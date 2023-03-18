@@ -285,9 +285,6 @@ if get_option('enable_step_tests')
           if app['full_name'] == 'autosar_multicore_andreas_spinlock_b'
             continue
           endif
-          if app['full_name'] == 'autosar_singlecore_bcc1_resource1_l'
-            continue
-          endif
 
           test('autosar_generator_' + app['full_name'],
               py3_inst,
