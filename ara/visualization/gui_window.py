@@ -52,6 +52,7 @@ class GuiWindow(QMainWindow):
     def __init__(self, parent):
         super().__init__(parent)
 
+        self.setWindowTitle("ARA-GUI")
         self.mode = StepMode.DEFAULT
 
         self.current_trace = None
