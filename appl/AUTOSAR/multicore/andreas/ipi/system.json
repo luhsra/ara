@@ -8,14 +8,16 @@
           "autostart": true,
           "priority": 1,
           "events": [
-            "E1"
+            "E1",
+            "E2"
           ],
           "schedule": true
         }
       },
       "resources": {},
       "events": {
-        "E1": {}
+        "E1": {},
+        "E2": {}
       },
       "alarms": {},
       "counters": {},
@@ -42,6 +44,9 @@
           "activation": 1,
           "autostart": false,
           "priority": 1,
+          "events": [
+            "E2"
+          ],
           "schedule": true
         }
       },

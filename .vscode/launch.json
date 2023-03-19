@@ -29,12 +29,12 @@
         "justMyCode": true
         },
         {
-            "name": "autosar_multicore_andreas_ipi_f",
+            "name": "autosar_multicore_andreas_ipi_g",
             "type": "python",
             "request": "launch",
             "program": "build/ara.py",
             "args": [
-                "build/appl/AUTOSAR/autosar_multicore_andreas_ipi_f.ll",
+                "build/appl/AUTOSAR/autosar_multicore_andreas_ipi_g.ll",
                 "--os=AUTOSAR",
                 "--oilfile=appl/AUTOSAR/multicore/andreas/ipi/system.json",
                 "--step-settings=settings/autosar_generator.json",

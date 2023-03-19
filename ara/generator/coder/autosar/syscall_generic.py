@@ -261,32 +261,17 @@ class GenericSystemCalls(BaseCoder):
                            [self.task_desc(userspace.calling_task)])
 
     def GetEvent(self, syscall, userspace, kernelspace):
-        mask = self.call(kernelspace, "scheduler_["+str(userspace.calling_task.cpu_id)+"].GetEvent_impl",
-                                  "EventMaskType", [self.task_desc(kernelspace.arguments().task)])
 
-        # TODO fix this
-        return_variable = self.os_rules.get_syscall_return_variable("EventMaskType", 4)
+        task = kernelspace.arguments().task_id
 
-        # Fill return variable
-        kernelspace.add(Statement("%s.set(%s)"%(
-            return_variable.name,
-            mask.name)))
+        mask = self.call(kernelspace, f"scheduler_[{task.cpu_id}].GetEvent_impl",
+                                  "EventMaskType", [self.task_desc(task)], name = "*arg1")
 
-        # Read out the result of the system call
-        post = syscall.impl.post_hook
-        post.add(Statement("%s.check()" %(
-            return_variable.name
-        )))
-        post.add(Statement("*%s = %s.get()" %(
-            userspace.arguments()[1][0], # Name of the first argument
-            return_variable.name
-        )))
 
         kernelspace.add(Comment("Dispatch directly back to Userland"))
         self.call(kernelspace, "Dispatcher::ResumeToTask",
                            "void",
                            [self.task_desc(userspace.calling_task)])
-
 
 
     def SetEvent(self, syscall, userspace, kernelspace):
