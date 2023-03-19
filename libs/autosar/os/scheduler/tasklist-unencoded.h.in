@@ -18,7 +18,7 @@ struct TaskList : public UnencodedTaskListStatic {
 
 {{{!foreach_subtask|
     Task::prio_t {{{!subtask}}};
-    uint32_t {{{!subtask}}}_spinlocks_held;
+    uint32_t {{{!subtask}}}_spinlock_mask;
     {{{!if_events|\
     event_mask_t {{{!subtask}}}_events_waiting;
 	event_mask_t {{{!subtask}}}_events_set;
@@ -31,7 +31,7 @@ struct TaskList : public UnencodedTaskListStatic {
 
     TaskList() : UnencodedTaskListStatic()
     {{{!foreach_subtask|
-        , {{{!subtask}}}(0), {{{!subtask}}}_spinlocks_held(0)\
+        , {{{!subtask}}}(0), {{{!subtask}}}_spinlock_mask(0)\
         {{{!if_events|\
            , {{{!subtask}}}_events_waiting(0), {{{!subtask}}}_events_set(0)\
         }}}
@@ -68,7 +68,7 @@ struct TaskList : public UnencodedTaskListStatic {
         if (id == {{{!subtask_id}}}) {
 			if ({{{!subtask}}} < prio) {
 				{{{!subtask}}} = prio;
-                {{{!subtask}}}_spinlocks_held = 0;
+                {{{!subtask}}}_spinlock_mask = 0;
 				{{{!if_events|
 				{{{!subtask}}}_events_waiting = 0;
                 {{{!subtask}}}_events_set = 0;\
@@ -119,36 +119,45 @@ struct TaskList : public UnencodedTaskListStatic {
 		}
     }
 
-    /** holds locks **/
-    forceinline int num_spinlock(const Task::id_t id) {
+    /** check if task holds locks **/
+    forceinline int get_task_spinlock_mask(const Task::id_t id) {
         (void) id;
 {{{!foreach_subtask|\
         if (id == {{{!subtask_id}}}) {
-           return {{{!subtask}}}_spinlocks_held;
+           return {{{!subtask}}}_spinlock_mask;
         } else \
 }}}     {
 			return 0;
 		}
     }
 
-    /** increase locks **/
-    forceinline void inc_spinlock(const Task::id_t id) {
+    /** check if CPU holds locks **/
+    forceinline uint32_t get_cpu_spinlock_mask(const CoreIdType cpuid) {
+    uint32_t mask = 0;
+{{{!foreach_subtask|\
+        if (OS_{{{!subtask}}}_task.cpuid == cpuid) {
+           mask |= {{{!subtask}}}_spinlock_mask;
+        } \
+}}}
+        return mask;
+    }
+
+    forceinline void task_spin_lock(const Task::id_t id, const SpinlockType spinlock_id) {
         (void) id;
 {{{!foreach_subtask|\
         if (id == {{{!subtask_id}}}) {
-           {{{!subtask}}}_spinlocks_held ++;
+           {{{!subtask}}}_spinlock_mask |= spinlock_id;
         } else \
 }}}     {
 			assert(false);
 		}
     }
 
-    /** decrease locks **/
-    forceinline void dec_spinlock(const Task::id_t id) {
+    forceinline void task_spin_unlock(const Task::id_t id, const SpinlockType spinlock_id) {
         (void) id;
 {{{!foreach_subtask|\
         if (id == {{{!subtask_id}}}) {
-           {{{!subtask}}}_spinlocks_held --;
+           {{{!subtask}}}_spinlock_mask &= ~spinlock_id;
         } else \
 }}}     {
 			assert(false);

@@ -31,7 +31,7 @@ namespace os {
 
 			// task ID
 			const id_t id;
-			const uint8_t target_cpuid;
+			const uint8_t cpuid;
 
 			template <typename T>
 			constexpr T enc_id() const {
@@ -59,8 +59,8 @@ namespace os {
 			/* Constant reference to the TCB */
 			const arch::TCB& tcb;
 
-			constexpr Task(id_t _id, uint8_t _target_cpuid, prio_t _prio, bool preemptable, const arch::TCB& tcb)
-			    : id(_id), target_cpuid(_target_cpuid), prio(_prio), preemptable(preemptable), tcb(tcb) {}
+			constexpr Task(id_t _id, uint8_t _cpuid, prio_t _prio, bool preemptable, const arch::TCB& tcb)
+			    : id(_id), cpuid(_cpuid), prio(_prio), preemptable(preemptable), tcb(tcb) {}
 		};
 
 	}; // namespace scheduler

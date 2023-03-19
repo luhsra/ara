@@ -52,8 +52,9 @@ struct Scheduler {
     }*/
 
     forceinline StatusType TerminateTask_impl(const Task &from) {
-		if (tlist.num_spinlock(from.id)) {
-			debug_core << "Error: Task "<< (int) from.id <<" holds locks" << endl;
+		uint32_t mask = tlist.get_task_spinlock_mask(from.id);
+		if (mask) {
+			debug_core << "Error: Task "<< (int) from.id <<" holds locks, mask: " << mask << endl;
 			return E_NOT_OK;
 		}
 		SetSuspended_impl(from);
@@ -78,8 +79,9 @@ struct Scheduler {
 	}
 
 	forceinline StatusType WaitEvent_impl(const Task &current_task, const int event_mask) {
-		if (tlist.num_spinlock(current_task.id)) {
-			debug_core << "Error: Task "<< (int) current_task.id <<" holds locks" << endl;
+		uint32_t mask = tlist.get_task_spinlock_mask(current_task.id);
+		if (mask) {
+			debug_core << "Error: Task "<< (int) current_task.id <<" holds locks, mask: " << mask << endl;
 			return E_NOT_OK;
 		}
 		tlist.wait_events(current_task.id, event_mask);
@@ -129,29 +131,41 @@ struct Scheduler {
 
 
 	forceinline StatusType GetSpinlock_impl(const Task &task, os::Spinlock &sl) {
-        debug_core << __FUNCTION__ << "(" << sl.id << ")" << endl;
+        debug_core << __FUNCTION__ << "(" <<(int) task.id <<  ", " << sl.id << ")" << endl;
+
+		uint32_t mask = tlist.get_cpu_spinlock_mask(task.cpuid);
+		if (mask & sl.id) {
+			debug_core << "Error: CPU "<< (int) task.cpuid <<" already holds spinlock " << sl.id << endl;
+			return E_NOT_OK;
+		}
 
         StatusType rc = sl.lock();
 		if (rc == 0)
-			tlist.inc_spinlock(task.id);
+			tlist.task_spin_lock(task.id, sl.id);
 		return rc;
     }
 
     forceinline StatusType TryToGetSpinlock_impl(const Task &task, os::Spinlock &sl, TryToGetSpinlockType* success) {
-        debug_core << __FUNCTION__ << "(" << sl.id << ")" << endl;
+        debug_core << __FUNCTION__ << "(" <<(int) task.id <<  ", " << sl.id << ")" << endl;
+
+		uint32_t mask = tlist.get_task_spinlock_mask(task.cpuid);
+		if (mask) {
+			debug_core << "Error: CPU "<< (int) task.cpuid <<" holds locks, mask: " << mask << endl;
+			return E_NOT_OK;
+		}
 
         StatusType rc = sl.trylock(success);
 		if (*success == TRYTOGETSPINLOCK_SUCCESS)
-			tlist.inc_spinlock(task.id);
+			tlist.task_spin_lock(task.id, sl.id);
 		return rc;
     }
 
     forceinline StatusType ReleaseSpinlock_impl(const Task &task, os::Spinlock &sl) {
-		debug_core << __FUNCTION__ << "(" << sl.id << ")" << endl;
+		debug_core << __FUNCTION__ << "(" << (int) task.id <<  ", " << sl.id << ")" << endl;
 
 		StatusType rc = sl.unlock();
 		if (rc == 0)
-			tlist.dec_spinlock(task.id);
+			tlist.task_spin_unlock(task.id, sl.id);
 		return rc;
 	}
 

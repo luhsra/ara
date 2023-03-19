@@ -478,7 +478,7 @@ class AlarmTemplate(CodeTemplate):
             ret += "scheduler_[%d].tlist.set_events(%d, %d);\n"% (
                 alarm.impl.task.cpu_id,
                 alarm.impl.task.impl.task_id,
-                alarm.impl.event.impl.event_mask,
+                alarm.impl.event.index,
             )
         else:
             ret += "scheduler_[%d].SetReady_impl(%s);\n"% (

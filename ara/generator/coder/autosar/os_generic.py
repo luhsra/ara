@@ -180,7 +180,8 @@ class GenericOS(BaseCoder):
             self.generator.source_file.data_manager.add(iddesc)
 
         for v, event in self.ara_graph.instances.get(Event):
-
+            if event.index == None:
+                event.index = 0 # null in mask -> disabled
             iddesc = DataObject("const EventMaskType", "AUTOSAR_EVENT_" + event.name,
                                 static_initializer = str(event.index),
                                 extern_c = True)
