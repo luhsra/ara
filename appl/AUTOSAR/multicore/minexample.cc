@@ -1,16 +1,11 @@
 #include "autosar/os.h"
+#include "test/test.h"
 
-void doSomethingBefore() { }
-void doSomethingAfter() { }
-void doSomethingImportant2() { }
-void doSomethingImportant() { }
-void doSomethingC() { }
-void doSomethingD() { }
-void doSomethingE() { }
-extern bool getBool();
-void handleSomeEvent() { }
-void doCriticalWork() {}
-
+/** TEST
+ * ara/steps/multisse_helper/pairing_partner_search.py", line 333, in _find_timed_predecessor
+ *  assert len(predecessors) > 0
+ *  AssertionError
+*/
 DeclareTask(TaskA);
 DeclareTask(TaskB);
 DeclareTask(TaskC);
@@ -19,111 +14,63 @@ DeclareTask(TaskE);
 DeclareTask(TaskF);
 
 ISR2(Interrupt1) {
-    doSomethingC();
-    ActivateTask(TaskB);
-}
-
-ISR2(Interrupt2) {
-    doSomethingImportant2();
+    test_trace('1');
 }
 
 TASK(TaskA) {
-    doSomethingBefore();
-    // DisableAllInterrupts();
-    ActivateTask(TaskE);
-    doSomethingAfter();
-    // EnableAllInterrupts();
-    TerminateTask(); 
+    test_trace('A');
+    TerminateTask();
 }
 
 TASK(TaskB) {
-    doSomethingImportant();
-    TerminateTask(); 
+    test_trace('B');
+    TerminateTask();
 }
 
 TASK(TaskC) {
-    doSomethingC();
-    doSomethingAfter();
+    test_trace('C');
     TerminateTask(); 
 }
 
 TASK(TaskD) {
-    while (true) {
-        doSomethingD();
-        ActivateTask(TaskB);
-    }
-    // doSomethingD();
-    // ActivateTask(TaskC);
+    test_trace('D');
+    ActivateTask(TaskA);
     TerminateTask(); 
 }
 
 TASK(TaskE) {
-    doSomethingE();
-    ActivateTask(TaskF);
-    TerminateTask(); 
+    test_trace('E');
+    ShutdownAllCores(E_OK);
+    TerminateTask();
 }
 
 TASK(TaskF) {
-    doSomethingE();
+    test_trace('F');
     ActivateTask(TaskE);
-    TerminateTask(); 
+    TerminateTask();
 }
 
-// ISR2(Interrupt1) {
-//     handleSomeEvent();
-// }
+void start()
+{
+    StatusType rv;
+    switch(GetCoreID()) {
+    case OS_CORE_ID_MASTER:
+        StartCore(OS_CORE_ID_1, &rv);
 
-// ISR2(Interrupt2) {
-//     ActivateTask(TaskF);
-// }
+        // wait until all cores are idling
+        SyncCore(OS_CORE_ID_1);
+    default:
+        StartOS(0);
+    }
+}
 
-// TASK(TaskA) {
-//     doSomethingBefore(); //race condition between the runtime of this ABB
-//     ActivateTask(TaskD);
+TEST_MAKE_OS_MAIN(start())
 
-//     TerminateTask();
-// }
-
-// TASK(TaskB) {
-//     DisableAllInterrupts();
-//     doCriticalWork();
-//     EnableAllInterrupts();
-
-//     TerminateTask();
-// }
-
-// TASK(TaskF) {
-//     while(true) {
-//         doSomethingAfter();
-//     }
-//     TerminateTask();
-// }
-
-// TASK(TaskC) {
-//     doSomethingC(); //and between this ABB
-//     ActivateTask(TaskE);
-//     TerminateTask();
-// }
-
-// TASK(TaskD) {
-//     // ActivateTask(TaskF);
-//     while(true) {
-//         doSomethingD();
-//     }
-
-//     TerminateTask();
-// }
-
-// TASK(TaskE) {
-//     ActivateTask(TaskF);
-//     while(true) {
-//         doSomethingE();
-//     }
-    
-//     TerminateTask();
-// }
-
-int main(void){
-    StartOS(0);
-    return 0;
+void ShutdownHook(StatusType status) {
+    (void) status;
+    /* The testcase has finished, check the output */
+    if (GetCoreID() == OS_CORE_ID_1) {
+        test_trace_assert("DAFE");
+        test_finish();
+    }
 }

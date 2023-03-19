@@ -7,6 +7,14 @@
         {
             "type": "lldb",
             "request": "launch",
+            "name": "LLDB autosar_multicore_minexample",
+            "program": "${workspaceFolder}/build/appl/AUTOSAR/autosar_multicore_minexample",
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
             "name": "LLDB autosar_multicore_andreas_spinlock_b",
             "program": "${workspaceFolder}/build/appl/AUTOSAR/autosar_multicore_andreas_spinlock_b",
             "args": [],

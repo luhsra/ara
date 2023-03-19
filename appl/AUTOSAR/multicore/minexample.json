@@ -5,7 +5,7 @@
       "tasks": {
         "TaskA": {
           "activation": 1,
-          "autostart": true,
+          "autostart": false,
           "priority": 1,
           "schedule": true
         },
@@ -70,7 +70,7 @@
         "TaskF": {
           "activation": 1,
           "autostart": false,
-          "priority": 2,
+          "priority": 3,
           "schedule": true
         }
       },
@@ -86,7 +86,7 @@
       "alarms": {
         "Alarm2": {
           "counter": "SystemCounter2",
-          "autostart": true,
+          "autostart": false,
           "cycletime": 1000,
           "alarmtime": 500,
           "action": {
