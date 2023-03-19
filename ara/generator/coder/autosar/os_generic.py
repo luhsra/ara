@@ -59,10 +59,7 @@ class GenericOS(BaseCoder):
     def generate_dataobjects_task_descriptors(self):
         self.generator.source_file.include("os/scheduler/task.h")
 
-        task_list = [self.ara_graph.instances.vp.obj[v]
-                for v in self.ara_graph.instances.vertices()
-                if isinstance(self.ara_graph.instances.vp.obj[v], Task)]
-        for task in task_list:
+        for v, task in self.ara_graph.instances.get(Task):
 
             initializer = "(%d, %d, %d, %s, arch::%s)" % (
                 task.impl.task_id,
@@ -106,11 +103,7 @@ class GenericOS(BaseCoder):
         self.generator.source_file.include("os/counter.h")
         self.generator.source_file.include("os/alarm.h")
 
-        ctr_list = [self.ara_graph.instances.vp.obj[v]
-            for v in self.ara_graph.instances.vertices()
-                if isinstance(self.ara_graph.instances.vp.obj[v], Counter)]
-
-        for ctr in ctr_list:
+        for v, ctr in self.ara_graph.instances.get(Counter):
             assert ctr.maxallowedvalue < 2**16, "At the moment the maxallowedvalue has to fit into a 16 Bit Value"
 
             impl = self.generate_counter(ctr)
@@ -122,11 +115,8 @@ class GenericOS(BaseCoder):
 
         alarm_id = 1
 
-        alarm_vertex_list = [v for v in self.ara_graph.instances.vertices()
-            if isinstance(self.ara_graph.instances.vp.obj[v], Alarm)]
-        for alarm_vertex in alarm_vertex_list:
-            alarm = self.ara_graph.instances.vp.obj[alarm_vertex]
-            edges = [e for e in alarm_vertex.out_edges()] + [e for e in alarm_vertex.in_edges()]
+        for v, alarm in self.ara_graph.instances.get(Alarm):
+            edges = [e for e in v.out_edges()] + [e for e in v.in_edges()]
 
             for e in edges:
                 label = self.ara_graph.instances.ep.label[e]
@@ -161,67 +151,46 @@ class GenericOS(BaseCoder):
            to be done after the objects are allocated.
 
         """
-        task_list = [self.ara_graph.instances.vp.obj[v]
-                for v in self.ara_graph.instances.vertices()
-                if isinstance(self.ara_graph.instances.vp.obj[v], Task)]
-        for task in task_list:
-            # add: const TaskType subtaskname_id = OS_subtask.name_task.id;
+        for v, task in self.ara_graph.instances.get(Task):
+            # add: const TaskType subtaskname_id = OS_subtask.name_task.id
             iddesc = DataObject("const TaskType", "AUTOSAR_TASK_" + task.name,
                                 static_initializer = str(task.impl.task_id),
                                 extern_c = True)
-            self.generator.source_file.data_manager.add(iddesc);
+            self.generator.source_file.data_manager.add(iddesc)
 
-        alarm_list = [self.ara_graph.instances.vp.obj[v]
-            for v in self.ara_graph.instances.vertices()
-                if isinstance(self.ara_graph.instances.vp.obj[v], Alarm)]
-        for alarm in alarm_list:
+        for v, alarm in self.ara_graph.instances.get(Alarm):
             iddesc = DataObject("const AlarmType", "AUTOSAR_ALARM_" + alarm.name,
                                 static_initializer = str(alarm.impl.alarm_id),
                                 extern_c = True)
-            self.generator.source_file.data_manager.add(iddesc);
+            self.generator.source_file.data_manager.add(iddesc)
 
-        res_vertex_list = [v for v in self.ara_graph.instances.vertices()
-                if isinstance(self.ara_graph.instances.vp.obj[v], Resource)]
-        for res_vertex in res_vertex_list:
-            res = self.ara_graph.instances.vp.obj[res_vertex]
-            neighbors = self.ara_graph.instances.get_all_neighbors(res_vertex)
+        for v, res in self.ara_graph.instances.get(Resource):
+            neighbors = self.ara_graph.instances.get_all_neighbors(v)
             tasks_prio = [self.ara_graph.instances.vp.obj[n].priority for n in neighbors]
             res.impl.static_priority = max(tasks_prio)+1
             iddesc = DataObject("const ResourceType", "AUTOSAR_RESOURCE_" + res.name,
                                 static_initializer = str(res.impl.static_priority),
                                 extern_c = True)
-            self.generator.source_file.data_manager.add(iddesc);
+            self.generator.source_file.data_manager.add(iddesc)
 
-        ctr_list = [self.ara_graph.instances.vp.obj[v]
-            for v in self.ara_graph.instances.vertices()
-                if isinstance(self.ara_graph.instances.vp.obj[v], Counter)]
-        for counter in ctr_list:
-            iddesc = DataObject("const CounterType", "AUTOSAR_COUNTER_" + counter.name,
+        for v, ctr in self.ara_graph.instances.get(Counter):
+            iddesc = DataObject("const CounterType", "AUTOSAR_COUNTER_" + ctr.name,
                                 static_initializer = "0",
                                 extern_c = True)
-            self.generator.source_file.data_manager.add(iddesc);
+            self.generator.source_file.data_manager.add(iddesc)
 
-        event_list = [self.ara_graph.instances.vp.obj[v]
-            for v in self.ara_graph.instances.vertices()
-                if isinstance(self.ara_graph.instances.vp.obj[v], Event)]
-        for event in event_list:
-
+        for v, event in self.ara_graph.instances.get(Event):
             iddesc = DataObject("const EventMaskType", "AUTOSAR_EVENT_" + event.name,
                                 static_initializer = str(event.impl.event_mask),
                                 extern_c = True)
-            self.generator.source_file.data_manager.add(iddesc);
-
-        spinlock_list = [self.ara_graph.instances.vp.obj[v]
-            for v in self.ara_graph.instances.vertices()
-                if isinstance(self.ara_graph.instances.vp.obj[v], Spinlock)]
+            self.generator.source_file.data_manager.add(iddesc)
 
         self.generator.source_file.include("os/spinlock.h")
-
-        for spinlock in spinlock_list:
+        for v, spinlock in self.ara_graph.instances.get(Spinlock):
             iddesc = DataObject("const SpinlockType", "AUTOSAR_SPINLOCK_" + spinlock.name,
                                 static_initializer = str(spinlock.impl.id),
                                 extern_c = True)
-            self.generator.source_file.data_manager.add(iddesc);
+            self.generator.source_file.data_manager.add(iddesc)
 
             desc = DataObject("os::Spinlock", "OS_" + spinlock.name, "("+iddesc.name+")")
             self.generator.source_file.data_manager.add(desc, namespace = ("os",))
@@ -236,7 +205,7 @@ class GenericOS(BaseCoder):
             self.generator.source_file.function_manager.add(hook_function)
             # Cast arguments to void, to get rid of unused parameter warning
             for i in range(0, len(args)):
-                hook_function.unused_parameter(i);
+                hook_function.unused_parameter(i)
 
             # In the pre idle hook, we place the kickoff method
 

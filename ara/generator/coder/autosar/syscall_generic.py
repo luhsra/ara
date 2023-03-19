@@ -9,7 +9,7 @@ from ara.os.autosar import Resource, Task, Alarm, Counter, ISR, Event
 from ara.generator.tools import panic
 from ara.graph import ABBType
 
-import dataclasses
+from itertools import chain
 
 
 class GenericSystemCalls(BaseCoder):
@@ -33,10 +33,7 @@ class GenericSystemCalls(BaseCoder):
     def foreach_subtask(self, func):
         """Call func for every task"""
         ret = []
-        task_list = [self.ara_graph.instances.vp.obj[v]
-                for v in self.ara_graph.instances.vertices()
-                if isinstance(self.ara_graph.instances.vp.obj[v], Task)]
-        for task in task_list:
+        for v, task in self.ara_graph.instances.get(Task):
             ret += func(task)
         return ret
 
@@ -113,9 +110,7 @@ class GenericSystemCalls(BaseCoder):
         self.os_rules.generate_hooks()
 
         # Generate ISRs
-        isr_list = [self.ara_graph.instances.vp.obj[v]
-            for v in self.ara_graph.instances.vertices()
-                if isinstance(self.ara_graph.instances.vp.obj[v], ISR)]
+        isr_list = [event for v, event in self.ara_graph.instances.get(ISR)]
 
         self.arch_rules.generate_isr_table(isr_list)
 
@@ -141,9 +136,7 @@ class GenericSystemCalls(BaseCoder):
                 self._log.warning("too many callsites for %s, using first one", self.ara_graph.cfg.vp.name[fn])
                 callgraph_fn = callsites[0]
 
-        for v in self.ara_graph.instances.vertices():
-            inst = self.ara_graph.instances.vp.obj[v]
-            if isinstance(inst, Task) or isinstance(inst, ISR):
+        for v, inst in chain(self.ara_graph.instances.get(ISR), self.ara_graph.instances.get(Task)):
                 if self.ara_graph.cfg.vp.call_graph_link[inst.function] == callgraph_fn:
                     return inst
 
@@ -157,21 +150,16 @@ class GenericSystemCalls(BaseCoder):
 
         block.add(Statement("debug_core << __FUNCTION__ << endl"))
 
-        task_list = [self.ara_graph.instances.vp.obj[v]
-                for v in self.ara_graph.instances.vertices()
-                if isinstance(self.ara_graph.instances.vp.obj[v], Task)]
-
-
         # prepare tasks only on one core
         ifblock = If("AUTOSAR_GetCoreID() == OS_CORE_ID_MASTER")
-        for task in task_list:
+        for v, task in self.ara_graph.instances.get(Task):
             # Use Reset the stack pointer for all all tasks
             self.call(ifblock, "Dispatcher::Prepare",
                       "void", [self.task_desc(task)])
         block.add(ifblock)
 
         # add autostarted tasks
-        for task in task_list:
+        for v, task in self.ara_graph.instances.get(Task):
             if task.autostart:
                 core_id = "OS_CORE_ID_"+str(task.cpu_id)
                 ifblock = If("AUTOSAR_GetCoreID() == "+core_id)
@@ -179,9 +167,9 @@ class GenericSystemCalls(BaseCoder):
                           "void", [self.task_desc(task)])
                 block.add(ifblock)
 
-        # TODO only when needed
-        self.generator.source_file.include("itimer.h")
-        self.call(block, "ITimer::init")
+        if any(chain(self.ara_graph.instances.get(Counter))):
+            self.generator.source_file.include("itimer.h")
+            self.call(block, "ITimer::init")
 
         # Call the StartupHook
         self.call(block, "CALL_HOOK", "void", ["StartupHook"])
@@ -440,9 +428,7 @@ class AlarmTemplate(CodeTemplate):
 
         # Check if there are any counters/alarms which have to be implemented
         self.subsystem_enabled = False
-        alarm_list = [self.ara_graph.instances.vp.obj[v]
-            for v in self.ara_graph.instances.vertices()
-                if isinstance(self.ara_graph.instances.vp.obj[v], Alarm)]
+        alarm_list = [alarm for v, alarm in self.ara_graph.instances.get(Alarm)]
 
         if self.alarm_filter:
             if any(self.alarm_filter(x) for x in alarm_list):
@@ -454,10 +440,7 @@ class AlarmTemplate(CodeTemplate):
     def increase_counters(self, snippet, args):
         ret = []
 
-        ctr_list = [self.ara_graph.instances.vp.obj[v]
-            for v in self.ara_graph.instances.vertices()
-                if isinstance(self.ara_graph.instances.vp.obj[v], Counter)]
-        for counter in ctr_list:
+        for v, counter in self.ara_graph.instances.get(Counter):
             # Softcounters are ignored by the hardware interrupt
             # TODO support softcounters?
             #if counter.conf.softcounter:
@@ -528,14 +511,9 @@ class AlarmTemplate(CodeTemplate):
         return ret
 
     def generate_check_alarms(self, snippet, args):
-        # TODO only when needed
         ret = []
 
-        alarm_list = [self.ara_graph.instances.vp.obj[v]
-            for v in self.ara_graph.instances.vertices()
-                if isinstance(self.ara_graph.instances.vp.obj[v], Alarm)]
-
-        for alarm in alarm_list:
+        for v, alarm in self.ara_graph.instances.get(Alarm):
             # TODO soft counters
             #if alarm.conf.counter.conf.softcounter:
             #    continue

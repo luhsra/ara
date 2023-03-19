@@ -30,11 +30,7 @@ class PosixArch(GenericArch):
         self.generate_enable_irq_after_kernel()
 
     def generate_dataobjects_tcbs(self):
-        self.generator.source_file.include("tcb.h")
-        task_list = [self.ara_graph.instances.vp.obj[v]
-            for v in self.ara_graph.instances.vertices()
-                if isinstance(self.ara_graph.instances.vp.obj[v], Task)]
-        for task in task_list:
+        for v, task in self.ara_graph.instances.get(Task):
             initializer = "(&%s, %s, %s, %d, %s)" % (
                 task.impl.entry_function.name,
                 task.impl.stack.name,

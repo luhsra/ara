@@ -13,10 +13,7 @@ class GenericArch(BaseCoder):
     def generate_dataobjects_task_stacks(self):
         """Generate the stacks for the tasks, including the task pointers"""
         # Ignore the Idle thread and ISR subtasks
-        task_list = [self.ara_graph.instances.vp.obj[v]
-            for v in self.ara_graph.instances.vertices()
-                if isinstance(self.ara_graph.instances.vp.obj[v], Task)]
-        for task in task_list:
+        for v, task in self.ara_graph.instances.get(Task):
             stacksize = str(4096)
 
             stack = DataObjectArray("uint8_t", task.name + "_stack", stacksize,
@@ -34,10 +31,7 @@ class GenericArch(BaseCoder):
         pass
 
     def generate_dataobjects_task_entries(self):
-        task_list = [self.ara_graph.instances.vp.obj[v]
-            for v in self.ara_graph.instances.vertices()
-                if isinstance(self.ara_graph.instances.vp.obj[v], Task)]
-        for task in task_list:
+        for v, task in self.ara_graph.instances.get(Task):
             entry_function = FunctionDeclaration(TASK_PREFIX + "FUNC_" + task.name, extern_c = True)
             self.generator.source_file.function_manager.add(entry_function)
             task.impl.entry_function = entry_function

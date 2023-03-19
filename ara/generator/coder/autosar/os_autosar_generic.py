@@ -88,11 +88,7 @@ class TaskListTemplate(CodeTemplate):
         return ""
 
     def scheduler_prio(self, snippet, args):
-
-        task_list_prio = [self.ara_graph.instances.vp.obj[v].priority
-            for v in self.ara_graph.instances.vertices()
-            if isinstance(self.ara_graph.instances.vp.obj[v], Task)]
-
+        task_list_prio = [task.priority for v, task in self.ara_graph.instances.get(Task)]
         return str(max(task_list_prio)+1)
 
 class SchedulerTemplate(CodeTemplate):
