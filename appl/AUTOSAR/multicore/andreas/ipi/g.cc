@@ -69,8 +69,8 @@ TASK(T20) {
 }
 
 TASK(T30) {
-    SetEvent(T00, E1);
     test_trace('3');
+    SetEvent(T00, E1);
     TerminateTask();
 }
 

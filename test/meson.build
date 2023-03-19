@@ -265,6 +265,7 @@ if get_option('enable_step_tests')
         'bcc1/alarm3',
         'bcc1/complex1',
         'bcc1/complex2',
+        'bcc1/counter1',
         'bcc1/isr2',
         'bcc1/resource1',
         'bcc1/resource2',
