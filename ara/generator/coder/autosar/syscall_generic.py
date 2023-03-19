@@ -245,7 +245,7 @@ class GenericSystemCalls(BaseCoder):
                            "scheduler_["+str(userspace.calling_task.cpu_id)+"].WaitEvent_impl",
                            "StatusType",
                            [self.task_desc(userspace.calling_task),
-                            str(kernelspace.arguments().event_mask) # TODO combine_event_masks ?
+                            str(kernelspace.arguments().event_mask)
                            ], name = "result")
 
     def ClearEvent(self, syscall, userspace, kernelspace):

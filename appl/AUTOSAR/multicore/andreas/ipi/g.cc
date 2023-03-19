@@ -6,11 +6,14 @@ DeclareTask(T10);
 DeclareTask(T20);
 DeclareTask(T30);
 
-#define DecEvent(x) DeclareEvent(x, 1 << __COUNTER__)
+//#define DecEvent(x) DeclareEvent(x, 1 << __COUNTER__)
+//DecEvent(E1);
+//DecEvent(E2);
 
-DecEvent(E1);
+DeclareEvent(E1, 1 << 3);
+DeclareEvent(E2, 1 << 6);
+
 DeclareCounter(C1);
-DecEvent(E2);
 DeclareCounter(C2);
 
 void start()
@@ -37,11 +40,12 @@ void check_events() {
     WaitEvent(E1 | E2);
     EventMaskType events;
     GetEvent(T00, &events);
-    debug_core << "EVENTMASK" << events << endl;
     if (events & E1)
         test_trace('E');
     if (events & E2)
         test_trace('e');
+
+    ClearEvent(E1 | E2);
 }
 
 TASK(T00) {
@@ -49,6 +53,9 @@ TASK(T00) {
     ActivateTask(T10);
 
     check_events();
+
+    ActivateTask(T30);
+
     check_events();
 
     TerminateTask();
@@ -62,7 +69,6 @@ TASK(T10) {
 TASK(T20) {
     test_trace('2');
     SetEvent(T00, E2);
-    ActivateTask(T30);
     TerminateTask();
 }
 
@@ -76,7 +82,7 @@ void ShutdownHook(StatusType status) {
     (void) status;
     /* The testcase has finished, check the output */
     if (GetCoreID() == OS_CORE_ID_3) {
-        test_trace_assert("0123eE");
+        test_trace_assert("012e3E");
         test_finish();
     }
 }

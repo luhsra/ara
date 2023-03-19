@@ -32,11 +32,8 @@ class SpinlockImpl(BaseImpl):
         SpinlockImpl.spinlock_id_counter +=1
 
 class EventImpl(BaseImpl):
-    event_id_counter = 1
     def __init__(self, instance):
         super().__init__(instance)
-        self.event_mask = EventImpl.event_id_counter
-        EventImpl.event_id_counter +=1
         self.name = None
 
 class AlarmImpl(BaseImpl):
