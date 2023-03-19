@@ -124,7 +124,6 @@ TASK(TaskF) {
 // }
 
 int main(void){
-    char * appmode = {"tmp"};
-    StartOS(appmode);
+    StartOS(0);
     return 0;
 }
