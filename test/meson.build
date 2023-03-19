@@ -275,6 +275,7 @@ if get_option('enable_step_tests')
         'ecc1/bt1',
         'ecc1/event1',
         'ecc1/eventisr1',
+        'sched',
         'andreas/ipi',
         'andreas/spinlock',
       ]

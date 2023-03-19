@@ -42,3 +42,9 @@ TASK(J3) {
 	ReleaseResource(shaded);
 	TerminateTask();
 }
+
+void PreIdleHook() {
+	test_trace_assert("");
+	test_finish();
+	ShutdownMachine();
+}
