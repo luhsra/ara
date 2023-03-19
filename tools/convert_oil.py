@@ -788,7 +788,8 @@ def convert_to_json(cpus):
             j_counters[counter_name] = {
                 "maxallowedvalue": counter.maxallowedvalue,
                 "ticksperbase": counter.ticksperbase,
-                "mincycle": counter.mincycle
+                "mincycle": counter.mincycle,
+                "softcounter": counter.softcounter
             }
 
         # ISRs

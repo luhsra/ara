@@ -115,7 +115,13 @@ class LoadOIL(Step):
                 )
                 if "secondspertick" in counter:
                     instances.vp.obj[c].secondspertick = counter["secondspertick"]
+                if "softcounter" in counter:
+                    instances.vp.obj[c].softcounter = counter["softcounter"]
                 instances.vp.label[c] = c_name
+
+                code_instance = va.find_global(_autosar.COUNTER_PREFIX + c_name)
+                if code_instance is not None:
+                    va.assign_system_object(code_instance, instances.vp.obj[c])
 
             # events
             for e_name in cpu["events"].keys():

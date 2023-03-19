@@ -29,6 +29,7 @@ from .interrupts import fake_interrupt_function
 TASK_PREFIX = "AUTOSAR_TASK_"
 ALARM_PREFIX = "AUTOSAR_ALARM_"
 RESOURCE_PREFIX = "AUTOSAR_RESOURCE_"
+COUNTER_PREFIX = "AUTOSAR_COUNTER_"
 SPINLOCK_PREFIX = "AUTOSAR_SPINLOCK_"
 
 logger = get_logger("AUTOSAR")
@@ -162,12 +163,13 @@ class SpinlockContext:
                                wait_for=[x for x in self.wait_for])
 
 
-@dataclass
+@dataclass(eq=False)
 class Counter(AUTOSARInstance):
     mincycle: int
     maxallowedvalue: int
     ticksperbase: int
     secondspertick: int = 1
+    softcounter: bool = False
 
 
 @dataclass(eq=False)
@@ -657,9 +659,11 @@ class AUTOSAR(OSBase):
                           ty=InstanceEdge.activate)
         return state
 
-    @syscall
-    def AUTOSAR_AdvanceCounter(cfg, abb, state):
-        pass
+    @syscall(categories={SyscallCategory.comm},
+             signature=(Arg("counter", ty=Counter, hint=SigType.instance),))
+    def AUTOSAR_AdvanceCounter(cfg, state, cpu_id, args, va):
+        assert(isinstance(args.counter, Counter))
+        return state
 
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("alarm", ty=Alarm, hint=SigType.instance),))
