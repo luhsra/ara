@@ -150,22 +150,17 @@ class GenericSystemCalls(BaseCoder):
 
         block.add(Statement("debug_core << __FUNCTION__ << endl"))
 
-        # prepare tasks only on one core
-        ifblock = If("AUTOSAR_GetCoreID() == OS_CORE_ID_MASTER")
+        # prepare and autostarted tasks
         for v, task in self.ara_graph.instances.get(Task):
-            # Use Reset the stack pointer for all all tasks
+            core_id = "OS_CORE_ID_"+str(task.cpu_id)
+            ifblock = If("AUTOSAR_GetCoreID() == "+core_id)
+            block.add(ifblock)
             self.call(ifblock, "Dispatcher::Prepare",
-                      "void", [self.task_desc(task)])
-        block.add(ifblock)
-
-        # add autostarted tasks
-        for v, task in self.ara_graph.instances.get(Task):
+                "void", [self.task_desc(task)])
             if task.autostart:
-                core_id = "OS_CORE_ID_"+str(task.cpu_id)
-                ifblock = If("AUTOSAR_GetCoreID() == "+core_id)
                 self.call(ifblock, "scheduler_["+core_id+"].SetReadyFromSuspended_impl",
                           "void", [self.task_desc(task)])
-                block.add(ifblock)
+
 
         if any(chain(self.ara_graph.instances.get(Counter))):
             self.generator.source_file.include("itimer.h")
