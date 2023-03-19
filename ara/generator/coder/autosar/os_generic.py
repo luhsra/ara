@@ -167,6 +167,10 @@ class GenericOS(BaseCoder):
         for v, res in self.ara_graph.instances.get(Resource):
             neighbors = self.ara_graph.instances.get_all_neighbors(v)
             tasks_prio = [self.ara_graph.instances.vp.obj[n].priority for n in neighbors]
+
+            if tasks_prio == []: # resource never used
+                continue
+
             res.impl.static_priority = max(tasks_prio)+1
             iddesc = DataObject("const ResourceType", "AUTOSAR_RESOURCE_" + res.name,
                                 static_initializer = str(res.impl.static_priority),

@@ -294,6 +294,8 @@ extern "C" noinline void test_trace(char chr);
 
 extern "C" void arch_startup();
 
+extern "C" forceinline void ara_timing_info(int a, int b) {}
+
 #define TEST_MAKE_OS_MAIN(body) \
 	void os_main(void) {		\
 		test_main();			\

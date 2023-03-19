@@ -21,6 +21,22 @@
             "cwd": "${workspaceFolder}"
         },
         {
+            "name": "autosar_multicore_paper_minimal",
+            "type": "python",
+            "request": "launch",
+            "program": "build/ara.py",
+            "args": [
+                "build/appl/AUTOSAR/autosar_multicore_paper_minimal.ll",
+                "--os=AUTOSAR",
+                "--oilfile=appl/AUTOSAR/multicore/paper/system_minimal.json",
+                "--step-settings=settings/autosar_generator.json",
+                "--generator_output=autosar.cc",
+                "--dump"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
         "name": "autosar_singlecore_bcc1_counter1_a",
         "type": "python",
         "request": "launch",
