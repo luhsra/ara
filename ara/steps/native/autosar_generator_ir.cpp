@@ -68,7 +68,7 @@ namespace ara::step {
 
 		std::set<std::string> SystemCalls = this->graph.get_os().get_syscall_names();
 		// only a subset of system calls are renamed
-		std::regex re("Resource|Task|Event|Spinlock|Alarm");
+		std::regex re("Resource|Task|Event|Spinlock|Alarm|Counter");
 
 		for (const std::string& call : SystemCalls) {
 			if (std::regex_search(call, re))

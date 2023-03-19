@@ -29,6 +29,7 @@ class GenericSystemCalls(BaseCoder):
         "AUTOSAR_GetSpinlock": ["StatusType", "SpinlockType"],
         "AUTOSAR_TryGetSpinlock": ["StatusType", "SpinlockType", "int*"],
         "AUTOSAR_ReleaseSpinlock": ["StatusType", "SpinlockType"],
+        "AUTOSAR_AdvanceCounter": ["StatusType", "CounterType"],
     }
     def foreach_subtask(self, func):
         """Call func for every task"""
@@ -162,9 +163,12 @@ class GenericSystemCalls(BaseCoder):
                           "void", [self.task_desc(task)])
 
 
-        if any(chain(self.ara_graph.instances.get(Counter))):
-            self.generator.source_file.include("itimer.h")
-            self.call(block, "ITimer::init")
+        # check if hardware timer is needed
+        for v, counter in self.ara_graph.instances.get(Counter):
+            if counter.softcounter == False:
+                self.generator.source_file.include("itimer.h")
+                self.call(block, "ITimer::init")
+                break
 
         # Call the StartupHook
         self.call(block, "CALL_HOOK", "void", ["StartupHook"])
@@ -308,14 +312,17 @@ class GenericSystemCalls(BaseCoder):
                            [self.task_desc(userspace.calling_task)])
 
     def AdvanceCounter(self, syscall, userspace, kernelspace):
-        counter = syscall.arguments[0]
+        counter = kernelspace.arguments().counter
 
-        # Increase Counter and check the counter
+        if (not counter.softcounter):
+            kernelspace.add(Statement("result = E_NOT_OK"))
+            return
+
         kernelspace.add(Statement("%s.do_tick()" % counter.impl.name))
-        for alarm in self.system_graph.alarms:
-            if alarm.conf.counter == counter:
-                alarm.carried_syscall.function = syscall.function
-                check_alarm = self.alarms(self).generate_check_alarm_softcounter(alarm)
+
+        for v, alarm in self.ara_graph.instances.get(Alarm):
+            if alarm.impl.counter == counter:
+                check_alarm = self.alarms(self).generate_check_alarm(alarm, userspace.is_isr, userspace.calling_task.cpu_id)
                 kernelspace.add(Statement(check_alarm))
 
         kernelspace.add(Comment("Dispatch directly back to Userland"))
@@ -370,9 +377,6 @@ class GenericSystemCalls(BaseCoder):
             userspace.calling_task.priority = res.prev_priority
             res.prev_priority = None
 
-        # TODO not needed?
-        #if not abb.subtask.conf.preemptable:
-        #    next_prio = self.system_graph.get(Resource, "RES_SCHEDULER").conf.static_priority
         self.call(kernelspace,
                            "scheduler_["+str(userspace.calling_task.cpu_id)+"].ReleaseResource_impl",
                            "void",
@@ -422,46 +426,32 @@ class AlarmTemplate(CodeTemplate):
 
         for v, counter in self.ara_graph.instances.get(Counter):
             # Softcounters are ignored by the hardware interrupt
-            # TODO support softcounters?
-            #if counter.conf.softcounter:
-            #    continue
+            if counter.softcounter:
+                continue
             # Ignore all counters, that have no alarm attached, which
             # is actually implemented
 
-            #if self.alarm_filter:
-            #    if all(self.alarm_filter(x) is False for x in counter.alarms):
-            #        continue
+            if self.alarm_filter:
+                if all(self.alarm_filter(x) is False for x in counter.alarms):
+                    continue
             ret += self.expand_snippet("increase_counter",
                                        name = counter.impl.name,
                                        cpuid = counter.cpu_id)
         return ret
 
 
-    def generate_check_alarm_softcounter(self, alarm):
-        #TODO fix softcounters
-        args = {"alarm": alarm.impl.name}
-
-        abb = alarm.carried_syscall
-        ret = self.expand_snippet("if_alarm", **args) + "\n"
-        userspace, kernelspace = Block(), Block()
-
-        if abb.isA(S.ActivateTask):
-            self.rules.syscall_rules.ActivateTask(abb, userspace, kernelspace)
-        else:
-            self.rules.syscall_rules.SetEvent(abb, userspace, kernelspace)
-
-        ret += "".join(kernelspace.expand(None))
-        ret += self.expand_snippet("endif_alarm", **args) + "\n"
-
-        return ret
-
-    def generate_check_alarm(self, alarm):
+    def generate_check_alarm(self, alarm, is_isr, cpuid = None):
         ret = ""
         callback_name = "AUTOSAR_ALARMCB_%s" % (alarm.name)
         has_callback = self.ara_graph.cfg.contains_function_by_name(callback_name)
 
+        if cpuid == None:
+            # CPUID is needed for Counter::tick()
+            ret += self.expand_snippet("if_alarm_cpuid", alarm=alarm.impl.name, cpuid=alarm.cpu_id) + "\n"
+        else:
+            # softcounter syscall dont need to check cpuid
+            ret += self.expand_snippet("if_alarm", alarm=alarm.impl.name) + "\n"
 
-        ret += self.expand_snippet("if_alarm", alarm=alarm.impl.name, cpuid=alarm.cpu_id) + "\n"
         # This alarm has an callback
         if has_callback:
             # Add a Declaration
@@ -482,9 +472,9 @@ class AlarmTemplate(CodeTemplate):
             )
 
         if alarm.cpu_id != alarm.impl.task.cpu_id:
-            ret += "Machine::trigger_interrupt(30, %d, 0);\n"%alarm.impl.task.cpu_id
+            ret += f"Machine::trigger_interrupt(30, {alarm.impl.task.cpu_id}, 0);\n"
         else:
-            ret += "scheduler_[%d].Schedule_impl(/* from_interrupt */ true);\n"%alarm.impl.task.cpu_id
+            ret += f"scheduler_[{alarm.impl.task.cpu_id}].Schedule_impl(/* from_interrupt */ {str(is_isr).lower()});\n"
 
         ret += self.expand_snippet("endif_alarm", alarm=alarm.impl.name) + "\n"
 
@@ -494,9 +484,9 @@ class AlarmTemplate(CodeTemplate):
         ret = []
 
         for v, alarm in self.ara_graph.instances.get(Alarm):
-            # TODO soft counters
-            #if alarm.conf.counter.conf.softcounter:
-            #    continue
-            ret += [self.generate_check_alarm(alarm)]
+            if alarm.impl.counter.softcounter:
+                continue
+            # assume this is expanded only in ISR Counter::tick()
+            ret += [self.generate_check_alarm(alarm, True)]
 
         return ret

@@ -7,8 +7,8 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "LLDB autosar_multicore_minexample",
-            "program": "${workspaceFolder}/build/appl/AUTOSAR/autosar_multicore_minexample",
+            "name": "LLDB autosar_singlecore_bcc1_counter1_a",
+            "program": "${workspaceFolder}/build/appl/AUTOSAR/autosar_singlecore_bcc1_counter1_a",
             "args": [],
             "cwd": "${workspaceFolder}"
         },
@@ -19,6 +19,23 @@
             "program": "${workspaceFolder}/build/appl/AUTOSAR/autosar_multicore_andreas_spinlock_b",
             "args": [],
             "cwd": "${workspaceFolder}"
+        },
+        {
+        "name": "autosar_singlecore_bcc1_counter1_a",
+        "type": "python",
+        "request": "launch",
+        "program": "build/ara.py",
+        "args": [
+            "build/appl/AUTOSAR/autosar_singlecore_bcc1_counter1_a.ll",
+            "--os=AUTOSAR",
+            "--oilfile=appl/AUTOSAR/singlecore/bcc1/counter1/system.json",
+            "--step-settings=settings/autosar_generator.json",
+            "--generator_output=autosar.cc",
+            "--dump",
+            "--log-level=debug"
+        ],
+        "console": "integratedTerminal",
+        "justMyCode": true
         },
         {
         "name": "autosar_multicore_andreas_spinlock_c",
