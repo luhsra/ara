@@ -60,6 +60,9 @@
 	border-color: blue;
 }
 
+#svfg_node[mouse_selected=&quot;true&quot;], #svfg_node[mouse_selected=&quot;true&quot;] QWidget, Line {
+	background-color: lightGray;
+}
 </string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">

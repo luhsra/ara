@@ -14,6 +14,7 @@ from graph_tool.libgraph_tool_core import Vertex
 from ara.graph import CFType
 from ara.visualization.trace import trace_lib, trace_util
 from ara.visualization.util import RESOURCE_PATH
+from ara.visualization.widgets.properties_info import PropertiesInfo
 
 DPI_LEVEL = 72
 
@@ -38,6 +39,15 @@ class AbstractNode(GraphicsObject):
         Base class for graph nodes. Loads a ui file for the design.
     """
 
+    _mouse_selected: 'AbstractNode' = None
+
+    def reset_mouse_selected():
+        if AbstractNode._mouse_selected != None:
+            AbstractNode._mouse_selected.is_mouse_selected = False
+            AbstractNode._mouse_selected.widget.setProperty("mouse_selected", "false")
+            AbstractNode._mouse_selected.reload_stylesheet()
+        AbstractNode._mouse_selected = None
+
     def __init__(self, node: Node, ui_path=RESOURCE_PATH.get() + "node.ui"):
         super().__init__(ui_path)
 
@@ -53,6 +63,7 @@ class AbstractNode(GraphicsObject):
 
         self.setGeometry(int(x), int(y), int(width), int(height))
         self.highlighting = False
+        self.is_mouse_selected = False
 
     def reload_stylesheet(self):
         """
@@ -65,6 +76,20 @@ class AbstractNode(GraphicsObject):
         self.highlighting = True
         self.widget.setProperty("highlighted", color.value)
         self.reload_stylesheet()
+
+    def set_mouse_selected(self):
+        if self.is_mouse_selected:
+            return
+        AbstractNode.reset_mouse_selected()
+        AbstractNode._mouse_selected = self
+        self.is_mouse_selected = True
+        self.widget.setProperty("mouse_selected", "true")
+        self.reload_stylesheet()
+
+    def __del__(self):
+        if self.is_mouse_selected:
+            AbstractNode._mouse_selected = None
+            PropertiesInfo.globalInfo.show_no_data()
 
 
 class AdjacencyNode(AbstractNode):
@@ -101,7 +126,11 @@ class AbbNode(AbstractNode):
         self.widget.type_text.setText(str(self.data.attr["type"]))
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        print("Do Something with the clicks")
+        if event.button() == Qt.LeftButton:
+            from ara.visualization import ara_manager
+            graph = ara_manager.INSTANCE.graph
+            PropertiesInfo.globalInfo.set_node_data(graph.cfg, self.id)
+            self.set_mouse_selected()
 
 
 class CallGraphNode(AdjacencyNode):
@@ -142,6 +171,8 @@ class CallGraphNode(AdjacencyNode):
 
             self.reload_stylesheet()
 
+            AbstractNode.reset_mouse_selected()
+            PropertiesInfo.globalInfo.show_no_data()
             return
 
         if event.button(
@@ -161,6 +192,18 @@ class InstanceNode(AbstractNode):
         self.widget.label_text.setText(str(self.data.attr["label"]))
         self.widget.sublabel_text.setText(str(self.data.attr["sublabel"]))
 
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        if event.button() == Qt.LeftButton:
+            from ara.visualization import ara_manager
+            graph = ara_manager.INSTANCE.graph
+            os_obj = graph.instances.vp.obj[self.id]
+            member_vars = [[attr, str(getattr(os_obj, attr))] for attr in dir(os_obj)
+                        if not callable(getattr(os_obj, attr))
+                            and not attr.startswith("_")]
+            member_vars.append(["---", "---"])
+            PropertiesInfo.globalInfo.set_node_data(graph.instances, self.id, member_vars)
+            self.set_mouse_selected()
+
 
 class SVFGNode(AdjacencyNode):
     """
@@ -174,12 +217,19 @@ class SVFGNode(AdjacencyNode):
 
         self.widget.label_text.setText(str(self.data.attr["label"]))
         self.widget.label_text.setWordWrap(True)
+        if self.data.attr["mouse_selected"] == "True":
+            self.set_mouse_selected()
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.LeftButton:
+            from ara.visualization import ara_manager
+            graph = ara_manager.INSTANCE.graph
+            PropertiesInfo.globalInfo.set_node_data(graph.svfg, self.id)
+            AbstractNode.reset_mouse_selected()
             if self.adjacency:
                 self.sig_adjacency_selected.emit(self.id)
-                return
+            else:
+                self.set_mouse_selected()
 
 
 class Subgraph(GraphicsObject):

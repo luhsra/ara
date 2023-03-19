@@ -13,9 +13,10 @@
   <property name="windowTitle">
    <string>Node</string>
   </property>
+
   <property name="styleSheet">
    <string notr="true">QWidget {
-	background: white; 
+	background: white;
 }
 
 #type_text {
@@ -56,6 +57,10 @@
 
 #node[highlighted=&quot;7&quot;] {
 	border-color: blue;
+}
+
+#node[mouse_selected=&quot;true&quot;], #node[mouse_selected=&quot;true&quot;] QWidget  {
+	background-color: lightgray;
 }
 </string>
   </property>

@@ -55,6 +55,10 @@
 #instance_node[highlighted=&quot;7&quot;] {
 	border-color: blue;
 }
+
+#instance_node[mouse_selected=&quot;true&quot;], #instance_node[mouse_selected=&quot;true&quot;] QWidget  {
+	background-color: lightgray;
+}
 </string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">

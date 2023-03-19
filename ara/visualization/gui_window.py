@@ -7,11 +7,11 @@
 import enum
 
 from PySide6.QtUiTools import QUiLoader
-from PySide6.QtWidgets import QApplication, QPushButton, QHBoxLayout, QVBoxLayout, QGraphicsView, QLabel, QWidget, \
+from PySide6.QtWidgets import QPushButton, QVBoxLayout, QWidget, \
     QMainWindow, QDockWidget, QToolBar, QListWidgetItem, QListWidget
 
 from PySide6.QtCore import Signal, QItemSelectionModel
-from PySide6.QtCore import Slot
+from PySide6.QtCore import Slot, QSize
 
 from PySide6.QtGui import QPainter, Qt
 
@@ -20,9 +20,10 @@ from ara.graph.mix import GraphType
 from .signal import ara_signal
 from .signal.signal_combiner import SignalCombiner
 from .trace import trace_handler
-from .util import RESOURCE_PATH, StepMode
+from .util import RESOURCE_PATH, StepMode, SMALL_WIDGET_HEIGHT, SMALL_WIDGET_WIDTH
 from .widgets import graph_views
 from .widgets.graph_views import CFGView, CallGraphView, InstanceGraphView, SVFGView
+from .widgets.graph_elements import AbstractNode
 from .widgets.properties_info import PropertiesInfo
 
 loader = QUiLoader()
@@ -86,9 +87,15 @@ class GuiWindow(QMainWindow):
         self.dw_svfg.setFeatures(QDockWidget.DockWidgetMovable
                                  | QDockWidget.DockWidgetFloatable)
 
+        # Override method of QDockWidget
+        def sizeHint(self) -> QSize:
+            return QSize(SMALL_WIDGET_WIDTH, SMALL_WIDGET_HEIGHT)
+
         self.dw_step_queue = loader.load(RESOURCE_PATH.get() + "step_queue.ui")
+        self.dw_step_queue.sizeHint = sizeHint.__get__(self.dw_step_queue, QDockWidget)
         self.dw_function_search = loader.load(RESOURCE_PATH.get() +
                                               "function_list_search.ui")
+        self.dw_function_search.sizeHint = sizeHint.__get__(self.dw_function_search, QDockWidget)
 
         self.proxies = []
 
@@ -105,10 +112,12 @@ class GuiWindow(QMainWindow):
         self.b_step.clicked.connect(self.handle_step_clicked)
         self.b_step.clicked.connect(self.disable_step_button)
         self.b_step.clicked.connect(self.disable_step_trace_button)
+        self.b_step.clicked.connect(self.reset_mouse_selected)
 
         self.b_step_trace.clicked.connect(self.handle_step_trace_clicked)
         self.b_step_trace.clicked.connect(self.disable_step_trace_button)
         self.b_step_trace.clicked.connect(self.disable_step_button)
+        self.b_step_trace.clicked.connect(self.reset_mouse_selected)
 
         self.sig_exec_step.connect(ara_manager.INSTANCE.step)
 
@@ -170,7 +179,9 @@ class GuiWindow(QMainWindow):
         self.dw_callgraph.setWidget(CallGraphView(signal_combiner))
         self.dw_instance_graph.setWidget(InstanceGraphView(signal_combiner))
         self.dw_svfg.setWidget(SVFGView(signal_combiner))
-        self.info_field.setWidget(PropertiesInfo(signal_combiner))
+
+        PropertiesInfo.globalInfo = PropertiesInfo()
+        self.info_field.setWidget(PropertiesInfo.globalInfo)
 
         self.dw_cfg.widget().setRenderHint(QPainter.Antialiasing)
         self.dw_callgraph.widget().setRenderHint(QPainter.Antialiasing)
@@ -178,9 +189,9 @@ class GuiWindow(QMainWindow):
         self.dw_svfg.widget().setRenderHint(QPainter.Antialiasing)
 
         self.addDockWidget(Qt.TopDockWidgetArea, self.dw_cfg)
-        self.addDockWidget(Qt.TopDockWidgetArea, self.info_field)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_callgraph)
         self.addDockWidget(Qt.TopDockWidgetArea, self.dw_instance_graph)
+        self.addDockWidget(Qt.TopDockWidgetArea, self.info_field)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_svfg)
         self.addDockWidget(Qt.TopDockWidgetArea, self.dw_step_queue)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_function_search)
@@ -250,6 +261,11 @@ class GuiWindow(QMainWindow):
             self.sig_reset_trace_handler.emit()
 
         self.sig_exec_step.emit()
+    
+    @Slot()
+    def reset_mouse_selected(self):
+        AbstractNode.reset_mouse_selected()
+        PropertiesInfo.globalInfo.show_no_data()
 
     @Slot()
     def handle_step_trace_clicked(self):

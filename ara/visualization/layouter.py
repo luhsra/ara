@@ -274,7 +274,8 @@ class Layouter(QObject):
 
     def _update_svfg_view(self,
                           extension_points: list[Vertex],
-                          mode=StepMode.DEFAULT):
+                          mode=StepMode.DEFAULT,
+                          mouse_selected_node:Vertex=None):
         """ Create SVFG view. """
         if mode is StepMode.TRACE:
             svfg = trace_handler.INSTANCE.context.svfg
@@ -286,13 +287,15 @@ class Layouter(QObject):
         adjacent_nodes = set()
 
         def add_node(node: Vertex, adjacency: bool = False):
+            assert node != None
             self.svfg_view.add_node(str(hash(node)),
                                     shape="box",
                                     label=svfg.vp.label[node],
                                     width=5,
                                     height=0.75,
                                     id=node,
-                                    adjacency="True" if adjacency else "")
+                                    adjacency="True" if adjacency else "",
+                                    mouse_selected="True" if (mouse_selected_node == node) else "")
 
         def add_expanded_node(node: Vertex):
             add_node(node)
@@ -375,11 +378,12 @@ class Layouter(QObject):
 
         return return_data
 
-    @Slot(GraphType, set, list, bool, StepMode)
+    @Slot(GraphType, set, list, Vertex, bool, StepMode)
     def layout(self,
                graph_type,
                entry_points,
                svfg_extension_points=[],
+               svfg_mouse_selected_node:Vertex=None,
                layout_only=False,
                mode=StepMode.DEFAULT):
         """
@@ -416,7 +420,7 @@ class Layouter(QObject):
                         svfg = trace_handler.INSTANCE.context.svfg
                     else:
                         svfg = self._graph.svfg
-                    self._update_svfg_view(svfg_extension_points, mode)
+                    self._update_svfg_view(svfg_extension_points, mode, svfg_mouse_selected_node)
 
             if graph_type == GraphType.ABB:
                 self.cfg_view.layout("dot")

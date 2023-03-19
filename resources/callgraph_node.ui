@@ -31,6 +31,10 @@
 	background-color: lightgray;
 }
 
+#callgraph_node[mouse_selected=&quot;true&quot;], #callgraph_node[mouse_selected=&quot;true&quot;] QLabel  {
+	background-color: gray;
+}
+
 #callgraph_node[expansion=&quot;true&quot;] {
 	border-style: dashed;
 }

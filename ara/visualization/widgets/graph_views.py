@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from abc import abstractmethod
-from PySide6.QtCore import Slot, Qt, QThread, Signal, QObject
+from PySide6.QtCore import Slot, Qt, QThread, Signal, QObject, QSize
 from PySide6.QtGui import QWheelEvent, QPainter
 from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsProxyWidget, QWidget
 from graph_tool.libgraph_tool_core import Vertex
@@ -14,7 +14,7 @@ from ara.visualization.layouter import Layouter
 from ara.visualization.signal import ara_signal
 from ara.visualization.signal.signal_combiner import SignalCombiner
 from ara.visualization.trace import trace_handler, trace_lib
-from ara.visualization.util import StepMode
+from ara.visualization.util import StepMode, BIG_WIDGET_HEIGHT, BIG_WIDGET_WIDTH
 from ara.visualization.widgets.graph_elements import GraphicsObject, InstanceNode, SVFGNode, Subgraph, AbbNode, CallGraphNode, GraphEdge
 
 
@@ -136,7 +136,7 @@ class BaseGraphView(QGraphicsView):
     """
     # set = expansion points
     # bool = layout only - deprecated
-    sig_layout_start = Signal(GraphType, set, list, bool, StepMode)
+    sig_layout_start = Signal(GraphType, set, list, Vertex, bool, StepMode)
 
     sig_work_done = Signal(int)
 
@@ -192,19 +192,21 @@ class BaseGraphView(QGraphicsView):
             self.start_update(False, False)
 
     @Slot(bool, bool)
-    def start_update(self, steps_available, trace_available):
+    def start_update(self, steps_available, trace_available, svfg_mouse_selected_node:Vertex=None):
         if not self.isVisible():
             return
 
         if self.graph_type == GraphType.CALLGRAPH:
             self.sig_layout_start.emit(self.graph_type,
                                        CONTEXT.get_expansion_points(),
-                                       CONTEXT.svfg_expansion_points, False,
-                                       self.mode)
+                                       CONTEXT.svfg_expansion_points,
+                                       svfg_mouse_selected_node,
+                                       False, self.mode)
         else:
             self.sig_layout_start.emit(self.graph_type, CONTEXT.entry_points,
-                                       CONTEXT.svfg_expansion_points, False,
-                                       self.mode)
+                                       CONTEXT.svfg_expansion_points,
+                                       svfg_mouse_selected_node,
+                                       False, self.mode)
 
     @Slot()
     def update_view(self):
@@ -278,6 +280,10 @@ class BaseGraphView(QGraphicsView):
                     trace_setting):
                 trace_handler.INSTANCE.gui_element_settings[
                     trace_setting].apply(edge)
+
+    # Override method of QDockWidget
+    def sizeHint(self) -> QSize:
+        return QSize(BIG_WIDGET_WIDTH, BIG_WIDGET_HEIGHT)
 
 
 class CallGraphView(BaseGraphView):
@@ -414,4 +420,4 @@ class SVFGView(BaseGraphView):
     @Slot(Vertex)
     def adjacency_expansion(self, point):
         CONTEXT.add_svfg_expansion_point(point)
-        self.start_update(False, False)
+        self.start_update(False, False, point)
