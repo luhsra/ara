@@ -6,14 +6,13 @@
 #ifndef __OUTPUT_H__
 #define __OUTPUT_H__
 
+#include "bufferedterminal.h"
 #if DEBUG
 
 // debugging: print kout+debug on stdout/stderr
-#include "colorterminal.h"
-#include "bufferedterminal.h"
 #include "hardware_threads.h"
-extern Terminal kout;
-extern Terminal debug;
+extern BufferedTerminal kout;
+extern BufferedTerminal debug;
 extern BufferedTerminal debug_core_arr[MAX_CPUS];
 
 #define debug_core (debug_core_arr[arch::get_cpuid()])
@@ -21,10 +20,8 @@ extern BufferedTerminal debug_core_arr[MAX_CPUS];
 #else // DEBUG
 
 // not debugging: print kout on stdout, ignore debug
-#include "colorterminal.h"
-extern Terminal kout;
+extern BufferedTerminal kout;
 extern Null_Stream debug;
-
 #define debug_core debug
 
 #endif // DEBUG

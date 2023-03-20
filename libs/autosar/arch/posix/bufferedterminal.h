@@ -11,17 +11,22 @@
 class BufferedTerminal : public Terminal {
 	char buf[128] = {0};
 	int idx = 0;
+	bool printcpu;
 	pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 public:
-    BufferedTerminal(Terminal::port_t port = STDOUT) : Terminal(port) {};
+    BufferedTerminal(Terminal::port_t port = STDOUT, bool printcpu=false)
+	: Terminal(port), printcpu(printcpu)
+	{};
 
 	void clear(){};
 
 	virtual void putchar(char character) override {
-		if (idx == 0) {
-			buf[idx++] = '0' + arch::get_cpuid();
-			buf[idx++] = '-';
+		if (printcpu) {
+			if (idx == 0) {
+				buf[idx++] = '0' + arch::get_cpuid();
+				buf[idx++] = '-';
+			}
 		}
 		buf[idx++] = character;
 		

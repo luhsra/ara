@@ -8,24 +8,24 @@
 
 #if DEBUG
 
-Terminal kout(Terminal::STDOUT);
-Terminal debug(Terminal::STDERR);
+BufferedTerminal kout(Terminal::STDOUT);
+BufferedTerminal debug(Terminal::STDERR);
 
 
 BufferedTerminal debug_core_arr[MAX_CPUS] = {
-    BufferedTerminal(Terminal::STDERR),
-    BufferedTerminal(Terminal::STDERR),
-    BufferedTerminal(Terminal::STDERR),
-    BufferedTerminal(Terminal::STDERR),
-    BufferedTerminal(Terminal::STDERR),
-    BufferedTerminal(Terminal::STDERR),
-    BufferedTerminal(Terminal::STDERR),
-    BufferedTerminal(Terminal::STDERR),
+    BufferedTerminal(Terminal::STDERR, true),
+    BufferedTerminal(Terminal::STDERR, true),
+    BufferedTerminal(Terminal::STDERR, true),
+    BufferedTerminal(Terminal::STDERR, true),
+    BufferedTerminal(Terminal::STDERR, true),
+    BufferedTerminal(Terminal::STDERR, true),
+    BufferedTerminal(Terminal::STDERR, true),
+    BufferedTerminal(Terminal::STDERR, true),
 };
 
 #else // DEBUG
 
-Terminal kout(Terminal::STDOUT);
+BufferedTerminal kout(Terminal::STDOUT);
 Null_Stream debug;
 
 #endif // DEBUG
