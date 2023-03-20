@@ -1,5 +1,6 @@
 #include "autosar/os.h"
 #pragma once
+#include "test/test.h"
 
 #define NUMBER_OF_CORES 99
 #define uint32 uint32_t
@@ -10,16 +11,16 @@
 
 // fake functions for trampoline
 #define SCHEDULING_CHECK_INIT(a)
-#define SCHEDULING_CHECK_AND_EQUAL_INT(a, b, c)
+#define SCHEDULING_CHECK_AND_EQUAL_INT(a, b, c) test_start(); test_eq(b, c); test_positive_tests_eq(1)
 #define SCHEDULING_CHECK_STEP(a)
 
 using CoreFunc = void (*)();
 using TestRef = unsigned int;
 #define TestRef int
 
-#define TestRunner_start()
-#define TestRunner_runTest(t) t
-#define TestRunner_end()
+#define TestRunner_start() test_init()
+#define TestRunner_runTest(t) t;
+#define TestRunner_end() test_finish()
 #define addFailure(msg, line, file) debug_core << msg << endl;
 
 #define OSDEFAULTAPPMODE 0
