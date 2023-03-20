@@ -148,10 +148,7 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'andreas'/ 'spinlock','name': 'b',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'spinlock','name': 'c',                     'oil': 'system.json'},
 ]
-# conformance tests for trampoline
-# do not work on posix?
-warning('TRAMPOLINE TESTS ARE DISABLED')
-# subdir('multicore' / 'trampoline')
+subdir('multicore' / 'trampoline')
 
 
 no_timing_settings = custom_target(
@@ -195,59 +192,6 @@ foreach app : autosar_apps
                                    ir_flags +
                                    clang_flags)
   app += {'ll': app_ll}
-
-  if get_option('arch') == 'posix'
-
-    out = custom_target(full_name + '_mod',
-                        input : app_ll,
-                        output : [
-                          full_name + '_mod.ll',
-                          full_name+'_autosar.unfmt.cc'
-                        ],
-                        depfile : full_name + '_mod.ll.dep',
-                        command : [
-                          py3_inst, ara_py, app['ll'],
-                          '--os', 'AUTOSAR',
-                          '--oilfile', app['oil'],
-                          '--ir_output', '@OUTPUT0@',
-                          '--step-settings', '../settings/autosar_generator.json',
-		                      '--generator_output', '@OUTPUT1@',
-                        ])
-    app_ll_mod = out[0]
-    autosar_unfmt = out[1]
-    app += {'app_ll_mod': app_ll_mod}
-
-    autosar = custom_target(full_name + '_autosar',
-                        input : autosar_unfmt,
-                        output : full_name+'_autosar.cc',
-                        capture: true,
-                        command : [
-                          clang_format,
-                          '--style=file',
-                          '@INPUT@',
-                        ])
-
-    app += {'autosar': autosar}
-
-    app_image = custom_target(full_name + '_image',
-                            input: [
-                              app_ll_mod,
-                              autosar,
-                              libautosar_test,
-                              libautosar_os,
-                              libautosar_posix,
-                              libautosar_generic
-                            ],
-                            output : full_name,
-                            depfile : full_name + '.dep',
-                            command : clang_cpp +
-                                      autosar_includes +
-                                      ld_flags +
-                                      clang_flags)
-
-    app += {'app_image': app_image}
-    run_target('run_' + full_name, command: [app_image])
-  endif
 
   # trace file for sse testing
   if not app.has_key('mtrace')
@@ -305,6 +249,8 @@ foreach app : autosar_apps
 
 
 endforeach
+
+autosar_generated_targets = []
 foreach app: autosar_targets
   full_name = app['full_name']
   generate_timing_settings = custom_target(
@@ -343,6 +289,62 @@ foreach app: autosar_targets
                                       '--timings', app['sys_timings'],
                                       '--step-data', '@OUTPUT@'],
                            )
+
+
+  if get_option('arch') == 'posix'
+
+    out = custom_target(full_name + '_mod',
+                        input : app_ll,
+                        output : [
+                          full_name + '_mod.ll',
+                          full_name+'_autosar.unfmt.cc'
+                        ],
+                        depfile : full_name + '_mod.ll.dep',
+                        command : [
+                          py3_inst, ara_py, app['ll'],
+                          '--os', 'AUTOSAR',
+                          '--oilfile', app['oil'],
+                          '--ir_output', '@OUTPUT0@',
+                          '--step-settings', '../settings/autosar_generator.json',
+		                      '--generator_output', '@OUTPUT1@',
+                        ])
+    app_ll_mod = out[0]
+    autosar_unfmt = out[1]
+    app += {'app_ll_mod': app_ll_mod}
+
+    autosar = custom_target(full_name + '_autosar',
+                        input : autosar_unfmt,
+                        output : full_name+'_autosar.cc',
+                        capture: true,
+                        command : [
+                          clang_format,
+                          '--style=file',
+                          '@INPUT@',
+                        ])
+
+    app += {'autosar': autosar}
+
+    app_image = custom_target(full_name + '_image',
+                            input: [
+                              app_ll_mod,
+                              autosar,
+                              libautosar_test,
+                              libautosar_os,
+                              libautosar_posix,
+                              libautosar_generic
+                            ],
+                            output : full_name,
+                            depfile : full_name + '.dep',
+                            command : clang_cpp +
+                                      autosar_includes +
+                                      ld_flags +
+                                      clang_flags)
+
+    app += {'app_image': app_image}
+    run_target('run_' + full_name, command: [app_image])
+
+    autosar_generated_targets += app
+  endif
 
 endforeach
 

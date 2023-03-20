@@ -279,9 +279,9 @@ if get_option('enable_step_tests')
         'andreas/ipi',
         'andreas/spinlock',
       ]
-      foreach app : autosar_targets
+      foreach app : autosar_generated_targets
         # filter supported tests
-        if app['path'] in supported
+        if app.has_key('path') and app['path'] in supported
 
           test('autosar_generator_' + app['full_name'],
               py3_inst,
