@@ -226,13 +226,9 @@ extern StatusType AUTOSAR_ActivateTask(TaskType t);
  * \brief Terminate the calling TASK and immediately activate another TASK
  * \param t The TASK to be activated
  **/
-#if CONFIG_ARCH_OSEK_V
+
 extern StatusType AUTOSAR_ChainTask(TaskType t);
 extern StatusType AUTOSAR_TerminateTask();
-#else
-extern __attribute__((noreturn)) StatusType AUTOSAR_ChainTask(TaskType t);
-extern __attribute__((noreturn)) StatusType AUTOSAR_TerminateTask();
-#endif
 
 extern StatusType AUTOSAR_Schedule();
 

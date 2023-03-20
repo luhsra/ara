@@ -25,30 +25,42 @@ namespace ara::step {
 	void AutosarGeneratorIR::AddKickoffFunctionCalls(Module& module, LLVMContext& context) {
 		logger.info() << "Execute AddKickoffFunctionCalls" << std::endl;
 
-		std::vector<Type*> args;
-		FunctionType* kickoff_type = FunctionType::get(Type::getVoidTy(context), args, false);
-		Function* kickoff = Function::Create(kickoff_type, Function::ExternalLinkage, "AUTOSAR_kickoff", &module);
-		Function* arch_startup = Function::Create(kickoff_type, Function::ExternalLinkage, "arch_startup", &module);
+		FunctionType* void_type_void = FunctionType::get(Type::getVoidTy(context), false);
+		Function* kickoff = Function::Create(void_type_void, Function::ExternalLinkage, "AUTOSAR_kickoff", &module);
+		Function* arch_startup = Function::Create(void_type_void, Function::ExternalLinkage, "arch_startup", &module);
+
+		std::vector<Type*> arg_types;
+		arg_types.emplace_back(Type::getInt32Ty(context));
+		FunctionType* void_type_iii = FunctionType::get(Type::getVoidTy(context), arg_types, false);
+		Function* fault_hook = Function::Create(void_type_iii, Function::ExternalLinkage, "__OS_HOOK_ErrorHook", &module);
 
 		for (auto& function : module) {
 			// all TASK(foo) functions start with this string, see os/os.h
-			if (function.getName().startswith("AUTOSAR_TASK_FUNC") || function.getName().equals("main")) {
-				BasicBlock& bb = *function.begin();
+			if (function.getName().startswith("AUTOSAR_TASK_FUNC")) {
 				IRBuilder<> builder(context);
+				BasicBlock& bb = *function.begin();
 				Instruction* inst = &*bb.begin();
 				builder.SetInsertPoint(inst);
-
 				std::vector<Value*> ArgsV;
-				Function* insert;
+				builder.CreateCall(kickoff, ArgsV);
+				logger.debug() << "add " << kickoff->getName().str() << " to " << function.getName().str() << std::endl;
 
-				if (function.getName().startswith("AUTOSAR_TASK_FUNC")) {
-					insert = kickoff;
-				} else {
-					insert = arch_startup;
-				}
+				BasicBlock& bb1 = function.back();
+				Instruction* inst1 = &*bb1.begin();
+				builder.SetInsertPoint(inst1);
+				ArgsV.emplace_back(builder.getInt32(14)); //E_OS_MISSINGEND
+				builder.CreateCall(fault_hook, ArgsV);
+				logger.debug() << "add " << fault_hook->getName().str() << " to " << function.getName().str() << std::endl;
 
-				builder.CreateCall(insert, ArgsV);
-				logger.debug() << "add " << insert->getName().str() << " to " << function.getName().str() << std::endl;
+			} else if (function.getName().equals("main")) {
+				IRBuilder<> builder(context);
+				BasicBlock& bb = *function.begin();
+				Instruction* inst = &*bb.begin();
+				builder.SetInsertPoint(inst);
+				std::vector<Value*> ArgsV;
+
+				builder.CreateCall(arch_startup, ArgsV);
+				logger.debug() << "add " << arch_startup->getName().str() << " to " << function.getName().str() << std::endl;
 			}
 		}
 	}

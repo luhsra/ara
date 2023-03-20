@@ -19,10 +19,9 @@ class GenericOS(BaseCoder):
         args = self.ara_graph.cfg.vp.arguments[abb]
         if args == None:
             self._log.info("systemcall %s in %s never called", syscall_name, abb_name)
-            userspace.add(Comment("never called"))
-
+            userspace.add(Comment("never called in analysis"))
             userspace.add(Statement("debug_core << __FUNCTION__ << \" should never be called\" << endl"))
-            userspace.add(Statement("AUTOSAR_ShutdownAllCores(E_NOT_OK)"))
+            userspace.add(Statement("ShutdownMachine()"))
             return
         ret_type = self.syscall_rules.AUTOSAR_SYSCALLS["AUTOSAR_"+syscall_name][0]
         if ret_type != "void":
@@ -227,8 +226,17 @@ class GenericOS(BaseCoder):
                 if hook == "PostTaskHook":
                     logging.warning("Be aware that PostTaskHooks are not properly implemented")
 
-            if hook == "FaultDetectedHook" or hook == "ErrorHook":
+            if hook == "FaultDetectedHook":
                 hook_function.add(Statement(f"debug_core << \"{hook} \" << arg0 << endl"))
                 self.call(hook_function, "ShutdownMachine", "void", [])
                 self.call(hook_function, "Machine::unreachable", "void", [])
 
+            if hook == "ErrorHook":
+                hook_function.add(Statement(f"debug_core << \"{hook} \" << arg0 << endl"))
+
+                ifblock = If("arg0 == E_OS_MISSINGEND")
+                # TODO release resource and reschedule
+                self.call(ifblock, "ShutdownMachine", "void", [])
+                self.call(ifblock, "Machine::unreachable", "void", [])
+
+                hook_function.add(ifblock)

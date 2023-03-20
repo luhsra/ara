@@ -27,8 +27,10 @@ TASK(T00) {
     GetSpinlock(S1);
     test_trace('0');
     WaitEvent(E1); // error hook because of lock
-
-    TerminateTask();
+    test_trace('1');
+    TerminateTask(); // error hook because of lock
+    test_trace('2');
+    // missing end
 }
 
 TASK(T01) {
@@ -49,6 +51,8 @@ TASK(T11) {
 void ErrorHook(StatusType status) {
     (void) status;
     /* The testcase has finished, check the output */
-    test_trace_assert("0");
-    test_finish();
+    if (status == E_OS_MISSINGEND) {
+        test_trace_assert("012");
+        test_finish();
+    }
 }
