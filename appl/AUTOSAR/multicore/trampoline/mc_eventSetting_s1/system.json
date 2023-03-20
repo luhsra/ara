@@ -8,7 +8,7 @@
           "autostart": true,
           "priority": 1,
           "schedule": false,
-          "spinlocks": ["sync", "end_of_tests"]
+          "spinlocks": ["sync0", "end_of_tests"]
         }
       },
       "resources": {},
@@ -31,7 +31,7 @@
           "priority": 1,
           "schedule": true,
           "events": ["event"],
-          "spinlocks": ["sync", "end_of_tests"]
+          "spinlocks": ["sync0", "end_of_tests"]
         },
         "no_access_task": {
           "activation": 1,
@@ -40,7 +40,7 @@
           "schedule": false,
           "events": ["event"],
           "accessing_application": [],
-          "spinlocks": ["sync", "end_of_tests"]
+          "spinlocks": ["sync0", "end_of_tests"]
         }
       },
       "resources": {},
@@ -57,6 +57,6 @@
     }
   ],
   "spinlocks": [
-    ["sync", "end_of_tests"]
+    ["sync0", "end_of_tests"]
   ]
 }

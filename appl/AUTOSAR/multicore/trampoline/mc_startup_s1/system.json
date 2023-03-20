@@ -8,7 +8,7 @@
           "autostart": true,
           "priority": 1,
           "schedule": false,
-          "spinlocks": ["sync", "end_of_tests"]
+          "spinlocks": ["sync0", "end_of_tests"]
         }
       },
       "resources": {},
@@ -30,7 +30,7 @@
           "autostart": true,
           "priority": 1,
           "schedule": false,
-          "spinlocks": ["sync", "end_of_tests"]
+          "spinlocks": ["sync0", "end_of_tests"]
         }
       },
       "resources": {},
@@ -47,6 +47,6 @@
     }
   ],
   "spinlocks": [
-    ["sync", "end_of_tests"]
+    ["sync0", "end_of_tests"]
   ]
 }

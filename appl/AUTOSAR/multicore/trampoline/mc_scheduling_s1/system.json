@@ -8,7 +8,7 @@
           "autostart": true,
           "priority": 1,
           "schedule": false,
-          "spinlocks": ["sync"]
+          "spinlocks": ["sync0"]
         }
       },
       "resources": {},
@@ -30,7 +30,7 @@
           "autostart": false,
           "priority": 1,
           "schedule": false,
-          "spinlocks": ["sync"]
+          "spinlocks": ["sync0"]
         }
       },
       "resources": {},
@@ -47,6 +47,6 @@
     }
   ],
   "spinlocks": [
-    ["sync"]
+    ["sync0"]
   ]
 }

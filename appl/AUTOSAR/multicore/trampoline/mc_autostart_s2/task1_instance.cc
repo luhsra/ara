@@ -34,12 +34,12 @@
 
 #include "Os.h"
 
-DeclareSpinlock(sync);
+DeclareSpinlock(sync0);
 
 static void test_t1_instance(void)
 {
   TerminateTask();
-  SyncAllCores(sync);
+  SyncAllCores(sync0);
 }
 
 TestRef t1_instance(void)

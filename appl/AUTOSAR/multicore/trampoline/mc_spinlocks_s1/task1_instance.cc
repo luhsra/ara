@@ -36,7 +36,7 @@
 
 #include "Os.h"
 
-DeclareSpinlock(sync);
+DeclareSpinlock(sync0);
 DeclareSpinlock(lock_task);
 DeclareSpinlock(lock_isr);
 DeclareSpinlock(already_taken);
@@ -92,7 +92,7 @@ static void test_t1_instance(void)
   SCHEDULING_CHECK_AND_EQUAL_INT(10, E_OK, r9);
 
   /* Wait for the core 1 to end its tests */
-  SyncAllCores(sync);
+  SyncAllCores(sync0);
 }
 
 TestRef t1_instance(void)

@@ -37,14 +37,14 @@
 #include "Os.h"
 
 DeclareSpinlock(spin0);
-DeclareSpinlock(sync);
+DeclareSpinlock(sync0);
 
 static void test_t1_instance(void)
 {
   StatusType r1;
 
   /* Wait for the core 1 to get spin0 */
-  SyncAllCores(sync);
+  SyncAllCores(sync0);
 
   /* Wait for the core 1's timing protection wdt to release the spinlock */
   SCHEDULING_CHECK_INIT(2);

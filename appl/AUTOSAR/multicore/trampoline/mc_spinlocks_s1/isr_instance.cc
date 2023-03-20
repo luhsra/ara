@@ -38,7 +38,7 @@
 
 DeclareSpinlock(already_taken);
 DeclareSpinlock(lock_isr);
-DeclareSpinlock(sync);
+DeclareSpinlock(sync0);
 
 static void test_isr_instance(void)
 {
@@ -76,7 +76,7 @@ static void test_isr_instance(void)
   SCHEDULING_CHECK_AND_EQUAL_INT(20, TRYTOGETSPINLOCK_NOSUCCESS, success);
 
   /* Release the core0 so he goes to ShutdownOs*/
-  SyncAllCores(sync);
+  SyncAllCores(sync0);
 }
 
 TestRef isr_instance(void)

@@ -37,7 +37,7 @@
 #include "Os.h"
 
 DeclareSpinlock(lock_task);
-DeclareSpinlock(sync);
+DeclareSpinlock(sync0);
 
 static void test_t2_instance(void)
 {
@@ -61,7 +61,7 @@ static void test_t2_instance(void)
 
   while(1);
 
-  SyncAllCores(sync);
+  SyncAllCores(sync0);
 }
 
 TestRef t2_instance(void)

@@ -8,7 +8,7 @@
           "autostart": true,
           "priority": 1,
           "schedule": false,
-          "spinlocks": ["sync"]
+          "spinlocks": ["sync0"]
         },
         "should_not_run": {
           "activation": 1,
@@ -52,7 +52,7 @@
           "autostart": false,
           "priority": 1,
           "schedule": false,
-          "spinlocks": ["sync"],
+          "spinlocks": ["sync0"],
           "events": ["t2_event"]
         }
       },
@@ -64,6 +64,6 @@
     }
   ],
   "spinlocks": [
-      ["sync"]
+      ["sync0"]
   ]
 }

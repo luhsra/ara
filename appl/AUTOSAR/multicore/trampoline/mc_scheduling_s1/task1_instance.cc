@@ -37,7 +37,7 @@
 #include "Os.h"
 
 DeclareTask(t2);
-DeclareSpinlock(sync);
+DeclareSpinlock(sync0);
 
 static void test_t1_instance(void)
 {
@@ -52,7 +52,7 @@ static void test_t1_instance(void)
 
   /* Wait for the core 1 to execute task t2 */
   TerminateTask();
-  SyncAllCores(sync);
+  SyncAllCores(sync0);
 }
 
 /*create the test suite with all the test cases*/

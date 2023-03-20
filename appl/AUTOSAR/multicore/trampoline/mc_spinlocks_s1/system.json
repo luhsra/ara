@@ -8,7 +8,7 @@
           "autostart": true,
           "priority": 1,
           "schedule": false,
-          "spinlocks": ["lock_task", "lock_isr", "already_taken", "not_successor", "sync"]
+          "spinlocks": ["lock_task", "lock_isr", "already_taken", "not_successor", "sync0"]
         }
       },
       "resources": {},
@@ -34,7 +34,7 @@
           "autostart": false,
           "priority": 1,
           "schedule": false,
-          "spinlocks": ["lock_task", "lock_isr", "already_taken", "not_successor", "sync"]
+          "spinlocks": ["lock_task", "lock_isr", "already_taken", "not_successor", "sync0"]
         }
       },
       "resources": {},
@@ -56,10 +56,10 @@
   ],
   "spinlocks": [
     ["lock_task", "lock_isr"],
-    ["lock_task", "sync"],
-    ["lock_isr", "sync"],
-    ["already_taken", "sync"],
-    ["not_successor", "sync"],
-    ["sync"]
+    ["lock_task", "sync0"],
+    ["lock_isr", "sync0"],
+    ["already_taken", "sync0"],
+    ["not_successor", "sync0"],
+    ["sync0"]
   ]
 }

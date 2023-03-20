@@ -34,13 +34,13 @@
 
 #include "Os.h"
 
-DeclareSpinlock(sync);
+DeclareSpinlock(sync0);
 DeclareSpinlock(end_of_tests);
 
 static void test_t2_instance(void)
 {
   /* Notify StartupHook has been crossed */
-  // SyncAllCores(sync);
+  // SyncAllCores(sync0);
 
   /* Wait end of tests */
   // SyncAllCores(end_of_tests);

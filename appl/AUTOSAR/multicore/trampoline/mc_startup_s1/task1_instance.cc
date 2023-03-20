@@ -36,7 +36,7 @@
 
 #include "Os.h"
 
-DeclareSpinlock(sync);
+DeclareSpinlock(sync0);
 DeclareSpinlock(end_of_tests);
 
 extern uint32 coresInStartupHook[NUMBER_OF_CORES];
@@ -49,7 +49,7 @@ static void test_t1_instance(void)
   int totalCores = GetNumberOfActivatedCores();
 
   /* Be sure the other cores have finished executing the StartupHook */
-  // SyncAllCores(sync);
+  // SyncAllCores(sync0);
 
   /* For each activated core, check if it has successfully executed the
    * StartupHook.

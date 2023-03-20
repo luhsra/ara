@@ -38,7 +38,7 @@
 
 DeclareAlarm(activate_task_accross_cores);
 DeclareAlarm(set_event_accross_cores);
-DeclareSpinlock(sync);
+DeclareSpinlock(sync0);
 
 static void test_t1_instance(void)
 {
@@ -55,7 +55,7 @@ static void test_t1_instance(void)
   SCHEDULING_CHECK_AND_EQUAL_INT(2, E_OK, r2);
 
   /* Wait for the core 1 to end its tests */
-  SyncAllCores(sync);
+  SyncAllCores(sync0);
 }
 
 TestRef t1_instance(void)

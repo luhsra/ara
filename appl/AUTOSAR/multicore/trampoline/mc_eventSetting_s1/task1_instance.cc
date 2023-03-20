@@ -36,7 +36,7 @@
 
 #include "Os.h"
 
-DeclareSpinlock(sync);
+DeclareSpinlock(sync0);
 DeclareSpinlock(end_of_tests);
 
 DeclareEvent(event, 0);
@@ -48,7 +48,7 @@ static void test_t1_instance(void)
 {
   StatusType r1, r2;
 
-  // SyncAllCores(sync);
+  // SyncAllCores(sync0);
 
   SCHEDULING_CHECK_INIT(1);
   r1 = SetEvent(no_access_task, event);
