@@ -13,18 +13,18 @@ class RESOURCE_PATH:
     def set(path: str):
         RESOURCE_PATH.res_path = path
 
-class __SUPPORT_FOR_GUI:
-    """True if Meson option enable_gui is set"""
+class __USING_ARA_GUI:
+    """True if ara-gui.py was started"""
     def __init__(self):
-        self.support = False
+        self.ara_gui = False
 
-    def set(self, support: bool):
-        self.support = support
+    def set(self, ara_gui: bool):
+        self.ara_gui = ara_gui
 
     def __bool__(self):
-        return bool(self.support)
+        return bool(self.ara_gui)
 
-SUPPORT_FOR_GUI = __SUPPORT_FOR_GUI()
+USING_ARA_GUI = __USING_ARA_GUI()
 
 class StepMode:
     DEFAULT = 1

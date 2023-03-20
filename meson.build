@@ -35,10 +35,8 @@ py3_mod = import('python')
 # TODO add version argument to find_installation: see https://github.com/mesonbuild/meson/issues/7078
 
 python_modules = ['pydot', 'graph_tool']
-support_for_gui = 'False'  # Needs to be string to inject into ara.py
-if get_option('enable_gui')
+if get_option('gui_required')
     python_modules += ['PySide6', 'scipy']
-    support_for_gui = 'True'
 endif
 
 py3_inst = py3_mod.find_installation('python3', modules: python_modules)
@@ -153,9 +151,6 @@ sys.setdlopenflags(sys.getdlopenflags() | os.RTLD_GLOBAL)
 
 import pyllco
 
-from ara.visualization.util import SUPPORT_FOR_GUI
-SUPPORT_FOR_GUI.set(@2@)
-
 load("graph_data", "ara.graph.graph_data")
 load("py_logging", "ara.steps.py_logging")
 load("step", "ara.steps.step")
@@ -164,7 +159,7 @@ sys.setdlopenflags(sys.getdlopenflags() & ~os.RTLD_GLOBAL)
 
 from ara.ara import Main
 main = Main()
-sys.exit(main.main(False))'''
+sys.exit(main.main())'''
 
 python_dirs = [source_dir, pyllco_dir, step_dir, graph_data_dir]
 python_path = 'PYTHONPATH=' + ':'.join(python_dirs)
@@ -173,13 +168,11 @@ ara_py = custom_target('ara-py',
     input: [],
     output: 'ara.py',
     depends: [step_mod, graph_data_mod],
-    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_py_content.format(py3_inst.path(), '"' + '", "'.join(python_dirs) + '"', support_for_gui)],
+    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_py_content.format(py3_inst.path(), '"' + '", "'.join(python_dirs) + '"')],
     build_by_default: true
 )
 
-if get_option('enable_gui')
-
-gui_py_content = '''#!@0@
+ara_gui_py_content = '''#!@0@
 """Automatic Real-time System Analyzer GUI"""
 import importlib
 import sys
@@ -195,9 +188,9 @@ sys.setdlopenflags(sys.getdlopenflags() | os.RTLD_GLOBAL)
 
 import pyllco
 
-from ara.visualization.util import RESOURCE_PATH, SUPPORT_FOR_GUI
+from ara.visualization.util import RESOURCE_PATH, USING_ARA_GUI
 RESOURCE_PATH.set('@2@')
-SUPPORT_FOR_GUI.set(True)
+USING_ARA_GUI.set(True)
 
 load("graph_data", "ara.graph.graph_data")
 load("py_logging", "ara.steps.py_logging")
@@ -207,16 +200,15 @@ import ara.ara as _ara
 import ara.visualization.main
 sys.exit()'''
 
-    subdir('resources')
+subdir('resources')
 
-    gui_py = custom_target('gui-py',
-        input: [],
-        output: 'gui.py',
-        depends: [step_mod, graph_data_mod],
-        command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', gui_py_content.format(py3_inst.path(), '"' + '", "'.join(python_dirs) + '"', resources_dir + '/')],
-        build_by_default: true
-    )
-endif
+ara_gui_py = custom_target('ara-gui-py',
+    input: [],
+    output: 'ara-gui.py',
+    depends: [step_mod, graph_data_mod],
+    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_gui_py_content.format(py3_inst.path(), '"' + '", "'.join(python_dirs) + '"', resources_dir + '/')],
+    build_by_default: true
+)
 
 # build test applications with help of ARA
 # Attention: The include order is important here.

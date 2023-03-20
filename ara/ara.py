@@ -23,7 +23,7 @@ import graph_tool
 from .graph import Graph
 from .stepmanager import StepManager
 from .util import init_logging
-from .visualization.util import SUPPORT_FOR_GUI
+from .visualization.util import USING_ARA_GUI
 from .os import get_os_names, get_os
 
 from .steplisting import print_avail_steps
@@ -36,14 +36,8 @@ class Main:
         self.graph = Graph()
         self.s_manager = StepManager(self.graph)
 
-    def main(self, gui=False):
-        """Entry point for ARA.
-
-        gui: set to True if ARAs GUI is activated (gui.py was called instead of ara.py)
-        """
-        if not SUPPORT_FOR_GUI:
-            assert not gui, "main(): gui set to True but gui is not supported"
-
+    def main(self):
+        """Entry point for ARA."""
         parser = argparse.ArgumentParser(
             prog=sys.argv[0],
             description=sys.modules[__name__].__doc__,
@@ -101,7 +95,7 @@ class Main:
                             default=int(os.environ.get('ARA_THREADS', 0)))
         parser.add_argument('--manual-corrections', metavar="FILE",
                             help="File with manual corrections")
-        if gui:
+        if USING_ARA_GUI:
             parser.add_argument('--no_trace_algorithm', action='store_true',
                                 default=False, help=
                                 "Create a trace of supported algorithms for the gui to visualize")
@@ -176,7 +170,7 @@ class Main:
 
         s_args = dict([(x, y) for x, y in vars(self.args).items() if y is not None])
 
-        if gui:
+        if USING_ARA_GUI:
             s_args['trace_algorithm'] = not self.args.no_trace_algorithm
             self.s_manager.init_execution(s_args, self.extra_settings, self.args.step)
             return
@@ -194,4 +188,4 @@ class Main:
 
 if __name__ == '__main__':
     main = Main()
-    main.main(gui=False)
+    main.main()

@@ -8,11 +8,11 @@ from dataclasses import dataclass
 from typing import List
 from ara.graph.graph import CFG, SVFG, Callgraph, InstanceGraph
 from ara.graph.mix import GraphType
-from ara.visualization.util import SUPPORT_FOR_GUI
+from ara.visualization.util import USING_ARA_GUI
 from ara.visualization.trace import trace_lib
 from ara.visualization.trace.trace_type import AlgorithmTrace
 
-if SUPPORT_FOR_GUI:
+if USING_ARA_GUI:
     from ara.visualization.trace.trace_components import \
         BaseTraceElement, CFGNodeHighlightTraceElement, CallgraphNodeHighlightTraceElement, \
         NodeHighlightTraceElement, ResetChangesTraceElement, ResetPartialChangesTraceElement, \
@@ -121,7 +121,7 @@ class Tracer:
     def _highlight_nodes(self,
                          nodes: List[GraphNode],
                          color=trace_lib.Color.RED) -> List[BaseTraceElement]:
-        if not SUPPORT_FOR_GUI:
+        if not USING_ARA_GUI:
             return []
 
         highlight_node_elems = []
@@ -146,7 +146,7 @@ class Tracer:
     def _highlight_paths(self,
                          paths: List[GraphPath],
                          color=trace_lib.Color.RED) -> List[BaseTraceElement]:
-        if not SUPPORT_FOR_GUI:
+        if not USING_ARA_GUI:
             return []
 
         highlight_path_elems = []
@@ -167,7 +167,7 @@ class Tracer:
         
         Also updates the _last_reset field with the changes in actions
         """
-        if not SUPPORT_FOR_GUI:
+        if not USING_ARA_GUI:
             return actions
 
         undo_previous_elems = ent.last_reset

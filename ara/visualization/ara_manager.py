@@ -44,7 +44,7 @@ class ARAManager(QObject):
         """
             Entry Point for ARAs GUI.
         """
-        self.main.main(gui=True)
+        self.main.main()
         self.copy_main_fields()
 
         ara_signal.SIGNAL_MANAGER.sig_init_done.emit()

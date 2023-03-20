@@ -1,6 +1,7 @@
 option('arch', type: 'combo', choices: ['arm', 'i386'], value: 'arm', yield: true,
     description: 'Set the architecture for which the test applications are built.')
-option('enable_gui', type: 'boolean', value: false, yield: true)
+option('gui_required', type: 'boolean', value: false, yield: true,
+    description: 'Set all dependencies of ara gui to required if this option is true')
 
 option('enable_qemu_tests', type: 'boolean', value: true, yield: true)
 option('enable_step_tests', type: 'boolean', value: true, yield: true,

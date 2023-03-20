@@ -5,9 +5,9 @@
 
 from collections import deque
 from typing import List
-from ara.visualization.util import SUPPORT_FOR_GUI
+from ara.visualization.util import USING_ARA_GUI
 
-if SUPPORT_FOR_GUI:
+if USING_ARA_GUI:
     from ara.visualization.trace.trace_components import BaseTraceElement, LogTraceElement
 
     class AlgorithmTrace:
