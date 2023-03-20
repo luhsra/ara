@@ -40,7 +40,7 @@ extern int user_number_of_cores;
 
 static void test_t1_instance(void)
 {
-  StatusType r1, r2;
+  int r1, r2;
 
   SCHEDULING_CHECK_INIT(1);
   r1 = GetNumberOfActivatedCores();

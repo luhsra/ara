@@ -20,8 +20,8 @@ using TestRef = unsigned int;
 
 #define TestRunner_start() test_init()
 #define TestRunner_runTest(t) t;
-#define TestRunner_end() test_finish()
-#define addFailure(msg, line, file) debug_core << msg << endl;
+#define TestRunner_end() test_finish(); ShutdownMachine()
+#define addFailure(msg, line, file) debug_core << msg << endl; ShutdownMachine()
 
 #define OSDEFAULTAPPMODE 0
 
