@@ -133,7 +133,8 @@ class TaskContext(ControlContext):
                            call_path=copy(self.call_path),
                            dyn_prio=list(self.dyn_prio),
                            received_events=self.received_events,
-                           waited_events=self.waited_events)
+                           waited_events=self.waited_events,
+                           in_critical_section=self.in_critical_section)
 
 """
 (frozen=True)
