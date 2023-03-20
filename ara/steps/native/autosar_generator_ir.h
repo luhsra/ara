@@ -20,7 +20,7 @@ namespace ara::step {
 		option::TOptEntity<option::Bool> rename_syscalls;
 		virtual void init_options() override;
 
-		void AddKickoffFunctionCalls(llvm::Module& module, llvm::LLVMContext& context);
+		void AddSystemcalls(llvm::Module& module, llvm::LLVMContext& context);
 		void RenameSystemcall(llvm::Module& module, llvm::CallInst* call);
 		void RenameSystemcalls(llvm::Module& module);
 
