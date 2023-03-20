@@ -76,6 +76,7 @@ class GenericSystemCalls(BaseCoder):
         # add termination handler for shutdownAllCores
         TERM_handler = Function("AUTOSAR_ISR_TERM", "void", [], extern_c = True)
         TERM_handler.add(Statement("cores--"))
+        TERM_handler.add(Statement("CALL_HOOK(ShutdownHook, E_OK)"))
         self.call(TERM_handler, "arch::stop_hardware_thread")
         self.generator.source_file.function_manager.add(TERM_handler)
 

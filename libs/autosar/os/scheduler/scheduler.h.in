@@ -6,24 +6,24 @@ using namespace os::tasks;
 using namespace arch;
 
 struct Scheduler {
-	os::scheduler::TaskList tlist;
+    os::scheduler::TaskList tlist;
 
-	os::scheduler::TaskList::current_prio_t current_prio;
-	os::scheduler::TaskList::current_task_t current_task;
+    os::scheduler::TaskList::current_prio_t current_prio;
+    os::scheduler::TaskList::current_task_t current_task;
 
-	template<const bool *possible_tasks = nullptr>
-	forceinline void PartialReschedule() {
-		tlist.head<possible_tasks>(current_task, current_prio);
+    template<const bool *possible_tasks = nullptr>
+    forceinline void PartialReschedule() {
+        tlist.head<possible_tasks>(current_task, current_prio);
 
-		dispatchToCurrentTask();
-	}
+        dispatchToCurrentTask();
+    }
 
-	noinline void Reschedule(void);
+    noinline void Reschedule(void);
 
-	forceinline void Schedule_impl(bool from_interrupt=false) {
+    forceinline void Schedule_impl(bool from_interrupt=false) {
         if(!from_interrupt) {
             // in syscall: reschedule directly
-			Reschedule();
+            Reschedule();
         } else {
             // not in syscall (probably in ISR): request reschedule AST
             // Calls also Reschedule()
@@ -32,169 +32,169 @@ struct Scheduler {
     }
 
     forceinline void SetReady_impl(const Task &task) {
-		tlist.activate(task.id, task.prio);
+        tlist.activate(task.id, task.prio);
     }
 
 
     forceinline void SetSuspended_impl(const Task &t) {
-		Dispatcher::Destroy(t);
-		tlist.remove(t.id);
+        Dispatcher::Destroy(t);
+        tlist.remove(t.id);
     }
 
-	forceinline void ActivateTask_impl(const Task &task, bool from_interrupt=false) {
+    forceinline void ActivateTask_impl(const Task &task, bool from_interrupt=false) {
         SetReady_impl(task);
         Schedule_impl(from_interrupt);
     }
 
     /*forceinline StatusType ChainTask_impl(const Task &from, const Task &to) {
-		SetReady_impl(to);
-		return TerminateTask_impl(from);
+        SetReady_impl(to);
+        return TerminateTask_impl(from);
     }*/
 
     forceinline StatusType TerminateTask_impl(const Task &from) {
-		uint32_t mask = tlist.get_task_spinlock_mask(from.id);
-		if (mask) {
-			debug_core << "Error: Task "<< (int) from.id <<" holds locks, mask: " << mask << endl;
-			return E_NOT_OK;
-		}
-		SetSuspended_impl(from);
-		Schedule_impl();
-		return E_OK;
+        uint32_t mask = tlist.get_task_spinlock_mask(from.id);
+        if (mask) {
+            debug_core << "Error: Task "<< (int) from.id <<" holds locks, mask: " << mask << endl;
+            return E_NOT_OK;
+        }
+        SetSuspended_impl(from);
+        Schedule_impl();
+        return E_OK;
     }
 
     forceinline void GetResource_impl(const Task &current_task, const Task::prio_t new_prio) {
-		SetPriority(current_task, new_prio);
-		SetSystemPriority(new_prio);
+        SetPriority(current_task, new_prio);
+        SetSystemPriority(new_prio);
     }
 
     forceinline void ReleaseResource_impl(const Task &current_task, const Task::prio_t new_prio) {
-		SetPriority(current_task, new_prio);
-		SetSystemPriority(new_prio);
-		Schedule_impl();
-	}
-
-	forceinline void SetEvent_impl(const Task &other_task, const int event_mask) {
-		tlist.set_events(other_task.id, event_mask);
-		Schedule_impl();
-	}
-
-	forceinline StatusType WaitEvent_impl(const Task &current_task, const int event_mask) {
-		uint32_t mask = tlist.get_task_spinlock_mask(current_task.id);
-		if (mask) {
-			debug_core << "Error: Task "<< (int) current_task.id <<" holds locks, mask: " << mask << endl;
-			return E_NOT_OK;
-		}
-		tlist.wait_events(current_task.id, event_mask);
-		Schedule_impl();
-		return E_OK;
-	}
-
-	forceinline void ClearEvent_impl(const Task &current_task, const int event_mask) {
-		tlist.clear_events(current_task.id, event_mask);
-	}
-
-	forceinline uint32_t GetEvent_impl(const Task &current_task) {
-		return tlist.get_events(current_task.id);
-	}
-
-    forceinline void SetReadyFromSuspended_impl(const Task &task) {
-		SetPriority(task, task.prio);
-		// Clear all Events
-		tlist.clear_events(task.id, ~0);
+        SetPriority(current_task, new_prio);
+        SetSystemPriority(new_prio);
+        Schedule_impl();
     }
 
-	// Low level interface to the task list
-	forceinline void SetCurrentTask(const Task &task) {
-		if (task.preemptable == false) {
-			// promote non-preemptable task to RES_SCHEDULER
-			tlist.set(task.id, tlist.scheduler_prio);
-			current_prio = tlist.scheduler_prio;
+    forceinline void SetEvent_impl(const Task &other_task, const int event_mask) {
+        tlist.set_events(other_task.id, event_mask);
+        Schedule_impl();
+    }
+
+    forceinline StatusType WaitEvent_impl(const Task &current_task, const int event_mask) {
+        uint32_t mask = tlist.get_task_spinlock_mask(current_task.id);
+        if (mask) {
+            debug_core << "Error: Task "<< (int) current_task.id <<" holds locks, mask: " << mask << endl;
+            return E_NOT_OK;
         }
-		current_task = tlist.encode_task_id(task.id);
-	}
+        tlist.wait_events(current_task.id, event_mask);
+        Schedule_impl();
+        return E_OK;
+    }
 
-	forceinline void SetSystemPriority(const Task::prio_t new_prio) {
-		current_prio = tlist.encode_task_prio(new_prio);
-	}
+    forceinline void ClearEvent_impl(const Task &current_task, const int event_mask) {
+        tlist.clear_events(current_task.id, event_mask);
+    }
 
-	forceinline void SetPriority(const Task &task, const Task::prio_t new_prio) {
-		tlist.set(task.id, new_prio);
-	}
+    forceinline uint32_t GetEvent_impl(const Task &current_task) {
+        return tlist.get_events(current_task.id);
+    }
 
-	forceinline uint32_t isReady(const Task &task) {
-		return tlist.isReady(task.id);
-	}
+    forceinline void SetReadyFromSuspended_impl(const Task &task) {
+        SetPriority(task, task.prio);
+        // Clear all Events
+        tlist.clear_events(task.id, ~0);
+    }
+
+    // Low level interface to the task list
+    forceinline void SetCurrentTask(const Task &task) {
+        if (task.preemptable == false) {
+            // promote non-preemptable task to RES_SCHEDULER
+            tlist.set(task.id, tlist.scheduler_prio);
+            current_prio = tlist.scheduler_prio;
+        }
+        current_task = tlist.encode_task_id(task.id);
+    }
+
+    forceinline void SetSystemPriority(const Task::prio_t new_prio) {
+        current_prio = tlist.encode_task_prio(new_prio);
+    }
+
+    forceinline void SetPriority(const Task &task, const Task::prio_t new_prio) {
+        tlist.set(task.id, new_prio);
+    }
+
+    forceinline uint32_t isReady(const Task &task) {
+        return tlist.isReady(task.id);
+    }
 
     forceinline Task::id_t getCurrent_TaskID(void) const {
         return tlist.decode_task_id(current_task);
     }
 
 
-	forceinline StatusType GetSpinlock_impl(const Task &task, os::Spinlock &sl) {
+    forceinline StatusType GetSpinlock_impl(const Task &task, os::Spinlock &sl) {
         debug_core << __FUNCTION__ << "(" <<(int) task.id <<  ", " << sl.id << ")" << endl;
 
-		uint32_t mask = tlist.get_cpu_spinlock_mask(task.cpuid);
-		if (mask & sl.id) {
-			debug_core << "Error: CPU "<< (int) task.cpuid <<" already holds spinlock " << sl.id << endl;
-			return E_NOT_OK;
-		}
+        uint32_t mask = tlist.get_cpu_spinlock_mask(task.cpuid);
+        if (mask & sl.id) {
+            debug_core << "Error: CPU "<< (int) task.cpuid <<" already holds spinlock " << sl.id << endl;
+            return E_NOT_OK;
+        }
 
         StatusType rc = sl.lock();
-		if (rc == 0)
-			tlist.task_spin_lock(task.id, sl.id);
-		return rc;
+        if (rc == 0)
+            tlist.task_spin_lock(task.id, sl.id);
+        return rc;
     }
 
     forceinline StatusType TryToGetSpinlock_impl(const Task &task, os::Spinlock &sl, TryToGetSpinlockType* success) {
         debug_core << __FUNCTION__ << "(" <<(int) task.id <<  ", " << sl.id << ")" << endl;
 
-		uint32_t mask = tlist.get_task_spinlock_mask(task.cpuid);
-		if (mask) {
-			debug_core << "Error: CPU "<< (int) task.cpuid <<" holds locks, mask: " << mask << endl;
-			return E_NOT_OK;
-		}
+        uint32_t mask = tlist.get_task_spinlock_mask(task.cpuid);
+        if (mask) {
+            debug_core << "Error: CPU "<< (int) task.cpuid <<" holds locks, mask: " << mask << endl;
+            return E_NOT_OK;
+        }
 
         StatusType rc = sl.trylock(success);
-		if (*success == TRYTOGETSPINLOCK_SUCCESS)
-			tlist.task_spin_lock(task.id, sl.id);
-		return rc;
+        if (*success == TRYTOGETSPINLOCK_SUCCESS)
+            tlist.task_spin_lock(task.id, sl.id);
+        return rc;
     }
 
     forceinline StatusType ReleaseSpinlock_impl(const Task &task, os::Spinlock &sl) {
-		debug_core << __FUNCTION__ << "(" << (int) task.id <<  ", " << sl.id << ")" << endl;
+        debug_core << __FUNCTION__ << "(" << (int) task.id <<  ", " << sl.id << ")" << endl;
 
-		StatusType rc = sl.unlock();
-		if (rc == 0)
-			tlist.task_spin_unlock(task.id, sl.id);
-		return rc;
-	}
+        StatusType rc = sl.unlock();
+        if (rc == 0)
+            tlist.task_spin_unlock(task.id, sl.id);
+        return rc;
+    }
 
-	forceinline void dispatchToCurrentTask(void) {
-		// dispatch or enter idle
-		{{{!foreach_subtask|
-		if(current_task == {{{!subtask_id}}}) {
-			{{{!if_not_preemptable|
-							// promote non-preemptable task to RES_SCHEDULER
-							tlist.set({{{!subtask_id}}}, tlist.scheduler_prio);
-						current_prio = tlist.scheduler_prio;
-					}}}													\
-			Dispatcher::Dispatch({{{!subtask_desc}}});
-		} else															\
-		}}} if(current_task == TaskList::idle_id) {
-			Dispatcher::Idle();
-	} else {
-		CALL_HOOK(FaultDetectedHook, LOGIC_ERRORdetected, 0, 0);
-	}
+    forceinline void dispatchToCurrentTask(void) {
+        // dispatch or enter idle
+        {{{!foreach_subtask|
+        if(current_task == {{{!subtask_id}}}) {
+            {{{!if_not_preemptable|
+                            // promote non-preemptable task to RES_SCHEDULER
+                            tlist.set({{{!subtask_id}}}, tlist.scheduler_prio);
+                        current_prio = tlist.scheduler_prio;
+                    }}}													\
+            Dispatcher::Dispatch({{{!subtask_desc}}});
+        } else															\
+        }}} if(current_task == TaskList::idle_id) {
+            Dispatcher::Idle();
+    } else {
+        CALL_HOOK(FaultDetectedHook, LOGIC_ERRORdetected, 0, 0);
+    }
 }
 
 
 };
 
 void Scheduler::Reschedule() {
-	// update current_task
-	tlist.head(current_task, current_prio);
-	// dispatch
-	dispatchToCurrentTask();
+    // update current_task
+    tlist.head(current_task, current_prio);
+    // dispatch
+    dispatchToCurrentTask();
 }
 
 // TODO statically set MAX_CPUS and related structures
@@ -212,24 +212,24 @@ extern "C" CoreIdType AUTOSAR_GetCoreID() {
 }; // scheduler
 }; // os
 
-uint32_t cores = 1;
+volatile uint32_t cores = 1;
 bool kickoff_done[MAX_CPUS] = {false};
 
 extern "C" void AUTOSAR_kickoff() {
-	debug_core << __FUNCTION__ << endl;
-	kickoff_done[AUTOSAR_GetCoreID()] = true;
-	Machine::enable_interrupts();
+    debug_core << __FUNCTION__ << endl;
+    kickoff_done[AUTOSAR_GetCoreID()] = true;
+    Machine::enable_interrupts();
 }
 
 extern "C" uint32_t AUTOSAR_GetNumberOfActivatedCores()
 {
-	return cores;
+    return cores;
 }
 
 extern "C" void AUTOSAR_SyncCore(CoreIdType CoreID)
 {
-	debug_core << __FUNCTION__ << endl;
-	while(!kickoff_done[CoreID]);
+    debug_core << __FUNCTION__ << endl;
+    while(!kickoff_done[CoreID]);
 }
 
 extern "C" void* AUTOSAR_StartCoreStage2(void* arg) {
@@ -243,7 +243,7 @@ extern "C" void* AUTOSAR_StartCoreStage2(void* arg) {
 }
 
 extern "C" void AUTOSAR_StartCore(CoreIdType CoreID, StatusType *status) {
-	debug_core << __FUNCTION__ << endl;
+    debug_core << __FUNCTION__ << endl;
     if (CoreID == OS_CORE_ID_MASTER)
     {
         *status = E_NOT_OK;  // already started
@@ -264,13 +264,16 @@ extern "C" void AUTOSAR_ShutdownOS(StatusType arg0){
 
     Machine::disable_interrupts();
 
-    if (cores > 1) {
-        cores --;
+    cores --;
+    CALL_HOOK(ShutdownHook, arg0);
+
+    if (cores > 0) {
+        // wait here
         arch::stop_hardware_thread();
     } else { // last core
-        AUTOSAR_ShutdownAllCores(arg0);
+        ShutdownMachine();
+        Machine::unreachable();
     }
-    Machine::unreachable();
 }
 
 extern "C" void AUTOSAR_ShutdownAllCores(StatusType arg0){
@@ -279,7 +282,7 @@ extern "C" void AUTOSAR_ShutdownAllCores(StatusType arg0){
     Machine::disable_interrupts();
     cores--;
 
-	if (cores > 1) {
+    if (cores > 0) {
         int curr_cpuid = AUTOSAR_GetCoreID();
         for (int i = 0; i < MAX_CPUS; i++) {
             if (i == curr_cpuid || !cpu_online(i) )
