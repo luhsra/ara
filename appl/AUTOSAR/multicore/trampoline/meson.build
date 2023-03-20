@@ -2,7 +2,7 @@ name_prefix_trampoline = 'autosar_multicore_trampoline_'
 tramp_clang = generator(clang,
                         output : '@BASENAME@.ll',
                         depfile : '@BASENAME@.ll.dep',
-                        arguments : [clang_base, cxx_std, ir_flags, clang_flags, libs_includes, '-I', meson.current_source_dir()])
+                        arguments : [clang_base, cxx_std, ir_flags, clang_flags, autosar_includes, '-I', meson.current_source_dir()])
 
 subdir('mc_alarms_s1')
 subdir('mc_appTermination_s1')

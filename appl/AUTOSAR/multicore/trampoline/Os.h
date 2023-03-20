@@ -4,8 +4,6 @@
 #define NUMBER_OF_CORES 99
 #define uint32 uint32_t
 
-__attribute__((weak)) extern "C" int GetCoreID() {return -1;}
-__attribute__((weak)) extern "C" StatusType GetNumberOfActivatedCores() {return E_OK;}
 #define OS_CORE_ID_MASTER 0
 #define OS_CORE_ID_1 1
 
@@ -17,16 +15,13 @@ __attribute__((weak)) extern "C" StatusType GetNumberOfActivatedCores() {return 
 
 using CoreFunc = void (*)();
 using TestRef = unsigned int;
-using TryToGetSpinlockType = int;
 #define TestRef int
 
 #define TestRunner_start()
 #define TestRunner_runTest(t) t
 #define TestRunner_end()
-#define addFailure(msg, line, file)
+#define addFailure(msg, line, file) debug_core << msg << endl;
 
-
-#define StartCore(id, rv)
 #define OSDEFAULTAPPMODE 0
 
 #define new_TestFixture(unused, func) func();
