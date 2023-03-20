@@ -22,9 +22,9 @@
       }
     },
     "isrs": {
-      "softwareInterruptHandler0_Core0":{"priority": 1, "category": 2},
-      "softwareInterruptHandler1_Core0":{"priority": 2, "category": 2},
-      "softwareInterruptHandler2_Core0":{"priority": 3, "category": 2}
+      "softwareInterruptHandler0_Core0":{"priority": 1, "category": 2, "device": 37},
+      "softwareInterruptHandler1_Core0":{"priority": 2, "category": 2, "device": 38},
+      "softwareInterruptHandler2_Core0":{"priority": 3, "category": 2, "device": 39}
     }
     }, {
       "id": 1,
@@ -48,9 +48,9 @@
         }
       },
       "isrs": {
-        "softwareInterruptHandler0_Core1": {"priority": 1, "category": 2},
-        "softwareInterruptHandler1_Core1": {"priority": 2, "category": 2},
-        "softwareInterruptHandler2_Core1": {"priority": 3, "category": 2}
+        "softwareInterruptHandler0_Core1": {"priority": 1, "category": 2, "device": 40},
+        "softwareInterruptHandler1_Core1": {"priority": 2, "category": 2, "device": 41},
+        "softwareInterruptHandler2_Core1": {"priority": 3, "category": 2, "device": 42}
       }
     }
   ],

@@ -26,6 +26,10 @@ typedef enum {
 	E_OS_STATE = 7,
 	E_OS_VALUE = 8,
 	E_NOT_OK = 9,
+	E_OS_CORE,
+	E_OS_SPINLOCK,
+	E_OS_NESTING_DEADLOCK,
+	E_OS_INTERFERENCE_DEADLOCK,
 } StatusType;
 
 /**

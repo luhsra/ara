@@ -278,6 +278,14 @@ if get_option('enable_step_tests')
         'sched',
         'andreas/ipi',
         'andreas/spinlock',
+        'trampoline/mc_coreid_s1',
+        'trampoline/mc_autostart_s1',
+        'trampoline/mc_autostart_s2',
+        'trampoline/mc_startOs_s1',
+        'trampoline/mc_startup_s1',
+        'trampoline/mc_taskActivation_s1',
+        'trampoline/mc_taskChaining_s1',
+        'trampoline/mc_events_s1',
       ]
       foreach app : autosar_generated_targets
         # filter supported tests
