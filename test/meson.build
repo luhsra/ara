@@ -283,14 +283,16 @@ if get_option('enable_step_tests')
         'trampoline/mc_autostart_s2',
         'trampoline/mc_startOs_s1',
         'trampoline/mc_startup_s1',
+        'trampoline/mc_events_s1',
+      ]
+      # OS application access check unsupported
+      expected_fail = [
         'trampoline/mc_taskActivation_s1',
         'trampoline/mc_taskChaining_s1',
-        'trampoline/mc_events_s1',
       ]
       foreach app : autosar_generated_targets
         # filter supported tests
         if app.has_key('path') and app['path'] in supported
-
           test('autosar_generator_' + app['full_name'],
               py3_inst,
               args: [files('autosar_generator.py'), app['app_image']],
@@ -299,6 +301,18 @@ if get_option('enable_step_tests')
               suite: ['autosar_generator']
           )
         endif
+
+        if app.has_key('path') and app['path'] in expected_fail
+          test('autosar_generator_' + app['full_name'],
+              py3_inst,
+              args: [files('autosar_generator.py'), app['app_image']],
+              env: [python_path],
+              depends: ara_py,
+              should_fail: true,
+              suite: ['autosar_generator']
+          )
+        endif
+
       endforeach
     endif
 

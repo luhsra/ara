@@ -55,7 +55,7 @@ struct Scheduler {
         uint32_t mask = tlist.get_task_spinlock_mask(from.id);
         if (mask) {
             debug_core << "Error: Task "<< (int) from.id <<" holds locks, mask: " << mask << endl;
-            return E_NOT_OK;
+            return E_OS_SPINLOCK;
         }
         SetSuspended_impl(from);
         Schedule_impl();
@@ -82,7 +82,7 @@ struct Scheduler {
         uint32_t mask = tlist.get_task_spinlock_mask(current_task.id);
         if (mask) {
             debug_core << "Error: Task "<< (int) current_task.id <<" holds locks, mask: " << mask << endl;
-            return E_NOT_OK;
+            return E_OS_SPINLOCK;
         }
         tlist.wait_events(current_task.id, event_mask);
         Schedule_impl();
