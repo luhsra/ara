@@ -13,20 +13,30 @@ extern "C" void init_generic();
 
 using namespace arch;
 
+bool initialized = false;
+pthread_mutex_t init = PTHREAD_MUTEX_INITIALIZER;
+
 //!< i386 specific startup code
 extern "C" void arch_startup()
 {
-    // global constructors habe been are already called before main.
+    pthread_mutex_lock(&init);
 
-    Machine::init();
+    if (!initialized) {
+        // global constructors habe been are already called before main.
 
-    Dispatcher::init();
+        Machine::init();
 
-    // setup timer
-    //ITimer::init();
+        Dispatcher::init();
 
-    arch::init_cpuid();
+        // setup timer
+        //ITimer::init();
 
-    // Proceed to generic initialisation
-    init_generic();
+        arch::init_cpuid();
+
+        // Proceed to generic initialisation
+        init_generic();
+        initialized = true;
+    }
+
+    pthread_mutex_unlock(&init);
 }

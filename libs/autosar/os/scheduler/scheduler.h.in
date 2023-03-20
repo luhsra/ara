@@ -239,7 +239,7 @@ extern "C" void* AUTOSAR_StartCoreStage2(void* arg) {
     debug_core << "StartCore successful" <<  endl;
     cores++;
 
-    ap_main();
+    main();
 }
 
 extern "C" void AUTOSAR_StartCore(CoreIdType CoreID, StatusType *status) {

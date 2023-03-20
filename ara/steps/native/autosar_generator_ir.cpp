@@ -28,19 +28,27 @@ namespace ara::step {
 		std::vector<Type*> args;
 		FunctionType* kickoff_type = FunctionType::get(Type::getVoidTy(context), args, false);
 		Function* kickoff = Function::Create(kickoff_type, Function::ExternalLinkage, "AUTOSAR_kickoff", &module);
+		Function* arch_startup = Function::Create(kickoff_type, Function::ExternalLinkage, "arch_startup", &module);
 
 		for (auto& function : module) {
 			// all TASK(foo) functions start with this string, see os/os.h
-			if (function.getName().startswith("AUTOSAR_TASK_FUNC")) {
+			if (function.getName().startswith("AUTOSAR_TASK_FUNC") || function.getName().equals("main")) {
 				BasicBlock& bb = *function.begin();
 				IRBuilder<> builder(context);
 				Instruction* inst = &*bb.begin();
 				builder.SetInsertPoint(inst);
 
 				std::vector<Value*> ArgsV;
-				builder.CreateCall(kickoff, ArgsV);
+				Function* insert;
 
-				logger.debug() << "add " << kickoff->getName().str() << " to " << function.getName().str() << std::endl;
+				if (function.getName().startswith("AUTOSAR_TASK_FUNC")) {
+					insert = kickoff;
+				} else {
+					insert = arch_startup;
+				}
+
+				builder.CreateCall(insert, ArgsV);
+				logger.debug() << "add " << insert->getName().str() << " to " << function.getName().str() << std::endl;
 			}
 		}
 	}

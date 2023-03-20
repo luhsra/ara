@@ -205,11 +205,7 @@
 extern "C" {
 #endif
     
-    
-
-
-void os_main(void);
-void ap_main(void);
+int main(void);
 EXTERN_C_DECL void StartOS(int);
 
 

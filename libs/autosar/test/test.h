@@ -1,3 +1,4 @@
+#pragma once
 /**
  *  @defgroup test Testing
  *  @brief Testing
@@ -297,16 +298,9 @@ extern "C" void arch_startup();
 extern "C" forceinline void ara_timing_info(int a, int b) {}
 
 #define TEST_MAKE_OS_MAIN(body) \
-	void os_main(void) {		\
-		test_main();			\
-	}							\
-	void ap_main() {			\
-		body;					\
-	}							\
-	void test() {				\
-		test_start();			\
-		body;					\
-	}							\
 	int main(void) { 			\
-		arch_startup();			\
+		if (GetCoreID() == 0){	\
+			test_init();		\
+		}						\
+		body;					\
 	}							\
