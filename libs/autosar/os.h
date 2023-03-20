@@ -143,6 +143,9 @@
 #define SyncCore(core)						\
   AUTOSAR_SyncCore(core)
 
+#define GetNumberOfActivatedCores()						\
+  AUTOSAR_GetNumberOfActivatedCores()
+
 #define OS_CORE_ID_0 0
 #define OS_CORE_ID_1 1
 #define OS_CORE_ID_2 2
@@ -256,6 +259,11 @@ extern void AUTOSAR_StartCore(CoreIdType r, StatusType *status);
  * Wait until given core has scheduled once
  */
 extern void AUTOSAR_SyncCore(CoreIdType r);
+
+/**
+ * Wait until given core has scheduled once
+ */
+extern uint32_t AUTOSAR_GetNumberOfActivatedCores();
 
 /**
  * \brief Acquire a RESOURCE

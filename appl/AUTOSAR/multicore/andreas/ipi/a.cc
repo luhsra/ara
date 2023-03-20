@@ -27,6 +27,8 @@ void start()
 TEST_MAKE_OS_MAIN(start())
 
 TASK(T00) {
+    uint32_t cores = GetNumberOfActivatedCores();
+    debug_core << "Cores: " << cores << endl;
     test_trace('0');
     ActivateTask(T10);
     TerminateTask();

@@ -212,13 +212,18 @@ extern "C" CoreIdType AUTOSAR_GetCoreID() {
 }; // scheduler
 }; // os
 
-int cores = 1;
+uint32_t cores = 1;
 bool kickoff_done[MAX_CPUS] = {false};
 
 extern "C" void AUTOSAR_kickoff() {
 	debug_core << __FUNCTION__ << endl;
 	kickoff_done[AUTOSAR_GetCoreID()] = true;
 	Machine::enable_interrupts();
+}
+
+extern "C" uint32_t AUTOSAR_GetNumberOfActivatedCores()
+{
+	return cores;
 }
 
 extern "C" void AUTOSAR_SyncCore(CoreIdType CoreID)
