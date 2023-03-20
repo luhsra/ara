@@ -46,7 +46,6 @@ static void test_t2_instance(void)
   WaitEvent(event);
 
   /* Wait end of tests */
-  TerminateTask();
   SyncAllCores(end_of_tests);
 }
 
