@@ -14,5 +14,5 @@ class TaskBase(Object):
 
 
 class DynamicTask(TaskBase):
-
-    def 
+    pass
+    #def 
