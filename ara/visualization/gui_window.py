@@ -20,7 +20,7 @@ from ara.graph.mix import GraphType
 from .signal import ara_signal
 from .signal.signal_combiner import SignalCombiner
 from .trace import trace_handler
-from .util import RESOURCE_PATH, StepMode, SMALL_WIDGET_HEIGHT, SMALL_WIDGET_WIDTH
+from .util import RESOURCES, StepMode, SMALL_WIDGET_HEIGHT, SMALL_WIDGET_WIDTH
 from .widgets import graph_views
 from .widgets.graph_views import CFGView, CallGraphView, InstanceGraphView, SVFGView
 from .widgets.graph_elements import AbstractNode
@@ -91,10 +91,9 @@ class GuiWindow(QMainWindow):
         def sizeHint(self) -> QSize:
             return QSize(SMALL_WIDGET_WIDTH, SMALL_WIDGET_HEIGHT)
 
-        self.dw_step_queue = loader.load(RESOURCE_PATH.get() + "step_queue.ui")
+        self.dw_step_queue = loader.load(RESOURCES.get("step_queue.ui"))
         self.dw_step_queue.sizeHint = sizeHint.__get__(self.dw_step_queue, QDockWidget)
-        self.dw_function_search = loader.load(RESOURCE_PATH.get() +
-                                              "function_list_search.ui")
+        self.dw_function_search = loader.load(RESOURCES.get("function_list_search.ui"))
         self.dw_function_search.sizeHint = sizeHint.__get__(self.dw_function_search, QDockWidget)
 
         self.proxies = []

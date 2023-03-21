@@ -3,15 +3,16 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-class RESOURCE_PATH:
-    """Contains path to resource directory"""
+class RESOURCES:
+    """Allows to get paths to GUI resources files"""
     res_path = "../"
 
-    def get():
-        return RESOURCE_PATH.res_path
+    def get(filename: str):
+        import os
+        return os.path.join(RESOURCES.res_path, filename)
 
-    def set(path: str):
-        RESOURCE_PATH.res_path = path
+    def set_res_path(path: str):
+        RESOURCES.res_path = path
 
 class __USING_ARA_GUI:
     """True if ara-gui.py was started"""

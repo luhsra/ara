@@ -22,7 +22,9 @@ py_logging_header = py_logging_pyx_cpp[1]
 log_bridge = py3_inst.extension_module('py_logging',
   py_logging_pyx_cpp,
   gnu_symbol_visibility: 'default',
-  dependencies: py3_inst.dependency()
+  dependencies: py3_inst.dependency(),
+  install: true,
+  install_dir: 'lib'
 )
 
 log_bridge_incl = include_directories('.')
@@ -110,6 +112,8 @@ step_mod = py3_inst.extension_module('step',
   override_options: 'b_lundef=false',
   cpp_pch: 'pch/steps_pch.h',
   link_depends: [log_bridge, graph_data_mod],
-  dependencies: [log_dep, py3_inst.dependency(), llvm_dep, graph_tool_dep, graph_dep, common_dep, pyllco_dep, svf_dep]
+  dependencies: [log_dep, py3_inst.dependency(), llvm_dep, graph_tool_dep, graph_dep, common_dep, pyllco_dep, svf_dep],
+  install: true,
+  install_dir: 'lib'
 )
 

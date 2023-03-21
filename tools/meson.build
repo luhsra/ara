@@ -14,6 +14,7 @@ validate_generator_runner = files('validate_generator_runner.py')
 dump_cmds = files('dump_cmds.py')
 gcc_version = files('gcc_version.py') # drop, when https://github.com/mesonbuild/meson/issues/7166 is resolved
 ctimeout = files('ctimeout')
+replace_in_textfile = files('replace_in_textfile.py')
 
 if get_option('arch') == 'arm'
   qemu_cmd = files('qemu_stm32.sh')
@@ -23,3 +24,4 @@ else
   gdb_qemu_cmd = disabler()
 endif
 
+meson.add_install_script('post_meson_install.sh', py3_inst.path(), replace_in_textfile)

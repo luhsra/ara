@@ -13,7 +13,7 @@ from graph_tool.libgraph_tool_core import Vertex
 
 from ara.graph import CFType
 from ara.visualization.trace import trace_lib, trace_util
-from ara.visualization.util import RESOURCE_PATH
+from ara.visualization.util import RESOURCES
 from ara.visualization.widgets.properties_info import PropertiesInfo
 
 DPI_LEVEL = 72
@@ -48,7 +48,7 @@ class AbstractNode(GraphicsObject):
             AbstractNode._mouse_selected.reload_stylesheet()
         AbstractNode._mouse_selected = None
 
-    def __init__(self, node: Node, ui_path=RESOURCE_PATH.get() + "node.ui"):
+    def __init__(self, node: Node, ui_path=RESOURCES.get("node.ui")):
         super().__init__(ui_path)
 
         self.data = node
@@ -95,7 +95,7 @@ class AbstractNode(GraphicsObject):
 class AdjacencyNode(AbstractNode):
     """Node able to be adjacent to a an expansion point"""
 
-    def __init__(self, node: Node, ui_path=RESOURCE_PATH.get() + "node.ui"):
+    def __init__(self, node: Node, ui_path=RESOURCES.get("node.ui")):
         super().__init__(node, ui_path)
         self.adjacency = False
         self.widget.setProperty("adjacency", "false")
@@ -118,7 +118,7 @@ class AbbNode(AbstractNode):
     subtypes = {"": "UNK", "1": "syscall", "2": "call", "4": "comp"}
 
     def __init__(self, node: Node):
-        super().__init__(node, RESOURCE_PATH.get() + "node.ui")
+        super().__init__(node, RESOURCES.get("node.ui"))
 
         self.widget.label_text.setText(self.data.attr["label"])
         self.widget.subtype_text.setText(
@@ -147,7 +147,7 @@ class CallGraphNode(AdjacencyNode):
     sig_unselected = Signal(str)
 
     def __init__(self, node: Node):
-        super().__init__(node, RESOURCE_PATH.get() + "callgraph_node.ui")
+        super().__init__(node, RESOURCES.get("callgraph_node.ui"))
 
         self.widget.label_text.setText(str(self.data.attr["label"]))
 
@@ -188,7 +188,7 @@ class InstanceNode(AbstractNode):
     """
 
     def __init__(self, node: Node):
-        super().__init__(node, RESOURCE_PATH.get() + "instance_node.ui")
+        super().__init__(node, RESOURCES.get("instance_node.ui"))
         self.widget.label_text.setText(str(self.data.attr["label"]))
         self.widget.sublabel_text.setText(str(self.data.attr["sublabel"]))
 
@@ -213,7 +213,7 @@ class SVFGNode(AdjacencyNode):
     sig_adjacency_selected = Signal(Vertex)
 
     def __init__(self, node: Node):
-        super().__init__(node, RESOURCE_PATH.get() + "svfg_node.ui")
+        super().__init__(node, RESOURCES.get("svfg_node.ui"))
 
         self.widget.label_text.setText(str(self.data.attr["label"]))
         self.widget.label_text.setWordWrap(True)
@@ -238,7 +238,7 @@ class Subgraph(GraphicsObject):
     """
 
     def __init__(self, subgraph: AGraph):
-        super().__init__(RESOURCE_PATH.get() + "subgraph.ui")
+        super().__init__(RESOURCES.get("subgraph.ui"))
         self.data = subgraph
 
         x_min = 100000000

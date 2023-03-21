@@ -17,6 +17,11 @@ project('ara', 'cpp',
                        'cpp_std=c++17',
                        'buildtype=debugoptimized'])
 
+# There is no way to check if meson is running as root so we make a warning:
+if get_option('prefix') == '/usr/local' or get_option('prefix') == '/usr' or get_option('prefix') == '/' or get_option('prefix') == 'C:/'
+    warning('prefix option is set to a system wide installation path. Do not invoke "meson install" as root before setting prefix to a local path. System wide installation is not supported!')
+endif
+
 add_project_arguments('-Werror=return-type', language: ['c', 'cpp'])
 # c-linkage is not correct, see https://github.com/cython/cython/issues/1839
 compiler = meson.get_compiler('cpp')
@@ -61,9 +66,11 @@ graph_tool_dep = dependency('graph-tool-py' + py3_inst.language_version(), inclu
 ## pyllco
 pyllco_dep = dependency('pyllco-py' + py3_inst.language_version(), required : false)
 if pyllco_dep.found()
+    pyllco_used_from_subproj = false
     pyllco_cython_inc = pyllco_dep.get_variable(pkgconfig: 'Cython.include')
     pyllco_dir = ''
 else
+    pyllco_used_from_subproj = true
     pyllco_proj = subproject('pyllco')
     pyllco_dep = pyllco_proj.get_variable('pyllco_dep')
     pyllco_cython_inc = pyllco_proj.get_variable('pyllco_cython_inc')
@@ -142,7 +149,7 @@ elif get_option('python_optimization_level') == 2
     python_opt_arg = ' -OO'
 endif
 
-# convenience script to call ara without installing
+# ara startup script
 ara_py_content = '''#!@0@
 """Automatic Real-time System Analyzer"""
 import importlib
@@ -167,7 +174,8 @@ sys.setdlopenflags(sys.getdlopenflags() & ~os.RTLD_GLOBAL)
 
 from ara.ara import Main
 main = Main()
-sys.exit(main.main())'''
+sys.exit(main.main())
+'''
 
 python_dirs = [source_dir, pyllco_dir, step_dir, graph_data_dir]
 python_path = 'PYTHONPATH=' + ':'.join(python_dirs)
@@ -196,8 +204,8 @@ sys.setdlopenflags(sys.getdlopenflags() | os.RTLD_GLOBAL)
 
 import pyllco
 
-from ara.visualization.util import RESOURCE_PATH, USING_ARA_GUI
-RESOURCE_PATH.set('@2@')
+from ara.visualization.util import RESOURCES, USING_ARA_GUI
+RESOURCES.set_res_path(@2@)
 USING_ARA_GUI.set(True)
 
 load("graph_data", "ara.graph.graph_data")
@@ -206,7 +214,8 @@ load("step", "ara.steps.step")
 
 import ara.ara as _ara
 import ara.visualization.main
-sys.exit()'''
+sys.exit()
+'''
 
 subdir('resources')
 
@@ -214,9 +223,11 @@ ara_gui_py = custom_target('ara-gui-py',
     input: [],
     output: 'ara-gui.py',
     depends: [step_mod, graph_data_mod],
-    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_gui_py_content.format(py3_inst.path()+python_opt_arg, '"' + '", "'.join(python_dirs) + '"', resources_dir + '/')],
+    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_gui_py_content.format(py3_inst.path()+python_opt_arg, '"' + '", "'.join(python_dirs) + '"', '"' + resources_dir + '"')],
     build_by_default: true
 )
+
+subdir('startup')
 
 # build test applications with help of ARA
 # Attention: The include order is important here.
