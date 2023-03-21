@@ -134,6 +134,14 @@ subdir('ara')
 # tools for deploying
 subdir('tools')
 
+# Python optimization argument
+python_opt_arg = ''
+if get_option('python_optimization_level') == 1
+    python_opt_arg = ' -O'
+elif get_option('python_optimization_level') == 2
+    python_opt_arg = ' -OO'
+endif
+
 # convenience script to call ara without installing
 ara_py_content = '''#!@0@
 """Automatic Real-time System Analyzer"""
@@ -168,7 +176,7 @@ ara_py = custom_target('ara-py',
     input: [],
     output: 'ara.py',
     depends: [step_mod, graph_data_mod],
-    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_py_content.format(py3_inst.path(), '"' + '", "'.join(python_dirs) + '"')],
+    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_py_content.format(py3_inst.path()+python_opt_arg, '"' + '", "'.join(python_dirs) + '"')],
     build_by_default: true
 )
 
@@ -206,7 +214,7 @@ ara_gui_py = custom_target('ara-gui-py',
     input: [],
     output: 'ara-gui.py',
     depends: [step_mod, graph_data_mod],
-    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_gui_py_content.format(py3_inst.path(), '"' + '", "'.join(python_dirs) + '"', resources_dir + '/')],
+    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_gui_py_content.format(py3_inst.path()+python_opt_arg, '"' + '", "'.join(python_dirs) + '"', resources_dir + '/')],
     build_by_default: true
 )
 

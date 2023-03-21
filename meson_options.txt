@@ -2,6 +2,9 @@ option('arch', type: 'combo', choices: ['arm', 'i386'], value: 'arm', yield: tru
     description: 'Set the architecture for which the test applications are built.')
 option('gui_required', type: 'boolean', value: false, yield: true,
     description: 'Set all dependencies of ara gui to required if this option is true')
+option('python_optimization_level', type : 'integer', min : 0, max : 2, value : 0, yield: true,
+    description: 'Optimize python bytecode by the provided level. Levels 1 and 2 disable asserts so choose them wisely.')
+
 
 option('enable_qemu_tests', type: 'boolean', value: true, yield: true)
 option('enable_step_tests', type: 'boolean', value: true, yield: true,
