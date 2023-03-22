@@ -2,6 +2,7 @@
 # SPDX-FileCopyrightText: 2021 Bastian Fuhlenriede
 # SPDX-FileCopyrightText: 2022 Björn Fiedler <fiedler@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2023 Jan Neugebauer
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -516,6 +517,10 @@ class Printer(Step):
 
         if filename in self._graph.file_cache:
             return self._graph.file_cache[filename]
+
+        if not os.path.exists(filename):
+            self._log.warn(f"file {filename} not found, skip source code linking")
+            return None
 
         hfile = os.path.join(os.path.dirname(self.dump_prefix.get()),
                              'html_files',
