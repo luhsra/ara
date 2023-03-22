@@ -317,7 +317,7 @@ class GenericSystemCalls(BaseCoder):
         counter = kernelspace.arguments().counter
 
         if (not counter.softcounter):
-            kernelspace.add(Statement("result = E_NOT_OK"))
+            kernelspace.add(Statement("result = E_OS_ID"))
             return
 
         kernelspace.add(Statement("%s.do_tick()" % counter.impl.name))
