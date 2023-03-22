@@ -20,11 +20,19 @@
       "resources": {},
       "events": {},
     "alarms": {
-      "activate_task_across_cores": {
+      "activate_task_accross_cores": {
         "counter": "SystemCounter_core0",
-        "action":
-        {"action": "activatetask",
-         "task": "t2"
+        "action": {
+          "action": "activatetask",
+          "task": "t2"
+        }
+      },
+      "set_event_accross_cores": {
+        "counter": "SystemCounter_core0",
+        "action": {
+          "action": "setevent",
+          "task": "t2",
+          "event": "t2_event"
         }
       },
       "should_not_expire": {
