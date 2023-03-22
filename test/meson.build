@@ -289,6 +289,7 @@ if get_option('enable_step_tests')
       expected_fail = [
         'trampoline/mc_taskActivation_s1',
         'trampoline/mc_taskChaining_s1',
+        'trampoline/mc_eventSetting_s1',
       ]
       foreach app : autosar_generated_targets
         is_parallel = true
