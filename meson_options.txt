@@ -6,6 +6,8 @@ option('python_optimization_level', type : 'integer', min : 0, max : 2, value : 
     description: 'Optimize python bytecode by the provided level. Levels 1 and 2 disable asserts so choose them wisely.')
 option('build_examples_on_install', type: 'boolean', value: true, yield: true,
     description: 'Build example applications to LLVM IR and include them on the installation (Currently only FreeRTOS apps). This does not invoke the Generator.')
+option('ara_user_dir', type: 'string', value: '.ara', yield: true,
+    description: 'The path to ARAs user directory. All dumps will be stored in <ara_user_dir>/dumps if ARA is installed. Relative paths start from home directory $HOME')
 
 option('enable_qemu_tests', type: 'boolean', value: true, yield: true)
 option('enable_step_tests', type: 'boolean', value: true, yield: true,

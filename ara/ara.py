@@ -8,6 +8,7 @@
 # SPDX-FileCopyrightText: 2022 Jan Neugebauer
 # SPDX-FileCopyrightText: 2023 Björn Fiedler <fiedler@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2023 Jan Neugebauer
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -39,7 +40,6 @@ class Main:
     def main(self):
         """Entry point for ARA."""
         parser = argparse.ArgumentParser(
-            prog=sys.argv[0],
             description=sys.modules[__name__].__doc__,
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         parser.add_argument('--list-steps', '-l', action="store_true",
@@ -51,7 +51,7 @@ class Main:
                             default=os.environ.get('ARA_LOGLEVEL', 'warn'))
         parser.add_argument('--dump', action='store_true', default=bool(os.environ.get('ARA_DUMP', '')),
                             help="emit a meaningful dot graph where possible")
-        parser.add_argument('--dump-prefix', default='dumps/{step_name}.{uuid}.',
+        parser.add_argument('--dump-prefix', default=os.path.join(os.environ.get('ARA_DUMP_DIR', 'dumps'), '{step_name}.{uuid}.'),
                             help="path that prefixes all dot files. The string "
                                 "'{step_name}' is replaced with the step name. "
                                 "The string '{uuid}' is replace with the uuid.")
