@@ -222,8 +222,15 @@ extern "C" uint32_t AUTOSAR_GetNumberOfActivatedCores()
     return arch::get_num_cores();
 }
 
+bool core_started[MAX_CPUS] = {false};
+
 extern "C" void AUTOSAR_StartCore(CoreIdType CoreID, StatusType *status) {
     debug_core << __FUNCTION__ << endl;
+
+    if (core_started[GetCoreID()]) {
+        *status = E_OS_ACCESS;
+        return;
+    }
 
     *status = arch::start_hardware_thread(CoreID, nullptr, NULL);
 }

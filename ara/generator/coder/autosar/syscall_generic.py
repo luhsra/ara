@@ -151,11 +151,12 @@ class GenericSystemCalls(BaseCoder):
         block.unused_parameter(0)
 
         block.add(Statement("debug_core << __FUNCTION__ << endl"))
+        block.add(Statement("core_started[GetCoreID()] = true"))
 
         # prepare and autostarted tasks
         for v, task in self.ara_graph.instances.get(Task):
             core_id = "OS_CORE_ID_"+str(task.cpu_id)
-            ifblock = If("AUTOSAR_GetCoreID() == "+core_id)
+            ifblock = If("GetCoreID() == "+core_id)
             block.add(ifblock)
             self.call(ifblock, "Dispatcher::Prepare",
                 "void", [self.task_desc(task)])
