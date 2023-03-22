@@ -3,6 +3,9 @@
 
 #define MAX_CPUS 8
 
+#include <stdint.h>
+#include "osek_types.h"
+
 namespace arch {
 
 	/**
@@ -14,17 +17,18 @@ namespace arch {
 	 * \param size_of_stack The size of the given stack
 	 * \param startup_function A function pointer to the function that will be
 	 *                         run on the started hardware thread
-	 * \return true if everything went fine, false on error
 	 **/
-	bool start_hardware_thread(unsigned int hardware_number,
+	StatusType start_hardware_thread(unsigned int hardware_number,
 	                           void *bottom_of_stack,
-	                           unsigned int size_of_stack,
-	                           void* (*startup_function)(void*));
+	                           unsigned int size_of_stack);
 
 	bool cpu_online(int cpuid);
 	int get_cpuid();
+	unsigned int get_num_cores();
 	void init_cpuid();
+	void sync_all_hardware_threads(bool slot = 0);
 	void stop_hardware_thread();
+	void stop_other_hardware_threads();
 }
 
 #endif

@@ -231,7 +231,7 @@ class GenericOS(BaseCoder):
                 self.call(hook_function, "ShutdownMachine", "void", [])
                 self.call(hook_function, "Machine::unreachable", "void", [])
 
-            if hook == "ErrorHook":
+            elif hook == "ErrorHook":
                 hook_function.add(Statement(f"debug_core << \"{hook} \" << arg0 << endl"))
 
                 ifblock = If("arg0 == E_OS_MISSINGEND")
@@ -240,3 +240,7 @@ class GenericOS(BaseCoder):
                 self.call(ifblock, "Machine::unreachable", "void", [])
 
                 hook_function.add(ifblock)
+
+            elif hook == "StartupHook":
+                self.call(hook_function, "arch::sync_all_hardware_threads", "void", ["0"], prepend=True)
+                self.call(hook_function, "arch::sync_all_hardware_threads", "void", ["1"])

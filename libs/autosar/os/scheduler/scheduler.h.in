@@ -212,86 +212,38 @@ extern "C" CoreIdType AUTOSAR_GetCoreID() {
 }; // scheduler
 }; // os
 
-volatile uint32_t cores = 1;
-bool kickoff_done[MAX_CPUS] = {false};
-
 extern "C" void AUTOSAR_kickoff() {
     debug_core << __FUNCTION__ << endl;
-    kickoff_done[AUTOSAR_GetCoreID()] = true;
     Machine::enable_interrupts();
 }
 
 extern "C" uint32_t AUTOSAR_GetNumberOfActivatedCores()
 {
-    return cores;
-}
-
-extern "C" void AUTOSAR_SyncCore(CoreIdType CoreID)
-{
-    debug_core << __FUNCTION__ << endl;
-    while(!kickoff_done[CoreID]);
-}
-
-extern "C" void* AUTOSAR_StartCoreStage2(void* arg) {
-
-    int* core = (int*)arg;
-    while (!cpu_online(*core));
-    debug_core << "StartCore successful" <<  endl;
-    cores++;
-
-    main();
+    return arch::get_num_cores();
 }
 
 extern "C" void AUTOSAR_StartCore(CoreIdType CoreID, StatusType *status) {
     debug_core << __FUNCTION__ << endl;
-    if (CoreID == OS_CORE_ID_MASTER)
-    {
-        *status = E_NOT_OK;  // already started
-        return;
-    }
 
-    int curr_cores = cores;
-    arch::start_hardware_thread(CoreID, nullptr, NULL, AUTOSAR_StartCoreStage2);
-
-    // wait until core is in stage 2
-    while (curr_cores == cores);
-
-    *status = E_OK;
+    *status = arch::start_hardware_thread(CoreID, nullptr, NULL);
 }
 
 extern "C" void AUTOSAR_ShutdownOS(StatusType arg0){
     debug_core << __FUNCTION__ << endl;
 
-    Machine::disable_interrupts();
-
-    cores --;
+    // Individual shutdown concept: dont sync
     CALL_HOOK(ShutdownHook, arg0);
-
-    if (cores > 0) {
-        // wait here
-        arch::stop_hardware_thread();
-    } else { // last core
-        ShutdownMachine();
-        Machine::unreachable();
-    }
+    arch::stop_hardware_thread();
 }
 
 extern "C" void AUTOSAR_ShutdownAllCores(StatusType arg0){
     debug_core << __FUNCTION__ << endl;
 
-    Machine::disable_interrupts();
-    cores--;
+    arch::stop_other_hardware_threads();
 
-    if (cores > 0) {
-        int curr_cpuid = AUTOSAR_GetCoreID();
-        for (int i = 0; i < MAX_CPUS; i++) {
-            if (i == curr_cpuid || !cpu_online(i) )
-                continue;
-            Machine::trigger_interrupt(SIGTERM, i);
-        }
-    }
-
+    // Synchronized shutdown concept
+    arch::sync_all_hardware_threads(0);
     CALL_HOOK(ShutdownHook, arg0);
-    ShutdownMachine();
-    Machine::unreachable();
+    arch::stop_hardware_thread();
+
 }
