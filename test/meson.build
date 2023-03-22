@@ -291,24 +291,23 @@ if get_option('enable_step_tests')
         'trampoline/mc_taskChaining_s1',
       ]
       foreach app : autosar_generated_targets
-        # filter supported tests
-        if app.has_key('path') and app['path'] in supported
-          test('autosar_generator_' + app['full_name'],
-              py3_inst,
-              args: [files('autosar_generator.py'), app['app_image']],
-              env: [python_path],
-              depends: ara_py,
-              suite: ['autosar_generator']
-          )
+        is_parallel = true
+        if app.has_key('core') and app['core'] == 'multicore'
+          is_parallel = false
+        endif
+        should_fail = false
+        if app.has_key('path') and app['path'] in expected_fail
+          should_fail = true
         endif
 
-        if app.has_key('path') and app['path'] in expected_fail
+        if app.has_key('path') and app['path'] in supported or app['path'] in expected_fail
           test('autosar_generator_' + app['full_name'],
               py3_inst,
               args: [files('autosar_generator.py'), app['app_image']],
               env: [python_path],
               depends: ara_py,
-              should_fail: true,
+              should_fail: should_fail,
+              is_parallel: is_parallel,
               suite: ['autosar_generator']
           )
         endif
