@@ -15,7 +15,6 @@ void start()
     switch(GetCoreID()) {
     case OS_CORE_ID_MASTER:
         StartCore(OS_CORE_ID_1, &rv);
-        SyncCore(OS_CORE_ID_1);
     default:
         StartOS(0);
     }
@@ -55,4 +54,8 @@ void ErrorHook(StatusType status) {
         test_trace_assert("012");
         test_finish();
     }
+}
+
+void StartupHook() {
+    debug_core << "StartupHook" << endl;
 }

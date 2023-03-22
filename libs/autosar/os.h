@@ -140,9 +140,6 @@
 #define StartCore(core, status)						\
   AUTOSAR_StartCore(core, status)
 
-#define SyncCore(core)						\
-  AUTOSAR_SyncCore(core)
-
 #define GetNumberOfActivatedCores()						\
   AUTOSAR_GetNumberOfActivatedCores()
 
@@ -204,8 +201,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-    
-int main(void);
+
 EXTERN_C_DECL void StartOS(int);
 
 
@@ -246,11 +242,6 @@ extern CoreIdType AUTOSAR_GetCoreID();
  * Start a new Core
  */
 extern void AUTOSAR_StartCore(CoreIdType r, StatusType *status);
-
-/**
- * Wait until given core has scheduled once
- */
-extern void AUTOSAR_SyncCore(CoreIdType r);
 
 /**
  * Wait until given core has scheduled once

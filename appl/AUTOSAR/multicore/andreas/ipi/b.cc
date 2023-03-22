@@ -14,11 +14,6 @@ void start()
         StartCore(OS_CORE_ID_1, &rv);
         StartCore(OS_CORE_ID_2, &rv);
         StartCore(OS_CORE_ID_3, &rv);
-
-        // wait until all cores are idling
-        SyncCore(OS_CORE_ID_1);
-        SyncCore(OS_CORE_ID_2);
-        SyncCore(OS_CORE_ID_3);
     default:
         StartOS(0);
     }

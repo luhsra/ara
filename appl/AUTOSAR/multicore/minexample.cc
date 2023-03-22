@@ -29,13 +29,13 @@ TASK(TaskB) {
 
 TASK(TaskC) {
     test_trace('C');
-    TerminateTask(); 
+    TerminateTask();
 }
 
 TASK(TaskD) {
     test_trace('D');
     ActivateTask(TaskA);
-    TerminateTask(); 
+    TerminateTask();
 }
 
 TASK(TaskE) {
@@ -56,9 +56,6 @@ void start()
     switch(GetCoreID()) {
     case OS_CORE_ID_MASTER:
         StartCore(OS_CORE_ID_1, &rv);
-
-        // wait until all cores are idling
-        SyncCore(OS_CORE_ID_1);
     default:
         StartOS(0);
     }
