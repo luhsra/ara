@@ -31,7 +31,6 @@ typedef enum {
 	E_OS_NESTING_DEADLOCK = 12,
 	E_OS_INTERFERENCE_DEADLOCK = 13,
 	E_OS_MISSINGEND = 14, // hard-coded in IR generator
-	E_OS_ID = 15,
 } StatusType;
 
 /**
