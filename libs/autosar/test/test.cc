@@ -68,4 +68,5 @@ extern "C" {
 		//kout << trace_table[trace_table_idx-1] << endl;
 	}
 
+    void ara_timing_info(int a, int b) {};
 }
