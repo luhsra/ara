@@ -284,6 +284,7 @@ if get_option('enable_step_tests')
         'trampoline/mc_startOs_s1',
         'trampoline/mc_startup_s1',
         'trampoline/mc_events_s1',
+        'trampoline/mc_scheduling_s1',
       ]
       # OS application access check unsupported
       expected_fail = [
