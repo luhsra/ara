@@ -8,13 +8,15 @@
 #include <cstring>
 #include <pthread.h>
 
+#define BUF_LEN 80
+
 class BufferedTerminal : public Terminal {
-	char buf[128] = {0};
+	char buf[BUF_LEN] = {0};
 	int idx = 0;
 	bool printcpu;
 
 public:
-    BufferedTerminal(Terminal::port_t port = STDOUT, bool printcpu=true)
+    BufferedTerminal(Terminal::port_t port = STDERR, bool printcpu=true)
 	: Terminal(port), printcpu(printcpu)
 	{};
 
@@ -28,6 +30,11 @@ public:
 			}
 		}
 		buf[idx++] = character;
+
+		if (idx == BUF_LEN-1) {
+			character = '\n';
+			buf[idx++] = character;
+		}
 
 		if (character == '\n') {
 			write(m_channel, &buf, idx);
