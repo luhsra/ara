@@ -12,10 +12,9 @@ class BufferedTerminal : public Terminal {
 	char buf[128] = {0};
 	int idx = 0;
 	bool printcpu;
-	pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 public:
-    BufferedTerminal(Terminal::port_t port = STDOUT, bool printcpu=false)
+    BufferedTerminal(Terminal::port_t port = STDOUT, bool printcpu=true)
 	: Terminal(port), printcpu(printcpu)
 	{};
 
@@ -29,13 +28,11 @@ public:
 			}
 		}
 		buf[idx++] = character;
-		
+
 		if (character == '\n') {
-			pthread_mutex_lock(&mutex);
 			write(m_channel, &buf, idx);
 			memset(buf, 0, sizeof(buf));
 			idx = 0;
-			pthread_mutex_unlock(&mutex);
 		}
 	}
 

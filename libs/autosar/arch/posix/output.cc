@@ -8,20 +8,10 @@
 
 #if DEBUG
 
-BufferedTerminal kout(Terminal::STDOUT);
-BufferedTerminal debug(Terminal::STDERR);
+BufferedTerminal kout(Terminal::STDOUT, false);
+BufferedTerminal debug(Terminal::STDERR, false);
 
-
-BufferedTerminal debug_core_arr[MAX_CPUS] = {
-    BufferedTerminal(Terminal::STDERR, true),
-    BufferedTerminal(Terminal::STDERR, true),
-    BufferedTerminal(Terminal::STDERR, true),
-    BufferedTerminal(Terminal::STDERR, true),
-    BufferedTerminal(Terminal::STDERR, true),
-    BufferedTerminal(Terminal::STDERR, true),
-    BufferedTerminal(Terminal::STDERR, true),
-    BufferedTerminal(Terminal::STDERR, true),
-};
+BufferedTerminal debug_core_arr[MAX_CPUS];
 
 #else // DEBUG
 

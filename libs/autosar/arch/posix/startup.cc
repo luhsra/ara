@@ -22,6 +22,7 @@ extern "C" void arch_startup()
     pthread_mutex_lock(&init);
 
     if (!initialized) {
+        arch::init_cpuid();
         // global constructors habe been are already called before main.
 
         Machine::init();
@@ -31,7 +32,6 @@ extern "C" void arch_startup()
         // setup timer
         //ITimer::init();
 
-        arch::init_cpuid();
 
         // Proceed to generic initialisation
         init_generic();
