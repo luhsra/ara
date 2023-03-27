@@ -51,7 +51,7 @@ void IRQ::disable(int signum) {
     sigaction(signum, &sig, NULL);
 }
 
-volatile bool ipi_cleared[MAX_CPUS];
+_Atomic(bool) ipi_cleared[MAX_CPUS];
 
 void IRQ::trigger_interrupt(int irq, int cpuid, bool sync) {
     /* Send an signal to a specified thread */
@@ -128,10 +128,10 @@ void IRQ::guardian(int signum) {
     int cpuid = arch::get_cpuid();
     irq.ast_level[cpuid]++;
         irq.m_gate[signum](signum);
-        ipi_cleared[cpuid] = true;
     irq.ast_level[cpuid]--;
     if (irq.ast_level[cpuid] == 0 && irq.ast_requested[cpuid]) {
         irq.ast_requested[cpuid] = false;
+        ipi_cleared[cpuid] = true;
         __OS_ASTSchedule(0);
     }
 }
