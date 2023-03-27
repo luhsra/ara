@@ -8,8 +8,8 @@ class UnencodedTaskListStatic {};
 
 /* Simpler array based task queue */
 struct TaskList : public UnencodedTaskListStatic {
-	typedef uint32_t event_mask_t;
-    typedef uint32_t spinlock_mask_t;
+	typedef _Atomic(uint32_t) event_mask_t;
+    typedef _Atomic(uint32_t) spinlock_mask_t;
 
 	typedef Task::prio_t current_prio_t;
 	typedef Task::id_t current_task_t;

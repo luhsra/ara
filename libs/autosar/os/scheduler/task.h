@@ -26,8 +26,8 @@ namespace os {
 		 * */
 		class Task {
 		  public:
-			typedef uint8_t id_t;
-			typedef uint8_t prio_t;
+			typedef _Atomic(uint8_t) id_t;
+			typedef _Atomic(uint8_t) prio_t;
 
 			// task ID
 			const id_t id;

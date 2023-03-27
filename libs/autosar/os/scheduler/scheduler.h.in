@@ -94,7 +94,8 @@ struct Scheduler {
     }
 
     forceinline uint32_t GetEvent_impl(const Task &current_task) {
-        return tlist.get_events(current_task.id);
+        TaskList::event_mask_t mask = tlist.get_events(current_task.id);
+        return __c11_atomic_load(&mask, __ATOMIC_RELAXED);
     }
 
     forceinline void SetReadyFromSuspended_impl(const Task &task) {
@@ -125,8 +126,9 @@ struct Scheduler {
         return tlist.isReady(task.id);
     }
 
-    forceinline Task::id_t getCurrent_TaskID(void) const {
-        return tlist.decode_task_id(current_task);
+    forceinline uint32_t getCurrent_TaskID(void) const {
+        Task::id_t id = tlist.decode_task_id(current_task);
+        return __c11_atomic_load(&id, __ATOMIC_RELAXED);
     }
 
 
