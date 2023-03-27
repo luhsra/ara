@@ -9,6 +9,7 @@ class UnencodedTaskListStatic {};
 /* Simpler array based task queue */
 struct TaskList : public UnencodedTaskListStatic {
 	typedef uint32_t event_mask_t;
+    typedef uint32_t spinlock_mask_t;
 
 	typedef Task::prio_t current_prio_t;
 	typedef Task::id_t current_task_t;
@@ -18,7 +19,7 @@ struct TaskList : public UnencodedTaskListStatic {
 
 {{{!foreach_subtask|
     Task::prio_t {{{!subtask}}};
-    uint32_t {{{!subtask}}}_spinlock_mask;
+    spinlock_mask_t {{{!subtask}}}_spinlock_mask;
     {{{!if_events|\
     event_mask_t {{{!subtask}}}_events_waiting;
 	event_mask_t {{{!subtask}}}_events_set;
@@ -120,7 +121,7 @@ struct TaskList : public UnencodedTaskListStatic {
     }
 
     /** check if task holds locks **/
-    forceinline int get_task_spinlock_mask(const Task::id_t id) {
+    forceinline spinlock_mask_t get_task_spinlock_mask(const Task::id_t id) {
         (void) id;
 {{{!foreach_subtask|\
         if (id == {{{!subtask_id}}}) {
@@ -132,8 +133,8 @@ struct TaskList : public UnencodedTaskListStatic {
     }
 
     /** check if CPU holds locks **/
-    forceinline uint32_t get_cpu_spinlock_mask(const CoreIdType cpuid) {
-    uint32_t mask = 0;
+    forceinline spinlock_mask_t get_cpu_spinlock_mask(const CoreIdType cpuid) {
+    spinlock_mask_t mask = 0;
 {{{!foreach_subtask|\
         if (OS_{{{!subtask}}}_task.cpuid == cpuid) {
            mask |= {{{!subtask}}}_spinlock_mask;
