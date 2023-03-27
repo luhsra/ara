@@ -26,7 +26,7 @@ namespace arch {
 	int get_cpuid();
 	unsigned int get_num_cores();
 	void init_cpuid();
-	void sync_all_hardware_threads(bool slot = 0);
+	void sync_all_hardware_threads(int slot = 0);
 	void stop_hardware_thread();
 	void stop_other_hardware_threads();
 }

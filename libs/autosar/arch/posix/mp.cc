@@ -115,18 +115,19 @@ namespace arch
      * A syncing slot is used to protect against
      * recurrent access from the same cpu.
      */
-    void sync_all_hardware_threads(bool slot)
+    void sync_all_hardware_threads(int slot)
     {
+        bool s = !!slot;
         cores_lock.lock();
-        syncing_cores[slot] ++;
-        debug_core << "Syncing[" << slot << "]: "<< syncing_cores[slot] << "/" << cores << endl;
+        syncing_cores[s] ++;
+        debug_core << "Syncing[" << s << "]: "<< syncing_cores[s] << "/" << cores << endl;
         cores_lock.unlock();
 
         // wait until all cores have synced
-        while (syncing_cores[slot] != cores);
+        while (syncing_cores[s] != cores);
 
         cores_lock.lock();
-        syncing_cores[slot] --;
+        syncing_cores[s] --;
         cores_lock.unlock();
     }
 
