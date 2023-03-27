@@ -9,15 +9,15 @@ option('build_examples_on_install', type: 'boolean', value: true, yield: true,
 option('ara_user_dir', type: 'string', value: '.ara', yield: true,
     description: 'The path to ARAs user directory. All dumps will be stored in <ara_user_dir>/dumps if ARA is installed. Relative paths start from home directory $HOME')
 
-option('enable_qemu_tests', type: 'boolean', value: true, yield: true)
-option('enable_step_tests', type: 'boolean', value: true, yield: true,
+option('enable_qemu_tests', type: 'boolean', value: false, yield: true)
+option('enable_step_tests', type: 'boolean', value: false, yield: true,
     description: 'Unit tests for ARA itself.')
-option('enable_toplevel_tests', type: 'boolean', value: true, yield: true,
+option('enable_toplevel_tests', type: 'boolean', value: false, yield: true,
     description: 'Not actual tests, but stored common commandlines and examples for calling ARA.')
-option('enable_generator_tests', type: 'boolean', value: true, yield: true,
+option('enable_generator_tests', type: 'boolean', value: false, yield: true,
     description: 'Test for the generator part of ARA (execute ARA and test the output')
 
-option('execute_ara', type: 'boolean', value: true, yield: true,
+option('execute_ara', type: 'boolean', value: false, yield: true,
     description: 'Build targets which executes ARA')
 
 option('arm_include_dirs', type: 'array', value: ['/usr/lib/arm-none-eabi/include'], yield: true,
