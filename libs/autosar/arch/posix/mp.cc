@@ -9,10 +9,10 @@ extern "C" int main(void);
 
 pthread_t cpuid[MAX_CPUS];
 os::Spinlock cores_lock;
-int cores = 1;
+_Atomic(int) cores = 1;
 
 // two slots for recurrent access
-int syncing_cores[2] = {0};
+_Atomic(int) syncing_cores[2] = {0};
 
 namespace arch
 {
