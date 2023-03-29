@@ -4,6 +4,7 @@
 #include "output.h"
 #include "machine.h"
 #include "spinlock.h"
+#include <sys/sysinfo.h>
 
 extern "C" int main(void);
 
@@ -41,13 +42,28 @@ namespace arch
 
         if (cpu_online(hardware_number)) // this core was already started
         {
-            return E_OS_ACCESS;
+            return E_OS_STATE;
+        }
+
+        int host_cpus = get_nprocs();
+
+        if (hardware_number > host_cpus)
+        {
+            debug_core << "This POSIX machine cannot handle " << hardware_number << " cpus" << endl;
+            return E_OS_ID;
         }
 
         int curr_cores = cores;
 
-        int rc = pthread_create(&thread, NULL, start_hardware_thread_stage2, &hardware_number);
+        /* set CPU affinity to hardware_number */
+        pthread_attr_t attr;
+        cpu_set_t cpus;
+        CPU_ZERO(&cpus);
+        CPU_SET(hardware_number, &cpus);
+        pthread_attr_init(&attr);
+        pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpus);
 
+        int rc = pthread_create(&thread, &attr, start_hardware_thread_stage2, &hardware_number);
         if (rc) {
             return E_NOT_OK;
         }

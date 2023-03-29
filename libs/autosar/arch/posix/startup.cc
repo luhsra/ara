@@ -29,6 +29,14 @@ extern "C" void arch_startup()
 
         Dispatcher::init();
 
+        /* set affinity to CPU 0*/
+        cpu_set_t cpuset;
+        pthread_t thread;
+        thread = pthread_self();
+        CPU_ZERO(&cpuset);
+        CPU_SET(0, &cpuset);
+        pthread_setaffinity_np(thread, sizeof(cpuset), &cpuset);
+
         // setup timer
         //ITimer::init();
 
