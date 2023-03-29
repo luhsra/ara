@@ -26,10 +26,11 @@ public:
 	virtual void putchar(char character) override {
 		if (printcpu) {
 			if (idx == 0) {
-				// TODO fix for CPUS > 9
-				buf[idx++] = '0' + arch::get_cpuid();
+				int cpuid = arch::get_cpuid();
+				int phycpu = sched_getcpu();
+				buf[idx++] = cpuid + (cpuid > 9 ? 55 : '0');
 				buf[idx++] = '-';
-				buf[idx++] = '0' + sched_getcpu();
+				buf[idx++] = phycpu + (phycpu > 9 ? 55 : '0');
 				buf[idx++] = ':';
 			}
 		}
