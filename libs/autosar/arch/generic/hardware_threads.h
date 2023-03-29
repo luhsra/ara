@@ -1,7 +1,7 @@
 #ifndef __HARDWARE_THREADS_H__
 #define __HARDWARE_THREADS_H__
 
-#define MAX_CPUS 8
+#define MAX_CPUS 16
 
 #include <stdint.h>
 #include "osek_types.h"

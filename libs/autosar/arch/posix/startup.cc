@@ -6,7 +6,7 @@
 
 #include "itimer.h"
 #include "dispatch.h"
-#include <pthread.h>
+#include "spinlock.h"
 
 /** Initialisation stub for generic startup code */
 extern "C" void init_generic();
@@ -14,12 +14,12 @@ extern "C" void init_generic();
 using namespace arch;
 
 bool initialized = false;
-pthread_mutex_t init = PTHREAD_MUTEX_INITIALIZER;
+os::Spinlock init_lock;
 
 //!< i386 specific startup code
 extern "C" void arch_startup()
 {
-    pthread_mutex_lock(&init);
+    init_lock.lock();
 
     if (!initialized) {
         arch::init_cpuid();
@@ -38,5 +38,6 @@ extern "C" void arch_startup()
         initialized = true;
     }
 
-    pthread_mutex_unlock(&init);
+
+    init_lock.unlock();
 }

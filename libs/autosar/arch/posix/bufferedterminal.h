@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include "hardware_threads.h"
 #include <cstring>
+#include <cstdio>
 #include <pthread.h>
 
 #define BUF_LEN 80
@@ -25,8 +26,8 @@ public:
 	virtual void putchar(char character) override {
 		if (printcpu) {
 			if (idx == 0) {
-				buf[idx++] = '0' + arch::get_cpuid();
-				buf[idx++] = '-';
+				snprintf(buf, 5, "%x-%x:", arch::get_cpuid(), sched_getcpu());
+				idx += 4;
 			}
 		}
 		buf[idx++] = character;

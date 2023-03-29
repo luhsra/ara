@@ -147,6 +147,9 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'andreas'/ 'spinlock','name': 'a',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'spinlock','name': 'b',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'spinlock','name': 'c',                     'oil': 'system.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'cores',   'name': '4',                     'oil': 'system.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'cores',   'name': '12',                    'oil': 'system.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'cores',   'name': '16',                    'oil': 'system.json'},
 ]
 subdir('multicore' / 'trampoline')
 

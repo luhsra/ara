@@ -151,6 +151,14 @@
 #define OS_CORE_ID_5 5
 #define OS_CORE_ID_6 6
 #define OS_CORE_ID_7 7
+#define OS_CORE_ID_8 8
+#define OS_CORE_ID_9 9
+#define OS_CORE_ID_10 10
+#define OS_CORE_ID_11 11
+#define OS_CORE_ID_12 12
+#define OS_CORE_ID_13 13
+#define OS_CORE_ID_14 14
+#define OS_CORE_ID_15 15
 #define OS_CORE_ID_MASTER OS_CORE_ID_0
 
 // #define DeclareMessage(x)						\
