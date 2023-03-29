@@ -213,7 +213,7 @@ class GenericSystemCalls(BaseCoder):
                 "void", [self.task_desc(kernelspace.arguments().task)])
 
         if curr_cpu != target_cpu:
-            self.call(kernelspace, "Machine::trigger_interrupt", "void", ["30", str(target_cpu), "true"])
+            self.call(kernelspace, "Machine::trigger_interrupt", "void", [str(self.generator.arch_rules.IPI_SIG), str(target_cpu), "true"])
         else:
             self.call(kernelspace,
                            "scheduler_[%d].Schedule_impl"%curr_cpu,
@@ -291,7 +291,7 @@ class GenericSystemCalls(BaseCoder):
                 "void", [tid, mask])
 
         if curr_cpu != target_cpu:
-            self.call(kernelspace, "Machine::trigger_interrupt", "void", ["30", str(target_cpu), "true"])
+            self.call(kernelspace, "Machine::trigger_interrupt", "void", [str(self.generator.arch_rules.IPI_SIG), str(target_cpu), "true"])
         else:
             self.call(kernelspace,
                            "scheduler_[%d].Schedule_impl"%curr_cpu,
@@ -474,7 +474,7 @@ class AlarmTemplate(CodeTemplate):
             )
 
         if alarm.cpu_id != alarm.impl.task.cpu_id:
-            ret += f"Machine::trigger_interrupt(30, {alarm.impl.task.cpu_id}, 0);\n"
+            ret += f"Machine::trigger_interrupt({self.generator.arch_rules.IPI_SIG}, {alarm.impl.task.cpu_id}, 0);\n"
         else:
             ret += f"scheduler_[{alarm.impl.task.cpu_id}].Schedule_impl(/* from_interrupt */ {str(is_isr).lower()});\n"
 

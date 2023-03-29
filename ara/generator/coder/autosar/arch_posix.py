@@ -9,6 +9,8 @@ class PosixArch(GenericArch):
 
     def __init__(self):
         super(PosixArch, self).__init__()
+        self.IPI_SIG = 10 # SIGUSR1 on x86 Linux
+        self.TERM_SIG = 12 # SIGUSR2
 
     def generate_startup_code(self):
         # generate other functions
@@ -84,7 +86,7 @@ class PosixArch(GenericArch):
             function=0,
             priority=0,
             category=0,
-            device=30, # SIGUSR1
+            device=self.IPI_SIG,
             artificial=True)
 
         shutdown = ISR(cfg=0,
@@ -93,7 +95,7 @@ class PosixArch(GenericArch):
             function=0,
             priority=0,
             category=0,
-            device=15, # SIGTERM
+            device=self.TERM_SIG,
             artificial=True)
 
         for isr in isrs + [ipi, shutdown]:

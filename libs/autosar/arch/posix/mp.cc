@@ -120,7 +120,7 @@ namespace arch
             for (int i = 0; i < MAX_CPUS; i++) {
                 if (i == curr_cpuid || !cpu_online(i) )
                     continue;
-                Machine::trigger_interrupt(SIGTERM, i);
+                Machine::trigger_interrupt(SIGUSR2, i);
             }
         }
     }
