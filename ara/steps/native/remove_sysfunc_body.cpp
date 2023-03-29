@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
 // SPDX-FileCopyrightText: 2022 Jan Neugebauer
+// SPDX-FileCopyrightText: 2023 Jan Neugebauer
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -34,7 +35,10 @@ namespace ara::step {
 				std::ostringstream loc_str;
 				try {
 					const auto& [source, line] = get_source_location(*instr);
-					loc_str << std::filesystem::canonical(source) << ":" << line;
+					std::filesystem::path abs_path =
+					    (std::filesystem::exists(source) ? std::filesystem::canonical(source)
+					                                     : std::filesystem::absolute(source));
+					loc_str << abs_path << ":" << line;
 				} catch (const LLVMError& e) {
 					loc_str << "<location unknown (no debug info?)>";
 				}
