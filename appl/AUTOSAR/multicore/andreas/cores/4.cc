@@ -17,5 +17,11 @@ void start()
 TEST_MAKE_OS_MAIN(start())
 
 TASK(T0) {
+    int cores = GetNumberOfActivatedCores();
+    test_init();
+    test_start();
+    test_eq(cores, 4);
+    test_positive_tests_eq(1);
+    test_finish();
     ShutdownAllCores(E_OK);
 }
