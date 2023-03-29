@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
 // SPDX-FileCopyrightText: 2022 Jan Neugebauer
+// SPDX-FileCopyrightText: 2023 Jan Neugebauer
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
