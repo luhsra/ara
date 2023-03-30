@@ -6,7 +6,6 @@
 
 ara_startup = '''
 """Automatic Real-time System Analyzer"""
-import importlib
 import sys
 import os
 import graph_tool
