@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2020 Björn Fiedler <fiedler@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2020 Gerion Entrup <entrup@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2023 Björn Fiedler <fiedler@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2023 Jan Neugebauer
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -14,7 +15,7 @@ validate_generator_runner = files('validate_generator_runner.py')
 dump_cmds = files('dump_cmds.py')
 gcc_version = files('gcc_version.py') # drop, when https://github.com/mesonbuild/meson/issues/7166 is resolved
 ctimeout = files('ctimeout')
-replace_in_textfile = files('replace_in_textfile.py')
+get_all_ara_python_files = files('get_all_ara_python_files.py')
 
 if get_option('arch') == 'arm'
   qemu_cmd = files('qemu_stm32.sh')
@@ -24,4 +25,6 @@ else
   gdb_qemu_cmd = disabler()
 endif
 
-meson.add_install_script('post_meson_install.sh', py3_inst.path(), replace_in_textfile)
+meson.add_install_script('post_meson_install.sh', py3_inst.path(),
+                         py3_inst.get_install_dir() / 'ara',
+                         get_option('datadir'))

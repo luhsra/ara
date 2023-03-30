@@ -77,9 +77,7 @@ foreach app : ir_apps + hw_apps
                                       freertos_default_config +
                                       libplatform_default_config +
                                       ir_flags +
-                                      clang_flags,
-                            install: get_option('build_examples_on_install'),
-                            install_dir: 'appl')
+                                      clang_flags)
   set_variable('freertos_' + app.underscorify(), app_vanilla_ll)
 
   named_elf_targets = []

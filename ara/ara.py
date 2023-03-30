@@ -51,7 +51,7 @@ class Main:
                             default=os.environ.get('ARA_LOGLEVEL', 'warn'))
         parser.add_argument('--dump', action='store_true', default=bool(os.environ.get('ARA_DUMP', '')),
                             help="emit a meaningful dot graph where possible")
-        parser.add_argument('--dump-prefix', default=os.path.join(os.environ.get('ARA_DUMP_DIR', 'dumps'), '{step_name}.{uuid}.'),
+        parser.add_argument('--dump-prefix', default=os.path.join('dumps', '{step_name}.{uuid}.'),
                             help="path that prefixes all dot files. The string "
                                 "'{step_name}' is replaced with the step name. "
                                 "The string '{uuid}' is replace with the uuid.")

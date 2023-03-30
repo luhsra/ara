@@ -1,21 +1,20 @@
 #!/bin/sh
 
+# SPDX-FileCopyrightText: 2023 Jan Neugebauer
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # Arguments
 readonly PYTHON="$1"
-readonly REPLACE_IN_TEXTFILE_SCRIPT="$2"
+readonly PYTHON_ARA_INSTALL_DIR="$2"
+readonly INSTALL_DATA_DIR="$3"
 
-# copy svfs ExtAPI.json
-# This can not be done in Meson because Mesons security concept does not allow accessing files in subdirectories directly
-mkdir -p "${MESON_INSTALL_DESTDIR_PREFIX}/include/Util/"
-cp "${MESON_SOURCE_ROOT}/subprojects/svf/include/Util/ExtAPI.json" "${MESON_INSTALL_DESTDIR_PREFIX}/include/Util/ExtAPI.json"
+# workaround: copy SVFs ExtAPI.json
+# install() in CMake will be ignored by Mesons Cmake module (https://github.com/mesonbuild/meson/issues/10298)
+# so we need to install SVFs ExtAPI.json in this project.
+# This can not be done in a Meson script because Mesons security concept does not allow accessing files in subprojects directly.
+mkdir -p "${MESON_INSTALL_DESTDIR_PREFIX}/${INSTALL_DATA_DIR}/svf"
+cp "${MESON_SOURCE_ROOT}/subprojects/svf/include/Util/ExtAPI.json" "${MESON_INSTALL_DESTDIR_PREFIX}/${INSTALL_DATA_DIR}/svf"
 
 # Compile python files
-"${PYTHON}" -O -m compileall "${MESON_INSTALL_DESTDIR_PREFIX}/python" -j 0 -o 0 -o 1 -o 2 --hardlink-dupes
-
-# Set __ARA_DEFAULT_INSTALL_DIR__ in start scripts and rename these scripts
-"${PYTHON}" "${REPLACE_IN_TEXTFILE_SCRIPT}" "${MESON_INSTALL_DESTDIR_PREFIX}/bin/ara.sh" "${MESON_INSTALL_DESTDIR_PREFIX}/bin/ara" __ARA_DEFAULT_INSTALL_DIR__ "${MESON_INSTALL_DESTDIR_PREFIX}"
-"${PYTHON}" "${REPLACE_IN_TEXTFILE_SCRIPT}" "${MESON_INSTALL_DESTDIR_PREFIX}/bin/ara-gui.sh" "${MESON_INSTALL_DESTDIR_PREFIX}/bin/ara-gui" __ARA_DEFAULT_INSTALL_DIR__ "${MESON_INSTALL_DESTDIR_PREFIX}"
-chmod a+x "${MESON_INSTALL_DESTDIR_PREFIX}/bin/ara"
-chmod a+x "${MESON_INSTALL_DESTDIR_PREFIX}/bin/ara-gui"
-rm "${MESON_INSTALL_DESTDIR_PREFIX}/bin/ara.sh"
-rm "${MESON_INSTALL_DESTDIR_PREFIX}/bin/ara-gui.sh"
+"${PYTHON}" -O -m compileall "${PYTHON_ARA_INSTALL_DIR}" -j 0 -o 0 -o 1 -o 2 --hardlink-dupes

@@ -18,11 +18,6 @@ project('ara', 'cpp',
                        'cpp_std=c++17',
                        'buildtype=debugoptimized'])
 
-# There is no way to check if meson is running as root so we make a warning:
-if get_option('prefix') == '/usr/local' or get_option('prefix') == '/usr' or get_option('prefix') == '/' or get_option('prefix') == 'C:/'
-    warning('prefix option is set to a system wide installation path. Do not invoke "meson install" as root before setting prefix to a local path. System wide installation is not supported!')
-endif
-
 add_project_arguments('-Werror=return-type', language: ['c', 'cpp'])
 # c-linkage is not correct, see https://github.com/cython/cython/issues/1839
 compiler = meson.get_compiler('cpp')
@@ -136,11 +131,11 @@ endforeach
 build_dir = meson.current_build_dir()
 source_dir = meson.current_source_dir()
 
-# build ARA itself
-subdir('ara')
-
 # tools for deploying
 subdir('tools')
+
+# build ARA itself
+subdir('ara')
 
 # Python optimization argument
 python_opt_arg = ''
@@ -150,8 +145,8 @@ elif get_option('python_optimization_level') == 2
     python_opt_arg = ' -OO'
 endif
 
-# ara startup script
-ara_py_content = '''#!@0@
+# convenience script to call ara without installing
+conv_wrapper = '''
 """Automatic Real-time System Analyzer"""
 import importlib
 import sys
@@ -162,17 +157,20 @@ def load(what, where):
     module = importlib.import_module(what)
     sys.modules[where] = module
 
-sys.path = [@1@] + sys.path
+sys.path = [@0@] + sys.path
 sys.setdlopenflags(sys.getdlopenflags() | os.RTLD_GLOBAL)
 
 import pyllco
-
+@1@
 load("graph_data", "ara.graph.graph_data")
 load("py_logging", "ara.steps.py_logging")
 load("step", "ara.steps.step")
 
 sys.setdlopenflags(sys.getdlopenflags() & ~os.RTLD_GLOBAL)
+'''
 
+ara_py_content = '''#!@0@
+@1@
 from ara.ara import Main
 main = Main()
 sys.exit(main.main())
@@ -180,51 +178,40 @@ sys.exit(main.main())
 
 python_dirs = [source_dir, pyllco_dir, step_dir, graph_data_dir]
 python_path = 'PYTHONPATH=' + ':'.join(python_dirs)
+conv_wrapper_formatted = conv_wrapper.format('"' + '", "'.join(python_dirs) + '"', '')
 
 ara_py = custom_target('ara-py',
     input: [],
     output: 'ara.py',
     depends: [step_mod, graph_data_mod],
-    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_py_content.format(py3_inst.path()+python_opt_arg, '"' + '", "'.join(python_dirs) + '"')],
+    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_py_content.format(py3_inst.path()+python_opt_arg, conv_wrapper_formatted)],
     build_by_default: true
 )
 
-ara_gui_py_content = '''#!@0@
-"""Automatic Real-time System Analyzer GUI"""
-import importlib
-import sys
-import os
-import graph_tool
+# ARA GUI
+subdir('resources')
 
-def load(what, where):
-    module = importlib.import_module(what)
-    sys.modules[where] = module
-
-sys.path = [@1@] + sys.path
-sys.setdlopenflags(sys.getdlopenflags() | os.RTLD_GLOBAL)
-
-import pyllco
-
+ara_gui_py_before_import = '''
 from ara.visualization.util import RESOURCES, USING_ARA_GUI
-RESOURCES.set_res_path(@2@)
+RESOURCES.set_res_path(@0@)
 USING_ARA_GUI.set(True)
+'''
 
-load("graph_data", "ara.graph.graph_data")
-load("py_logging", "ara.steps.py_logging")
-load("step", "ara.steps.step")
-
+ara_gui_py_content = '''#!@0@
+@1@
 import ara.ara as _ara
 import ara.visualization.main
 sys.exit()
 '''
 
-subdir('resources')
+ara_gui_py_before_import_formatted = ara_gui_py_before_import.format('"' + resources_dir + '"')
+conv_wrapper_formatted = conv_wrapper.format('"' + '", "'.join(python_dirs) + '"', ara_gui_py_before_import_formatted)
 
 ara_gui_py = custom_target('ara-gui-py',
     input: [],
     output: 'ara-gui.py',
     depends: [step_mod, graph_data_mod],
-    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_gui_py_content.format(py3_inst.path()+python_opt_arg, '"' + '", "'.join(python_dirs) + '"', '"' + resources_dir + '"')],
+    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_gui_py_content.format(py3_inst.path()+python_opt_arg, conv_wrapper_formatted)],
     build_by_default: true
 )
 

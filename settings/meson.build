@@ -147,6 +147,6 @@ llvm_lto_cmd_none = ['cp', '@INPUT@', '@OUTPUT@']
 llvm_lto_cmd_standard = llvm_opt_cmd
 llvm_lto_cmd_rle2 = llvm_opt_cmd + ['-load', sparse_rle2.full_path(), '-SparseRLE2', '-enable-new-pm=0']
 
-install_subdir(settings_dir,
-               exclude_files: ['meson.build'],
-               install_dir: '')
+#install_subdir(settings_dir,
+#               exclude_files: ['meson.build'],
+#               install_dir: get_option('datadir') / 'ara')

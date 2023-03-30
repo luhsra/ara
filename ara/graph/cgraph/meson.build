@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2021 Bastian Fuhlenriede
 # SPDX-FileCopyrightText: 2021 Jan Neugebauer
 # SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2023 Jan Neugebauer
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -29,7 +30,7 @@ graph_data_mod = py3_inst.extension_module('graph_data',
   override_options: 'b_lundef=false',
   dependencies: [py3_inst.dependency(), llvm_dep, boost_dep, graph_tool_dep, common_dep, pyllco_dep, svf_dep],
   install: true,
-  install_dir: 'lib'
+  subdir: 'ara' / 'graph'
 )
 graph_data_dir = meson.current_build_dir()
 

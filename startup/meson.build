@@ -4,69 +4,80 @@
 
 ## Code required to start installed version of ARA ##
 
-# expand ara user path to $HOME if relative
-if fs.is_absolute(get_option('ara_user_dir'))
-    ara_user_dir = get_option('ara_user_dir')
-else
-    ara_user_dir = fs.expanduser('~/' + get_option('ara_user_dir'))
-endif
+ara_startup = '''
+"""Automatic Real-time System Analyzer"""
+import importlib
+import sys
+import os
+import graph_tool
 
-python_dirs_installed = ['os.path.join(os.environ["ARA_INSTALL_DIR"], "python")',
-                         'os.path.join(os.environ["ARA_INSTALL_DIR"], "lib")']
-if pyllco_used_from_subproj
-    python_dirs_installed += ['os.path.join(os.environ["ARA_INSTALL_DIR"], "usr' / 'lib' / ('python' + py3_inst.language_version()) / 'site-packages")']
-endif
+sys.setdlopenflags(sys.getdlopenflags() | os.RTLD_GLOBAL)
+
+import pyllco
+@0@
+import ara.graph.graph_data
+import ara.steps.py_logging
+import ara.steps.step
+
+sys.setdlopenflags(sys.getdlopenflags() & ~os.RTLD_GLOBAL)
+'''
 
 ara_py_installed = custom_target('ara-py-installed',
     input: [],
     output: 'ara',
     depends: [step_mod, graph_data_mod],
-    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_py_content.format('#!/usr/bin/env python3', ', '.join(python_dirs_installed))],
+    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_py_content.format(py3_inst.path()+python_opt_arg, ara_startup.format(''))],
     install: true,
-    install_dir: 'python' / 'startup'
+    install_dir: get_option('bindir')
 )
+
+installed_resources_dir = 'os.path.join(os.environ["ARA_DATA_DIR"], "resources") if "ARA_DATA_DIR" in os.environ else "' + \
+                          get_option('prefix') / get_option('datadir') / 'ara' / 'resources' + '"'
+
+ara_startup_formatted = ara_startup.format(ara_gui_py_before_import.format(installed_resources_dir))
 
 ara_gui_py_installed = custom_target('ara-gui-py-installed',
     input: [],
     output: 'ara-gui',
     depends: [step_mod, graph_data_mod],
-    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_gui_py_content.format('#!/usr/bin/env python3', ', '.join(python_dirs_installed), 'os.path.join(os.environ["ARA_INSTALL_DIR"], "resources")')],
+    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_gui_py_content.format(py3_inst.path()+python_opt_arg, ara_startup_formatted)],
     install: true,
-    install_dir: 'python' / 'startup'
+    install_dir: get_option('bindir')
 )
 
-# Wrapper that is used if ARA is installed.
+# Create ara-wrapper and ara-gui-wrapper
 #
-# This wrapper is required because setting LD_LIBRARY_PATH in ara.py does not have an effect.
-# We need to set LD_LIBRARY_PATH beforehand.
-#
-# __ARA_DEFAULT_INSTALL_DIR__ will be set in the install script tools/post_meson_install.sh
-# There is no way to get ${MESON_INSTALL_DESTDIR_PREFIX} here so we need to set it in the install script.
+# These wrappers can be used to execute ARA without installing it properly.
+# Receiving a zip file and executing ara-wrapper is enough to run ARA.
 ara_wrapper_content = '''#!/bin/sh
 
-if [ "x${ARA_INSTALL_DIR}" = "x" ] ; then
-	ARA_INSTALL_DIR="__ARA_DEFAULT_INSTALL_DIR__"
-fi
+# Set environment variables for ARA.
+# This script allows to run ARA without installation in the system.
 
-if [ "x${ARA_USER_DIR}" = "x" ] ; then
-	ARA_USER_DIR="@2@"
-fi
-
-ARA_INSTALL_DIR="${ARA_INSTALL_DIR}" ARA_DUMP_DIR="${ARA_USER_DIR}/dumps" SVF_DIR="${ARA_INSTALL_DIR}" LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${ARA_INSTALL_DIR}/lib" @0@ "${ARA_INSTALL_DIR}/python/startup/@1@" "$@"
+SVF_EXT_API_JSON="@0@"
+export SVF_EXT_API_JSON
+PYTHONPATH="${PYTHONPATH}:@1@" LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:@2@" @3@ "@4@" "$@"
 '''
+
+ara_wrapper_formatted = ara_wrapper_content.format(get_option('prefix') / get_option('datadir') / 'svf' / 'ExtAPI.json',
+                                                   py3_inst.get_install_dir(), 
+                                                   get_option('prefix') / get_option('libdir'),
+                                                   py3_inst.path()+python_opt_arg,
+                                                   get_option('prefix') / get_option('bindir') / '@0@')
+
 ara_wrapper = custom_target('ara-wrapper',
     input: [],
-    output: 'ara.sh',
+    output: 'ara-wrapper',
     depends: [ara_py_installed],
-    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_wrapper_content.format(py3_inst.path()+python_opt_arg, 'ara', ara_user_dir)],
+    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_wrapper_formatted.format('ara')],
     install: true,
-    install_dir: 'bin'
+    install_dir: get_option('bindir')
 )
 ara_gui_wrapper = custom_target('ara-gui-wrapper',
     input: [],
-    output: 'ara-gui.sh',
+    output: 'ara-gui-wrapper',
     depends: [ara_gui_py_installed],
-    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_wrapper_content.format(py3_inst.path()+python_opt_arg, 'ara-gui', ara_user_dir)],
+    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_wrapper_formatted.format('ara-gui')],
     install: true,
-    install_dir: 'bin'
+    install_dir: get_option('bindir')
 )

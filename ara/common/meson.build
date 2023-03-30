@@ -8,9 +8,7 @@
 common_dependencies = [llvm_dep, boost_dep]
 libcommon = static_library('common',
     'llvm_common.cpp',
-    dependencies: common_dependencies,
-    install: true,
-    install_dir: 'lib'
+    dependencies: common_dependencies
 )
 
 common_inc = include_directories('.')

@@ -8,6 +8,7 @@
 # SPDX-FileCopyrightText: 2022 Björn Fiedler <fiedler@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2022 Jan Neugebauer
+# SPDX-FileCopyrightText: 2023 Jan Neugebauer
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -24,7 +25,7 @@ log_bridge = py3_inst.extension_module('py_logging',
   gnu_symbol_visibility: 'default',
   dependencies: py3_inst.dependency(),
   install: true,
-  install_dir: 'lib'
+  subdir: 'ara' / 'steps'
 )
 
 log_bridge_incl = include_directories('.')
@@ -114,6 +115,6 @@ step_mod = py3_inst.extension_module('step',
   link_depends: [log_bridge, graph_data_mod],
   dependencies: [log_dep, py3_inst.dependency(), llvm_dep, graph_tool_dep, graph_dep, common_dep, pyllco_dep, svf_dep],
   install: true,
-  install_dir: 'lib'
+  subdir: 'ara' / 'steps'
 )
 
