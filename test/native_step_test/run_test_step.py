@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
 
 # SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2023 Jan Neugebauer
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
-
-if __name__ == '__main__':
-    __package__ = 'test.native_step_test'
 
 import logging
 import sys
 
-from ..init_test import get_config
+try:
+    from init_test import get_config
+except ImportError:
+    if __name__ == '__main__':
+        __package__ = 'test.native_step_test'
+    from ..init_test import get_config
 
 from ara.util import init_logging
 from ara.graph import Graph
