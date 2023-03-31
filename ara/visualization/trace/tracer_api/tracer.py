@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2022 Jan Neugebauer
+# SPDX-FileCopyrightText: 2023 Jan Neugebauer
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -16,7 +17,7 @@ if USING_ARA_GUI:
     from ara.visualization.trace.trace_components import \
         BaseTraceElement, CFGNodeHighlightTraceElement, CallgraphNodeHighlightTraceElement, \
         NodeHighlightTraceElement, ResetChangesTraceElement, ResetPartialChangesTraceElement, \
-        SVFGNodeHighlightTraceElement, CallgraphPathHighlightTraceElement
+        SVFGNodeHighlightTraceElement, CallgraphPathHighlightTraceElement, PathHighlightTraceElement
 else:
     # stubs
     class BaseTraceElement:
@@ -153,9 +154,13 @@ class Tracer:
             if path.graph == GraphType.CALLGRAPH:
                 trace_elem = CallgraphPathHighlightTraceElement()
             else:
-                continue  # for now
+                trace_elem = PathHighlightTraceElement(path.graph)
+
             for edge in path.path:
-                trace_elem.add_edge(edge, self.low_level_trace.callgraph, color)
+                if path.graph == GraphType.CALLGRAPH:
+                    trace_elem.add_edge(edge, self.low_level_trace.callgraph, color)
+                else:
+                    trace_elem.add_edge(trace_lib.createGraphtoolEdge(edge), color)
             highlight_path_elems.append(trace_elem)
         return highlight_path_elems
 
@@ -212,14 +217,14 @@ class Tracer:
                     If you follow input edges, set forward to False:
                         In this case the destination node is the source of the last edge in path.
         """
+        goes_to = path.path[-1].target() if forward else path.path[-1].source()
         actions = self._handle_entity_reset(
-            ent, self._highlight_paths([path], ent.color))
-        self._handle_entity_reset(ent, actions)
+            ent, self._highlight_paths([path], ent.color) + self._highlight_nodes([GraphNode(goes_to, path.graph)], ent.color))
         self.low_level_trace.add_element(
             actions,
             self._format_trace_output(
                 ent,
-                f"goes to node {path.path[-1].target() if forward else path.path[-1].source()} via {path}"
+                f"goes to node {goes_to} via {path}"
             ))
 
     def duplicate(self, old_entity: Entity, new_name: str) -> Entity:
