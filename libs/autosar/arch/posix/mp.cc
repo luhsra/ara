@@ -9,11 +9,9 @@
 extern "C" int main(void);
 
 pthread_t cpuid[MAX_CPUS];
-os::Spinlock cores_lock;
 _Atomic(int) cores = 1;
 
-// two slots for recurrent access
-_Atomic(int) syncing_cores[2] = {0};
+_Atomic(int) syncing_cores[4] = {0};
 
 namespace arch
 {
@@ -21,9 +19,7 @@ namespace arch
         int hardware_number = *((int*)arg);
         cpuid[hardware_number] = pthread_self();
 
-        cores_lock.lock();
         cores++;
-        cores_lock.unlock();
 
         debug_core << "started core " << hardware_number << endl;
 
@@ -95,22 +91,17 @@ namespace arch
     {
         Machine::disable_interrupts();
 
-        cores_lock.lock();
-        cores --;
-        cpuid[arch::get_cpuid()] = 0;
+        /* sync all cores before machine shutdown */
+        arch::sync_all_hardware_threads(3);
 
-        if (cores > 0) {
-            cores_lock.unlock();
-            // not the last core, wait
+        if (arch::get_cpuid() == 0) {
+            Machine::shutdown();
+            Machine::unreachable();
+        } else {
             while(1) {
                 Machine::nop();
             }
         }
-        cores_lock.unlock();
-
-        // last core
-        Machine::shutdown();
-        Machine::unreachable();
     }
 
     void stop_other_hardware_threads()
@@ -124,7 +115,6 @@ namespace arch
             }
         }
     }
-
     /**
      * This function must be called on every thread.
      * On return, all threads are synchronized.
@@ -133,18 +123,11 @@ namespace arch
      */
     void sync_all_hardware_threads(int slot)
     {
-        bool s = !!slot;
-        cores_lock.lock();
-        syncing_cores[s] ++;
-        debug_core << "Syncing[" << s << "]: "<< syncing_cores[s] << "/" << cores << endl;
-        cores_lock.unlock();
+        syncing_cores[slot] ++;
+        debug_core << "Syncing[" << slot << "]: "<< syncing_cores[slot] << "/" << cores << endl;
 
         // wait until all cores have synced
-        while (syncing_cores[s] != cores);
-
-        cores_lock.lock();
-        syncing_cores[s] --;
-        cores_lock.unlock();
+        while (syncing_cores[slot] != cores);
     }
 
     int get_cpuid()

@@ -61,10 +61,11 @@ void IRQ::trigger_interrupt(int irq, int cpuid, bool sync) {
         ipi_cleared[cpuid] = false;
         pthread_kill(get_thread_id(cpuid), irq);
 
-        if (sync) {
+        // TODO this makes some threads hang!
+        /*if (sync) {
             while(ipi_cleared[cpuid] == false);
             debug_core << __FUNCTION__ << " completed" << endl;
-        }
+        }*/
     }
     else
         debug_core << "cpuid " << cpuid << " offline" << endl;

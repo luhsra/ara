@@ -240,7 +240,7 @@ extern "C" void AUTOSAR_StartCore(CoreIdType CoreID, StatusType *status) {
 extern "C" void AUTOSAR_ShutdownOS(StatusType arg0){
     debug_core << __FUNCTION__ << endl;
 
-    // Individual shutdown concept: dont sync
+    // Individual shutdown concept: dont sync before ShutdownHook
     CALL_HOOK(ShutdownHook, arg0);
     arch::stop_hardware_thread();
 }
@@ -251,7 +251,7 @@ extern "C" void AUTOSAR_ShutdownAllCores(StatusType arg0){
     arch::stop_other_hardware_threads();
 
     // Synchronized shutdown concept
-    arch::sync_all_hardware_threads(0);
+    arch::sync_all_hardware_threads(2);
     CALL_HOOK(ShutdownHook, arg0);
     arch::stop_hardware_thread();
 
