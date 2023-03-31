@@ -6,7 +6,7 @@ option('python_optimization_level', type : 'integer', min : 0, max : 2, value : 
     description: 'Optimize python bytecode by the provided level. Levels 1 and 2 disable asserts so choose them wisely.')
 
 option('enable_qemu_tests', type: 'boolean', value: false, yield: true)
-option('enable_step_tests', type: 'boolean', value: false, yield: true,
+option('enable_step_tests', type: 'boolean', value: true, yield: true,
     description: 'Unit tests for ARA itself.')
 option('enable_toplevel_tests', type: 'boolean', value: false, yield: true,
     description: 'Not actual tests, but stored common commandlines and examples for calling ARA.')
