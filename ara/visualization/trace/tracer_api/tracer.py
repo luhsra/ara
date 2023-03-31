@@ -76,7 +76,6 @@ class GraphPath:
 
 class Tracer:
 
-    # TODO: check why this is working (it is not used as static variable):
     _last_reset = [
     ]  # contains clear actions that need to be performed on next trace
 
