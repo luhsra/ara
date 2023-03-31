@@ -11,7 +11,7 @@ extern "C" int main(void);
 pthread_t cpuid[MAX_CPUS];
 _Atomic(int) cores = 1;
 
-_Atomic(int) syncing_cores[4] = {0};
+_Atomic(int) syncing_cores[arch::SYNC_MAX] = {0};
 
 namespace arch
 {
@@ -92,7 +92,7 @@ namespace arch
         Machine::disable_interrupts();
 
         /* sync all cores before machine shutdown */
-        arch::sync_all_hardware_threads(3);
+        arch::sync_all_hardware_threads(arch::SYNC_POST_SHUTDOWNHOOK);
 
         if (arch::get_cpuid() == 0) {
             Machine::shutdown();
@@ -118,16 +118,16 @@ namespace arch
     /**
      * This function must be called on every thread.
      * On return, all threads are synchronized.
-     * A syncing slot is used to protect against
+     * Multiple syncing points are used to protect against
      * recurrent access from the same cpu.
      */
-    void sync_all_hardware_threads(int slot)
+    void sync_all_hardware_threads(cpu_sync_point_t sync_point)
     {
-        syncing_cores[slot] ++;
-        debug_core << "Syncing[" << slot << "]: "<< syncing_cores[slot] << "/" << cores << endl;
+        int synced = ++syncing_cores[sync_point];
+        debug_core << "Syncing[" << sync_point << "]: "<< synced << "/" << cores << endl;
 
         // wait until all cores have synced
-        while (syncing_cores[slot] != cores);
+        while (syncing_cores[sync_point] != cores);
     }
 
     int get_cpuid()

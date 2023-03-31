@@ -8,6 +8,14 @@
 
 namespace arch {
 
+	typedef enum {
+		SYNC_PRE_STARTUPHOOK = 0,
+		SYNC_POST_STARTUPHOOK = 1,
+		SYNC_PRE_SHUTDOWNHOOK = 2,
+		SYNC_POST_SHUTDOWNHOOK = 3,
+		SYNC_MAX = 4,
+	} cpu_sync_point_t;
+
 	/**
 	 * \brief Starts another hardware thread (generic interface)
 	 *
@@ -26,7 +34,7 @@ namespace arch {
 	int get_cpuid();
 	unsigned int get_num_cores();
 	void init_cpuid();
-	void sync_all_hardware_threads(int slot = 0);
+	void sync_all_hardware_threads(cpu_sync_point_t);
 	void stop_hardware_thread();
 	void stop_other_hardware_threads();
 }

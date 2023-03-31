@@ -251,7 +251,7 @@ extern "C" void AUTOSAR_ShutdownAllCores(StatusType arg0){
     arch::stop_other_hardware_threads();
 
     // Synchronized shutdown concept
-    arch::sync_all_hardware_threads(2);
+    arch::sync_all_hardware_threads(SYNC_PRE_SHUTDOWNHOOK);
     CALL_HOOK(ShutdownHook, arg0);
     arch::stop_hardware_thread();
 

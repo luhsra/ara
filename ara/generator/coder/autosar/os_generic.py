@@ -242,5 +242,5 @@ class GenericOS(BaseCoder):
                 hook_function.add(ifblock)
 
             elif hook == "StartupHook":
-                self.call(hook_function, "arch::sync_all_hardware_threads", "void", ["0"], prepend=True)
-                self.call(hook_function, "arch::sync_all_hardware_threads", "void", ["1"])
+                self.call(hook_function, "arch::sync_all_hardware_threads", "void", ["arch::SYNC_PRE_STARTUPHOOK"], prepend=True)
+                self.call(hook_function, "arch::sync_all_hardware_threads", "void", ["arch::SYNC_POST_STARTUPHOOK"])
