@@ -26,6 +26,7 @@ if get_option('enable_step_tests')
         py3_inst,
         args: files('dependency_resolving.py'),
         env: [python_path],
+        depends: ara_py,
         suite: ['analysis', 'preproc']
     )
 
@@ -183,6 +184,7 @@ if get_option('enable_step_tests')
         py3_inst,
         args: files('multiple_configured_steps.py'),
         env: [python_path],
+        depends: ara_py,
         suite: ['analysis', 'preproc']
     )
 

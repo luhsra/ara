@@ -10,6 +10,7 @@ test('native-steps',
     py3_inst,
     args: files('native_steps.py'),
     env: [python_path],
+    depends: ara_py,
     suite: ['analysis', 'preproc']
 )
 
@@ -17,6 +18,7 @@ test('cfg-optimize',
     py3_inst,
     args: [run_test_cstep, 'CFGOptimizeTest', freertos_optimization],
     env: [python_path],
+    depends: ara_py,
     suite: ['analysis', 'preproc']
 )
 
@@ -24,6 +26,7 @@ test('fn-single-exit',
     py3_inst,
     args: [run_test_cstep, 'FnSingleExitTest', freertos_multi_exit],
     env: [python_path],
+    depends: ara_py,
     suite: ['analysis', 'preproc']
 )
 
@@ -31,6 +34,7 @@ test('llvm-map',
     py3_inst,
     args: [run_test_cstep, 'LLVMMapTest', freertos_icfg],
     env: [python_path],
+    depends: ara_py,
     suite: ['analysis', 'preproc']
 )
 
