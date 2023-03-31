@@ -39,7 +39,8 @@ elif get_option('arch') == 'posix'
   clang_flags += '-m32'
   clang_flags += '-gdwarf-4' # for valgrind
   if get_option('debug') == true
-    clang_flags += '-DDEBUG',
+    clang_flags += '-DDEBUG'
+  endif
   ld_flags += [
     '-lpthread',
     '-lrt',
