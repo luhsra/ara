@@ -6,7 +6,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 """Common init function for tests."""
-import importlib
 import json
 import sys
 import os
@@ -15,27 +14,37 @@ import tempfile
 from ara.os import get_os
 from dataclasses import dataclass
 
-
-def fake_step_module():
-    """Fake the step module into the correct package."""
-    sys.setdlopenflags(sys.getdlopenflags() | os.RTLD_GLOBAL)
+if bool(os.environ.get('ARA_TEST_USE_INSTALLED_ARA', '')):
     import graph_tool
+    sys.setdlopenflags(sys.getdlopenflags() | os.RTLD_GLOBAL)
+    
     import pyllco
-    def load(what, where):
-        module = importlib.import_module(what)
-        sys.modules[where] = module
-
-    load("graph_data", "ara.graph.graph_data")
-    load("py_logging", "ara.steps.py_logging")
-    load("step", "ara.steps.step")
+    import ara.graph.graph_data
+    import ara.steps.py_logging
+    import ara.steps.step
 
     sys.setdlopenflags(sys.getdlopenflags() & ~os.RTLD_GLOBAL)
 
+else:
+    import importlib
+    def fake_step_module():
+        """Fake the step module into the correct package."""
+        import graph_tool
+        sys.setdlopenflags(sys.getdlopenflags() | os.RTLD_GLOBAL)
+        import pyllco
+        def load(what, where):
+            module = importlib.import_module(what)
+            sys.modules[where] = module
 
-fake_step_module()
+        load("graph_data", "ara.graph.graph_data")
+        load("py_logging", "ara.steps.py_logging")
+        load("step", "ara.steps.step")
+
+        sys.setdlopenflags(sys.getdlopenflags() & ~os.RTLD_GLOBAL)
+    fake_step_module()
 
 
-# this imports has to be _below_ the call to fake_step_module
+# these imports has to be _below_ the above imports
 from ara.util import init_logging, get_logger
 from ara.graph import Graph
 from ara.stepmanager import StepManager
