@@ -213,7 +213,8 @@ class Tracer:
                     If you follow input edges, set forward to False:
                         In this case the destination node is the source of the last edge in path.
         """
-        actions = self._handle_entity_reset(ent, [])  # TODO: add action
+        actions = self._handle_entity_reset(
+            ent, self._highlight_paths([path], ent.color))
         self._handle_entity_reset(ent, actions)
         self.low_level_trace.add_element(
             actions,
