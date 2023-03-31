@@ -66,6 +66,9 @@ class PosixArch(GenericArch):
 
         self.call(handler, "AUTOSAR_ISR_"+isr.name)
 
+        if not isr.artificial and isr.device in [self.IPI_SIG, self. TERM_SIG]:
+            raise ValueError("ISR device {isr.device} conflicts with an internal signal")
+
         forward = FunctionDeclaration("AUTOSAR_ISR_"+isr.name, extern_c=True)
         self.generator.source_file.function_manager.add(forward)
 

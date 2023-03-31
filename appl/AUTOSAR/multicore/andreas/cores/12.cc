@@ -28,7 +28,7 @@ TASK(T0) {
     int cores = GetNumberOfActivatedCores();
     test_init();
     test_start();
-    test_eq(cores, 4);
+    test_eq(cores, 12);
     test_positive_tests_eq(1);
     test_finish();
     ShutdownAllCores(E_OK);
