@@ -15,7 +15,7 @@ BufferedTerminal debug_core_arr[MAX_CPUS];
 
 #else // DEBUG
 
-BufferedTerminal kout(Terminal::STDOUT);
+BufferedTerminal kout(Terminal::STDOUT, false);
 Null_Stream debug;
 
 #endif // DEBUG
