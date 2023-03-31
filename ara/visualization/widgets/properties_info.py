@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2023 Jan Neugebauer
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 from PySide6.QtWidgets import QTableView
 from PySide6.QtCore import QAbstractTableModel, Qt, QSize
