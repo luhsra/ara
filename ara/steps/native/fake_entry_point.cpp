@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2020 Björn Fiedler <fiedler@sra.uni-hannover.de>
 // SPDX-FileCopyrightText: 2020 Gerion Entrup <entrup@sra.uni-hannover.de>
 // SPDX-FileCopyrightText: 2021 Kenny Albes
+// SPDX-FileCopyrightText: 2023 Jan Neugebauer
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -65,10 +66,12 @@ namespace ara::step {
 				args.emplace_back(&arg);
 			}
 
-			CallInst* o_call = builder.CreateCall(old_entry_point, args, "old_entry");
 			if (old_entry_point->getReturnType()->isVoidTy()) {
+				// It is not allowed to assign a name if return type is 'void'
+				builder.CreateCall(old_entry_point, args);
 				builder.CreateRetVoid();
 			} else {
+				CallInst* o_call = builder.CreateCall(old_entry_point, args, "old_entry");
 				builder.CreateRet(o_call);
 			}
 		}
