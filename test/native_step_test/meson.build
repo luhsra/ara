@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2019 Björn Fiedler <fiedler@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2023 Jan Neugebauer
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -32,3 +33,5 @@ test('llvm-map',
     env: [python_path],
     suite: ['analysis', 'preproc']
 )
+
+# bb-split and comp-insert are in parrot
