@@ -1,0 +1,15 @@
+[
+    ["___pause", "sleep"],
+    ["__ara_fake_entry", "main"],
+    ["_open64", "sleep"],
+    ["_printf", "___pause"],
+    ["main", "___pause"],
+    ["main", "_open64"],
+    ["main", "_printf"],
+    ["main", "pause"],
+    ["main", "pthread_cancel"],
+    ["main", "pthread_cancel.3"],
+    ["main", "pthread_cond_timedwait"],
+    ["main", "pthread_join"],
+    ["pthread_cancel.3", "sleep"]
+]

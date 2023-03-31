@@ -5,11 +5,13 @@
 # SPDX-FileCopyrightText: 2022 Domenik Kuhn
 # SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2022 Jan Neugebauer
+# SPDX-FileCopyrightText: 2023 Jan Neugebauer
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 instance_graph_test = files('instance_graph.py')
 instance_graph_stats = files('instance_graph_stats.py')
+test_dir = meson.current_source_dir()
 
 if get_option('enable_step_tests')
     test('create-abbs',
@@ -232,3 +234,5 @@ if get_option('enable_step_tests')
 
     subdir('native_step_test')
 endif
+
+subdir('posix_test')
