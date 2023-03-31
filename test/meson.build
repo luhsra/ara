@@ -278,6 +278,7 @@ if get_option('enable_step_tests')
         'sched',
         'andreas/ipi',
         'andreas/spinlock',
+        'andreas/cores',
         'trampoline/mc_coreid_s1',
         'trampoline/mc_autostart_s1',
         'trampoline/mc_autostart_s2',

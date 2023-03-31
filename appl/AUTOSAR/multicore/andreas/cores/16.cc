@@ -1,6 +1,7 @@
 #include "autosar/os.h"
 #include "test/test.h"
 
+#include <sys/sysinfo.h>
 void start()
 {
     StatusType rv;
@@ -32,7 +33,7 @@ TASK(T0) {
     int cores = GetNumberOfActivatedCores();
     test_init();
     test_start();
-    test_eq(cores, 16);
+    test_eq(cores, get_nprocs());
     test_positive_tests_eq(1);
     test_finish();
     ShutdownAllCores(E_OK);
