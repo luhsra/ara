@@ -37,10 +37,9 @@ if get_option('arch') == 'i386'
   clang_flags += '-DX86_STUB=1'
 elif get_option('arch') == 'posix'
   clang_flags += '-m32'
-  clang_flags += [
-    '-DDEBUG',
-    '-gdwarf-4',
-  ]
+  clang_flags += '-gdwarf-4' # for valgrind
+  if get_option('debug') == true
+    clang_flags += '-DDEBUG',
   ld_flags += [
     '-lpthread',
     '-lrt',
