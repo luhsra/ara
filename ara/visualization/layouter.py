@@ -2,6 +2,7 @@
 # SPDX-FileCopyrightText: 2022 Bastian Fuhlenriede
 # SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2022 Jan Neugebauer
+# SPDX-FileCopyrightText: 2023 Jan Neugebauer
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -232,7 +233,9 @@ class Layouter(QObject):
 
                     self.cfg_view.add_edge(str(hash(edge.source())),
                                            str(hash(edge.target())),
-                                           edge_type=cfg.ep.type[edge])
+                                           edge_type=cfg.ep.type[edge],
+                                           source=str(int(edge.source())),
+                                           target=str(int(edge.target())))
 
         except Exception as e:
             print(e)
@@ -270,7 +273,9 @@ class Layouter(QObject):
             self.instance_graph_view.add_edge(
                 str(hash(edge.source())),
                 str(hash(edge.target())),
-                label=instance_graph.ep.label[edge])
+                label=instance_graph.ep.label[edge],
+                source=str(int(edge.source())),
+                target=str(int(edge.target())))
 
     def _update_svfg_view(self,
                           extension_points: list[Vertex],
@@ -312,6 +317,8 @@ class Layouter(QObject):
                 self.svfg_view.add_edge(
                     str(hash(edge.source())),
                     str(hash(edge.target())),
+                    source=str(int(edge.source())),
+                    target=str(int(edge.target())),
                 )
                 created_edges.add(edge)
                 add_adjacent_node(edge.source())

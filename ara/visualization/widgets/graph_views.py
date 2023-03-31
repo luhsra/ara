@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2022 Bastian Fuhlenriede
 # SPDX-FileCopyrightText: 2022 Jan Neugebauer
+# SPDX-FileCopyrightText: 2023 Jan Neugebauer
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -275,7 +276,8 @@ class BaseGraphView(QGraphicsView):
         """
         if isinstance(edge, GraphEdge):
             trace_setting = trace_lib.TraceElementSetting(
-                False, self.graph_type, edge.id)
+                False, self.graph_type, trace_lib.GraphtoolEdge(int(edge.data.attr["source"]),
+                                                                int(edge.data.attr["target"])))
             if trace_handler.INSTANCE.gui_element_settings.__contains__(
                     trace_setting):
                 trace_handler.INSTANCE.gui_element_settings[
@@ -329,6 +331,18 @@ class CallGraphView(BaseGraphView):
                 node.widget.setProperty("selected", "true")
                 node.selected = True
                 node.reload_stylesheet()
+
+    def handle_edge_add(self, edge):
+        """
+            Applies edge settings if they exist.
+        """
+        if isinstance(edge, GraphEdge):
+            trace_setting = trace_lib.TraceElementSetting(
+                False, self.graph_type, edge.id)
+            if trace_handler.INSTANCE.gui_element_settings.__contains__(
+                    trace_setting):
+                trace_handler.INSTANCE.gui_element_settings[
+                    trace_setting].apply(edge)
 
     def setup_signals(self):
         super().setup_signals()

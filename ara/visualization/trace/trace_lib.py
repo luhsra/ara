@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2022 Bastian Fuhlenriede
 # SPDX-FileCopyrightText: 2022 Jan Neugebauer
+# SPDX-FileCopyrightText: 2023 Jan Neugebauer
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -7,6 +8,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from ara.graph.mix import GraphType
+from graph_tool.libgraph_tool_core import Vertex, Edge
 
 
 # The color numbers are used for determining the correct style in the style sheet.
@@ -30,3 +32,13 @@ class TraceElementSetting:
     is_vertex: bool
     graph: GraphType
     obj: any
+
+@dataclass(frozen=True, order=True)
+class GraphtoolEdge:
+    """Wrapper around Graphtool Edge"""
+    source: int
+    target: int
+
+def createGraphtoolEdge(edge: Edge):
+    """Construct new GraphtoolEdge"""
+    return GraphtoolEdge(int(edge.source()), int(edge.target()))
