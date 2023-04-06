@@ -6,12 +6,8 @@ DeclareTask(T10);
 DeclareTask(T20);
 DeclareTask(T30);
 
-//#define DecEvent(x) DeclareEvent(x, 1 << __COUNTER__)
-//DecEvent(E1);
-//DecEvent(E2);
-
-DeclareEvent(E1, 1 << 3);
-DeclareEvent(E2, 1 << 6);
+DeclareEvent(E1, 1);
+DeclareEvent(E2, 2);
 
 DeclareCounter(C1);
 DeclareCounter(C2);
