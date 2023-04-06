@@ -1,13 +1,13 @@
 #include "test/test.h"
 
 extern "C" {
-	bool global_all_ok;
-	int positive_tests;
-	int experiment_number;
+	_Atomic(bool) global_all_ok;
+	_Atomic(int) positive_tests;
+	_Atomic(int) experiment_number;
 	expected_value_t expected_values[EXPECTED_VALUES_MAX];
-	bool interrupts_suspended = false;
+	_Atomic(bool) interrupts_suspended = false;
     char trace_table[256];
-    unsigned char trace_table_idx = 0;
+    _Atomic(unsigned char) trace_table_idx = 0;
 
     volatile uint32_t fail_trace = 0;
 

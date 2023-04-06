@@ -69,25 +69,25 @@ typedef unsigned int expected_value_t;
 
 extern "C" {
 	//! all tests (so far) passed
-	extern bool global_all_ok;
+	extern _Atomic(bool) global_all_ok;
 
 	//! number of positive checks in this test
-	extern int positive_tests;
+	extern _Atomic(int) positive_tests;
 
 	//! number of current experiment
-	extern int experiment_number;
+	extern _Atomic(int) experiment_number;
 
 	//! buffer for expected result values
 	extern expected_value_t expected_values[EXPECTED_VALUES_MAX];
 
 	//! interrupts were enabled before test checks
-	extern bool interrupts_suspended;
+	extern _Atomic(bool) interrupts_suspended;
 
 	//! buffer for task activation records
 	extern char trace_table[256];
 
 	//! index for trace_table
-	extern unsigned char trace_table_idx;
+	extern _Atomic(unsigned char) trace_table_idx;
 
 	/**
 	 * @name User supplied functions
