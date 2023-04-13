@@ -69,7 +69,7 @@ class IPIAvoidance(Step):
             if st2sy.vertex(sync).in_degree() == 2:
                 for state in st2sy.vertex(sync).in_neighbors():
                     syscall_name = mstg.get_syscall_name(state)
-                    if syscall_name == "AUTOSAR_ActivateTask":
+                    if syscall_name == "AUTOSAR_ActivateTask" or syscall_name == "AUTOSAR_SetEvent":
                         ipi_needed, handled = self._is_ipi_needed(state)
                         out.append({
                             "state": mstg.vp.state[state].id,
