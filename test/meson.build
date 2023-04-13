@@ -277,6 +277,7 @@ if get_option('enable_step_tests')
         'ecc1/eventisr1',
         'sched',
         'andreas/ipi',
+        'andreas/ipi2',
         'andreas/spinlock',
         'andreas/cores',
         'trampoline/mc_coreid_s1',
