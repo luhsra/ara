@@ -6,6 +6,7 @@ from ..elements.IncludeManager import Include
 from .arch_posix import PosixArch
 
 from .syscall_generic import GenericSystemCalls
+from .syscall_specialized import SpecializedSystemCalls
 from .implementations import add_impl as _add_impl
 
 from ..elements import CodeTemplate, Function
@@ -38,7 +39,7 @@ class AUTOSARGenericOS(GenericOS):
         return ['AutosarGeneratorIR']
 
     def get_syscall_rules(self):
-        return GenericSystemCalls
+        return SpecializedSystemCalls
 
     def get_arch_rules(self, arch):
         return self.arch_choices[arch]
