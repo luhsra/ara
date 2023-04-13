@@ -26,6 +26,22 @@ class SpecializedSystemCalls(GenericSystemCalls):
         else:
             super().ActivateTask(syscall, userspace, kernelspace)
 
+    def SetEvent(self, syscall, userspace, kernelspace):
+        # check if IPI not needed
+        if not self.ipi_needed(syscall):
+            target_cpu = kernelspace.arguments().task.cpu_id
+
+            tid = str(kernelspace.arguments().task.impl.task_id)
+            mask = str(kernelspace.arguments().event_mask)
+
+            self.call(kernelspace, "scheduler_[%d].tlist.set_events"%target_cpu,
+                    "void", [tid, mask])
+
+            kernelspace.add(Statement("debug_core << \"IPI Avoided\" << endl"))
+
+        else:
+            super().SetEvent(syscall, userspace, kernelspace)
+
 
     def ipi_needed(self, abb):
         step_data = self.ara_graph.step_data["IPIAvoidance"]
