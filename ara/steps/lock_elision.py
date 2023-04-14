@@ -29,8 +29,6 @@ class LockElision(Step):
               lambda x: x.on_hold and len(x.wait_for) > 0)]
 
     def _can_elide(self, state, cpu_id, spins):
-        if spins:
-            return False, None
 
         def get_abb_spinlock_syscall(state):
             syscall_name = mstg.get_syscall_name(state)
@@ -78,7 +76,7 @@ class LockElision(Step):
                         spin = mstg.get_exec_state(predecessor) == ExecState.waiting # check if spinning on this spinlock
                         if spin:
                             can_elide = False
-                    self._log.warning("%s (%s) -> %s (%s) spins: %s",
+                    self._log.debug("%s (%s) -> %s (%s) spins: %s",
                                         predecessor, mstg.vp.state[predecessor].id,
                                         curr_state, mstg.vp.state[curr_state].id,
                                         spin)
@@ -91,7 +89,8 @@ class LockElision(Step):
                 if next not in visited and next not in queue:
                     queue.append(next)
 
-        self._log.warning("#####")
+        if spins:
+            can_elide = False
 
         return can_elide, release_spinlock_abb
 
