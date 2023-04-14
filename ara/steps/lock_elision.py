@@ -7,7 +7,7 @@
 """Container for LockElision."""
 from ara.os.autosar import Spinlock
 from ara.os.os_base import ExecState
-from ara.graph import MSTType
+from ara.graph import MSTType, StateType
 from .step import Step
 
 from .option import Option, Bool
@@ -27,6 +27,73 @@ class LockElision(Step):
     #  Function which specifies that the lock is spinning)
     LOCKS = [(Spinlock, lambda x: x.name,
               lambda x: x.on_hold and len(x.wait_for) > 0)]
+
+    def _can_elide(self, state, cpu_id, spins):
+        if spins:
+            return False, None
+
+        def get_abb_spinlock_syscall(state):
+            syscall_name = mstg.get_syscall_name(state)
+            abb = mstg.vp.state[state].cpus.one().abb
+            if (syscall_name) not in ["AUTOSAR_GetSpinlock", "AUTOSAR_TryToGetSpinlock", "AUTOSAR_ReleaseSpinlock"]:
+                spinlock = None
+            else:
+                spinlock = self._graph.cfg.vp.arguments[abb].spinlock
+            return abb, spinlock, syscall_name
+
+        mstg = self._graph.mstg
+        st2sy = mstg.edge_type(MSTType.st2sy)
+        follow_sync = mstg.edge_type(MSTType.follow_sync)
+
+        can_elide = True
+        get_spinlock_abb, spinlock, _ = get_abb_spinlock_syscall(state)
+        release_spinlock_abb = None
+
+        queue = []
+        queue += st2sy.vertex(state).out_neighbors()
+        visited = []
+
+        while (queue):
+            curr_state = queue.pop(0) # FIFO -> BFS
+            visited.append(curr_state)
+
+            stop_search_subtree = False
+
+            if mstg.vp.type[curr_state] == StateType.entry_sync:
+                self._log.debug(f"SP entry {curr_state}")
+
+                for e in st2sy.vertex(curr_state).in_edges(): # find all predecessors
+                    predecessor = mstg.vertex(e.source())
+                    pre_abb, pre_spinlock, pre_syscall_name = get_abb_spinlock_syscall(predecessor)
+
+                    # Find ReleaseSpinlock on same cpu id with same spinlock
+                    if mstg.vp.state[predecessor].cpus.one().id == cpu_id and pre_spinlock == spinlock and pre_syscall_name == "AUTOSAR_ReleaseSpinlock":
+                        self._log.debug(f"matching ReleaseSpinlock in {predecessor}")
+                        release_spinlock_abb = pre_abb
+                        stop_search_subtree = True
+
+                    # Find GetSpinlock on any other CPU with same spinlock -> may be spinning
+                    spin = False
+                    if mstg.vp.state[predecessor].cpus.one().id != cpu_id and pre_spinlock == spinlock and pre_syscall_name == "AUTOSAR_GetSpinlock":
+                        spin = mstg.get_exec_state(predecessor) == ExecState.waiting # check if spinning on this spinlock
+                        if spin:
+                            can_elide = False
+                    self._log.warning("%s (%s) -> %s (%s) spins: %s",
+                                        predecessor, mstg.vp.state[predecessor].id,
+                                        curr_state, mstg.vp.state[curr_state].id,
+                                        spin)
+
+            if stop_search_subtree:
+                continue
+            # enqueue next states
+            exit = [v for v in mstg.vertex(curr_state).out_neighbors()].pop() # curr state is entry, so this must must be exit SP
+            for next in follow_sync.vertex(exit).out_neighbors(): # follow sync links the next entry SP
+                if next not in visited and next not in queue:
+                    queue.append(next)
+
+        self._log.warning("#####")
+
+        return can_elide, release_spinlock_abb
 
     def _may_spin(self, state, cpu_id):
         mstg = self._graph.mstg
@@ -91,17 +158,22 @@ class LockElision(Step):
             if syscall_name != 'AUTOSAR_GetSpinlock' and syscall_name != 'AUTOSAR_TryToGetSpinlock':
                 continue
             spins, handled = self._may_spin(state, cpu_id)
+            elide, release_abb = self._can_elide(state, cpu_id, spins)
             details[mstg.vp.state[state].id] = {
                 "state": mstg.vp.state[state].id,
                 "abb" : mstg.vp.state[state].cpus.one().abb,
                 "spins": spins,
+                "elide": elide,
+                "release_abb": release_abb
             }
             handled_sync |= handled
 
         for res in details.values():
             s = {True: "will spin", False: "won't spin"}[res['spins']]
+            e = {True: "can elide", False: "cannot elide"}[res['elide']]
             abb_name = self._graph.cfg.vp.name[res['abb']]
             self._log.warn(f"State {res['state']} ({abb_name}) {s}")
+            self._log.warn(f"State {res['state']} ({abb_name}) {e}")
 
         if deadlock:
             if self.fail_on_deadlock.get():
