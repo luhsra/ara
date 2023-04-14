@@ -66,6 +66,19 @@ class SpecializedSystemCalls(GenericSystemCalls):
             super().GetSpinlock(syscall, userspace, kernelspace)
 
 
+    def ReleaseSpinlock(self, syscall, userspace, kernelspace):
+        # check if Locking not needed
+        if not self.lock_needed(syscall, True):
+            self.call(kernelspace,
+                "scheduler_["+str(userspace.calling_task.cpu_id)+"].ReleaseSpinlock_impl",
+                "StatusType",
+                [self.task_desc(userspace.calling_task), str(kernelspace.arguments().spinlock.impl.descriptor.name), "true"], name = "result")
+            kernelspace.add(Statement("debug_core << \"Unlock Elided\" << endl"))
+
+            self.log_specialization(syscall)
+        else:
+            super().ReleaseSpinlock(syscall, userspace, kernelspace)
+
     def ipi_needed(self, abb):
         needed = True
         step_data = self.ara_graph.step_data["IPIAvoidance"]
@@ -80,13 +93,17 @@ class SpecializedSystemCalls(GenericSystemCalls):
 
         return needed
 
-    def lock_needed(self, abb):
+    def lock_needed(self, abb, release = False):
         needed = True
         step_data = self.ara_graph.step_data["LockElision"]["callsites"]
 
         for lock in step_data.values(): # check results
-            if lock["abb"] != abb:
+            if release and lock["release_abb"] != abb:
                 continue
+
+            if not release and lock["abb"] != abb:
+                continue
+
             if not lock["elide"]: # cannot be elided in at least one state
                 return True
 

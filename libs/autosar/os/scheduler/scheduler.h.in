@@ -149,7 +149,8 @@ struct Scheduler {
         return rc;
     }
 
-    forceinline StatusType TryToGetSpinlock_impl(const Task &task, os::Spinlock &sl, TryToGetSpinlockType* success) {
+    forceinline StatusType TryToGetSpinlock_impl(const Task &task, os::Spinlock &sl, TryToGetSpinlockType* success, bool elide = false) {
+        StatusType rc = E_OK;
         debug_core << __FUNCTION__ << "(" <<(int) task.id <<  ", " << sl.id << ")" << endl;
 
         TaskList::spinlock_mask_t mask = tlist.get_task_spinlock_mask(task.cpuid);
@@ -157,17 +158,22 @@ struct Scheduler {
             debug_core << "Error: CPU "<< (int) task.cpuid <<" holds locks, mask: " << mask << endl;
             return E_NOT_OK;
         }
+        if (!elide)
+            rc = sl.trylock(success);
+        else
+            *success == TRYTOGETSPINLOCK_SUCCESS;
 
-        StatusType rc = sl.trylock(success);
         if (*success == TRYTOGETSPINLOCK_SUCCESS)
             tlist.task_spin_lock(task.id, sl.id);
         return rc;
     }
 
-    forceinline StatusType ReleaseSpinlock_impl(const Task &task, os::Spinlock &sl) {
+    forceinline StatusType ReleaseSpinlock_impl(const Task &task, os::Spinlock &sl, bool elide = false) {
+        StatusType rc = E_OK;
         debug_core << __FUNCTION__ << "(" << (int) task.id <<  ", " << sl.id << ")" << endl;
 
-        StatusType rc = sl.unlock();
+        if (!elide)
+            rc = sl.unlock();
         if (rc == 0)
             tlist.task_spin_unlock(task.id, sl.id);
         return rc;
