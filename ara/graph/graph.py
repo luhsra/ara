@@ -277,7 +277,7 @@ class CFG(graph_tool.Graph):
 
     def get_entry_bb(self, abb):
         """Return the entry BB of the given ABB."""
-        return self._get_entry(function, edge_type=CFType.a2b)
+        return self._get_entry(abb, edge_type=CFType.a2b)
 
     def _get_exit(self, block, level):
         block = self.vertex(block)
