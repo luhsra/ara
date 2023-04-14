@@ -87,7 +87,7 @@ class SpecializedSystemCalls(GenericSystemCalls):
         for lock in step_data.values(): # check results
             if lock["abb"] != abb:
                 continue
-            if lock["spins"]: # needed in at least one state
+            if not lock["elide"]: # cannot be elided in at least one state
                 return True
 
             needed = False
