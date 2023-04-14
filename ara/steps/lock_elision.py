@@ -88,7 +88,7 @@ class LockElision(Step):
                 continue
             state, cpu_id, irq = mstg.get_syscall_state(sync)
             syscall_name = mstg.get_syscall_name(state)
-            if syscall_name != 'AUTOSAR_GetSpinlock':
+            if syscall_name != 'AUTOSAR_GetSpinlock' and syscall_name != 'AUTOSAR_TryToGetSpinlock':
                 continue
             spins, handled = self._may_spin(state, cpu_id)
             details[mstg.vp.state[state].id] = {
