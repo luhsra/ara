@@ -11,6 +11,7 @@ private:
     bool state;
 
 public:
+    bool elide = false;
     const int id;
     Spinlock (const Spinlock&) = delete;
     Spinlock& operator= (const Spinlock&) = delete;
