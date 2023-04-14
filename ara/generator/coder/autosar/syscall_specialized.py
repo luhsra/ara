@@ -46,16 +46,12 @@ class SpecializedSystemCalls(GenericSystemCalls):
     def ipi_needed(self, abb):
         needed = True
         step_data = self.ara_graph.step_data["IPIAvoidance"]
-        states = [self.ara_graph.mstg.vp.state[s] for s in self.ara_graph.mstg.vertices() if self.ara_graph.mstg.vp.state[s] != None]
 
         for ipi in step_data: # check results
-            for state in states:
-                if state.id == ipi["state"]: # search for matching state
-                    state_abb = state.cpus.one().abb # get abb of state
-                    if state_abb != abb:
-                        continue
-                    if ipi["ipi_needed"] == False:
-                        needed = False
-                    else:
-                        return True
+            if ipi["abb"] != abb:
+                continue
+            if ipi["ipi_needed"] == False:
+                needed = False
+            else:
+                return True
         return needed
