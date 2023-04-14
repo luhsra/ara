@@ -1,7 +1,6 @@
 #include "spinlock.h"
 #include <pthread.h>
 #include <errno.h>
-#include "output.h"
 
 using namespace os;
 
@@ -15,11 +14,6 @@ Spinlock::~Spinlock() {
 }
 
 StatusType Spinlock::lock() {
-    if (elide) {
-        debug_core << "Spinlock::lock() elided" << endl;
-        return E_OK;
-    }
-
     int rc = pthread_spin_lock(&sl);
     if (rc == 0) {
         return E_OK;
@@ -27,11 +21,6 @@ StatusType Spinlock::lock() {
     return E_NOT_OK;
 }
 StatusType Spinlock::trylock(TryToGetSpinlockType* success) {
-    if (elide) {
-        debug_core << "Spinlock::trylock() elided" << endl;
-        return E_OK;
-    }
-
     int rc = pthread_spin_trylock(&sl);
     if (rc == EBUSY) {
         *success = TRYTOGETSPINLOCK_NOSUCCESS;
@@ -45,12 +34,6 @@ StatusType Spinlock::trylock(TryToGetSpinlockType* success) {
     }
 }
 StatusType Spinlock::unlock() {
-    if (elide) {
-        elide = false;
-        debug_core << "Spinlock::unlock() elided" << endl;
-        return E_OK;
-    }
-
     int rc = pthread_spin_unlock(&sl);
     if (rc == 0) {
         return E_OK;

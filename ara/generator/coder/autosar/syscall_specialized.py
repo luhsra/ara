@@ -59,6 +59,7 @@ class SpecializedSystemCalls(GenericSystemCalls):
                 "scheduler_["+str(userspace.calling_task.cpu_id)+"].GetSpinlock_impl",
                 "StatusType",
                 [self.task_desc(userspace.calling_task), str(kernelspace.arguments().spinlock.impl.descriptor.name), "true"], name = "result")
+            kernelspace.add(Statement("debug_core << \"Lock Elided\" << endl"))
 
             self.log_specialization(syscall)
         else:
