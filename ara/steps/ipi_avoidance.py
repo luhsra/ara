@@ -80,6 +80,7 @@ class IPIAvoidance(Step):
 
         for res in out:
             s = {True: "needs", False: "doesn't need"}[res['ipi_needed']]
-            self._log.warn(f"State {res['state']} {s} an IPI.")
+            abb_name = self._graph.cfg.vp.name[res['abb']]
+            self._log.warn(f"State {res['state']} ({abb_name}) {s} an IPI.")
 
         self._set_step_data(out)
