@@ -70,12 +70,12 @@
         "justMyCode": true
         },
         {
-        "name": "autosar_multicore_andreas_spinlock_c",
+        "name": "autosar_multicore_andreas_spinlock_e",
         "type": "python",
         "request": "launch",
         "program": "build/ara.py",
         "args": [
-            "build/appl/AUTOSAR/autosar_multicore_andreas_spinlock_c.ll",
+            "build/appl/AUTOSAR/autosar_multicore_andreas_spinlock_e.ll",
             "--os=AUTOSAR",
             "--oilfile=appl/AUTOSAR/multicore/andreas/spinlock/system.json",
             "--step-settings=settings/autosar_generator.json",
