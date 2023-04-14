@@ -93,13 +93,15 @@ class LockElision(Step):
             spins, handled = self._may_spin(state, cpu_id)
             details[mstg.vp.state[state].id] = {
                 "state": mstg.vp.state[state].id,
+                "abb" : mstg.vp.state[state].cpus.one().abb,
                 "spins": spins,
             }
             handled_sync |= handled
 
         for res in details.values():
             s = {True: "will spin", False: "won't spin"}[res['spins']]
-            self._log.warn(f"State {res['state']} {s}")
+            abb_name = self._graph.cfg.vp.name[res['abb']]
+            self._log.warn(f"State {res['state']} ({abb_name}) {s}")
 
         if deadlock:
             if self.fail_on_deadlock.get():
