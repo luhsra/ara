@@ -1,7 +1,6 @@
 # SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
-
 """Container for IPIAvoidance."""
 from ara.graph import MSTType, single_check
 from .step import Step
@@ -16,6 +15,7 @@ class IPIAvoidance(Step):
     running a higher priority task on all possible synchronisation points, the
     operating system does not have to trigger an IPI but can set a flag only.
     """
+
     def get_single_dependencies(self):
         return ["MultiSSE"]
 
@@ -73,7 +73,7 @@ class IPIAvoidance(Step):
                         ipi_needed, handled = self._is_ipi_needed(state)
                         out.append({
                             "state": mstg.vp.state[state].id,
-                            "abb" : mstg.vp.state[state].cpus.one().abb,
+                            "abb": mstg.vp.state[state].cpus.one().abb,
                             "ipi_needed": ipi_needed
                         })
                         handled_sync |= handled
