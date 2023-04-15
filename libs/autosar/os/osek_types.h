@@ -1,6 +1,8 @@
 #ifndef __dosek_osek_types
 #define __dosek_osek_types
 
+#include <stdint.h>
+
 /**
  *  @defgroup os Operating System Layer
  *  @brief This modules provides all OS functionalities
