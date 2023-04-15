@@ -6,7 +6,9 @@ import logging
 
 from collections import namedtuple
 
+
 class GenericArch(BaseCoder):
+
     def __init__(self):
         super(GenericArch, self).__init__()
 
@@ -16,12 +18,15 @@ class GenericArch(BaseCoder):
         for v, task in self.ara_graph.instances.get(Task):
             stacksize = str(4096)
 
-            stack = DataObjectArray("uint8_t", task.name + "_stack", stacksize,
-                                    extern_c = True)
+            stack = DataObjectArray("uint8_t",
+                                    task.name + "_stack",
+                                    stacksize,
+                                    extern_c=True)
             self.generator.source_file.data_manager.add(stack)
 
             stackptr = DataObject("void *", "OS_" + task.name + "_stackptr")
-            self.generator.source_file.data_manager.add(stackptr, namespace = ("arch",))
+            self.generator.source_file.data_manager.add(stackptr,
+                                                        namespace=("arch", ))
 
             task.impl.stack = stack
             task.impl.stackptr = stackptr
@@ -32,7 +37,9 @@ class GenericArch(BaseCoder):
 
     def generate_dataobjects_task_entries(self):
         for v, task in self.ara_graph.instances.get(Task):
-            entry_function = FunctionDeclaration(TASK_PREFIX + "FUNC_" + task.name, extern_c = True)
+            entry_function = FunctionDeclaration(TASK_PREFIX + "FUNC_" +
+                                                 task.name,
+                                                 extern_c=True)
             self.generator.source_file.function_manager.add(entry_function)
             task.impl.entry_function = entry_function
 
@@ -41,7 +48,6 @@ class GenericArch(BaseCoder):
 
     def asm_marker(self, block, label):
         self.call(block, "asm_label", "void", ['"%s"' % label])
-
 
     def enable_irq(self, block):
         self.call(block, "Machine::enable_interrupts")
@@ -52,7 +58,9 @@ class GenericArch(BaseCoder):
     def disable_irq(self, block):
         self.call(block, "Machine::disable_interrupts")
 
-    KernelSpace = namedtuple("KernelSpace", ["pre_hook", "system", "post_hook"])
+    KernelSpace = namedtuple("KernelSpace",
+                             ["pre_hook", "system", "post_hook"])
+
     def generate_kernelspace(self, userspace, abb, arguments):
         """returns a KernelSpace object"""
         raise NotImplementedError()
@@ -74,12 +82,13 @@ class GenericArch(BaseCoder):
         userspace.calling_task = call_inst
 
         if userspace.is_isr:
-            userspace.add(Comment("Called from ISR, no disable interrupts required!"))
+            userspace.add(
+                Comment("Called from ISR, no disable interrupts required!"))
         else:
             self.disable_irq(userspace)
 
-        pre_hook  = Hook("SystemEnterHook",arguments =  args)
-        system    = Block(arguments = args)
+        pre_hook = Hook("SystemEnterHook", arguments=args)
+        system = Block(arguments=args)
         post_hook = Hook("SystemLeaveHook", userspace.arguments())
 
         syscall_name = self.ara_graph.cfg.get_syscall_name(abb)[8:]
@@ -89,11 +98,12 @@ class GenericArch(BaseCoder):
         userspace.add(post_hook)
 
         if userspace.is_isr:
-            userspace.add(Comment("Called from ISR, no enable interrupts required!"))
-        elif syscall_name in ["TerminateTask","ChainTask"]:
-            userspace.add(Comment("Terminating Task: return with closed interrupts"))
+            userspace.add(
+                Comment("Called from ISR, no enable interrupts required!"))
+        elif syscall_name in ["TerminateTask", "ChainTask"]:
+            userspace.add(
+                Comment("Terminating Task: return with closed interrupts"))
         else:
             self.enable_irq_after_kernel(userspace)
 
         return self.KernelSpace(pre_hook, system, post_hook)
-

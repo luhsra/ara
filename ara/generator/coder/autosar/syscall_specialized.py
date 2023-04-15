@@ -1,6 +1,6 @@
 from ..elements import (DataObjectArray, DataObject, Function, FunctionCall,
-                       Statement, Include, Comment, VariableDefinition,
-                       FunctionDeclaration, CodeTemplate, Block, If)
+                        Statement, Include, Comment, VariableDefinition,
+                        FunctionDeclaration, CodeTemplate, Block, If)
 
 from ..base import BaseCoder
 
@@ -27,8 +27,10 @@ class SpecializedSystemCalls(GenericSystemCalls):
     def ActivateTask(self, syscall, userspace, kernelspace):
         # check if IPI not needed
         if not self.ipi_needed(syscall):
-            self.call(kernelspace, "scheduler_[%d].SetReady_impl"%kernelspace.arguments().task.cpu_id,
-                "void", [self.task_desc(kernelspace.arguments().task)])
+            self.call(
+                kernelspace, "scheduler_[%d].SetReady_impl" %
+                kernelspace.arguments().task.cpu_id, "void",
+                [self.task_desc(kernelspace.arguments().task)])
             kernelspace.add(Statement("debug_core << \"IPI Avoided\" << endl"))
 
             self.log_specialization(syscall)
@@ -43,8 +45,9 @@ class SpecializedSystemCalls(GenericSystemCalls):
             tid = str(kernelspace.arguments().task.impl.task_id)
             mask = str(kernelspace.arguments().event_mask)
 
-            self.call(kernelspace, "scheduler_[%d].tlist.set_events"%target_cpu,
-                    "void", [tid, mask])
+            self.call(kernelspace,
+                      "scheduler_[%d].tlist.set_events" % target_cpu, "void",
+                      [tid, mask])
 
             kernelspace.add(Statement("debug_core << \"IPI Avoided\" << endl"))
 
@@ -55,25 +58,37 @@ class SpecializedSystemCalls(GenericSystemCalls):
     def GetSpinlock(self, syscall, userspace, kernelspace):
         # check if Locking not needed
         if not self.lock_needed(syscall):
-            self.call(kernelspace,
-                "scheduler_["+str(userspace.calling_task.cpu_id)+"].GetSpinlock_impl",
-                "StatusType",
-                [self.task_desc(userspace.calling_task), str(kernelspace.arguments().spinlock.impl.descriptor.name), "true"], name = "result")
+            self.call(
+                kernelspace,
+                "scheduler_[" + str(userspace.calling_task.cpu_id) +
+                "].GetSpinlock_impl",
+                "StatusType", [
+                    self.task_desc(userspace.calling_task),
+                    str(kernelspace.arguments().spinlock.impl.descriptor.name),
+                    "true"
+                ],
+                name="result")
             kernelspace.add(Statement("debug_core << \"Lock Elided\" << endl"))
 
             self.log_specialization(syscall)
         else:
             super().GetSpinlock(syscall, userspace, kernelspace)
 
-
     def ReleaseSpinlock(self, syscall, userspace, kernelspace):
         # check if Locking not needed
         if not self.lock_needed(syscall, True):
-            self.call(kernelspace,
-                "scheduler_["+str(userspace.calling_task.cpu_id)+"].ReleaseSpinlock_impl",
-                "StatusType",
-                [self.task_desc(userspace.calling_task), str(kernelspace.arguments().spinlock.impl.descriptor.name), "true"], name = "result")
-            kernelspace.add(Statement("debug_core << \"Unlock Elided\" << endl"))
+            self.call(
+                kernelspace,
+                "scheduler_[" + str(userspace.calling_task.cpu_id) +
+                "].ReleaseSpinlock_impl",
+                "StatusType", [
+                    self.task_desc(userspace.calling_task),
+                    str(kernelspace.arguments().spinlock.impl.descriptor.name),
+                    "true"
+                ],
+                name="result")
+            kernelspace.add(
+                Statement("debug_core << \"Unlock Elided\" << endl"))
 
             self.log_specialization(syscall)
         else:
@@ -83,28 +98,28 @@ class SpecializedSystemCalls(GenericSystemCalls):
         needed = True
         step_data = self.ara_graph.step_data["IPIAvoidance"]
 
-        for ipi in step_data: # check results
+        for ipi in step_data:  # check results
             if ipi["abb"] != abb:
                 continue
-            if ipi["ipi_needed"]: # needed in at least one state
+            if ipi["ipi_needed"]:  # needed in at least one state
                 return True
 
             needed = False
 
         return needed
 
-    def lock_needed(self, abb, release = False):
+    def lock_needed(self, abb, release=False):
         needed = True
         step_data = self.ara_graph.step_data["LockElision"]["callsites"]
 
-        for lock in step_data.values(): # check results
+        for lock in step_data.values():  # check results
             if release and lock["release_abb"] != abb:
                 continue
 
             if not release and lock["abb"] != abb:
                 continue
 
-            if not lock["elide"]: # cannot be elided in at least one state
+            if not lock["elide"]:  # cannot be elided in at least one state
                 return True
 
             needed = False

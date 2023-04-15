@@ -9,13 +9,12 @@ class PosixArch(GenericArch):
 
     def __init__(self):
         super(PosixArch, self).__init__()
-        self.IPI_SIG = 10 # SIGUSR1 on x86 Linux
-        self.TERM_SIG = 12 # SIGUSR2
+        self.IPI_SIG = 10  # SIGUSR1 on x86 Linux
+        self.TERM_SIG = 12  # SIGUSR2
 
     def generate_startup_code(self):
         # generate other functions
         self.arch_rules.generate_functions()
-
 
     # config-constraint-: (arch.self == posix) -> !arch.mpu
     def generate_linkerscript(self):
@@ -24,8 +23,8 @@ class PosixArch(GenericArch):
 
     def generate_data_objects(self):
         """Generate all dataobjects for the system"""
-        self.generate_dataobjects_task_stacks() # From GenericArch
-        self.generate_dataobjects_task_entries() # From GenericArch
+        self.generate_dataobjects_task_stacks()  # From GenericArch
+        self.generate_dataobjects_task_entries()  # From GenericArch
         self.generate_dataobjects_tcbs()
 
     def generate_functions(self):
@@ -42,15 +41,16 @@ class PosixArch(GenericArch):
             )
 
             tcb = DataObject("const arch::TCB", "OS_" + task.name + "_tcb",
-                              initializer)
+                             initializer)
             tcb.allocation_prefix = "constexpr "
-            self.generator.source_file.data_manager.add(tcb, namespace = ("arch",))
+            self.generator.source_file.data_manager.add(tcb,
+                                                        namespace=("arch", ))
             task.impl.tcb_descriptor = tcb
 
     def generate_enable_irq_after_kernel(self):
         """Enable only those interrupts that can happen according to the OIL
         model."""
-        block = Function("__OS_enable_irq_after_kernel", "void",[])
+        block = Function("__OS_enable_irq_after_kernel", "void", [])
         self.generator.source_file.function_manager.add(block)
 
         block.add(Statement("sigset_t mask; sigfillset(&mask)"))
@@ -64,42 +64,44 @@ class PosixArch(GenericArch):
         handler = Function(isr.name + "_wrapper", "void", ["int"])
         self.generator.source_file.function_manager.add(handler)
 
-        self.call(handler, "AUTOSAR_ISR_"+isr.name)
+        self.call(handler, "AUTOSAR_ISR_" + isr.name)
 
-        if not isr.artificial and isr.device in [self.IPI_SIG, self. TERM_SIG]:
-            raise ValueError("ISR device {isr.device} conflicts with an internal signal")
+        if not isr.artificial and isr.device in [self.IPI_SIG, self.TERM_SIG]:
+            raise ValueError(
+                "ISR device {isr.device} conflicts with an internal signal")
 
-        forward = FunctionDeclaration("AUTOSAR_ISR_"+isr.name, extern_c=True)
+        forward = FunctionDeclaration("AUTOSAR_ISR_" + isr.name, extern_c=True)
         self.generator.source_file.function_manager.add(forward)
 
         self.call(self.generator.syscall_rules.StartOS,
-                           "arch::irq.enable", "void", [str(isr.device)],
-                           prepend = True)
+                  "arch::irq.enable",
+                  "void", [str(isr.device)],
+                  prepend=True)
         self.call(self.generator.syscall_rules.StartOS,
-                           "arch::irq.set_handler", "void", [str(isr.device),
-                                                             handler.function_name],
-                           prepend = True)
+                  "arch::irq.set_handler",
+                  "void", [str(isr.device), handler.function_name],
+                  prepend=True)
 
     def generate_isr_table(self, isrs):
         self.generator.source_file.include("machine.h")
 
         ipi = ISR(cfg=0,
-            name="IPI",
-            cpu_id=0,
-            function=0,
-            priority=0,
-            category=0,
-            device=self.IPI_SIG,
-            artificial=True)
+                  name="IPI",
+                  cpu_id=0,
+                  function=0,
+                  priority=0,
+                  category=0,
+                  device=self.IPI_SIG,
+                  artificial=True)
 
         shutdown = ISR(cfg=0,
-            name="TERM",
-            cpu_id=0,
-            function=0,
-            priority=0,
-            category=0,
-            device=self.TERM_SIG,
-            artificial=True)
+                       name="TERM",
+                       cpu_id=0,
+                       function=0,
+                       priority=0,
+                       category=0,
+                       device=self.TERM_SIG,
+                       artificial=True)
 
         for isr in isrs + [ipi, shutdown]:
             self.generate_isr(isr)
@@ -113,7 +115,6 @@ class PosixArch(GenericArch):
 
         """
         self.call(block, "__OS_enable_irq_after_kernel")
-
 
     def generate_kernelspace(self, userspace, abb, arguments):
         # Use the inline kernelspace variant

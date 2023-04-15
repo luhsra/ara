@@ -14,21 +14,21 @@ from ..elements import CodeTemplate, Function
 from ara.os.autosar import Resource, Task, Event
 
 
-
 class AUTOSARGenericOS(GenericOS):
+
     def __init__(self):
         super(AUTOSARGenericOS, self).__init__()
 
         self.return_variables = {}
 
-    arch_choices = {'posix':PosixArch}
-
+    arch_choices = {'posix': PosixArch}
 
     def set_generator(self, generator):
         super().set_generator(generator)
 
-        generator.template_base = os.path.abspath(os.path.join(
-            os.path.dirname( __file__ ), "../../../../libs/autosar"))
+        generator.template_base = os.path.abspath(
+            os.path.join(os.path.dirname(__file__),
+                         "../../../../libs/autosar"))
 
         # These template slots are used by the system call layer
         self.task_list = TaskListTemplate
@@ -44,13 +44,13 @@ class AUTOSARGenericOS(GenericOS):
     def get_arch_rules(self, arch):
         return self.arch_choices[arch]
 
-
     @staticmethod
     def add_impl(instance):
         _add_impl(instance)
 
 
 class TaskListTemplate(CodeTemplate):
+
     def __init__(self, rules):
         CodeTemplate.__init__(self, rules.generator, self.template_file())
         self.rules = rules
@@ -70,15 +70,19 @@ class TaskListTemplate(CodeTemplate):
 
     def foreach_subtask(self, snippet, args):
         body = args[0]
+
         def do(subtask):
             self._subtask = subtask
             return self.expand_snippet(body)
+
         return self.rules.foreach_subtask(do)
 
     def if_events(self, snippet, args):
         task_vertex = self.ara_graph.instances.get_node(self._subtask)
         vertex_neighbors = task_vertex.out_neighbors()
-        objects = [self.ara_graph.instances.vp.obj[n] for n in vertex_neighbors]
+        objects = [
+            self.ara_graph.instances.vp.obj[n] for n in vertex_neighbors
+        ]
         if any([isinstance(n, Event) for n in objects]):
             return self.expand_snippet(args[0])
         return ""
@@ -89,10 +93,14 @@ class TaskListTemplate(CodeTemplate):
         return ""
 
     def scheduler_prio(self, snippet, args):
-        task_list_prio = [task.priority for v, task in self.ara_graph.instances.get(Task)]
-        return str(max(task_list_prio)+1)
+        task_list_prio = [
+            task.priority for v, task in self.ara_graph.instances.get(Task)
+        ]
+        return str(max(task_list_prio) + 1)
+
 
 class SchedulerTemplate(CodeTemplate):
+
     def __init__(self, rules):
         CodeTemplate.__init__(self, rules.generator, self.template_file())
         self.rules = rules
@@ -109,9 +117,11 @@ class SchedulerTemplate(CodeTemplate):
 
     def foreach_subtask(self, snippet, args):
         body = args[0]
+
         def do(subtask):
             self._subtask = subtask
             return self.expand_snippet(body)
+
         return self.rules.foreach_subtask(do)
 
     def if_not_preemptable(self, snippet, args):
