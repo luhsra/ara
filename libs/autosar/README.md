@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2023 Andreas Kässens
+
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
 # MACAW
 
 The MACAW (Multicore AUTOSAR Compatible Application-specific Whole-system-optimized) RTOS ist based upon [dOSEK](https://www4.cs.fau.de/Research/dOSEK/).
