@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 Andreas Kässens
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 from ..elements import (DataObjectArray, DataObject, Function, FunctionCall,
                         Statement, Include, Comment, VariableDefinition,
                         FunctionDeclaration, CodeTemplate, Block, If)

@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 Andreas Kässens
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 from ara.os.autosar import *
 
 

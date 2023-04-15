@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 Andreas Kässens
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 from .arch_generic import GenericArch
 from ..elements import *
 from ara.os.autosar import Task, ISR

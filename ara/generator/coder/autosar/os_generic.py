@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 Andreas Kässens
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 from ..elements import *
 from ..base import BaseCoder
 #from generator.analysis.Function import Function as GraphFunction
