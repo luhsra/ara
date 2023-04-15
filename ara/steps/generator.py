@@ -46,6 +46,14 @@ class Generator(Step):
                          help='disable all changes, just pipe IR code unchanged',
                          ty=Bool(),
                          default_value=False)
+    lock_elision = Option('lock_elision',
+                        help='specialize locking operations if possible, AUTOSAR only',
+                        ty=Bool(),
+                        default_value=False)
+    ipi_avoidance = Option('ipi_avoidance',
+                        help='specialize IPI-triggering operations if possible, AUTOSAR only',
+                        ty=Bool(),
+                        default_value=False)
 
     def get_single_dependencies(self):
         if self.passthrough.get():

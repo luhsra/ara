@@ -12,9 +12,9 @@
 	"Generator": {
 		"log_level": "debug",
 		"arch": "posix",
-		"instantiation_style": "static",
-		"interaction_style": "vanilla",
-		"os": "autosar"
+		"os": "autosar",
+		"lock_elision": true,
+		"ipi_avoidance": true
 	},
 	"LockElision": {
 		"fail_on_deadlock": true
