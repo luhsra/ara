@@ -127,7 +127,7 @@ namespace arch
         debug_core << "Syncing[" << sync_point << "]: "<< synced << "/" << cores << endl;
 
         // wait until all cores have synced
-        while (syncing_cores[sync_point] != cores);
+        while (syncing_cores[sync_point] < cores);
     }
 
     int get_cpuid()
