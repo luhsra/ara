@@ -296,8 +296,10 @@ if get_option('enable_step_tests')
       ]
       foreach app : autosar_generated_targets
         is_parallel = true
+        testsuite_extra = []
         if app.has_key('core') and app['core'] == 'multicore'
           is_parallel = false
+          testsuite_extra = 'autosar_generator_multicore'
         endif
         should_fail = false
         if app.has_key('path') and app['path'] in expected_fail
@@ -312,7 +314,7 @@ if get_option('enable_step_tests')
               depends: ara_py,
               should_fail: should_fail,
               is_parallel: is_parallel,
-              suite: ['autosar_generator']
+              suite: ['autosar_generator'] + testsuite_extra
           )
         endif
 
