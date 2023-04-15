@@ -1,0 +1,189 @@
+/* Kernel entry function */
+ENTRY(interrupt_vector_table)
+
+MEMORY {
+   ROM : ORIGIN = 0x100000, LENGTH = 4M
+   RAM : ORIGIN = 0x500000, LENGTH = 4M
+}
+
+REGION_ALIAS("REGION_TEXT", ROM);
+REGION_ALIAS("REGION_RODATA", ROM);
+REGION_ALIAS("REGION_DATA", RAM);
+REGION_ALIAS("REGION_BSS", RAM);
+
+SECTIONS {
+
+    /DISCARD/ : {
+        *(".text.inlined*")
+        *(.comment)
+        *(.eh_frame)
+        *(.ARM.exidx)
+        *(.ARM.extab)
+        *(.note.gnu.build-id)
+    }
+
+    /* Code and readonly data */
+    /* . = 0x0; */
+    .text : {
+
+        /* interrupt vectors */
+        /* . = 0; */
+        irq_vectors = .;
+        KEEP (*(".text.irq_vectors"))
+
+        /* fill gaps with invalid opcode to detect invalid jumps */
+        /* FILL(0xFEDEFFE7)*/
+
+        /* start of interrupt handlers */
+        _stext_irqs = .;
+
+        /* IRQ Handlers */
+        KEEP (*(".text.irqhandlers*")) /* ASM */
+        KEEP (*(".text.irq_handler*")) /* C */
+        *(".text.isrs*") /* C */
+        *(".text.isr_*") /* C */
+        KEEP (*(".text.OSEKOS_ISR*"))
+        KEEP (*(".text.idt")) /* ASM */
+
+        /* sysenter handler */
+        KEEP (*(".text.sysenter_syscall"))
+
+        _etext_irqs = .;
+        . += 16; /* padding after data, workaround for import-trace */
+
+
+        /* startup code */
+        . = ALIGN(4096);
+        _stext_startup = .;
+
+        /* constructors */
+        . = ALIGN(4096);
+        PROVIDE(__CTORS_START = .);
+        KEEP (*(.ctors*))
+        KEEP (*(.init_array*))
+        PROVIDE(__CTORS_END = .);
+
+        /* constructor code */
+        _stext_constructors = .;
+        KEEP (*(".text.startup"))
+        _etext_constructors = .;
+
+        *(".text._Z*4arch*")
+        *(".text.arch_startup")
+        *(".text.run_constructors")
+        *(".text.init_generic")
+        _etext_startup = .;
+
+        /* common text (always accessible) */
+        . = ALIGN(4096);
+        _stext_common = .;
+
+        /* common symbols */
+        _stext_common_syms = .;
+        *("_GLOBAL__I_a")
+        _etext_common_syms = .;
+
+        . += 16; /* padding after data, workaround for import-trace */
+
+        /* compiler code (arithmetic routines...) */
+        "*libgcc*.a:" ( ".text" )
+
+        /* anonymous read only data (probably strings) */
+        /* cannot be separated by source, so put it here */
+        _srodata_an = .;
+        *(".rodata..L*")
+        _erodata_an = .;
+
+        /* architectural rodata */
+        _srodata_arch = .;
+        *(".rodata._Z*4arch*")
+        _erodata_arch = .;
+
+        . += 16; /* padding after data, workaround for import-trace */
+
+        _etext_common = .;
+
+        /* operating system code and data */
+        . = ALIGN(4096);
+        _stext_os = .;
+        *(".text._Z*2os*")
+        KEEP (*(".text.__OS_*"))
+
+        _srodata_os = .;
+        *(".rodata._Z*2os*")
+        *(".rodata.__OS_*")
+        _erodata_os = .;
+
+        _etext_os = .;
+
+        /* task code regions */
+        . = ALIGN(4096);
+        _stext_application = .;
+        {{{generate:task_code_regions}}}
+        _etext_application = .;
+
+        /* remaining code and rodata*/
+        . = ALIGN(0x1000);
+        _stext = .;
+        *(".text*")
+        *(".rodata*")
+        _etext = .;
+
+    /* Page tables and directories */
+	   . = ALIGN(32768);
+	   __mmu_tbl_start = .;
+	   *(.mmu_tbl)
+	   __mmu_tbl_end = .;
+
+       /* End of ROM marker. In the ROM, here the initialized .data
+          section follows */
+       _erom   = .;
+	} > ROM
+
+    .stacks : {
+            . = ALIGN(4096);
+            _bstart = .;
+            /* Stacks */
+            _sstack = .;
+
+            _sstack_os = .;
+            KEEP (*(".startup_stack"))
+            KEEP (*(".kernel_stack"))
+            _estack_os = .;
+
+            {{{generate:task_stacks}}}
+
+            _estack = .;
+     } > RAM
+
+     .bss : {
+            *(COMMON);
+            _bend   = .;
+     } > RAM
+
+
+
+    /* Data and Stacks */
+    /* . = 0x200000; */
+    .data : {
+        /* Marker for the begin of the Data section */
+        _data = .;
+
+        /* Data */
+        _sdata_os = .;
+        *(".data._Z*2os*")
+        _edata_os = .;
+
+        _sdata_arch = .;
+        *(".data._Z*4arch*")
+        _edata_arch = .;
+
+        {{{generate:task_data}}}
+
+        _sdata = .;
+        *(".data*")
+        _edata = .;
+    } > RAM AT> ROM
+
+
+}
