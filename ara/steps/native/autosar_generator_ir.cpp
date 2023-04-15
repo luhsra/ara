@@ -37,7 +37,8 @@ namespace ara::step {
 		Function* arch_startup = Function::Create(void_type_void, Function::ExternalLinkage, "arch_startup", &module);
 
 		/* error hook if using ret to return from Task */
-		Function* error_hook = Function::Create(void_type_iii, Function::ExternalLinkage, "__OS_HOOK_ErrorHook", &module);
+		Function* error_hook =
+		    Function::Create(void_type_iii, Function::ExternalLinkage, "__OS_HOOK_ErrorHook", &module);
 
 		for (auto& function : module) {
 			// all TASK(foo) functions start with this string, see os/os.h
@@ -54,9 +55,10 @@ namespace ara::step {
 				Instruction* inst1 = &bb1.back();
 				if (llvm::dyn_cast<llvm::ReturnInst>(inst1)) {
 					builder.SetInsertPoint(inst1);
-					ArgsV.emplace_back(builder.getInt32(14)); //E_OS_MISSINGEND
+					ArgsV.emplace_back(builder.getInt32(14)); // E_OS_MISSINGEND
 					builder.CreateCall(error_hook, ArgsV);
-					logger.debug() << "add " << error_hook->getName().str() << " to " << function.getName().str() << std::endl;
+					logger.debug() << "add " << error_hook->getName().str() << " to " << function.getName().str()
+					               << std::endl;
 				}
 			} else if (function.getName().equals("main")) {
 				IRBuilder<> builder(context);
@@ -66,7 +68,8 @@ namespace ara::step {
 				std::vector<Value*> ArgsV;
 
 				builder.CreateCall(arch_startup, ArgsV);
-				logger.debug() << "add " << arch_startup->getName().str() << " to " << function.getName().str() << std::endl;
+				logger.debug() << "add " << arch_startup->getName().str() << " to " << function.getName().str()
+				               << std::endl;
 			}
 		}
 	}
