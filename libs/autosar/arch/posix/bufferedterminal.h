@@ -1,13 +1,13 @@
 #ifndef __BUFFEREDTERMINAL_H__
 #define __BUFFEREDTERMINAL_H__
 
-
 #include "colorterminal.h"
-#include <stdint.h>
 #include "hardware_threads.h"
-#include <cstring>
+
 #include <cstdio>
+#include <cstring>
 #include <pthread.h>
+#include <stdint.h>
 
 #define BUF_LEN 80
 
@@ -16,10 +16,8 @@ class BufferedTerminal : public Terminal {
 	int idx = 0;
 	bool printcpu;
 
-public:
-    BufferedTerminal(Terminal::port_t port = STDERR, bool printcpu=true)
-	: Terminal(port), printcpu(printcpu)
-	{};
+  public:
+	BufferedTerminal(Terminal::port_t port = STDERR, bool printcpu = true) : Terminal(port), printcpu(printcpu){};
 
 	void clear(){};
 
@@ -36,7 +34,7 @@ public:
 		}
 		buf[idx++] = character;
 
-		if (idx == BUF_LEN-1) {
+		if (idx == BUF_LEN - 1) {
 			character = '\n';
 			buf[idx++] = character;
 		}
@@ -47,8 +45,6 @@ public:
 			idx = 0;
 		}
 	}
-
 };
-
 
 #endif

@@ -7,18 +7,17 @@
 #ifndef __RESCHEDULE_AST_H__
 #define __RESCHEDULE_AST_H__
 
-#include "os/util/inline.h"
 #include "irq.h"
-
+#include "os/util/inline.h"
 
 namespace arch {
 
-/** \brief Request the reschedule AST to run after all other interrupts compelete. */
-forceinline void request_reschedule_ast() {
-    debug_core << "request AST" << endl;
-	irq.request_ast();
-    return;
-}
+	/** \brief Request the reschedule AST to run after all other interrupts compelete. */
+	forceinline void request_reschedule_ast() {
+		debug_core << "request AST" << endl;
+		irq.request_ast();
+		return;
+	}
 
 } // namespace arch
 

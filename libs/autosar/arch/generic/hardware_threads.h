@@ -3,8 +3,9 @@
 
 #define MAX_CPUS 16
 
-#include <stdint.h>
 #include "osek_types.h"
+
+#include <stdint.h>
 
 namespace arch {
 
@@ -26,9 +27,7 @@ namespace arch {
 	 * \param startup_function A function pointer to the function that will be
 	 *                         run on the started hardware thread
 	 **/
-	StatusType start_hardware_thread(unsigned int hardware_number,
-	                           void *bottom_of_stack,
-	                           unsigned int size_of_stack);
+	StatusType start_hardware_thread(unsigned int hardware_number, void* bottom_of_stack, unsigned int size_of_stack);
 
 	bool cpu_online(int cpuid);
 	int get_cpuid();
@@ -37,6 +36,6 @@ namespace arch {
 	void sync_all_hardware_threads(cpu_sync_point_t);
 	void stop_hardware_thread();
 	void stop_other_hardware_threads();
-}
+} // namespace arch
 
 #endif

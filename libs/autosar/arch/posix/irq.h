@@ -1,47 +1,49 @@
 #ifndef _POSIX_IRQ_H_
 #define _POSIX_IRQ_H_
 
-#include <signal.h>
-#include "inline.h"
 #include "hardware_threads.h"
+#include "inline.h"
+
+#include <signal.h>
 
 #define SIGMAX 256
 
 namespace arch {
-class IRQ {
-    bool ast_requested[MAX_CPUS];
-    int ast_level[MAX_CPUS];
-    sigset_t full_mask;
-public:
-    typedef void (*irq_handler_t)(int);
-    static const int IPISIG = SIGCHLD;
+	class IRQ {
+		bool ast_requested[MAX_CPUS];
+		int ast_level[MAX_CPUS];
+		sigset_t full_mask;
 
-    IRQ();
+	  public:
+		typedef void (*irq_handler_t)(int);
+		static const int IPISIG = SIGCHLD;
 
-    void set_handler(int signum, irq_handler_t gate);
-    void enable(int signum);
-    void disable(int signum);
-    noinline void trigger_interrupt(int irq, int cpuid, bool sync = false);
-    noinline void deliver_interrupt(int irq);
+		IRQ();
 
-    void enable_interrupts(sigset_t *mask = nullptr);
-    void disable_interrupts(sigset_t *oldmask = nullptr);
-    void clear_interrupts();
+		void set_handler(int signum, irq_handler_t gate);
+		void enable(int signum);
+		void disable(int signum);
+		noinline void trigger_interrupt(int irq, int cpuid, bool sync = false);
+		noinline void deliver_interrupt(int irq);
 
-    bool interrupts_enabled(int irq = 0);
+		void enable_interrupts(sigset_t* mask = nullptr);
+		void disable_interrupts(sigset_t* oldmask = nullptr);
+		void clear_interrupts();
 
-    bool forceinline in_interrupt() { return ast_level[arch::get_cpuid()] > 0;}
+		bool interrupts_enabled(int irq = 0);
 
-    void request_ast() { ast_requested[arch::get_cpuid()] = true; }
+		bool forceinline in_interrupt() { return ast_level[arch::get_cpuid()] > 0; }
 
-private:
-    static void guardian(int signum);
+		void request_ast() { ast_requested[arch::get_cpuid()] = true; }
 
-    irq_handler_t m_gate[SIGMAX];
-};
+	  private:
+		static void guardian(int signum);
 
-extern IRQ irq;
+		irq_handler_t m_gate[SIGMAX];
+	};
 
-};
+	extern IRQ irq;
+
+}; // namespace arch
 
 #endif /* _PIC_H */

@@ -10,7 +10,6 @@
  * @brief Small unit tests
  */
 
-
 /**
  * @file
  * @ingroup unit_tests
@@ -57,69 +56,67 @@
  *   ~~~~~~~~~~~~~~
  */
 
-#include <stdint.h>
-#include "util/encoded.h"
-#include "util/inline.h"
 #include "machine.h"
 #include "output.h"
+#include "util/encoded.h"
+#include "util/inline.h"
+
+#include <stdint.h>
 
 #define EXPECTED_VALUES_MAX 10
 typedef unsigned int expected_value_t;
 
-
 extern "C" {
-	//! all tests (so far) passed
-	extern _Atomic(bool) global_all_ok;
+//! all tests (so far) passed
+extern _Atomic(bool) global_all_ok;
 
-	//! number of positive checks in this test
-	extern _Atomic(int) positive_tests;
+//! number of positive checks in this test
+extern _Atomic(int) positive_tests;
 
-	//! number of current experiment
-	extern _Atomic(int) experiment_number;
+//! number of current experiment
+extern _Atomic(int) experiment_number;
 
-	//! buffer for expected result values
-	extern expected_value_t expected_values[EXPECTED_VALUES_MAX];
+//! buffer for expected result values
+extern expected_value_t expected_values[EXPECTED_VALUES_MAX];
 
-	//! interrupts were enabled before test checks
-	extern _Atomic(bool) interrupts_suspended;
+//! interrupts were enabled before test checks
+extern _Atomic(bool) interrupts_suspended;
 
-	//! buffer for task activation records
-	extern char trace_table[256];
+//! buffer for task activation records
+extern char trace_table[256];
 
-	//! index for trace_table
-	extern _Atomic(unsigned char) trace_table_idx;
+//! index for trace_table
+extern _Atomic(unsigned char) trace_table_idx;
 
-	/**
-	 * @name User supplied functions
-	 */
-	// @{
-    //! user-supplied prepare function
-	void test_prepare(void);
+/**
+ * @name User supplied functions
+ */
+// @{
+//! user-supplied prepare function
+void test_prepare(void);
 
-	//! user-supplied test function
-	noinline void test(void);
-	// @}
+//! user-supplied test function
+noinline void test(void);
+// @}
 
-    noinline void test_finish(int tests=0);
+noinline void test_finish(int tests = 0);
 
-    noinline void test_trace_dump(void);
+noinline void test_trace_dump(void);
 
-    noinline void test_trace_assert(const char *expected);
+noinline void test_trace_assert(const char* expected);
 
-    //! FAIL* trace location for FAIL* test compatibility
-    extern volatile uint32_t fail_trace;
+//! FAIL* trace location for FAIL* test compatibility
+extern volatile uint32_t fail_trace;
 }
 
-
-static forceinline void test_start()
-{
+static forceinline void test_start() {
 	// update global status variables
 	experiment_number++;
 	positive_tests = 0;
 
-	//kout.setcolor(Color::YELLOW, Color::BLACK);
-	kout << "Test " << (unsigned) experiment_number << ": " << endl;
-	//kout.setcolor(Color::WHITE, Color::BLACK);
+	// kout.setcolor(Color::YELLOW, Color::BLACK);
+	kout << "Test " << (unsigned)experiment_number << ": " << endl;
+	// kout.setcolor(Color::WHITE, Color::BLACK);
 }
 
 static forceinline void test_start_check() {
@@ -127,18 +124,17 @@ static forceinline void test_start_check() {
 	Machine::disable_interrupts();
 }
 
-static forceinline void test_equality(expected_value_t real_value, const expected_value_t expected_value, bool equal)
-{
-	if((equal && real_value == expected_value) || (!equal && real_value != expected_value)) {
-		//kout.setcolor(Color::GREEN, Color::BLACK);
+static forceinline void test_equality(expected_value_t real_value, const expected_value_t expected_value, bool equal) {
+	if ((equal && real_value == expected_value) || (!equal && real_value != expected_value)) {
+		// kout.setcolor(Color::GREEN, Color::BLACK);
 		kout << "  +" << endl;
-		//kout.setcolor(Color::WHITE, Color::BLACK);
+		// kout.setcolor(Color::WHITE, Color::BLACK);
 
 		positive_tests++;
 	} else {
-		//kout.setcolor(Color::RED, Color::BLACK);
+		// kout.setcolor(Color::RED, Color::BLACK);
 		kout << "  -[" << real_value << (equal ? " != " : " == ") << expected_value << "]" << endl;
-		//kout.setcolor(Color::WHITE, Color::BLACK);
+		// kout.setcolor(Color::WHITE, Color::BLACK);
 	}
 }
 
@@ -152,9 +148,7 @@ static forceinline void test_ne(expected_value_t real_value, const expected_valu
 
 /* Store and retrieve expected results */
 
-static forceinline void test_expect_store(unsigned char id, expected_value_t value) {
-	expected_values[id] = value;
-}
+static forceinline void test_expect_store(unsigned char id, expected_value_t value) { expected_values[id] = value; }
 
 static forceinline void test_expect_eq(unsigned char id, const expected_value_t expected_value) {
 	test_equality(expected_values[id], expected_value, true);
@@ -164,53 +158,42 @@ static forceinline void test_expect_ne(unsigned char id, const expected_value_t 
 	test_equality(expected_values[id], expected_value, false);
 }
 
-static forceinline void test_assert(bool result) {
-	test_equality(result, true, true);
-}
-
-
+static forceinline void test_assert(bool result) { test_equality(result, true, true); }
 
 static forceinline void __test_positive_tests(int pos_tests, int sign) {
 	int delta = positive_tests - pos_tests;
-	if ((sign < 0 && delta < 0)
-		|| (sign == 0 && delta == 0)
-		|| (sign > 0 && delta > 0)) {
+	if ((sign < 0 && delta < 0) || (sign == 0 && delta == 0) || (sign > 0 && delta > 0)) {
 
-		//kout.setcolor(Color::GREEN, Color::BLACK);
+		// kout.setcolor(Color::GREEN, Color::BLACK);
 		kout << "SUCCESS " << 1 << " " << (experiment_number * 4) << ":" << experiment_number << endl;
-		//kout.setcolor(Color::WHITE, Color::BLACK);
+		// kout.setcolor(Color::WHITE, Color::BLACK);
 	} else {
 		global_all_ok = false;
 
-		//kout.setcolor(Color::RED, Color::BLACK);
+		// kout.setcolor(Color::RED, Color::BLACK);
 		kout << "FAIL " << experiment_number << "(positive_tests = " << positive_tests << ")" << endl;
-		//kout.setcolor(Color::WHITE, Color::BLACK);
+		// kout.setcolor(Color::WHITE, Color::BLACK);
 	}
 
-	if(interrupts_suspended) Machine::enable_interrupts();
+	if (interrupts_suspended)
+		Machine::enable_interrupts();
 
 	for (int i = 0; i < EXPECTED_VALUES_MAX; i++) {
 		expected_values[i] = 0xAAAA5555;
 	}
 }
 
-static forceinline void test_positive_tests_eq(int positive_tests) {
-	__test_positive_tests(positive_tests, 0);
-}
+static forceinline void test_positive_tests_eq(int positive_tests) { __test_positive_tests(positive_tests, 0); }
 
-static forceinline void test_positive_tests_lt(int positive_tests) {
-	__test_positive_tests(positive_tests, -1);
-}
+static forceinline void test_positive_tests_lt(int positive_tests) { __test_positive_tests(positive_tests, -1); }
 
-static forceinline void test_positive_tests_gt(int positive_tests) {
-	__test_positive_tests(positive_tests, 1);
-}
-
+static forceinline void test_positive_tests_gt(int positive_tests) { __test_positive_tests(positive_tests, 1); }
 
 // run one test with unencoded result
 // forceinline used to inline this into test() function to stay within allowed text region
 // volatile used to prevent inlining of testfunction, which should stay separate
-static forceinline void run_checkable_function(void (* volatile testfun)(void), expected_value_t& result_var, value_t expected) {
+static forceinline void run_checkable_function(void (*volatile testfun)(void), expected_value_t& result_var,
+                                               value_t expected) {
 	test_expect_store(0, expected);
 
 	/* Start the testcase (including marker_start() */
@@ -228,8 +211,8 @@ static forceinline void run_checkable_function(void (* volatile testfun)(void), 
 // run one test with encoded result
 // forceinline used to inline this into test() function to stay within allowed text region
 // volatile used to prevent inlining of testfunction, which should stay separate
-template<typename T>
-static forceinline void run_checkable_function(void (* volatile testfun)(void), T& result_var, value_t expected) {
+template <typename T>
+static forceinline void run_checkable_function(void (*volatile testfun)(void), T& result_var, value_t expected) {
 	test_expect_store(0, expected);
 
 	/* Start the testcase (including marker_start() */
@@ -248,12 +231,9 @@ static forceinline void run_checkable_function(void (* volatile testfun)(void), 
 	test_positive_tests_gt(0);
 }
 
+__attribute__((weak_import)) extern void test_prepare();
 
-__attribute__((weak_import))
-extern void test_prepare();
-
-__attribute__((weak_import))
-extern void test();
+__attribute__((weak_import)) extern void test();
 
 static forceinline void test_init(void) {
 	// prepare tests
@@ -265,13 +245,10 @@ static forceinline void test_init(void) {
 	}
 }
 
-
-
-static forceinline void test_main(void)
-{
-	//debug.setcolor(Color::YELLOW, Color::BLACK);
+static forceinline void test_main(void) {
+	// debug.setcolor(Color::YELLOW, Color::BLACK);
 	debug << "AUTOSAR start" << endl;
-	//debug.setcolor(Color::WHITE, Color::BLACK);
+	// debug.setcolor(Color::WHITE, Color::BLACK);
 
 	// prepare tests
 	test_init();
@@ -290,17 +267,19 @@ static forceinline void test_main(void)
 extern "C" noinline void test_trace(char chr);
 
 #ifdef FAIL
-#define test_trace_assert(...) do{}while(0)
+#define test_trace_assert(...)                                                                                         \
+	do {                                                                                                               \
+	} while (0)
 #endif
 
 extern "C" void arch_startup();
 
 extern "C" noinline void ara_timing_info(int a, int b);
 
-#define TEST_MAKE_OS_MAIN(body) \
-	int main(void) { 			\
-		if (GetCoreID() == 0){	\
-			test_init();		\
-		}						\
-		body;					\
-	}							\
+#define TEST_MAKE_OS_MAIN(body)                                                                                        \
+	int main(void) {                                                                                                   \
+		if (GetCoreID() == 0) {                                                                                        \
+			test_init();                                                                                               \
+		}                                                                                                              \
+		body;                                                                                                          \
+	}\

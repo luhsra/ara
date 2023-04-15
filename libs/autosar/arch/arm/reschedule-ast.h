@@ -7,18 +7,18 @@
 #ifndef __RESCHEDULE_AST_H__
 #define __RESCHEDULE_AST_H__
 
-#include "os/util/inline.h"
 #include "gic.h"
+#include "os/util/inline.h"
 
 namespace arch {
 
-/** \brief Request the reschedule AST to run after all other interrupts compelete. */
-forceinline void request_reschedule_ast() {
-    // reset save_sp to detect IRQ from non-userspace in idt.S
-    //save_sp = 0;
+	/** \brief Request the reschedule AST to run after all other interrupts compelete. */
+	forceinline void request_reschedule_ast() {
+		// reset save_sp to detect IRQ from non-userspace in idt.S
+		// save_sp = 0;
 
-	GIC::trigger(IRQ_RESCHEDULE);
-}
+		GIC::trigger(IRQ_RESCHEDULE);
+	}
 
 } // namespace arch
 

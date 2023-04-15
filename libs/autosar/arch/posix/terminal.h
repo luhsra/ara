@@ -9,20 +9,19 @@
  * \brief POSIX TERMINAL output on terminal
  */
 
-#include <stdint.h>
 #include "../generic/ostream.h"
+
+#include <stdint.h>
 #include <unistd.h>
 
 class Terminal : public O_Stream<Terminal> {
-protected:
-    const uint16_t m_channel;
-public:
-    enum port_t {
-        STDOUT = STDOUT_FILENO,
-        STDERR = STDERR_FILENO
-    };
+  protected:
+	const uint16_t m_channel;
 
-	Terminal(port_t port) : m_channel(port) {};
+  public:
+	enum port_t { STDOUT = STDOUT_FILENO, STDERR = STDERR_FILENO };
+
+	Terminal(port_t port) : m_channel(port){};
 
 	virtual void putchar(char c);
 

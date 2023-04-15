@@ -3,9 +3,9 @@
 
 #include "counter.h"
 #include "scheduler/task.h"
+#include "spinlock.h"
 #include "stdint.h"
 #include "util/inline.h"
-#include "spinlock.h"
 
 using namespace os::scheduler;
 
@@ -33,9 +33,10 @@ namespace os {
 		    : configuration_(configuration), armed_(false), absoluteTime_(0), cycleTime_(0), task_(0), id_(id) {}
 		constexpr UnencodedAlarm(CounterType* configuration, const Task& task, const uint32_t id)
 		    : configuration_(configuration), armed_(false), absoluteTime_(0), cycleTime_(0), task_(&task), id_(id) {}
-		constexpr UnencodedAlarm(CounterType* configuration, const Task& task, bool armed, TickType absoluteTime, TickType cycleTime,
-		                         const uint32_t id)
-		    : configuration_(configuration), armed_(armed), absoluteTime_(absoluteTime), cycleTime_(cycleTime), task_(&task), id_(id) {}
+		constexpr UnencodedAlarm(CounterType* configuration, const Task& task, bool armed, TickType absoluteTime,
+		                         TickType cycleTime, const uint32_t id)
+		    : configuration_(configuration), armed_(armed), absoluteTime_(absoluteTime), cycleTime_(cycleTime),
+		      task_(&task), id_(id) {}
 
 		void setArmed(bool armed) {
 			mutex.lock();
@@ -113,7 +114,7 @@ namespace os {
 		}
 	};
 
-	//TODO: get rid of encoded stuff
+	// TODO: get rid of encoded stuff
 	template <B_t B, B_t CB, const EncodedCounter<CB>* const configuration_>
 	class EncodedAlarm : public Alarm {
 		typedef EncodedCounter<CB> CounterType;

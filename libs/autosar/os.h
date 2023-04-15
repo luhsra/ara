@@ -1,11 +1,9 @@
 #ifndef _DOSEK_OS_OS_H_
 #define _DOSEK_OS_OS_H_
 
-#include "util/inline.h"
 #include "helper.h"
 #include "hooks.h"
-
-
+#include "util/inline.h"
 
 /******************************************************************************
  *                                                                            *
@@ -18,58 +16,47 @@
 
 //#include "arch/patmos/irq.h"
 
-#define ISR2(taskname)                                          \
-    __attribute__((always_inline)) __attribute__((used))        \
-    EXTERN_C_DECL void AUTOSAR_ISR_##taskname(const arch::IRQ::Context &)
+#define ISR2(taskname)                                                                                                 \
+	__attribute__((always_inline)) __attribute__((used))                                                               \
+	EXTERN_C_DECL void AUTOSAR_ISR_##taskname(const arch::IRQ::Context&)
 
 #else
 
-#define ISR2(taskname) \
-	__attribute__((always_inline)) __attribute__((used)) \
-    EXTERN_C_DECL void AUTOSAR_ISR_##taskname(void)
+#define ISR2(taskname)                                                                                                 \
+	__attribute__((always_inline)) __attribute__((used)) EXTERN_C_DECL void AUTOSAR_ISR_##taskname(void)
 
 #endif
 
-#define DeclareTask(x)				\
-	extern const TaskType AUTOSAR_TASK_ ## x;		\
-    static dosek_unused const TaskType &x = AUTOSAR_TASK_ ## x;	\
+#define DeclareTask(x)                                                                                                 \
+	extern const TaskType AUTOSAR_TASK_##x;                                                                            \
+	static dosek_unused const TaskType& x = AUTOSAR_TASK_##x;
 
 /**
  * @satisfies{13,2,5}
  */
-#define TASK(taskname) \
-	noinline EXTERN_C_DECL void AUTOSAR_TASK_FUNC_##taskname(void)
+#define TASK(taskname) noinline EXTERN_C_DECL void AUTOSAR_TASK_FUNC_##taskname(void)
 
-#define ActivateTask(x)				\
-  AUTOSAR_ActivateTask(AUTOSAR_TASK_##x)
+#define ActivateTask(x) AUTOSAR_ActivateTask(AUTOSAR_TASK_##x)
 
-#define ActivateTaskAsync(x)				\
-  AUTOSAR_ActivateTaskAsync(AUTOSAR_TASK_##x)
+#define ActivateTaskAsync(x) AUTOSAR_ActivateTaskAsync(AUTOSAR_TASK_##x)
 
-#define ChainTask(x)				\
-	AUTOSAR_ChainTask(AUTOSAR_TASK_##x)
+#define ChainTask(x) AUTOSAR_ChainTask(AUTOSAR_TASK_##x)
 
-#define TerminateTask()				\
-  AUTOSAR_TerminateTask()
+#define TerminateTask() AUTOSAR_TerminateTask()
 
-#define Schedule()				\
-  AUTOSAR_Schedule()
+#define Schedule() AUTOSAR_Schedule()
 
-#define DeclareResource(x)				\
-	extern const ResourceType AUTOSAR_RESOURCE_ ## x;		\
-    static dosek_unused const ResourceType &x = AUTOSAR_RESOURCE_ ## x;
+#define DeclareResource(x)                                                                                             \
+	extern const ResourceType AUTOSAR_RESOURCE_##x;                                                                    \
+	static dosek_unused const ResourceType& x = AUTOSAR_RESOURCE_##x;
 
-#define GetResource(x)					\
-  AUTOSAR_GetResource(AUTOSAR_RESOURCE_##x)
+#define GetResource(x) AUTOSAR_GetResource(AUTOSAR_RESOURCE_##x)
 
-#define GetTaskID(x)					\
-  AUTOSAR_GetTaskID(x)
+#define GetTaskID(x) AUTOSAR_GetTaskID(x)
 
-#define GetCoreID()						\
-  AUTOSAR_GetCoreID()
+#define GetCoreID() AUTOSAR_GetCoreID()
 
-#define ReleaseResource(x)				\
-  AUTOSAR_ReleaseResource(AUTOSAR_RESOURCE_##x)
+#define ReleaseResource(x) AUTOSAR_ReleaseResource(AUTOSAR_RESOURCE_##x)
 
 #define GetSpinlock(x) AUTOSAR_GetSpinlock(AUTOSAR_SPINLOCK_##x)
 
@@ -83,65 +70,47 @@
 
 #define DeclareEvent(x, c) __attribute__((weak)) extern const EventMaskType x = (c);
 
-#define SetEvent(task,event)						\
-  AUTOSAR_SetEvent(AUTOSAR_TASK_##task,event)
+#define SetEvent(task, event) AUTOSAR_SetEvent(AUTOSAR_TASK_##task, event)
 
-#define SetEventAsync(task,event)						\
-  AUTOSAR_SetEventAsync(AUTOSAR_TASK_##task,event)
+#define SetEventAsync(task, event) AUTOSAR_SetEventAsync(AUTOSAR_TASK_##task, event)
 
-#define GetEvent(task,event)						\
-  AUTOSAR_GetEvent(AUTOSAR_TASK_##task,event)
+#define GetEvent(task, event) AUTOSAR_GetEvent(AUTOSAR_TASK_##task, event)
 
-#define ClearEvent(event)				\
-  AUTOSAR_ClearEvent(event)
+#define ClearEvent(event) AUTOSAR_ClearEvent(event)
 
-#define WaitEvent(event)				\
-  AUTOSAR_WaitEvent(event)
+#define WaitEvent(event) AUTOSAR_WaitEvent(event)
 
-#define DeclareAlarm(x)				\
-	extern const AlarmType AUTOSAR_ALARM_ ## x;		\
-    static dosek_unused const AlarmType &x = AUTOSAR_ALARM_ ## x;
+#define DeclareAlarm(x)                                                                                                \
+	extern const AlarmType AUTOSAR_ALARM_##x;                                                                          \
+	static dosek_unused const AlarmType& x = AUTOSAR_ALARM_##x;
 
-#define ALARMCALLBACK(x)				\
-  EXTERN_C_DECL void AUTOSAR_ALARMCB_##x()
+#define ALARMCALLBACK(x) EXTERN_C_DECL void AUTOSAR_ALARMCB_##x()
 
-#define GetAlarm(x,tick)				\
-  AUTOSAR_GetAlarm(AUTOSAR_ALARM_##x,tick)
+#define GetAlarm(x, tick) AUTOSAR_GetAlarm(AUTOSAR_ALARM_##x, tick)
 
-#define SetRelAlarm(x,inc,period)				\
-  AUTOSAR_SetRelAlarm(AUTOSAR_ALARM_##x,inc,period)
+#define SetRelAlarm(x, inc, period) AUTOSAR_SetRelAlarm(AUTOSAR_ALARM_##x, inc, period)
 
-#define SetAbsAlarm(x,inc,period)				\
-  AUTOSAR_SetRelAlarm(AUTOSAR_ALARM_##x,inc,period)
+#define SetAbsAlarm(x, inc, period) AUTOSAR_SetRelAlarm(AUTOSAR_ALARM_##x, inc, period)
 
-#define CancelAlarm(x)						\
-  AUTOSAR_CancelAlarm(AUTOSAR_ALARM_##x)
+#define CancelAlarm(x) AUTOSAR_CancelAlarm(AUTOSAR_ALARM_##x)
 
-#define GetAlarmBase(x,b)				\
-  AUTOSAR_GetAlarmBase(AUTOSAR_ALARM_##x,b)
+#define GetAlarmBase(x, b) AUTOSAR_GetAlarmBase(AUTOSAR_ALARM_##x, b)
 
-#define DeclareCounter(x)			\
-	extern const CounterType AUTOSAR_COUNTER_ ## x;		\
-    static dosek_unused const CounterType &x = AUTOSAR_COUNTER_ ## x;
+#define DeclareCounter(x)                                                                                              \
+	extern const CounterType AUTOSAR_COUNTER_##x;                                                                      \
+	static dosek_unused const CounterType& x = AUTOSAR_COUNTER_##x;
 
-#define AdvanceCounter(x)			\
-  AUTOSAR_AdvanceCounter(AUTOSAR_COUNTER_##x)
+#define AdvanceCounter(x) AUTOSAR_AdvanceCounter(AUTOSAR_COUNTER_##x)
 
-#define IncrementCounter(x)			\
-  AUTOSAR_AdvanceCounter(AUTOSAR_COUNTER_##x)
+#define IncrementCounter(x) AUTOSAR_AdvanceCounter(AUTOSAR_COUNTER_##x)
 
-#define GetCounter(x)								\
-	AUTOSAR_GetCounter(AUTOSAR_COUNTER_##x)
-    
-#define StartOS(x)				\
-	AUTOSAR_StartOS(x)		\
+#define GetCounter(x) AUTOSAR_GetCounter(AUTOSAR_COUNTER_##x)
 
+#define StartOS(x) AUTOSAR_StartOS(x)
 
-#define StartCore(core, status)						\
-  AUTOSAR_StartCore(core, status)
+#define StartCore(core, status) AUTOSAR_StartCore(core, status)
 
-#define GetNumberOfActivatedCores()						\
-  AUTOSAR_GetNumberOfActivatedCores()
+#define GetNumberOfActivatedCores() AUTOSAR_GetNumberOfActivatedCores()
 
 #define OS_CORE_ID_0 0
 #define OS_CORE_ID_1 1
@@ -179,26 +148,16 @@
 // #define SendZeroMessage(MSG)				\
 //   AUTOSAR_SendZeroMessage(AUTOSAR_MESSAGE_##MSG)
 
-#define ShutdownOS(STATUS)			\
-  AUTOSAR_ShutdownOS(STATUS)
+#define ShutdownOS(STATUS) AUTOSAR_ShutdownOS(STATUS)
 
-#define ShutdownAllCores(STATUS)			\
-  AUTOSAR_ShutdownAllCores(STATUS)
+#define ShutdownAllCores(STATUS) AUTOSAR_ShutdownAllCores(STATUS)
 
-#define DisableAllInterrupts()                  \
-  AUTOSAR_DisableAllInterrupts()
-#define EnableAllInterrupts()                  \
-  AUTOSAR_EnableAllInterrupts()
-#define SuspendAllInterrupts()                  \
-  AUTOSAR_SuspendAllInterrupts()
-#define ResumeAllInterrupts()                   \
-  AUTOSAR_ResumeAllInterrupts()
-#define SuspendOSInterrupts()                  \
-  AUTOSAR_SuspendOSInterrupts()
-#define ResumeOSInterrupts()                   \
-  AUTOSAR_ResumeOSInterrupts()
-
-
+#define DisableAllInterrupts() AUTOSAR_DisableAllInterrupts()
+#define EnableAllInterrupts() AUTOSAR_EnableAllInterrupts()
+#define SuspendAllInterrupts() AUTOSAR_SuspendAllInterrupts()
+#define ResumeAllInterrupts() AUTOSAR_ResumeAllInterrupts()
+#define SuspendOSInterrupts() AUTOSAR_SuspendOSInterrupts()
+#define ResumeOSInterrupts() AUTOSAR_ResumeOSInterrupts()
 
 /******************************************************************************
  *                                                                            *
@@ -212,13 +171,11 @@ extern "C" {
 
 EXTERN_C_DECL void StartOS(int);
 
-
 /**
  * \brief Artificial function at beginning of a subtask handler
  **/
 
 void AUTOSAR_kickoff();
-
 
 /**
  * \brief Activate a TASK
@@ -249,7 +206,7 @@ extern CoreIdType AUTOSAR_GetCoreID();
 /**
  * Start a new Core
  */
-extern void AUTOSAR_StartCore(CoreIdType r, StatusType *status);
+extern void AUTOSAR_StartCore(CoreIdType r, StatusType* status);
 
 /**
  * Wait until given core has scheduled once
@@ -291,7 +248,7 @@ extern StatusType AUTOSAR_ReleaseSpinlock(SpinlockType r);
  * \param t The TASK owning the EVENT
  * \param e The EVENT the will be set
  **/
-extern StatusType AUTOSAR_SetEvent(TaskType t,EventMaskType e);
+extern StatusType AUTOSAR_SetEvent(TaskType t, EventMaskType e);
 
 /**
  * \brief Get the event mask of the given TASK
@@ -314,7 +271,7 @@ extern StatusType AUTOSAR_WaitEvent(EventMaskType e);
 /**
  * \brief Get the ticks until the next expiration
  **/
-extern StatusType AUTOSAR_GetAlarm(AlarmType a,TickType* ticks);
+extern StatusType AUTOSAR_GetAlarm(AlarmType a, TickType* ticks);
 
 /**
  * \brief Trigger the given Alarm to expire in certain amount of time
@@ -322,7 +279,7 @@ extern StatusType AUTOSAR_GetAlarm(AlarmType a,TickType* ticks);
  * \param inc The relative offset for the first expiration of the given ALARM
  * \param cycle The ALARM will periodically expire every cycle time units
  **/
-extern StatusType AUTOSAR_SetRelAlarm(AlarmType a,TickType inc, TickType cycle);
+extern StatusType AUTOSAR_SetRelAlarm(AlarmType a, TickType inc, TickType cycle);
 
 /**
  * \brief Reset the given ALARM
@@ -332,7 +289,7 @@ extern StatusType AUTOSAR_CancelAlarm(AlarmType a);
 /**
  * \brief Get the AlarmBase
  **/
-extern StatusType AUTOSAR_GetAlarmBase(AlarmType a,AlarmBaseRefType ab);
+extern StatusType AUTOSAR_GetAlarmBase(AlarmType a, AlarmBaseRefType ab);
 
 /**
  * \brief Advance the given UserCounter c by one tick
@@ -344,14 +301,14 @@ extern StatusType AUTOSAR_AdvanceCounter(CounterType c);
  * \param m The MESSAGE to be sent.
  * \param data The content of the message
  **/
-extern StatusType AUTOSAR_SendMessage(MessageIdentifier m,void *data);
+extern StatusType AUTOSAR_SendMessage(MessageIdentifier m, void* data);
 
 /**
  * \brief Receive the given Message
  * \param m The MESSAGE to be received.
  * \param data The content of the message is stored here.
  **/
-extern StatusType AUTOSAR_ReceiveMessage(MessageIdentifier m,void *data);
+extern StatusType AUTOSAR_ReceiveMessage(MessageIdentifier m, void* data);
 
 /**
  * \brief Send the given Message of statical unknown lenght
@@ -359,7 +316,7 @@ extern StatusType AUTOSAR_ReceiveMessage(MessageIdentifier m,void *data);
  * \param data The content of the message
  * \param length The lenght of the content in bytes
  **/
-extern StatusType AUTOSAR_SendDynamicMessage(MessageIdentifier m,void *data,unsigned int length);
+extern StatusType AUTOSAR_SendDynamicMessage(MessageIdentifier m, void* data, unsigned int length);
 
 /**
  * \brief Receive the given Message
@@ -367,7 +324,7 @@ extern StatusType AUTOSAR_SendDynamicMessage(MessageIdentifier m,void *data,unsi
  * \param data The content of the message is stored here
  * \param length The lenght of the content in bytes
  **/
-extern StatusType AUTOSAR_ReceiveDynamicMessage(MessageIdentifier m,void *data,unsigned int length);
+extern StatusType AUTOSAR_ReceiveDynamicMessage(MessageIdentifier m, void* data, unsigned int length);
 
 /**
  * \brief Send a message without content
@@ -388,8 +345,6 @@ extern void AUTOSAR_SuspendAllInterrupts();
 extern void AUTOSAR_ResumeAllInterrupts();
 extern void AUTOSAR_SuspendOSInterrupts();
 extern void AUTOSAR_ResumeOSInterrupts();
-
-
 
 /******************************************************************************
  *                                                                            *

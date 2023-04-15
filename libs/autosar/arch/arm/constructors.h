@@ -15,9 +15,9 @@
  */
 
 extern "C" {
-  /**
-   * @brief To be execute at startup.
-   */
-	void run_constructors();
+/**
+ * @brief To be execute at startup.
+ */
+void run_constructors();
 }
 #endif

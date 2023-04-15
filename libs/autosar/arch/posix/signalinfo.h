@@ -7,10 +7,10 @@
 
 #include <signal.h>
 
-int printSigMask(const char *msg);
+int printSigMask(const char* msg);
 
-int printPendingSigs(const char *msg);
+int printPendingSigs(const char* msg);
 
-void printSigset(const char *ldr, const sigset_t *mask);
+void printSigset(const char* ldr, const sigset_t* mask);
 
 #endif
