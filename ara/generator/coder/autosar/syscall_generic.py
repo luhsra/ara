@@ -32,7 +32,7 @@ class GenericSystemCalls(BaseCoder):
         ["StatusType", "AlarmType", "TickType", "TickType"],
         "AUTOSAR_CancelAlarm": ["StatusType", "AlarmType"],
         "AUTOSAR_GetSpinlock": ["StatusType", "SpinlockType"],
-        "AUTOSAR_TryGetSpinlock": ["StatusType", "SpinlockType", "int*"],
+        "AUTOSAR_TryToGetSpinlock": ["StatusType", "SpinlockType", "TryToGetSpinlockType*"],
         "AUTOSAR_ReleaseSpinlock": ["StatusType", "SpinlockType"],
         "AUTOSAR_AdvanceCounter": ["StatusType", "CounterType"],
     }
@@ -262,6 +262,18 @@ class GenericSystemCalls(BaseCoder):
             "StatusType", [
                 self.task_desc(userspace.calling_task),
                 str(kernelspace.arguments().spinlock.impl.descriptor.name)
+            ],
+            name="result")
+
+    def TryToGetSpinlock(self, syscall, userspace, kernelspace):
+        self.call(
+            kernelspace,
+            "scheduler_[" + str(userspace.calling_task.cpu_id) +
+            "].TryToGetSpinlock_impl",
+            "StatusType", [
+                self.task_desc(userspace.calling_task),
+                str(kernelspace.arguments().spinlock.impl.descriptor.name),
+                "arg1"
             ],
             name="result")
 
