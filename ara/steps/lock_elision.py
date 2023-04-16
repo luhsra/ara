@@ -30,11 +30,20 @@ class LockElision(Step):
     LOCKS = [(Spinlock, lambda x: x.name,
               lambda x: x.on_hold and len(x.wait_for) > 0)]
 
-    def _can_elide(self, state, cpu_id, spins):
+    def _can_elide(self, state, cpu_id):
+        mstg = self._graph.mstg
+        st2sy = mstg.edge_type(MSTType.st2sy)
+        follow_sync = mstg.edge_type(MSTType.follow_sync)
 
-        def get_abb_spinlock_syscall(state):
+        def get_abb(state):
+            return mstg.vp.state[state].cpus.one().abb
+
+        def get_next_state(state):
+            return [v for v in mstg.vertex(state).out_neighbors()].pop()
+
+        def get_syscall_args_spinlock(state):
             syscall_name = mstg.get_syscall_name(state)
-            abb = mstg.vp.state[state].cpus.one().abb
+            abb = get_abb(state)
             if (syscall_name) not in [
                     "AUTOSAR_GetSpinlock", "AUTOSAR_TryToGetSpinlock",
                     "AUTOSAR_ReleaseSpinlock"
@@ -42,72 +51,67 @@ class LockElision(Step):
                 spinlock = None
             else:
                 spinlock = self._graph.cfg.vp.arguments[abb].spinlock
-            return abb, spinlock, syscall_name
+            return spinlock
 
-        mstg = self._graph.mstg
-        st2sy = mstg.edge_type(MSTType.st2sy)
-        follow_sync = mstg.edge_type(MSTType.follow_sync)
+        def get_predecessor_states(state):
+            return [
+                mstg.vertex(e.source())
+                for e in st2sy.vertex(state).in_edges()
+            ]
 
-        can_elide = True
-        get_spinlock_abb, spinlock, _ = get_abb_spinlock_syscall(state)
-        release_spinlock_abb = None
+        def get_cpuid(state):
+            return mstg.vp.state[state].cpus.one().id
 
-        queue = []
-        queue += st2sy.vertex(state).out_neighbors()
+        def is_spinning_or_trying(state):
+            if mstg.get_syscall_name(state) == "AUTOSAR_TryToGetSpinlock":
+                return True
+            return mstg.get_exec_state(state) == ExecState.waiting
+
+        def get_successor_sps(entry_sp):
+            exit_sp = get_next_state(entry_sp)
+            return follow_sync.vertex(exit_sp).out_neighbors()
+
+        queue = [get_next_state(state)]
         visited = []
+        elide = True
+        spinlock = get_syscall_args_spinlock(state)
+        self._log.debug(f"GetSpinlock({spinlock.name}) in {state}")
+        release_abb = None
 
-        while (queue):
-            curr_state = queue.pop(0)  # FIFO -> BFS
-            visited.append(curr_state)
-
+        while queue:
+            curr_sp = queue.pop(0)  # FIFO -> BFS
+            visited.append(curr_sp)
             stop_search_subtree = False
 
-            if mstg.vp.type[curr_state] == StateType.entry_sync:
-                self._log.debug(f"SP entry {curr_state}")
-
-                for e in st2sy.vertex(
-                        curr_state).in_edges():  # find all predecessors
-                    predecessor = mstg.vertex(e.source())
-                    pre_abb, pre_spinlock, pre_syscall_name = get_abb_spinlock_syscall(
-                        predecessor)
-
-                    # Find ReleaseSpinlock on same cpu id with same spinlock
-                    if mstg.vp.state[predecessor].cpus.one(
-                    ).id == cpu_id and pre_spinlock == spinlock and pre_syscall_name == "AUTOSAR_ReleaseSpinlock":
-                        self._log.debug(
-                            f"matching ReleaseSpinlock in {predecessor}")
-                        release_spinlock_abb = pre_abb
-                        stop_search_subtree = True
-
-                    # Find GetSpinlock on any other CPU with same spinlock -> may be spinning
-                    spin = False
-                    if mstg.vp.state[predecessor].cpus.one(
-                    ).id != cpu_id and pre_spinlock == spinlock and pre_syscall_name == "AUTOSAR_GetSpinlock":
-                        spin = mstg.get_exec_state(
-                            predecessor
-                        ) == ExecState.waiting  # check if spinning on this spinlock
-                        if spin:
-                            can_elide = False
-                    self._log.debug("%s (%s) -> %s (%s) spins: %s",
-                                    predecessor, mstg.vp.state[predecessor].id,
-                                    curr_state, mstg.vp.state[curr_state].id,
-                                    spin)
-
-            if stop_search_subtree:
+            if mstg.vp.type[curr_sp] != StateType.entry_sync:
+                self._log.warning(f"Not an entry SP {curr_sp}")
                 continue
-            # enqueue next states
-            exit = [
-                v for v in mstg.vertex(curr_state).out_neighbors()
-            ].pop()  # curr state is entry, so this must must be exit SP
-            for next in follow_sync.vertex(exit).out_neighbors(
-            ):  # follow sync links the next entry SP
-                if next not in visited and next not in queue:
-                    queue.append(next)
 
-        if spins:
-            can_elide = False
+            for p in get_predecessor_states(curr_sp):
 
-        return can_elide, release_spinlock_abb
+                if not get_syscall_args_spinlock(p) == spinlock:
+                    continue  # irrelevant predecessor
+
+                # Find ReleaseSpinlock on same cpu id with same spinlock
+                if cpu_id == get_cpuid(p) and mstg.get_syscall_name(
+                        p) == "AUTOSAR_ReleaseSpinlock":
+                    self._log.debug(
+                        f"matching ReleaseSpinlock({spinlock.name}) in {p} -> {curr_sp}"
+                    )
+                    stop_search_subtree = True
+                    # store where the lock is released
+                    release_abb = get_abb(p)
+
+                if is_spinning_or_trying(p):
+                    elide = False
+                    self._log.debug(f"{p} -> {curr_sp} spins")
+
+            if not stop_search_subtree:
+                for next_sp in get_successor_sps(curr_sp):
+                    if next_sp not in visited and next_sp not in queue:
+                        queue.append(next_sp)
+
+        return elide, release_abb
 
     def _may_spin(self, state, cpu_id):
         mstg = self._graph.mstg
@@ -176,10 +180,10 @@ class LockElision(Step):
                 continue
             state, cpu_id, irq = mstg.get_syscall_state(sync)
             syscall_name = mstg.get_syscall_name(state)
-            if syscall_name != 'AUTOSAR_GetSpinlock' and syscall_name != 'AUTOSAR_TryToGetSpinlock':
+            if syscall_name != 'AUTOSAR_GetSpinlock':
                 continue
             spins, handled = self._may_spin(state, cpu_id)
-            elide, release_abb = self._can_elide(state, cpu_id, spins)
+            elide, release_abb = self._can_elide(state, cpu_id)
             details[mstg.vp.state[state].id] = {
                 "state": mstg.vp.state[state].id,
                 "abb": mstg.vp.state[state].cpus.one().abb,
