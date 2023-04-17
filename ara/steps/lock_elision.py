@@ -62,11 +62,6 @@ class LockElision(Step):
         def get_cpuid(state):
             return mstg.vp.state[state].cpus.one().id
 
-        def is_spinning_or_trying(state):
-            if mstg.get_syscall_name(state) == "AUTOSAR_TryToGetSpinlock":
-                return True
-            return mstg.get_exec_state(state) == ExecState.waiting
-
         def get_successor_sps(entry_sp):
             exit_sp = get_next_state(entry_sp)
             return follow_sync.vertex(exit_sp).out_neighbors()
@@ -102,9 +97,10 @@ class LockElision(Step):
                     # store where the lock is released
                     release_abb = get_abb(p)
 
-                if is_spinning_or_trying(p):
+                # interaction on any other cpu
+                if cpu_id != get_cpuid(p):
                     elide = False
-                    self._log.debug(f"{p} -> {curr_sp} spins")
+                    self._log.warning(f"{p} -> {curr_sp} interaction")
 
             if not stop_search_subtree:
                 for next_sp in get_successor_sps(curr_sp):
