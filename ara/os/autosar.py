@@ -688,6 +688,11 @@ class AUTOSAR(OSBase):
         cur_task = state.cur_control_inst(cpu_id)
         assert isinstance(cur_task, Task), "ChainTask must be called in a task"
 
+        if args.task.accessing_application is not None:
+            if cpu_id not in args.task.accessing_application:
+                logger.debug(f"Unallowed CT of {args.task} from {cpu_id=}.")
+                return state
+
         state = AUTOSAR.TerminateTask(state, cpu_id)
         state = AUTOSAR.ActivateTask(state, cpu_id, args.task)
 
@@ -950,7 +955,7 @@ class AUTOSAR(OSBase):
         assert isinstance(args.event_mask, int)
         if args.task.accessing_application is not None:
             if cpu_id not in args.task.accessing_application:
-                logger.debug(f"Unallowed AT of {args.task} from {cpu_id=}.")
+                logger.debug(f"Unallowed SE of {args.task} from {cpu_id=}.")
                 return state
         state = AUTOSAR.SetEvent(state, cpu_id, args.task, args.event_mask)
         AUTOSAR.connect_events(state, cpu_id, args.event_mask, "SetEvent",
