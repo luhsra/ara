@@ -53,12 +53,20 @@ struct Scheduler {
         return TerminateTask_impl(from);
     }*/
 
-    forceinline StatusType TerminateTask_impl(const Task &from) {
+    forceinline StatusType CheckSpinlock_impl(const Task& from) {
         TaskList::spinlock_mask_t mask = tlist.get_task_spinlock_mask(from.id);
         if (mask) {
             debug_core << "Error: Task "<< (int) from.id <<" holds locks, mask: " << mask << endl;
             return E_OS_SPINLOCK;
         }
+        return E_OK;
+    }
+
+    forceinline StatusType TerminateTask_impl(const Task &from) {
+        if (CheckSpinlock_impl(from)) {
+            return E_OS_SPINLOCK;
+        }
+
         SetSuspended_impl(from);
         Schedule_impl();
         return E_OK;
@@ -81,11 +89,10 @@ struct Scheduler {
     }
 
     forceinline StatusType WaitEvent_impl(const Task &current_task, const int event_mask) {
-        TaskList::spinlock_mask_t mask = tlist.get_task_spinlock_mask(current_task.id);
-        if (mask) {
-            debug_core << "Error: Task "<< (int) current_task.id <<" holds locks, mask: " << mask << endl;
+        if (CheckSpinlock_impl(current_task)) {
             return E_OS_SPINLOCK;
         }
+
         tlist.wait_events(current_task.id, event_mask);
         Schedule_impl();
         return E_OK;

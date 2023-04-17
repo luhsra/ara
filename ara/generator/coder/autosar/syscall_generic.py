@@ -241,7 +241,7 @@ class GenericSystemCalls(BaseCoder):
         if not allowed:
             kernelspace.add(
                 Statement("debug_core << \"Access denied\" << endl"))
-            kernelspace.add(Statement("result = E_OS_ACCESS;"))
+            kernelspace.add(Statement("result = E_OS_ACCESS"))
             return False
 
         self.call(kernelspace, "scheduler_[%d].SetReady_impl" % target_cpu,
@@ -260,21 +260,33 @@ class GenericSystemCalls(BaseCoder):
 
         task = userspace.calling_task
         curr_cpu = userspace.calling_task.cpu_id
+        target_cpu = kernelspace.arguments().task.cpu_id
 
         allowed = self.access_check(kernelspace.arguments().task, curr_cpu)
         if not allowed:
             kernelspace.add(
                 Statement("debug_core << \"Access denied\" << endl"))
-            kernelspace.add(Statement("result = E_OS_ACCESS;"))
+            kernelspace.add(Statement("result = E_OS_ACCESS"))
             return False
+
+        ifblock = If(f"scheduler_[{task.cpu_id}].CheckSpinlock_impl({self.task_desc(task)})")
+        ifblock.add(Statement("return E_OS_SPINLOCK"))
+        kernelspace.add(ifblock)
+
+        self.call(kernelspace, "scheduler_[%d].SetReady_impl" % target_cpu,
+                  "void", [self.task_desc(kernelspace.arguments().task)])
+
+        if curr_cpu != target_cpu:
+            self.call(kernelspace, "Machine::trigger_interrupt", "void", [
+                str(self.generator.arch_rules.IPI_SIG),
+                str(target_cpu), "true"
+            ])
 
         self.call(kernelspace,
                   "scheduler_[%d].SetSuspended_impl" % task.cpu_id, "void",
                   [self.task_desc(task)])
-
-        self.ActivateTask(syscall, userspace, kernelspace)
-
-        self.call(kernelspace, "scheduler_[%d].Schedule_impl" % task.cpu_id)
+        self.call(kernelspace, f"scheduler_[{curr_cpu}].Schedule_impl",
+                "void")
 
     def GetSpinlock(self, syscall, userspace, kernelspace):
         self.call(kernelspace,

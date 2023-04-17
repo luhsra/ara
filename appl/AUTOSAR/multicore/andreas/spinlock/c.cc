@@ -28,6 +28,7 @@ TASK(T00) {
 	test_trace('1');
 	TerminateTask(); // error hook because of lock
 	test_trace('2');
+	//ChainTask(T10); // error hook because of lock
 	// missing end
 }
 
