@@ -163,6 +163,12 @@ class GenericSystemCalls(BaseCoder):
         task = self.get_calling_inst(abb)
         return self.task_desc(task)
 
+    def access_check(self, task, cpu_id):
+        if task.accessing_application is not None:
+            if cpu_id not in task.accessing_application:
+                return False
+        return True
+
     def StartOS(self, block):
         block.unused_parameter(0)
 
@@ -230,6 +236,12 @@ class GenericSystemCalls(BaseCoder):
         curr_cpu = userspace.calling_task.cpu_id
         target_cpu = kernelspace.arguments().task.cpu_id
 
+        allowed = self.access_check(kernelspace.arguments().task, curr_cpu)
+        if not allowed:
+            kernelspace.add(Statement("debug_core << \"Access denied\" << endl"))
+            kernelspace.add(Statement("result = E_OS_ACCESS;"))
+            return False
+
         self.call(kernelspace, "scheduler_[%d].SetReady_impl" % target_cpu,
                   "void", [self.task_desc(kernelspace.arguments().task)])
 
@@ -245,6 +257,13 @@ class GenericSystemCalls(BaseCoder):
     def ChainTask(self, syscall, userspace, kernelspace):
 
         task = userspace.calling_task
+        curr_cpu = userspace.calling_task.cpu_id
+
+        allowed = self.access_check(kernelspace.arguments().task, curr_cpu)
+        if not allowed:
+            kernelspace.add(Statement("debug_core << \"Access denied\" << endl"))
+            kernelspace.add(Statement("result = E_OS_ACCESS;"))
+            return False
 
         self.call(kernelspace,
                   "scheduler_[%d].SetSuspended_impl" % task.cpu_id, "void",
@@ -330,6 +349,12 @@ class GenericSystemCalls(BaseCoder):
 
         curr_cpu = userspace.calling_task.cpu_id
         target_cpu = kernelspace.arguments().task.cpu_id
+
+        allowed = self.access_check(kernelspace.arguments().task, curr_cpu)
+        if not allowed:
+            kernelspace.add(Statement("debug_core << \"Access denied\" << endl"))
+            kernelspace.add(Statement("result = E_OS_ACCESS;"))
+            return
 
         tid = str(kernelspace.arguments().task.impl.task_id)
         mask = str(kernelspace.arguments().event_mask)

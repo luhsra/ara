@@ -287,9 +287,6 @@ if get_option('enable_step_tests')
         'trampoline/mc_startup_s1',
         'trampoline/mc_events_s1',
         'trampoline/mc_scheduling_s1',
-      ]
-      # OS application access check unsupported
-      expected_fail = [
         'trampoline/mc_taskActivation_s1',
         'trampoline/mc_taskChaining_s1',
         'trampoline/mc_eventSetting_s1',
@@ -301,18 +298,13 @@ if get_option('enable_step_tests')
           is_parallel = false
           testsuite_extra = 'autosar_generator_multicore'
         endif
-        should_fail = false
-        if app.has_key('path') and app['path'] in expected_fail
-          should_fail = true
-        endif
 
-        if app.has_key('path') and app['path'] in supported or app['path'] in expected_fail
+        if app.has_key('path') and app['path'] in supported
           test('autosar_generator_' + app['full_name'],
               py3_inst,
               args: [files('autosar_generator.py'), app['app_image']],
               env: [python_path],
               depends: ara_py,
-              should_fail: should_fail,
               is_parallel: is_parallel,
               suite: ['autosar_generator'] + testsuite_extra
           )
