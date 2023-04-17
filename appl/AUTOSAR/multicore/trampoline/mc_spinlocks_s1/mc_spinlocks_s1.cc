@@ -114,7 +114,7 @@ void ShutdownHook(StatusType error)
 {
   switch(GetCoreID())
   {
-    case OS_CORE_ID_MASTER :
+    case OS_CORE_ID_1 :
       TestRunner_end();
       break;
     default :
@@ -127,12 +127,6 @@ ISR(softwareInterruptHandler0_Core1)
 {
   TestRunner_runTest(isr_instance());
 }
-
-UNUSED_ISR(softwareInterruptHandler0_Core0)
-UNUSED_ISR(softwareInterruptHandler1_Core0)
-UNUSED_ISR(softwareInterruptHandler1_Core1)
-UNUSED_ISR(softwareInterruptHandler2_Core0)
-UNUSED_ISR(softwareInterruptHandler2_Core1)
 
 TASK(t1)
 {
