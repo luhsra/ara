@@ -132,17 +132,6 @@ struct TaskList : public UnencodedTaskListStatic {
 		}
     }
 
-    /** check if CPU holds locks **/
-    forceinline spinlock_mask_t get_cpu_spinlock_mask(const CoreIdType cpuid) {
-    spinlock_mask_t mask = 0;
-{{{!foreach_subtask|\
-        if (OS_{{{!subtask}}}_task.cpuid == cpuid) {
-           mask |= {{{!subtask}}}_spinlock_mask;
-        } \
-}}}
-        return mask;
-    }
-
     forceinline void task_spin_lock(const Task::id_t id, const SpinlockType spinlock_id) {
         (void) id;
 {{{!foreach_subtask|\

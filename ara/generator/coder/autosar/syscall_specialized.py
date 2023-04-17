@@ -30,7 +30,8 @@ class SpecializedSystemCalls(GenericSystemCalls):
 
     def ActivateTask(self, syscall, userspace, kernelspace):
         # check if IPI not needed
-        if self.generator.ara_step.ipi_avoidance.get() and not self.ipi_needed(syscall):
+        if self.generator.ara_step.ipi_avoidance.get(
+        ) and not self.ipi_needed(syscall):
             self.call(
                 kernelspace, "scheduler_[%d].SetReady_impl" %
                 kernelspace.arguments().task.cpu_id, "void",
@@ -43,7 +44,8 @@ class SpecializedSystemCalls(GenericSystemCalls):
 
     def SetEvent(self, syscall, userspace, kernelspace):
         # check if IPI not needed
-        if self.generator.ara_step.ipi_avoidance.get() and not self.ipi_needed(syscall):
+        if self.generator.ara_step.ipi_avoidance.get(
+        ) and not self.ipi_needed(syscall):
             target_cpu = kernelspace.arguments().task.cpu_id
 
             tid = str(kernelspace.arguments().task.impl.task_id)
@@ -61,13 +63,13 @@ class SpecializedSystemCalls(GenericSystemCalls):
 
     def GetSpinlock(self, syscall, userspace, kernelspace):
         # check if Locking not needed
-        if self.generator.ara_step.lock_elision.get() and not self.lock_needed(syscall):
+        if self.generator.ara_step.lock_elision.get(
+        ) and not self.lock_needed(syscall):
             self.call(
                 kernelspace,
                 "scheduler_[" + str(userspace.calling_task.cpu_id) +
                 "].GetSpinlock_impl",
                 "StatusType", [
-                    self.task_desc(userspace.calling_task),
                     str(kernelspace.arguments().spinlock.impl.descriptor.name),
                     "true"
                 ],
@@ -80,13 +82,13 @@ class SpecializedSystemCalls(GenericSystemCalls):
 
     def ReleaseSpinlock(self, syscall, userspace, kernelspace):
         # check if Locking not needed
-        if self.generator.ara_step.lock_elision.get() and not self.lock_needed(syscall, True):
+        if self.generator.ara_step.lock_elision.get() and not self.lock_needed(
+                syscall, True):
             self.call(
                 kernelspace,
                 "scheduler_[" + str(userspace.calling_task.cpu_id) +
                 "].ReleaseSpinlock_impl",
                 "StatusType", [
-                    self.task_desc(userspace.calling_task),
                     str(kernelspace.arguments().spinlock.impl.descriptor.name),
                     "true"
                 ],

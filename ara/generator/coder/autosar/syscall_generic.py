@@ -32,7 +32,8 @@ class GenericSystemCalls(BaseCoder):
         ["StatusType", "AlarmType", "TickType", "TickType"],
         "AUTOSAR_CancelAlarm": ["StatusType", "AlarmType"],
         "AUTOSAR_GetSpinlock": ["StatusType", "SpinlockType"],
-        "AUTOSAR_TryToGetSpinlock": ["StatusType", "SpinlockType", "TryToGetSpinlockType*"],
+        "AUTOSAR_TryToGetSpinlock":
+        ["StatusType", "SpinlockType", "TryToGetSpinlockType*"],
         "AUTOSAR_ReleaseSpinlock": ["StatusType", "SpinlockType"],
         "AUTOSAR_AdvanceCounter": ["StatusType", "CounterType"],
     }
@@ -238,7 +239,8 @@ class GenericSystemCalls(BaseCoder):
 
         allowed = self.access_check(kernelspace.arguments().task, curr_cpu)
         if not allowed:
-            kernelspace.add(Statement("debug_core << \"Access denied\" << endl"))
+            kernelspace.add(
+                Statement("debug_core << \"Access denied\" << endl"))
             kernelspace.add(Statement("result = E_OS_ACCESS;"))
             return False
 
@@ -261,7 +263,8 @@ class GenericSystemCalls(BaseCoder):
 
         allowed = self.access_check(kernelspace.arguments().task, curr_cpu)
         if not allowed:
-            kernelspace.add(Statement("debug_core << \"Access denied\" << endl"))
+            kernelspace.add(
+                Statement("debug_core << \"Access denied\" << endl"))
             kernelspace.add(Statement("result = E_OS_ACCESS;"))
             return False
 
@@ -274,15 +277,12 @@ class GenericSystemCalls(BaseCoder):
         self.call(kernelspace, "scheduler_[%d].Schedule_impl" % task.cpu_id)
 
     def GetSpinlock(self, syscall, userspace, kernelspace):
-        self.call(
-            kernelspace,
-            "scheduler_[" + str(userspace.calling_task.cpu_id) +
-            "].GetSpinlock_impl",
-            "StatusType", [
-                self.task_desc(userspace.calling_task),
-                str(kernelspace.arguments().spinlock.impl.descriptor.name)
-            ],
-            name="result")
+        self.call(kernelspace,
+                  "scheduler_[" + str(userspace.calling_task.cpu_id) +
+                  "].GetSpinlock_impl",
+                  "StatusType",
+                  [str(kernelspace.arguments().spinlock.impl.descriptor.name)],
+                  name="result")
 
     def TryToGetSpinlock(self, syscall, userspace, kernelspace):
         self.call(
@@ -290,22 +290,18 @@ class GenericSystemCalls(BaseCoder):
             "scheduler_[" + str(userspace.calling_task.cpu_id) +
             "].TryToGetSpinlock_impl",
             "StatusType", [
-                self.task_desc(userspace.calling_task),
                 str(kernelspace.arguments().spinlock.impl.descriptor.name),
                 "arg1"
             ],
             name="result")
 
     def ReleaseSpinlock(self, syscall, userspace, kernelspace):
-        self.call(
-            kernelspace,
-            "scheduler_[" + str(userspace.calling_task.cpu_id) +
-            "].ReleaseSpinlock_impl",
-            "StatusType", [
-                self.task_desc(userspace.calling_task),
-                str(kernelspace.arguments().spinlock.impl.descriptor.name)
-            ],
-            name="result")
+        self.call(kernelspace,
+                  "scheduler_[" + str(userspace.calling_task.cpu_id) +
+                  "].ReleaseSpinlock_impl",
+                  "StatusType",
+                  [str(kernelspace.arguments().spinlock.impl.descriptor.name)],
+                  name="result")
 
     def WaitEvent(self, syscall, userspace, kernelspace):
         self.call(kernelspace,
@@ -352,7 +348,8 @@ class GenericSystemCalls(BaseCoder):
 
         allowed = self.access_check(kernelspace.arguments().task, curr_cpu)
         if not allowed:
-            kernelspace.add(Statement("debug_core << \"Access denied\" << endl"))
+            kernelspace.add(
+                Statement("debug_core << \"Access denied\" << endl"))
             kernelspace.add(Statement("result = E_OS_ACCESS;"))
             return
 
