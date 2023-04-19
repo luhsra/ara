@@ -38,8 +38,8 @@ class LockElision(Step):
         def get_abb(state):
             return mstg.vp.state[state].cpus.one().abb
 
-        def get_next_state(state):
-            return [v for v in mstg.vertex(state).out_neighbors()].pop()
+        def get_next_states(state):
+            return [v for v in mstg.vertex(state).out_neighbors()]
 
         def get_syscall_args_spinlock(state):
             syscall_name = mstg.get_syscall_name(state)
@@ -63,15 +63,26 @@ class LockElision(Step):
             return mstg.vp.state[state].cpus.one().id
 
         def get_successor_sps(entry_sp):
-            exit_sp = get_next_state(entry_sp)
+            exit_sp = get_next_states(entry_sp).pop()
             return follow_sync.vertex(exit_sp).out_neighbors()
 
-        queue = [get_next_state(state)]
+        def lock_held(entry_sp, spinlock):
+            for inst, ctxt in mstg.vp.state[entry_sp].context.items():
+                if inst == spinlock and ctxt.on_hold == True:
+                    self._log.debug(f"State {state} {spinlock.name} already held")
+                    return True
+
         visited = []
         elide = True
+        queue = list(get_next_states(state))
         spinlock = get_syscall_args_spinlock(state)
         self._log.debug(f"GetSpinlock({spinlock.name}) in {state}")
         release_abb = None
+
+        # check if lock is already held
+        for initial_sp in queue:
+            if lock_held(initial_sp, spinlock):
+                elide=False
 
         while queue:
             curr_sp = queue.pop(0)  # FIFO -> BFS
@@ -91,7 +102,7 @@ class LockElision(Step):
                 if cpu_id == get_cpuid(p) and mstg.get_syscall_name(
                         p) == "AUTOSAR_ReleaseSpinlock":
                     self._log.debug(
-                        f"matching ReleaseSpinlock({spinlock.name}) in {p} -> {curr_sp}"
+                        f"State {state} matching ReleaseSpinlock({spinlock.name}) in {p}"
                     )
                     stop_search_subtree = True
                     # store where the lock is released
@@ -100,7 +111,7 @@ class LockElision(Step):
                 # interaction on any other cpu
                 if cpu_id != get_cpuid(p):
                     elide = False
-                    self._log.warning(f"{p} -> {curr_sp} interaction")
+                    self._log.debug(f"State {state} interaction with {spinlock.name} in {p}")
 
             if not stop_search_subtree:
                 for next_sp in get_successor_sps(curr_sp):
@@ -176,7 +187,7 @@ class LockElision(Step):
                 continue
             state, cpu_id, irq = mstg.get_syscall_state(sync)
             syscall_name = mstg.get_syscall_name(state)
-            if syscall_name != 'AUTOSAR_GetSpinlock':
+            if syscall_name != 'AUTOSAR_GetSpinlock' and syscall_name != 'AUTOSAR_TryToGetSpinlock':
                 continue
             spins, handled = self._may_spin(state, cpu_id)
             elide, release_abb = self._can_elide(state, cpu_id)
