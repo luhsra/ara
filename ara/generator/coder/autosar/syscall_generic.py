@@ -269,7 +269,9 @@ class GenericSystemCalls(BaseCoder):
             kernelspace.add(Statement("result = E_OS_ACCESS"))
             return False
 
-        ifblock = If(f"scheduler_[{task.cpu_id}].CheckSpinlock_impl({self.task_desc(task)})")
+        ifblock = If(
+            f"scheduler_[{task.cpu_id}].CheckSpinlock_impl({self.task_desc(task)})"
+        )
         ifblock.add(Statement("return E_OS_SPINLOCK"))
         kernelspace.add(ifblock)
 
@@ -285,8 +287,7 @@ class GenericSystemCalls(BaseCoder):
         self.call(kernelspace,
                   "scheduler_[%d].SetSuspended_impl" % task.cpu_id, "void",
                   [self.task_desc(task)])
-        self.call(kernelspace, f"scheduler_[{curr_cpu}].Schedule_impl",
-                "void")
+        self.call(kernelspace, f"scheduler_[{curr_cpu}].Schedule_impl", "void")
 
     def GetSpinlock(self, syscall, userspace, kernelspace):
         self.call(kernelspace,

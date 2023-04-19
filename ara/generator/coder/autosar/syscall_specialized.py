@@ -80,6 +80,25 @@ class SpecializedSystemCalls(GenericSystemCalls):
         else:
             super().GetSpinlock(syscall, userspace, kernelspace)
 
+    def TryToGetSpinlock(self, syscall, userspace, kernelspace):
+        # check if Locking not needed
+        if self.generator.ara_step.lock_elision.get(
+        ) and not self.lock_needed(syscall):
+            self.call(
+                kernelspace,
+                "scheduler_[" + str(userspace.calling_task.cpu_id) +
+                "].TryToGetSpinlock_impl",
+                "StatusType", [
+                    str(kernelspace.arguments().spinlock.impl.descriptor.name),
+                    "arg1", "true"
+                ],
+                name="result")
+            kernelspace.add(Statement("debug_core << \"Lock Elided\" << endl"))
+
+            self.log_specialization(syscall)
+        else:
+            super().TryToGetGetSpinlock(syscall, userspace, kernelspace)
+
     def ReleaseSpinlock(self, syscall, userspace, kernelspace):
         # check if Locking not needed
         if self.generator.ara_step.lock_elision.get() and not self.lock_needed(
