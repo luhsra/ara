@@ -91,6 +91,9 @@ static void test_t1_instance(void)
   r9 = ActivateTask(t2);
   SCHEDULING_CHECK_AND_EQUAL_INT(10, E_OK, r9);
 
+  /* timing protection not available */
+  ReleaseSpinlock(lock_task);
+
   /* Wait for the core 1 to end its tests */
   SyncAllCores(sync0);
 }

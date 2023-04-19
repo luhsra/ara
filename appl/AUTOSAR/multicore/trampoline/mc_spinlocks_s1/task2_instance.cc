@@ -59,6 +59,7 @@ static void test_t2_instance(void)
   r2 = GetSpinlock_IE(lock_task);
   SCHEDULING_CHECK_AND_EQUAL_INT(13, E_OK, r2);
 
+  /* timing protection not available */
   Machine::trigger_interrupt_from_user(40, 1, 0);
 
   //SyncAllCores(sync0);
