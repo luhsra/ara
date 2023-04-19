@@ -2,18 +2,7 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from ..elements import (DataObjectArray, DataObject, Function, FunctionCall,
-                        Statement, Include, Comment, VariableDefinition,
-                        FunctionDeclaration, CodeTemplate, Block, If)
-
-from ..base import BaseCoder
-
-from ara.os.autosar import Resource, Task, Alarm, Counter, ISR, Event
-
-from ara.generator.tools import panic
-from ara.graph import ABBType
-
-from itertools import chain
+from ..elements import Statement, FunctionCall
 
 from .syscall_generic import GenericSystemCalls
 
@@ -29,124 +18,85 @@ class SpecializedSystemCalls(GenericSystemCalls):
         self._log.warning(f"Specialized {syscall} in {bb_name} {abb_name}")
 
     def ActivateTask(self, syscall, userspace, kernelspace):
-        # check if IPI not needed
-        if self.generator.ara_step.ipi_avoidance.get(
-        ) and not self.ipi_needed(syscall):
-            self.call(
-                kernelspace, "scheduler_[%d].SetReady_impl" %
-                kernelspace.arguments().task.cpu_id, "void",
-                [self.task_desc(kernelspace.arguments().task)])
-            kernelspace.add(Statement("debug_core << \"IPI Avoided\" << endl"))
+        super().ActivateTask(syscall, userspace, kernelspace)
 
-            self.log_specialization(syscall)
-        else:
-            super().ActivateTask(syscall, userspace, kernelspace)
+        # check if IPI not needed
+        self.avoid_ipi(syscall, kernelspace)
 
     def SetEvent(self, syscall, userspace, kernelspace):
+        super().SetEvent(syscall, userspace, kernelspace)
+
         # check if IPI not needed
-        if self.generator.ara_step.ipi_avoidance.get(
-        ) and not self.ipi_needed(syscall):
-            target_cpu = kernelspace.arguments().task.cpu_id
+        self.avoid_ipi(syscall, kernelspace)
 
-            tid = str(kernelspace.arguments().task.impl.task_id)
-            mask = str(kernelspace.arguments().event_mask)
+    def ChainTask(self, syscall, userspace, kernelspace):
+        super().ChainTask(syscall, userspace, kernelspace)
 
-            self.call(kernelspace,
-                      "scheduler_[%d].tlist.set_events" % target_cpu, "void",
-                      [tid, mask])
-
-            kernelspace.add(Statement("debug_core << \"IPI Avoided\" << endl"))
-
-            self.log_specialization(syscall)
-        else:
-            super().SetEvent(syscall, userspace, kernelspace)
+        # check if IPI not needed
+        self.avoid_ipi(syscall, kernelspace)
 
     def GetSpinlock(self, syscall, userspace, kernelspace):
-        # check if Locking not needed
-        if self.generator.ara_step.lock_elision.get(
-        ) and not self.lock_needed(syscall):
-            self.call(
-                kernelspace,
-                "scheduler_[" + str(userspace.calling_task.cpu_id) +
-                "].GetSpinlock_impl",
-                "StatusType", [
-                    str(kernelspace.arguments().spinlock.impl.descriptor.name),
-                    "true"
-                ],
-                name="result")
-            kernelspace.add(Statement("debug_core << \"Lock Elided\" << endl"))
+        super().GetSpinlock(syscall, userspace, kernelspace)
 
-            self.log_specialization(syscall)
-        else:
-            super().GetSpinlock(syscall, userspace, kernelspace)
+        # check if Locking not needed
+        self.elide_lock(syscall, kernelspace, False)
 
     def TryToGetSpinlock(self, syscall, userspace, kernelspace):
-        # check if Locking not needed
-        if self.generator.ara_step.lock_elision.get(
-        ) and not self.lock_needed(syscall):
-            self.call(
-                kernelspace,
-                "scheduler_[" + str(userspace.calling_task.cpu_id) +
-                "].TryToGetSpinlock_impl",
-                "StatusType", [
-                    str(kernelspace.arguments().spinlock.impl.descriptor.name),
-                    "arg1", "true"
-                ],
-                name="result")
-            kernelspace.add(Statement("debug_core << \"Lock Elided\" << endl"))
+        super().TryToGetSpinlock(syscall, userspace, kernelspace)
 
-            self.log_specialization(syscall)
-        else:
-            super().TryToGetGetSpinlock(syscall, userspace, kernelspace)
+        # check if Locking not needed
+        self.elide_lock(syscall, kernelspace, False)
 
     def ReleaseSpinlock(self, syscall, userspace, kernelspace):
+        super().ReleaseSpinlock(syscall, userspace, kernelspace)
+
         # check if Locking not needed
-        if self.generator.ara_step.lock_elision.get() and not self.lock_needed(
-                syscall, True):
-            self.call(
-                kernelspace,
-                "scheduler_[" + str(userspace.calling_task.cpu_id) +
-                "].ReleaseSpinlock_impl",
-                "StatusType", [
-                    str(kernelspace.arguments().spinlock.impl.descriptor.name),
-                    "true"
-                ],
-                name="result")
-            kernelspace.add(
-                Statement("debug_core << \"Unlock Elided\" << endl"))
+        self.elide_lock(syscall, kernelspace, True)
 
-            self.log_specialization(syscall)
-        else:
-            super().ReleaseSpinlock(syscall, userspace, kernelspace)
-
-    def ipi_needed(self, abb):
+    def avoid_ipi(self, abb, block):
         needed = True
-        step_data = self.ara_graph.step_data["IPIAvoidance"]
+        if not self.generator.ara_step.ipi_avoidance.get():
+            return
 
+        step_data = self.ara_graph.step_data["IPIAvoidance"]
         for ipi in step_data:  # check results
             if ipi["abb"] != abb:
                 continue
             if ipi["ipi_needed"]:  # needed in at least one state
                 return True
-
             needed = False
 
-        return needed
+        if not needed:
+            specialized_statement = Statement(
+                "debug_core << \"IPI Avoided\" << endl")
+            for idx, statement in enumerate(block.inner):
+                if isinstance(
+                        statement, FunctionCall
+                ) and statement.function == "Machine::trigger_interrupt":
+                    trigger_call = statement
+                    block.inner[idx] = specialized_statement
+                    self.log_specialization(abb)
 
-    def lock_needed(self, abb, release=False):
+    def elide_lock(self, abb, block, release=False):
         needed = True
+        if not self.generator.ara_step.lock_elision.get():
+            return
         step_data = self.ara_graph.step_data["LockElision"]["callsites"]
 
         for lock in step_data.values():  # check results
             if release and lock["release_abb"] != abb:
                 continue
-
             if not release and lock["abb"] != abb:
                 continue
-
             if not lock["elide"]:  # cannot be elided in at least one state
                 return True
 
             needed = False
 
-        return needed
+        if not needed:
+            # set "elide" to true
+            block.inner[0].arguments.append("true")
+            if not release:
+                block.add(Statement("debug_core << \"Lock Elided\" << endl"))
+            else:
+                block.add(Statement("debug_core << \"Unlock Elided\" << endl"))
