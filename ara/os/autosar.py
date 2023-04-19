@@ -688,6 +688,11 @@ class AUTOSAR(OSBase):
         cur_task = state.cur_control_inst(cpu_id)
         assert isinstance(cur_task, Task), "ChainTask must be called in a task"
 
+        # check if we are holding a spinlock
+        if state.context[cur_task].in_critical_section:
+            logger.debug(f"TerminateTask {cur_task.name} holding a spinlock")
+            return state
+
         if args.task.accessing_application is not None:
             if cpu_id not in args.task.accessing_application:
                 logger.debug(f"Unallowed CT of {args.task} from {cpu_id=}.")
@@ -1022,10 +1027,6 @@ class AUTOSAR(OSBase):
         cur_task = state.cur_control_inst(cpu_id)
         assert isinstance(cur_task, Task), "TerminateTask must be called in a task"
 
-        # check if we are holding a spinlock
-        if state.context[cur_task].in_critical_section:
-            return state
-
         state.context[cur_task] = TaskContext(status=TaskStatus.suspended,
                                               abb=state.cfg.get_entry_abb(cur_task.function),
                                               call_path=CallPath(),
@@ -1039,6 +1040,14 @@ class AUTOSAR(OSBase):
              signature=tuple(),
              custom_control_flow=True)
     def AUTOSAR_TerminateTask(cfg, state, cpu_id, args, va):
+        # check if we are holding a spinlock
+        cur_task = state.cur_control_inst(cpu_id)
+        assert isinstance(cur_task, Task), "TerminateTask must be called in a task"
+        if state.context[cur_task].in_critical_section:
+            logger.debug(f"TerminateTask {cur_task.name} holding a spinlock")
+            set_next_abb(state, cpu_id)
+            return state
+
         AUTOSAR.TerminateTask(state, cpu_id)
         cur = state.cpus[cpu_id].control_instance
         connect_from_here(state, cpu_id, cur, "TerminateTask",
@@ -1054,6 +1063,7 @@ class AUTOSAR(OSBase):
         cur_task = state.cur_control_inst(cpu_id)
         # check if we are holding a spinlock
         if state.context[cur_task].in_critical_section:
+            logger.debug(f"WaitEvent {cur_task.name} holding a spinlock")
             return state
 
         if args.event_mask & cur_ctx.received_events == 0:
