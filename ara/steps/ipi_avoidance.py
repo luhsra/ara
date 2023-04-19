@@ -10,7 +10,7 @@ import timeit
 
 
 class IPIAvoidance(Step):
-    """Detect unnecessary IPIs for ActivateTask calls.
+    """Detect unnecessary IPIs for ActivateTask, ChainTask, SetEvent calls.
 
     If an ActivateTask should activate a Task on another core but this core is
     running a higher priority task on all possible synchronisation points, the
@@ -70,7 +70,10 @@ class IPIAvoidance(Step):
             if st2sy.vertex(sync).in_degree() == 2:
                 for state in st2sy.vertex(sync).in_neighbors():
                     syscall_name = mstg.get_syscall_name(state)
-                    if syscall_name == "AUTOSAR_ActivateTask" or syscall_name == "AUTOSAR_SetEvent":
+                    if syscall_name in [
+                            "AUTOSAR_ActivateTask", "AUTOSAR_ChainTask",
+                            "AUTOSAR_SetEvent"
+                    ]:
                         ipi_needed, handled = self._is_ipi_needed(state)
                         out.append({
                             "state": mstg.vp.state[state].id,
