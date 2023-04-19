@@ -99,7 +99,7 @@ class Block(SourceElement):
         return ret
 
     def return_statement(self, expression):
-        block.add(Statement("return %s" % expression))
+        self.add(Statement("return %s" % expression))
 
     def statement_count(self):
         return sum([x.statement_count() for x in self.inner])

@@ -63,7 +63,7 @@ class SpecializedSystemCalls(GenericSystemCalls):
             if ipi["abb"] != abb:
                 continue
             if ipi["ipi_needed"]:  # needed in at least one state
-                return True
+                return
             needed = False
 
         if not needed:
@@ -89,7 +89,7 @@ class SpecializedSystemCalls(GenericSystemCalls):
             if not release and lock["abb"] != abb:
                 continue
             if not lock["elide"]:  # cannot be elided in at least one state
-                return True
+                return
 
             needed = False
 
