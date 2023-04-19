@@ -23,12 +23,13 @@ TEST_MAKE_OS_MAIN(start())
 
 TASK(T00) {
 	GetSpinlock(S1);
+	ChainTask(T10); // error hook because of lock
 	test_trace('0');
 	WaitEvent(E1); // error hook because of lock
 	test_trace('1');
 	TerminateTask(); // error hook because of lock
 	test_trace('2');
-	//ChainTask(T10); // error hook because of lock
+	TerminateTask(); // error hook because of lock
 	// missing end
 }
 

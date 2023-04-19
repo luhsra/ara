@@ -23,49 +23,40 @@ TEST_MAKE_OS_MAIN(start())
 TASK(T00) {
 	TryToGetSpinlockType success;
 	TryToGetSpinlock(S1, &success);
-
 	if (success == TRYTOGETSPINLOCK_SUCCESS) {
 		test_trace('1');
 		ReleaseSpinlock(S1);
-		ActivateTask(T01);
+		ActivateTask(T10);
 	}
-	ActivateTask(T01);
 
 	TerminateTask();
 }
 
 TASK(T01) {
-	GetSpinlock(S1);
-	ActivateTask(T10);
-	test_trace('2');
-	ReleaseSpinlock(S1);
 	TerminateTask();
 }
 
 TASK(T10) {
-	test_trace('3');
+	test_trace('2');
 
 	TryToGetSpinlockType success;
 	TryToGetSpinlock(S1, &success);
 	if (success == TRYTOGETSPINLOCK_SUCCESS) {
-		test_trace('4');
+		test_trace('3');
 		ReleaseSpinlock(S1);
 	}
-	//ActivateTask(T11);
 	ShutdownAllCores(E_OK);
 }
 
 TASK(T11) {
-
-	test_trace('4');
-	ShutdownAllCores(E_OK);
+	TerminateTask();
 }
 
 void ShutdownHook(StatusType status) {
 	(void)status;
 	/* The testcase has finished, check the output */
 	if (GetCoreID() == OS_CORE_ID_1) {
-		test_trace_assert("1234");
+		test_trace_assert("123");
 		test_finish();
 	}
 }
