@@ -25,11 +25,10 @@ namespace os {
 
 	class UnencodedAlarm : public Alarm {
 		typedef UnencodedCounter CounterType;
-		Spinlock mutex;
 		CounterType* configuration_;
-		bool armed_;
-		TickType absoluteTime_;
-		TickType cycleTime_;
+		_Atomic(bool) armed_;
+		_Atomic(TickType) absoluteTime_;
+		_Atomic(TickType) cycleTime_;
 
 	  public:
 		/** \brief task to activate */
@@ -46,28 +45,21 @@ namespace os {
 		      task_(&task), id_(id) {}
 
 		void setArmed(bool armed) {
-			mutex.lock();
 			armed_ = armed;
-			mutex.unlock();
 		}
 
 		bool getArmed() const { return armed_; }
 
 		void setAbsoluteTime(TickType absoluteTime) {
-			mutex.lock();
 			absoluteTime_ = absoluteTime;
-			mutex.unlock();
 		}
 
 		template <typename Encoded>
 		void setRelativeTime(Encoded encoded) {
-			mutex.lock();
 			setRelativeTime(encoded.decode());
-			mutex.unlock();
 		}
 
 		void setRelativeTime(TickType relativeTime) {
-			mutex.lock();
 			auto value = configuration_->getValue();
 			auto remaining = configuration_->maxallowedvalue - value;
 
@@ -76,7 +68,6 @@ namespace os {
 			} else {
 				absoluteTime_ = relativeTime - remaining - 1;
 			}
-			mutex.unlock();
 		}
 
 		TickType getAbsoluteTime() const { return absoluteTime_; }
@@ -87,9 +78,7 @@ namespace os {
 		}
 
 		void setCycleTime(TickType cycleTime) {
-			mutex.lock();
 			cycleTime_ = cycleTime;
-			mutex.unlock();
 		}
 
 		TickType getCycleTime() const { return cycleTime_; }
