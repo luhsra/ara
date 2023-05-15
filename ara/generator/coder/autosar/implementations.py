@@ -18,6 +18,7 @@ class BaseImpl:
 
 class TaskImpl(BaseImpl):
     task_id_counter = 1
+    basic_task_stackptr = {}
 
     def __init__(self, instance):
         super().__init__(instance)
@@ -31,7 +32,6 @@ class TaskImpl(BaseImpl):
         self.task_descriptor = None
         self.tcb_descriptor = None
         self.present = None
-
         self.generated_functions = []
 
 
