@@ -23,13 +23,9 @@ TEST_MAKE_OS_MAIN(start())
 TASK(T00) {
 	GetSpinlock(S1);
 	ActivateTask(T10);
-
-	for (int i = 0; i < 100000000; i++)
-		;
 	test_trace('1');
-
 	ReleaseSpinlock(S1);
-	TerminateTask();
+	ShutdownOS(E_OK);
 }
 
 TASK(T01) { TerminateTask(); }
@@ -38,7 +34,7 @@ TASK(T10) {
 	GetSpinlock(S1);
 	test_trace('2');
 	ReleaseSpinlock(S1);
-	ShutdownAllCores(E_OK);
+	ShutdownOS(E_OK);
 }
 
 TASK(T11) { TerminateTask(); }
