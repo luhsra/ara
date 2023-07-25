@@ -49,16 +49,9 @@ sudo apt install cmake pkgconf libboost-all-dev libsparsehash-dev gcc-arm-none-e
 pip3 install -U pycairo matplotlib
 ```
 
-
-To initialize the external modules, run the init script:
-```
-./init
-```
-
-
 To build the program type:
 ```
-meson build
+meson setup build
 cd build
 ninja
 ```
