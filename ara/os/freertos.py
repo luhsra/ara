@@ -351,7 +351,8 @@ class FreeRTOS(OSBase):
         instances.vp.recursive[v] = is_recursive
         instances.vp.after_scheduler[v] = after_sched
         instances.vp.usually_taken[v] = is_usually_taken
-        instances.vp.unique[v] = not (is_recursive or in_branch or in_loop)
+        instances.vp.unique[v] = not (is_recursive or in_loop or
+                                      (in_branch and not is_usually_taken))
         instances.vp.soc[v] = abb
         instances.vp.llvm_soc[v] = cfg.vp.llvm_link[cfg.get_single_bb(abb)]
         instances.vp.file[v] = cfg.vp.files[abb][0]
