@@ -80,7 +80,7 @@ class UnknownArgument:
         return False
 
     def __str__(self):
-        return "<unknown>"
+        return "@unknown@"
 
 
 @dataclasses.dataclass(unsafe_hash=True)
