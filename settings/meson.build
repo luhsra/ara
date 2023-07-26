@@ -137,7 +137,7 @@ ara_gen_freertos_targets = ['passthrough',
                             'vanilla',
                             'instances_full_static',
                             'instances_full_initialized',
-                            'interactions',
+                            #'interactions',
                            ]
 
 ara_gen_freertos_cmds = {}
