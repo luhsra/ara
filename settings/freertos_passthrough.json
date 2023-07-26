@@ -8,6 +8,11 @@
 		"passthrough": true,
 		"arch": "arm",
 		"os": "freertos"
+	},
+
+	"logger": {
+		"StepManager": "debug",
+		"ara": "info"
 	}
 
 }

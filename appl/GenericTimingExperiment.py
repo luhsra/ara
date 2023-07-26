@@ -182,6 +182,7 @@ class GenericTimingExperiment(Experiment):
                 print(f"Retry {profile}")
                 self.get_time(profile)
 
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--run-dir', help='Directory from where to run ninja commands')

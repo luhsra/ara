@@ -167,6 +167,10 @@ class Main:
 
         if self.args.step is None and not self.extra_settings.get("steps", None):
             self.args.step = ['SIA']
+            if self.args.generator_output:
+                # we probably want the generator when we specify that option
+                logger.info("A generator output was requested. Turn on the generator.")
+                self.args.step = ['Generator']
 
         s_args = dict([(x, y) for x, y in vars(self.args).items() if y is not None])
 
