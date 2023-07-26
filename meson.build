@@ -35,7 +35,7 @@ cython_flags = ['-Wextra', '--cplus', '-3']
 py3_mod = import('python')
 # TODO add version argument to find_installation: see https://github.com/mesonbuild/meson/issues/7078
 
-python_modules = ['pydot', 'graph_tool']
+python_modules = ['pydot', 'graph_tool', 'versuchung'] # TODO put versuchung to the places where it is actually needed
 if get_option('gui_required')
     python_modules += ['PySide6', 'scipy']
 endif
