@@ -69,12 +69,18 @@ elif get_option('arch') == 'arm'
                '-lc',
               ]
   # external arm dirs
+  found_libc = false
   foreach link_dir : get_option('arm_link_dirs')
     # requires meson 0.54
     # assert(fs.exists(link_dir) and fs.is_absolute(link_dir), path_error.format('arm_link_dir', link_dir))
     assert(fs.exists(link_dir), path_error.format('arm_link_dir', link_dir))
+    if fs.exists(link_dir / 'libc.a')
+      found_libc = true
+    endif
+
     ld_flags += ['-Wl,-L,' + link_dir]
   endforeach
+  assert(found_libc, 'Do not found libc. Set the arm_link_dirs to v7-m/nofp. Something with a libc.a')
   # external gcc dir
   if get_option('arm_gcc_version') == 'default'
     system_gcc = find_program('arm-none-eabi-gcc')
@@ -91,6 +97,7 @@ elif get_option('arch') == 'arm'
   # assert(fs.exists(libgcc_dir) and fs.is_absolute(libgcc_dir), path_error.format('arm_gcc_dir', libgcc_dir))
   assert(fs.exists(libgcc_dir), path_error.format('arm_gcc_dir', libgcc_dir))
   assert(fs.exists(libgcc_dir), 'arm_gcc_dir is non-existent.')
+  assert(fs.exists(libgcc_dir / 'libgcc.a'), 'libgcc is non-existent. Set the gcc to v7-m/nofp')
   message('libgcc directory: @0@'.format(libgcc_dir))
   ld_flags += ['-Wl,-L,' + (libgcc_dir )]
 
