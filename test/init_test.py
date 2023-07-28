@@ -6,6 +6,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 """Common init function for tests."""
+import difflib
 import json
 import sys
 import os
@@ -17,7 +18,7 @@ from dataclasses import dataclass
 if bool(os.environ.get('ARA_TEST_USE_INSTALLED_ARA', '')):
     import graph_tool
     sys.setdlopenflags(sys.getdlopenflags() | os.RTLD_GLOBAL)
-    
+
     import pyllco
     import ara.graph.graph_data
     import ara.steps.py_logging
@@ -50,10 +51,12 @@ from ara.graph import Graph
 from ara.stepmanager import StepManager
 
 
-def fail_with(*arg):
+def fail_with(*arg, dry=False):
     """Print an error message and exit."""
     print("ERROR:", *arg, file=sys.stderr)
-    sys.exit(1)
+    print("Tracefile:", sys.argv[1], file=sys.stderr)
+    if not dry:
+        sys.exit(1)
 
 
 def fail_if(condition, *arg, dry=False):
@@ -62,30 +65,30 @@ def fail_if(condition, *arg, dry=False):
     Keyword argument:
     dry -- Don't check and fail, only print message
     """
-    if condition or dry:
-        print("ERROR:", *arg, file=sys.stderr)
-        print("Tracefile:", sys.argv[1], file=sys.stderr)
-        if condition and not dry:
-            sys.exit(1)
+    if condition:
+        fail_with(*arg, dry=dry)
 
 
-def fail_if_json_not_equal(expected, actual):
-    if expected != actual:
-        def write_json_to_tmp(json_obj):
-            path = ""
-            with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
-                path = f.name
-                f.write(json.dumps(json_obj, indent=2))
-            return path
+def to_json(something):
+    """Converts something to json in a normalized way."""
+    return json.dumps(something, sort_keys=True, indent=2)
 
-        expected_path = write_json_to_tmp(expected)
-        actual_path = write_json_to_tmp(actual)
-        # run automatically diff to show difference in a convenient way
-        os.system(f"echo \"diff <expected> <actual>:\"; diff {expected_path} {actual_path}")
-        print("ERROR: Data not equal")
-        os.unlink(expected_path)
-        os.unlink(actual_path)
-        sys.exit(1)
+
+def diff_print(expected, actual):
+    """Prints a diff of two strings."""
+    sys.stderr.writelines(difflib.unified_diff(expected.splitlines(True),
+                                               actual.splitlines(True)))
+    sys.stderr.write("\n")
+
+
+def fail_if_json_not_equal(expected, actual, msg="Data not equal", dry=False):
+    """Compare two objects, and print *arg if they are not equal."""
+    exp = to_json(expected)
+    act = to_json(actual)
+
+    if exp != act:
+        diff_print(exp, act)
+        fail_with(msg, dry=dry)
 
 
 def get_config(i_file):
