@@ -208,11 +208,12 @@ class SysCall:
     A Syscall objects acts like a (static) function and can be called.
     """
 
-    def __init__(self, func_body, categories, signature, custom_control_flow, aliases, name, signal_safe, is_stub):
+    def __init__(self, func_body, categories, signature, custom_control_flow, aliases, name, signal_safe, atomic, is_stub):
         # visible attributes
         self.syscall = True
         self.categories = categories
         self.aliases = aliases
+        self.atomic = atomic
         self._func = func_body
         self._signature = signature
         self._ccf = custom_control_flow
@@ -282,7 +283,7 @@ class SysCall:
             if arg.hint == _SigType.instance:
                 hint = _SigType.symbol
             try:
-                result = va.get_argument_value(abb, 
+                result = va.get_argument_value(abb,
                                                idx + sig_offset,
                                                callpath=callpath,
                                                hint=hint)
@@ -322,6 +323,7 @@ def syscall(*args,
             custom_control_flow: bool = False,
             aliases: Tuple[str] = None,
             name: str = None,
+            atomic: bool = True,
             signal_safe: bool = False,
             is_stub: bool = False):
     """System call decorator. Changes a function into a system call.
@@ -334,8 +336,14 @@ def syscall(*args,
     custom_control_flow -- Does this system call alter the control flow?
     aliases             -- Alias names of the system call.
     name                -- The name of the syscall.
-                           If not set, the name of the syscalls equals the name of the decorated function.
-    signal_safe         -- Is it safe to call the syscall in a signal handler? (default: False)
+                           If not set, the name of the syscalls equals the
+                           name of the decorated function.
+    atomic              -- Is the syscall self contained or part of a group of
+                           syscalls? (default: True)
+                           A syscall that creates an instance but does not
+                           configure it, is not atomic for example.
+    signal_safe         -- Is it safe to call the syscall in a signal handler?
+                           (default: False)
     """
     if categories is None:
         categories = {_SyscallCategory.undefined}
@@ -349,15 +357,23 @@ def syscall(*args,
     outer_aliases = aliases
     outer_ccf = custom_control_flow
     outer_name = name
+    outer_atomic = atomic
     outer_signal_safe = signal_safe
     outer_is_stub = is_stub
 
     def wrap(func, categories=outer_categories, signature=outer_signature,
              custom_control_flow=outer_ccf, aliases=outer_aliases,
-             name=outer_name, signal_safe=outer_signal_safe,
-             is_stub=outer_is_stub):
-        wrapper = SysCall(func, categories, signature, custom_control_flow,
-                          aliases, name, signal_safe, is_stub)
+             name=outer_name, atomic=outer_atomic,
+             signal_safe=outer_signal_safe, is_stub=outer_is_stub):
+        wrapper = SysCall(func_body=func,
+                          categories=categories,
+                          signature=signature,
+                          custom_control_flow=custom_control_flow,
+                          aliases=aliases,
+                          name=name,
+                          signal_safe=signal_safe,
+                          atomic=atomic,
+                          is_stub=is_stub)
         return wrapper
 
     if len(args) == 1 and callable(args[0]):

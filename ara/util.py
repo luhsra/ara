@@ -18,7 +18,6 @@ import functools
 from inspect import Parameter, signature
 from itertools import tee, chain, repeat
 from graph_tool.topology import shortest_path
-from functools import lru_cache
 
 LEVEL = {"critical": logging.CRITICAL,
          "error": logging.ERROR,
@@ -26,6 +25,7 @@ LEVEL = {"critical": logging.CRITICAL,
          "warn": logging.WARNING,
          "info": logging.INFO,
          "debug": logging.DEBUG}
+
 
 class ContinueSignal(Exception):
     """Something in an inner loop happened that should cause the outer loop to
@@ -314,14 +314,3 @@ def debug_log(original_function=None, *,
         return _decorate(original_function)
 
     return _decorate
-
-
-@lru_cache(maxsize=1024)
-def is_recursive(callgraph, v):
-    """Checks if given vertex v is in a loop => v is recursive"""
-    v = callgraph.vertex(v)
-    for neighbor in v.out_neighbors():
-        vert, edge = shortest_path(callgraph, neighbor, v)
-        if vert:
-            return True
-    return False

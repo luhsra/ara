@@ -717,6 +717,7 @@ class SVFG(graph_tool.Graph):
 
         self.edge_properties["obj"] = self.new_ep("int64_t")
 
+
 class Graph:
     """Container for all data that ARA uses from multiple steps.
 

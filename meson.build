@@ -41,8 +41,8 @@ if get_option('gui_required')
 endif
 
 py3_inst = py3_mod.find_installation('python3', modules: python_modules)
-if py3_inst.language_version().version_compare('<3.9')
-    error('At least Python 3.9 is required.')
+if py3_inst.language_version().version_compare('<3.10')
+    error('At least Python 3.10 is required.')
 endif
 
 ## llvm dependencies

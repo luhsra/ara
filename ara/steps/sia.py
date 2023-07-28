@@ -9,33 +9,27 @@
 
 from ara.graph import ABBType, CFGView, SyscallCategory, CallPath, Callgraph, CFType
 from dataclasses import dataclass
-from ara.util import dominates, has_path, is_recursive
 from ara.visualization.trace.tracer_api.tracer import GraphNode, GraphPath, init_fast_trace
 from ara.graph.mix import GraphType, ARA_ENTRY_POINT
 
+from .cfg_traversal import Visitor, run_sse, AnalysisContext
 from .step import Step
-from .option import Option, String
+from .option import Option, String, Choice
+from .util import is_in_condition, is_usually_taken, is_recursive
 
 
 from ara.os.os_base import CPU, ExecState
 
-from graph_tool import GraphView
-from graph_tool.topology import all_paths, dominator_tree, label_out_component
+from graph_tool import GraphView, Vertex
+from graph_tool.topology import all_paths
 from graph_tool.util import find_vertex
 from itertools import chain
 
-import functools
 
-
-@dataclass
-class SIAContext:
+@dataclass(kw_only=True)
+class SIAContext(AnalysisContext):
     """Analysis Context for SIA´s fake CPU in OSState"""
     callg: Callgraph
-    branch: bool  # is this state coming from a branch
-    loop: bool  # is this state coming from a loop
-    recursive: bool  # is this state executing on a recursive path
-    usually_taken: bool  # is this state coming from a branch where
-    # all other branches ends in an endless loop
     scheduler_on: bool  # Is the global scheduler on
 
     def copy(self):
@@ -47,8 +41,23 @@ class SIAContext:
                           scheduler_on=self.scheduler_on)
 
 
+@dataclass
+class FakeStateCtx:
+    """Context for creating a fake state."""
+    cpu_id: int
+    branch: bool
+    loop: bool
+    instance: Vertex
+
+
 class FlatAnalysis(Step):
     """Flat Analysis"""
+    traversal_mode = Option(name="traversal_mode",
+                            help="Set the traversal method.",
+                            default_value="mixed",
+                            ty=Choice("flowsensitive",
+                                      "flowinsensitive",
+                                      "mixed"))
 
     def get_single_dependencies(self):
         raise NotImplementedError
@@ -58,79 +67,6 @@ class FlatAnalysis(Step):
             return ['SysFuncts']
         return self._graph.os.get_special_steps()
 
-    @functools.lru_cache(maxsize=32)
-    def _get_func_cfg(self, func):
-        """Get LCFG of function"""
-        abb = self._graph.cfg.get_entry_abb(func)
-        comp = label_out_component(self._graph.lcfg,
-                                   self._graph.lcfg.vertex(abb))
-        return CFGView(self._graph.lcfg, vfilt=comp)
-
-    @functools.lru_cache(maxsize=32)
-    def _create_dom_tree(self, func, respect_endless_loops=True):
-        """Create a dominator tree of the local control flow for func.
-
-        Return the dominator tree and a list of exit blocks for the function.
-        """
-        func_cfg = self._get_func_cfg(func)
-        entry = self._graph.cfg.get_entry_abb(func)
-
-        # prepare LCFG:
-        # If respect_endless_loops is set (the default), endless loops are
-        # considered as possible exit blocks.
-        # This is done by detecting and replacing them with real exit blocks.
-        exit_map = func_cfg.vp.is_exit.copy(full=False)
-        keep_edge_map = func_cfg.new_ep("bool", val=True)
-
-        if respect_endless_loops:
-            # iterate all exit loops (AKA endless loops)
-            loops = CFGView(func_cfg, vfilt=func_cfg.vp.is_exit_loop_head)
-            for loop_head in loops.vertices():
-                loop_head = func_cfg.vertex(loop_head)
-                for e in loop_head.in_edges():
-                    loop_end = e.source()
-                    if loop_head == loop_end or \
-                       has_path(func_cfg, loop_head, loop_end):
-                        # if edge that is a part of the loop
-                        # drop it
-                        keep_edge_map[e] = False
-                        exit_map[loop_end] = True
-
-        patched_func_cfg = CFGView(func_cfg, efilt=keep_edge_map)
-
-        # dom tree creation
-        dom_tree = dominator_tree(patched_func_cfg,
-                                  patched_func_cfg.vertex(entry))
-        return dom_tree, CFGView(func_cfg, vfilt=exit_map)
-
-    def _is_in_condition(self, abb, respect_endless_loops=True):
-        """Is abb part of a condition?"""
-        # Algorithm: abb must not dominate all exits
-        func = self._graph.cfg.get_function(abb)
-        dom_tree, exit_abbs = self._create_dom_tree(
-            func, respect_endless_loops=respect_endless_loops)
-        return not all(
-            [dominates(dom_tree, abb, x) for x in exit_abbs.vertices()])
-
-    def _is_usually_taken(self, abb):
-        """Is this abb usually taken?
-
-        Usually taken means that the abb is part of a branch, where all sibling
-        branches end in an endless loop.
-
-        Consider this example:
-         1o
-          |`--.
-          |   v
-         2o  3o <.
-              |  |
-              v  |
-             4o--´
-        The node 2 is usually taken.
-        """
-        return (self._is_in_condition(abb, respect_endless_loops=True) and
-                not self._is_in_condition(abb, respect_endless_loops=False))
-
     def _is_chained_analysis(self):
         return self.get_name() in {
             x.name
@@ -138,11 +74,12 @@ class FlatAnalysis(Step):
         }
 
     def _set_flags(self, analysis_context: SIAContext, abb):
-        analysis_context.branch |= self._is_in_condition(abb)
+        analysis_context.branch |= is_in_condition(self._graph.cfg, abb)
         analysis_context.loop |= self._graph.cfg.vp.part_of_loop[abb]
-        analysis_context.usually_taken = (self._is_usually_taken(abb) or
-                                          (analysis_context.usually_taken
-                                           and not self._is_in_condition(abb)))
+        analysis_context.usually_taken = (
+                is_usually_taken(self._graph.cfg, abb) or
+                (analysis_context.usually_taken and not
+                 is_in_condition(self._graph.cfg, abb)))
 
     def _dump_names(self):
         raise NotImplementedError
@@ -159,7 +96,110 @@ class FlatAnalysis(Step):
     def is_traceable(self):
         return True and self.trace_algorithm.get()
 
-    def run(self):
+    def _prepare_fake_states(self, instance):
+        instances = self._graph.instances
+        if instance is not None:
+            instance = instances.vertex(instance)
+            branch = instances.vp.branch[instance]
+            loop = instances.vp.loop[instance]
+            cpu_id = instances.vp.obj[instance].cpu_id
+            cpu_id = max(cpu_id, 0)
+        else:
+            branch = False
+            loop = False
+            cpu_id = 0
+
+        return FakeStateCtx(cpu_id=cpu_id,
+                            branch=branch,
+                            loop=loop,
+                            instance=instance)
+
+    def _fake_state(self, abb, path, init_state, function, ctx):
+        cfg = self._graph.cfg
+        callg = self._graph.callgraph
+
+        state = init_state.copy()
+        state.cpus[ctx.cpu_id] = CPU(
+            id=state.cpus[ctx.cpu_id].id,
+            irq_on=False,
+            control_instance=ctx.instance,
+            abb=abb,
+            call_path=CallPath(),
+            exec_state=ExecState.from_abbtype(cfg.vp.type[abb]),
+            analysis_context=SIAContext(
+                callg=callg,
+                branch=ctx.branch,
+                loop=ctx.loop,
+                recursive=False,
+                usually_taken=False,
+                scheduler_on=self._is_chained_analysis()))
+        fake_cpu = state.cpus[ctx.cpu_id]
+        for edge in path:
+            new_abb = cfg.vertex(callg.ep.callsite[edge])
+            fake_cpu.call_path.add_call_site(callg, edge)
+            self._set_flags(fake_cpu.analysis_context, new_abb)
+            if not fake_cpu.analysis_context.recursive:
+                fake_cpu.analysis_context.recursive = is_recursive(callg, edge.target())
+
+        self._set_flags(fake_cpu.analysis_context, abb)
+        if not fake_cpu.analysis_context.recursive:
+            fake_cpu.analysis_context.recursive = is_recursive(callg, function)
+
+        return state
+
+    def _run_flow_sensitive(self, function, path, instance):
+        cfg = self._graph.cfg
+        callg = self._graph.callgraph
+
+        entry_func = cfg.vertex(callg.vp.function[function])
+        entry = cfg.get_entry_abb(entry_func)
+
+        ctx = self._prepare_fake_states(instance)
+        state = self._fake_state(entry, path,
+                                 self._graph.os.get_initial_state(
+                                     cfg, self._graph.instances
+                                 ),
+                                 function,
+                                 ctx)
+
+        categories = set([self._search_category()])
+
+        traversed_syscalls = set()
+
+        class SIAVisitor(Visitor):
+            HANDLE_INTERRUPTS = False
+            SYSCALL_CATEGORIES = categories
+            HANDLE_ANALYSIS_CONTEXT = True
+
+            def get_initial_state(self):
+                return state
+
+            def add_state(self, new_state):
+                abb = new_state.cpus[ctx.cpu_id].abb
+                if cfg.vp.type[abb] == ABBType.syscall:
+                    traversed_syscalls.add(abb)
+                return True
+
+            def add_transition(self, source, target):
+                pass
+
+            def schedule(self, new_state):
+                pass
+
+        run_sse(graph=self._graph,
+                os=self._graph.os,
+                visitor=SIAVisitor(),
+                logger=self._log)
+
+        return traversed_syscalls
+
+    def _run_flow_insensitive(self, mixed_mode=False):
+        @dataclass
+        class SyscallInfo:
+            """Helper to handle atomic syscalls."""
+            is_atomic: bool
+            syscall: Vertex
+
         cfg = self._graph.cfg
         callg = self._graph.callgraph
         os = self._graph.os
@@ -172,17 +212,34 @@ class FlatAnalysis(Step):
             sia_entity = self.tracer.get_entity("SIA_entity")
 
         # actual algorithm
+        flow_sensitive = []
+        flow_insensitive = []
         syscalls = CFGView(cfg, vfilt=cfg.vp.type.fa == ABBType.syscall)
         for syscall in syscalls.vertices():
             sys_name = cfg.get_syscall_name(syscall)
-            if self._search_category() not in os.syscalls[sys_name].categories:
+            m_syscall = os.syscalls[sys_name]
+            if self._search_category() not in m_syscall.categories:
                 continue
 
-            cfg_function = cfg.get_function(syscall)
+            if mixed_mode and not m_syscall.atomic:
+                flow_sensitive.append(SyscallInfo(is_atomic=False,
+                                                  syscall=syscall))
+            else:
+                flow_insensitive.append(SyscallInfo(is_atomic=True,
+                                                    syscall=syscall))
+
+        traversed_syscalls = set()
+        for syscall_info in chain(flow_sensitive, flow_insensitive):
+            if syscall_info.syscall in traversed_syscalls:
+                continue
+
+            sys_name = cfg.get_syscall_name(syscall_info.syscall)
+
+            cfg_function = cfg.get_function(syscall_info.syscall)
             function = callg.vertex(cfg.vp.call_graph_link[cfg_function])
 
             if self.trace_algorithm.get():
-                abb = cfg.vertex(syscall)
+                abb = cfg.vertex(syscall_info.syscall)
                 syscall_node = [
                     x.target() for x in abb.out_edges()
                     if cfg.ep.type[x] == CFType.icf
@@ -199,20 +256,12 @@ class FlatAnalysis(Step):
             rev_cg = GraphView(callg, reversed=True)
             init_state = os.get_initial_state(cfg, instances)
             for entry_point, inst in entry_points:
-                if inst is not None:
-                    inst = instances.vertex(inst)
-                    branch = instances.vp.branch[inst]
-                    loop = instances.vp.loop[inst]
-                    cpu_id = instances.vp.obj[inst].cpu_id
-                    if cpu_id < 0:
-                        cpu_id = 0
-                else:
-                    branch = False
-                    loop = False
-                    cpu_id = 0
-
                 self._log.debug(f"Handle {sys_name} with entry_point "
                                 f"{callg.vp.function_name[entry_point]}")
+
+                non_atomic_call = mixed_mode and not syscall_info.is_atomic
+                if not non_atomic_call:
+                    fake_state_ctx = self._prepare_fake_states(inst)
 
                 path_to_self = [[]] if entry_point == function else []
                 for path in chain(
@@ -223,41 +272,41 @@ class FlatAnalysis(Step):
                         self.tracer.entity_is_looking_at(
                             sia_entity, GraphPath(path, GraphType.CALLGRAPH))
 
-                    abb = cfg.vertex(syscall)
-                    state = init_state.copy()
+                    abb = cfg.vertex(syscall_info.syscall)
 
-                    state.cpus[cpu_id] = CPU(
-                        id=state.cpus[cpu_id].id,
-                        irq_on=False,
-                        control_instance=inst,
-                        abb=abb,
-                        call_path=CallPath(),
-                        exec_state=ExecState.from_abbtype(cfg.vp.type[abb]),
-                        analysis_context=SIAContext(
-                            callg=callg,
-                            branch=branch,
-                            loop=loop,
-                            recursive=False,
-                            usually_taken=False,
-                            scheduler_on=self._is_chained_analysis()))
-                    fake_cpu = state.cpus[cpu_id]
-                    for edge in reversed(path):
-                        abb = cfg.vertex(callg.ep.callsite[edge])
-                        fake_cpu.call_path.add_call_site(callg, edge)
-                        self._set_flags(fake_cpu.analysis_context, abb)
-                        if not fake_cpu.analysis_context.recursive:
-                            fake_cpu.analysis_context.recursive = is_recursive(callg, edge.target())
+                    if non_atomic_call:
+                        traversed_syscalls |= self._run_flow_sensitive(
+                                cfg_function,
+                                reversed(path),
+                                inst
+                        )
+                        import sys
+                        sys.exit(1)
 
-                    self._set_flags(fake_cpu.analysis_context, syscall)
-                    if not fake_cpu.analysis_context.recursive:
-                        fake_cpu.analysis_context.recursive = is_recursive(callg, function)
-
+                    state = self._fake_state(abb, reversed(path),
+                                             init_state,
+                                             function,
+                                             fake_state_ctx)
                     os.interpret(self._graph,
                                  state,
                                  0,
                                  categories=self._search_category())
 
+
+    def run(self):
+        if self.traversal_mode.get() == "flowsensitive":
+            for entry_func, instance in self._get_entry_points():
+                self._run_flow_sensitive(entry_func,
+                                         [],
+                                         instance)
+        elif self.traversal_mode.get() == "flowinsensitive":
+            self._run_flow_insensitive()
+        else:
+            assert self.traversal_mode.get() == "mixed"
+            self._run_flow_insensitive(mixed_mode=True)
+
         self._trigger_new_steps()
+
         self._log.debug(is_recursive.cache_info())
 
         if self.dump.get():

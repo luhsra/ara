@@ -5,20 +5,18 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import copy
-import functools
 
 from collections import defaultdict
 from dataclasses import dataclass
 
-from graph_tool.topology import dominator_tree, label_out_component
-
-from ara.graph import SyscallCategory, CFGView, CFType
-from ara.util import get_null_logger, has_path, is_recursive
+from ara.graph import SyscallCategory
+from ara.util import get_null_logger
+from ara.steps.util import is_recursive, is_in_condition, is_usually_taken
 from ara.os.os_base import OSState, CrossCoreAction, ExecState
 
 
-@dataclass
-class CFGContext:
+@dataclass(kw_only=True)
+class AnalysisContext:
     """capture CFG specific quirks"""
     recursive: bool = False  # is this state part of a recursive function
     branch: bool = False     # is this state on a branch (behind an if)
@@ -27,17 +25,17 @@ class CFGContext:
                                  # all other branches end in an endless loop
 
     def copy(self):
-        return CFGContext(recursive=self.recursive,
-                          branch=self.branch,
-                          loop=self.loop,
-                          usually_taken=self.usually_taken)
+        return AnalysisContext(recursive=self.recursive,
+                               branch=self.branch,
+                               loop=self.loop,
+                               usually_taken=self.usually_taken)
 
 
 class Visitor:
     PREVENT_MULTIPLE_VISITS = True
     HANDLE_INTERRUPTS = True
     SYSCALL_CATEGORIES = (SyscallCategory.every,)
-    CFG_CONTEXT = CFGContext  # set to None if analysis should be deactivated
+    HANDLE_ANALYSIS_CONTEXT = False
 
     def get_initial_state(self):
         raise NotImplementedError
@@ -49,12 +47,20 @@ class Visitor:
         return False
 
     def add_state(self, new_state):
+        """Handle a newly created state.
+
+        Must return true, if the state is new, false otherwise.
+        """
         raise NotImplementedError
 
     def add_transition(self, source, target):
         raise NotImplementedError
 
-    def schedule(self, new_states):
+    def schedule(self, new_state):
+        """Schedule the new_state.
+
+        Does not return anything.
+        """
         raise NotImplementedError
 
     def cross_core_action(self, state, cpu_ids, irq=None):
@@ -91,7 +97,8 @@ class _SSERunner:
         self._ut_func = {}
         self._loop_func = {}
 
-        self._available_irqs = self._os.get_interrupts(graph.instances)
+        if self._visitor.HANDLE_INTERRUPTS:
+            self._available_irqs = self._os.get_interrupts(graph.instances)
 
     def _fail(self, msg, error=RuntimeError):
         """Print msg to as error and raise error."""
@@ -108,97 +115,45 @@ class _SSERunner:
         new_call_path.add_call_site(self._call_graph, edge)
         return new_call_path
 
-    @functools.lru_cache(maxsize=32)
-    def _get_func_cfg(self, func):
-        """Get LCFG of function"""
-        abb = self._cfg.get_entry_abb(func)
-        lcfg = CFGView(self._cfg, efilt=self._cfg.ep.type.fa == CFType.lcf)
-        comp = label_out_component(lcfg, lcfg.vertex(abb))
-        return CFGView(lcfg, vfilt=comp)
-
-    @functools.lru_cache(maxsize=32)
-    def _create_dom_tree(self, func, ignore_endless_loops=False):
-        """Create a dominator tree of the local control flow for func."""
-        func_cfg = self._get_func_cfg(func)
-        entry = self._cfg.get_entry_abb(func)
-
-        # prepare LCFG, endless loops are filtered out and replaces by exit
-        # blocks
-        exit_map = func_cfg.vp.is_exit.copy(full=False)
-        keep_edge_map = func_cfg.new_ep("bool", val=True)
-
-        if not ignore_endless_loops:
-            loops = CFGView(func_cfg, vfilt=func_cfg.vp.is_exit_loop_head)
-            for v in loops.vertices():
-                v = func_cfg.vertex(v)
-                for e in v.in_edges():
-                    if has_path(func_cfg, v, e.source()):
-                        keep_edge_map[e] = False
-                        exit_map[e.source()] = True
-
-        patched_func_cfg = CFGView(func_cfg, efilt=keep_edge_map)
-
-        # dom tree creation
-        dom_tree = dominator_tree(patched_func_cfg,
-                                  patched_func_cfg.vertex(entry))
-        return dom_tree, CFGView(func_cfg, vfilt=exit_map)
-
-    def _dominates(self, dom_tree, abb_x, abb_y):
-        """Does abb_x dominate abb_y?"""
-        while abb_y:
-            if abb_x == abb_y:
-                return True
-            abb_y = dom_tree[abb_y]
-        return False
-
-    def _is_in_condition(self, abb, ignore_endless_loops=False):
-        """Is abb part of a condition?"""
-        func = self._graph.cfg.get_function(abb)
-        dom_tree, exit_abbs = self._create_dom_tree(func,
-                                                    ignore_endless_loops=ignore_endless_loops)
-        res = not all([self._dominates(dom_tree, abb, x)
-                      for x in exit_abbs.vertices()])
-        return res
-
-    def _is_in_loop(self, abb):
-        """Is abb part of a loop?"""
-        return self._cfg.vp.part_of_loop[abb]
-
     def _is_usually_taken(self, state, abb):
-        in_cond = self._is_in_condition(abb)
-        local_ut = (in_cond and not
-                    self._is_in_condition(abb, ignore_endless_loops=True))
+        in_cond = is_in_condition(self._cfg, abb)
+        local_ut = is_usually_taken(self._cfg, abb)
         extern_ut = self._ut_func.get(state.cpus.one().call_path, False)
         return local_ut or (extern_ut and not in_cond)
 
-    def _assign_context(self, state, new_state, abb):
-        context = self._visitor.CFG_CONTEXT
-        if context is not None:
-            context = context()
+    def _assign_context(self, state):
+        if self._visitor.HANDLE_ANALYSIS_CONTEXT:
+            # old_context = old_state.cpus.one().analysis_context
+            # context = old_context.copy()
+            context = state.cpus.one().analysis_context
+            call_path = state.cpus.one().call_path
+            abb = state.cpus.one().abb
 
-            abb = new_state.cpus.one().abb
-            call_path = new_state.cpus.one().call_path
-
-            # check if in a recursive function and mark accordingly
+            # recursive flag
             func = self._cfg.get_function(self._cfg.vertex(abb))
-
             func_vert = self._call_graph.vertex(
                 self._cfg.vp.call_graph_link[func]
             )
             context.recursive = is_recursive(self._call_graph, func_vert)
 
+            # branch
             context.branch = (self._cond_func.get(call_path, False) or
-                              self._is_in_condition(abb))
-            self._cond_func[call_path] = context.branch
+                              is_in_condition(self._cfg, abb))
 
+            # usually_taken
             context.usually_taken = self._is_usually_taken(state, abb)
-            self._ut_func[call_path] = context.usually_taken
 
+            # loop
             context.loop = (self._loop_func.get(call_path, False) or
-                            self._is_in_loop(abb))
-            self._loop_func[call_path] = context.loop
+                            self._cfg.vp.part_of_loop[abb])
 
-            new_state.analysis_context = context
+    def _set_context_caches(self, state, call_path):
+        """When is a call, set the caches properly."""
+        if self._visitor.HANDLE_ANALYSIS_CONTEXT:
+            context = state.cpus.one().analysis_context
+            self._cond_func[call_path] = context.branch
+            self._loop_func[call_path] = context.loop
+            self._ut_func[call_path] = context.usually_taken
 
     def _get_exec(self, v):
         return ExecState.from_abbtype(self._cfg.vp.type[v])
@@ -257,6 +212,7 @@ class _SSERunner:
             name = self._cfg.vp.name[abb]
             syscall_name = self._cfg.get_syscall_name(abb)
             self._log.debug(f"Handle syscall: {name} ({syscall_name})")
+            self._assign_context(state)
             try:
                 new_states = self._os.interpret(
                     self._graph, state, cpu.id,
@@ -286,21 +242,22 @@ class _SSERunner:
                                     f"Callpath {new_call_path}")
                     continue
 
+                # context handling
+                self._assign_context(state)
+                self._set_context_caches(state, new_call_path)
+
                 new_state = state.copy()
                 new_state.cpus.one().abb = n
                 new_state.cpus.one().call_path = new_call_path
                 new_state.cpus.one().exec_state = self._get_exec(n)
-
-                # SSE specific analysis context
-                self._assign_context(state, new_state, abb)
                 new_states.append(new_state)
                 handled = True
             # if only recursive functions are found, handle the call like a
             # normal computation block
             if handled:
                 return new_states
-            self.log.debug("Found only edges that leads to recursion. "
-                           "Handle as computation.")
+            self._log.debug("Found only edges that leads to recursion. "
+                            "Handle as computation.")
 
         # exit handling
         elif self._icfg.vp.is_exit[abb]:
@@ -330,12 +287,12 @@ class _SSERunner:
 
         # computation block handling
         # all other paths before should have returned if necessary
-        self._log.debug(f"Handle computation: {self._icfg.vp.name[abb]}")
+        self._log.debug(f"Handle computation: {self._lcfg.vp.name[abb]}")
         new_states = []
-        for n in self._icfg.vertex(abb).out_neighbors():
-            self._log.debug(f"Neighbor {self._icfg.vp.name[n]}")
+        for n in self._lcfg.vertex(abb).out_neighbors():
+            self._log.debug(f"Neighbor {self._lcfg.vp.name[n]}")
             new_state = state.copy()
-            new_state.cpus.one().abb = n
+            new_state.cpus.one().abb = self._icfg.vertex(n)
             new_state.cpus.one().exec_state = self._get_exec(n)
             new_states.append(new_state)
         # Trigger all interrupts. We are _not_ deciding over interarrival times
@@ -344,7 +301,7 @@ class _SSERunner:
 
     def _system_semantic(self, state: OSState):
         # we can only handle a single core execution here
-        assert(len(state.cpus) == 1)
+        assert len(state.cpus) == 1
 
         new_states = self._execute(state)
         for new_state in new_states:
@@ -352,7 +309,9 @@ class _SSERunner:
         return new_states
 
     def run(self):
-        stack = [self._visitor.get_initial_state()]
+        init_state = self._visitor.get_initial_state()
+        self._set_context_caches(init_state, init_state.cpus.one().call_path)
+        stack = [init_state]
 
         counter = 0
         while stack:

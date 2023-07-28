@@ -66,7 +66,7 @@ class SSE(Step):
 
         class SSEVisitor(Visitor):
             PREVENT_MULTIPLE_VISITS = False
-            CFG_CONTEXT = None
+            HANDLE_ANALYSIS_CONTEXT = False
 
             @staticmethod
             def get_initial_state():

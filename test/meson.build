@@ -63,9 +63,33 @@ if get_option('enable_step_tests')
         suite: ['analysis', 'preproc']
     )
 
-    test('instances',
+    test('instances-flowsensitive',
         py3_inst,
-        args: [files('instances.py'), files('instances.json'), freertos_instances],
+        args: [files('instances.py'),
+               files('instances.json'),
+               freertos_instances,
+               'flowsensitive'],
+        env: [python_path],
+        depends: ara_py,
+        suite: ['analysis', 'sia']
+    )
+
+    test('instances-flowinsensitive',
+        py3_inst,
+        args: [files('instances.py'),
+               files('instances.json'),
+               freertos_instances,
+               'flowinsensitive'],
+        env: [python_path],
+        depends: ara_py,
+        suite: ['analysis', 'sia']
+    )
+    test('instances-mixed',
+        py3_inst,
+        args: [files('instances.py'),
+               files('instances.json'),
+               freertos_instances,
+               'mixed'],
         env: [python_path],
         depends: ara_py,
         suite: ['analysis', 'sia']
