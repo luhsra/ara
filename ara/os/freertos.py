@@ -321,7 +321,7 @@ class FreeRTOS(OSBase):
                 state = state.copy()
                 state.next_abbs = []
                 set_next_abb(state, 0)
-                return state
+                return [state]
         # TODO: place MissingInteractions.activate() in working initializer function
         MissingInteractions.activate()
         return syscall_function(graph, state, cpu_id)
@@ -358,6 +358,20 @@ class FreeRTOS(OSBase):
         instances.vp.file[v] = cfg.vp.files[abb][0]
         instances.vp.line[v] = cfg.vp.lines[abb][0]
         instances.vp.is_control[v] = False
+
+    @staticmethod
+    def handle_exit(graph, state, cpu_id):
+        # this method has to be called from an ISR otherwise it does not make
+        # sense. If it is called from an empty CallPath, it may return from a
+        # task, which is violating the Thread concept. So just warn about that.
+        cfg = graph.cfg
+        cpu = state.cpus[cpu_id]
+        if len(cpu.call_path) == 0:
+            func = cfg.get_function(cpu.abb)
+            func_name = cfg.vp.name[func]
+            logger.warn("Possible return from function %s. This may be wrong.",
+                        func_name)
+        return []
 
     @syscall(categories={SyscallCategory.create},
              signature=(Arg("task_function", hint=SigType.symbol, ty=pyllco.Function),
