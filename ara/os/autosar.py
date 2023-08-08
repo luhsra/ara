@@ -13,17 +13,21 @@ from copy import copy
 from dataclasses import dataclass, field
 from enum import IntEnum
 from itertools import chain
-from typing import Any, List, Tuple
+from typing import Any, List
 from graph_tool import GraphView
 from graph_tool.search import dfs_iterator
 
 import pyllco
 
 from ara.util import get_logger, has_path
-from ara.graph import CallPath, SyscallCategory, SigType, single_check, edge_types
+from ara.graph import (CallPath, SyscallCategory, SigType, single_check,
+                       edge_types)
 
-from .os_util import syscall, Arg, set_next_abb, connect_from_here, find_instance_node
-from .os_base import OSBase, OSState, CPUList, CPU, ControlInstance, TaskStatus, ControlContext, CrossCoreAction, ExecState, CPUBounded, IRQ
+from .os_util import (syscall, Arg, set_next_abb, connect_from_here,
+                      find_instance_node, Paranthesis)
+from .os_base import (OSBase, OSState, CPUList, CPU, ControlInstance,
+                      TaskStatus, ControlContext, CrossCoreAction,
+                      ExecState, CPUBounded, IRQ)
 from .interrupts import fake_interrupt_function
 
 TASK_PREFIX = "AUTOSAR_TASK_"
@@ -863,7 +867,7 @@ class AUTOSAR(OSBase):
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("resource", ty=Resource, hint=SigType.instance),))
     def AUTOSAR_GetResource(cfg, state, cpu_id, args, va):
-        assert(isinstance(args.resource, Resource))
+        assert isinstance(args.resource, Resource)
         # get correct dyn_prio
         res_vertex = state.instances.get_node(args.resource)
         dyn_prio = max([state.instances.vp.obj[x].priority for x in res_vertex.in_neighbors()]) * 2 + 1

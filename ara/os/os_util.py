@@ -13,7 +13,7 @@ import html
 import pyllco
 from abc import ABC, abstractmethod
 
-from typing import Tuple, Set
+from typing import Tuple
 
 from ara.graph import SyscallCategory as _SyscallCategory, SigType as _SigType
 from ara.graph import CFType as _CFType, CFGView as _CFGView
@@ -28,11 +28,12 @@ from .os_base import ExecState
 class AutoDotInstance(ABC):
     """This class auto implements as_dot() and get_maximal_id().
 
-    Instances that inherit from this class must implement wanted_attrs() and dot_appearance() to describe the dot printing."""
+    Instances that inherit from this class must implement wanted_attrs() and
+    dot_appearance() to describe the dot printing."""
     @property
     @abstractmethod
     def wanted_attrs(self) -> list:     # list[str]
-        """Return all attributes as strings that are relevent to be printed as dot.
+        """Return all attributes as strings that are relevant to be printed as dot.
 
         This attribute will influence as_dot() and get_maximal_id().
         """
@@ -51,7 +52,7 @@ class AutoDotInstance(ABC):
     def as_dot(self):
         attrs = [(x, str(getattr(self, x))) for x in self.wanted_attrs]
         sublabel = '<br/>'.join([f"<i>{k}</i>: {html.escape(v)}"
-                                    for k, v in attrs])
+                                 for k, v in attrs])
 
         self.dot_appearance["sublabel"] = sublabel
         return self.dot_appearance
@@ -208,18 +209,28 @@ class SysCall:
     A Syscall objects acts like a (static) function and can be called.
     """
 
-    def __init__(self, func_body, categories, signature, custom_control_flow, aliases, name, signal_safe, atomic, is_stub):
+    def __init__(self,
+                 func_body,
+                 categories,
+                 signature,
+                 custom_control_flow,
+                 aliases,
+                 name,
+                 signal_safe,
+                 atomic,
+                 is_stub):
         # visible attributes
         self.syscall = True
-        self.categories = categories
+        self._func = func_body
+        self.name = name if name is not None else func_body.__name__
+
+        self._ccf = custom_control_flow
+        self._signature = signature
         self.aliases = aliases
         self.atomic = atomic
-        self._func = func_body
-        self._signature = signature
-        self._ccf = custom_control_flow
-        self.name = name if name != None else func_body.__name__
-        self.signal_safe = signal_safe
+        self.categories = categories
         self.is_stub = is_stub
+        self.signal_safe = signal_safe
 
     def get_name(self):
         """Returns the name of the syscall function."""
@@ -250,11 +261,11 @@ class SysCall:
         graph       -- the graph object
         state       -- the OS state
         cpu_id      -- the cpu_id that should be interpreted
-        sig_offset  -- offset at which position the signature for the syscall function starts.
-                       The default value is 0. Do not set this value unless you have at least
-                       one argument at the beginning that does not belong to the syscall signature.
+        sig_offset  -- offset at which position the signature for the syscall
+                       function starts. The default value is 0. Do not set
+                       this value unless you have at least one argument at the
+                       beginning that does not belong to the syscall signature.
         """
-
         if _SyscallCategory.undefined in self.categories:
             raise NotImplementedError(f"{self._func.__name__} is only a stub.")
 
@@ -379,8 +390,15 @@ def syscall(*args,
     if len(args) == 1 and callable(args[0]):
         # decorator was called without keyword arguments, first argument is the
         # function, return a replacement function for the decorated function
-        func = wrap(args[0], categories, signature, custom_control_flow,
-                    aliases, name, signal_safe, is_stub=True)
+        func = wrap(func=args[0],
+                    categories=categories,
+                    signature=signature,
+                    custom_control_flow=custom_control_flow,
+                    aliases=aliases,
+                    name=name,
+                    signal_safe=signal_safe,
+                    atomic=atomic,
+                    is_stub=True)
         return func
 
     # decorator was called with keyword arguments, the returned function is
@@ -489,9 +507,11 @@ def connect_from_here(state, cpu_id, tgt, label, ty=None):
                       label,
                       ty=ty)
 
+
 def add_self_edge(state, cpu_id, label, ty=None):
     cpu = state.cpus[cpu_id]
     connect_from_here(state, cpu_id, cpu.control_instance, label, ty)
+
 
 def find_instance_node(instances, obj):
     for ins in instances.vertices():

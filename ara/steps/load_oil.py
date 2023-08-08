@@ -9,15 +9,17 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 """Container for OilStep."""
-from .option import Option, String
-from .step import Step
-import ara.os.autosar as _autosar
-
 import json
 import functools
 import pyllco
 
 from itertools import chain
+
+from .option import Option, String
+from .step import Step
+
+import ara.os.autosar as _autosar
+
 
 
 class LoadOIL(Step):

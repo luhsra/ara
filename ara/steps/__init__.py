@@ -41,6 +41,7 @@ def provide_steps():
     from .mark_loop_head import MarkLoopHead
     from .mstg_stats import MSTGStats
     from .multisse import MultiSSE
+    from .posix_init import POSIXInit
     from .printer import Printer
     from .reduce_sstg import ReduceSSTG
     from .register_task_entry import RegisterTaskEntry
@@ -52,7 +53,6 @@ def provide_steps():
     from .sysfuncts import SysFuncts
     from .system_relevant_functions import SystemRelevantFunctions
     from .zephyr_static_post import ZephyrStaticPost
-    from .posix_init import POSIXInit
 
     for step in _native_provide():
         yield step

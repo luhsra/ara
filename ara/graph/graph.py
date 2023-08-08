@@ -420,7 +420,7 @@ class Callgraph(graph_tool.Graph):
     def __init__(self, cfg, graph=None):
         super().__init__(graph)
 
-        # If a graph is used to initialize the values, everthing
+        # If a graph is used to initialize the values, everything
         # is copied from it. If we do not return from here
         # we will just overwrite the copied values with new empty
         # properties maps.

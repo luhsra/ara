@@ -14,6 +14,7 @@ instance_graph_stats = files('instance_graph_stats.py')
 test_dir = meson.current_source_dir()
 
 if get_option('enable_step_tests')
+    dummy = files('empty.json')
     test('create-abbs',
         py3_inst,
         args: [files('abb.py'), files('abb.json'), freertos_abb_merge],
@@ -113,7 +114,7 @@ if get_option('enable_step_tests')
 
     test('ir-reader-false-syntax',
         py3_inst,
-        args: [files('ir_reader.py'), files('empty.json'), files('ir_reader.false_syntax.ll')],
+        args: [files('ir_reader.py'), dummy, files('ir_reader.false_syntax.ll')],
         should_fail: true,
         env: [python_path],
         depends: ara_py,
@@ -121,7 +122,7 @@ if get_option('enable_step_tests')
     )
     test('ir-reader-multiple-symbols',
         py3_inst,
-        args: [files('ir_reader.py'), files('empty.json'), files('ir_reader.multiple_symbols.ll')],
+        args: [files('ir_reader.py'), dummy, files('ir_reader.multiple_symbols.ll')],
         should_fail: true,
         env: [python_path],
         depends: ara_py,
