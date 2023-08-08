@@ -1,0 +1,47 @@
+{
+  "cpus": [
+    {
+      "id": 0,
+      "os": {
+        "OsUseResScheduler": true
+      },
+      "task_groups": {
+        "H1Group": {
+          "promises": [],
+          "tasks": {
+            "H1": {
+              "activation": 1,
+              "autostart": true,
+              "priority": 5,
+              "schedule": true,
+			  "resources": [
+				"R1"
+			  ]
+            }
+          }
+        },
+        "H2Group": {
+          "promises": [],
+          "tasks": {
+            "H2": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 4,
+              "schedule": true,
+              "resources": [
+                "R1"
+              ]
+            }
+          }
+        }
+      },
+      "resources": {
+        "R1": {}
+      },
+      "events": {},
+      "alarms": {},
+      "counters": {},
+      "isrs": {}
+    }
+  ]
+}

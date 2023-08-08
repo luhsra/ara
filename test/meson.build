@@ -213,6 +213,27 @@ if get_option('enable_step_tests')
         suite: ['analysis', 'preproc']
     )
 
+    foreach app : autosar_targets
+      if app['full_name'] == 'autosar_singlecore_pairwise_pairwise'
+        test('pairwise',
+            py3_inst,
+            args: [files('pairwise.py'), dummy, app['ll'], app['oil']],
+            env: [python_path],
+            depends: ara_py,
+            suite: ['analysis']
+        )
+      endif
+      if app['full_name'] == 'autosar_singlecore_pairwise_pairwise_fail'
+        test('pairwise-fail',
+            py3_inst,
+            args: [files('pairwise.py'), dummy, app['ll'], app['oil']],
+            env: [python_path],
+            should_fail: true,
+            depends: ara_py,
+            suite: ['analysis']
+        )
+      endif
+    endforeach
 
     test('src-loc',
         py3_inst,

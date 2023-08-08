@@ -32,6 +32,8 @@ autosar_apps = [
   {'core': 'singlecore', 'path': 'bcc1' / 'lukas',     'name': 'alarmstress',           'oil': 'alarmstress.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'lukas',     'name': 'dispatch',              'oil': 'dispatch.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'lukas',     'name': 'isr2',                  'oil': 'isr2.json'},
+  {'core': 'singlecore', 'path': 'pairwise',           'name': 'pairwise',              'oil': 'system.json'},
+  {'core': 'singlecore', 'path': 'pairwise',           'name': 'pairwise-fail',              'oil': 'system.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'resource1', 'name': 'a',                     'oil': 'system.json', 'mtrace': 'a.trace.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'resource1', 'name': 'b',                     'oil': 'system.json', 'mtrace': 'b.trace.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'resource1', 'name': 'c',                     'oil': 'system.json', 'mtrace': 'c.trace.json'},

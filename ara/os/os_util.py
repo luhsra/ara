@@ -13,6 +13,7 @@ import html
 import pyllco
 from abc import ABC, abstractmethod
 
+from enum import Enum
 from typing import Tuple
 
 from ara.graph import SyscallCategory as _SyscallCategory, SigType as _SigType
@@ -198,6 +199,11 @@ def set_next_abb(state, cpu_id):
         cpu.exec_state = ExecState.from_abbtype(state.cfg.vp.type[next_abb])
 
 
+class Parenthesis(Enum):
+    LEFT = 1
+    RIGHT = 2
+
+
 class SysCall:
     """Defines a system call.
 
@@ -218,7 +224,8 @@ class SysCall:
                  name,
                  signal_safe,
                  atomic,
-                 is_stub):
+                 is_stub,
+                 parenthesis):
         # visible attributes
         self.syscall = True
         self._func = func_body
@@ -230,6 +237,7 @@ class SysCall:
         self.atomic = atomic
         self.categories = categories
         self.is_stub = is_stub
+        self.parenthesis = parenthesis
         self.signal_safe = signal_safe
 
     def get_name(self):
@@ -335,6 +343,7 @@ def syscall(*args,
             aliases: Tuple[str] = None,
             name: str = None,
             atomic: bool = True,
+            parenthesis: Parenthesis = None,
             signal_safe: bool = False,
             is_stub: bool = False):
     """System call decorator. Changes a function into a system call.
@@ -349,6 +358,9 @@ def syscall(*args,
     name                -- The name of the syscall.
                            If not set, the name of the syscalls equals the
                            name of the decorated function.
+    parenthesis         -- Must this syscall happen pairwise and on which
+                           position (left/right), such as open/close,
+                           lock/unlock (default: None).
     atomic              -- Is the syscall self contained or part of a group of
                            syscalls? (default: True)
                            A syscall that creates an instance but does not
@@ -368,13 +380,14 @@ def syscall(*args,
     outer_aliases = aliases
     outer_ccf = custom_control_flow
     outer_name = name
+    outer_parenthesis = parenthesis
     outer_atomic = atomic
     outer_signal_safe = signal_safe
     outer_is_stub = is_stub
 
     def wrap(func, categories=outer_categories, signature=outer_signature,
              custom_control_flow=outer_ccf, aliases=outer_aliases,
-             name=outer_name, atomic=outer_atomic,
+             name=outer_name, parenthesis=outer_parenthesis, atomic=outer_atomic,
              signal_safe=outer_signal_safe, is_stub=outer_is_stub):
         wrapper = SysCall(func_body=func,
                           categories=categories,
@@ -383,6 +396,7 @@ def syscall(*args,
                           aliases=aliases,
                           name=name,
                           signal_safe=signal_safe,
+                          parenthesis=parenthesis,
                           atomic=atomic,
                           is_stub=is_stub)
         return wrapper
@@ -397,6 +411,7 @@ def syscall(*args,
                     aliases=aliases,
                     name=name,
                     signal_safe=signal_safe,
+                    parenthesis=parenthesis,
                     atomic=atomic,
                     is_stub=True)
         return func

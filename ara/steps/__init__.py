@@ -41,6 +41,7 @@ def provide_steps():
     from .mark_loop_head import MarkLoopHead
     from .mstg_stats import MSTGStats
     from .multisse import MultiSSE
+    from .pairwise_check import PairwiseCheck
     from .posix_init import POSIXInit
     from .printer import Printer
     from .reduce_sstg import ReduceSSTG
@@ -80,6 +81,7 @@ def provide_steps():
     yield MarkLoopHead
     yield MSTGStats
     yield MultiSSE
+    yield PairwiseCheck
     yield POSIXInit
     yield Printer
     yield ReduceSSTG

@@ -24,7 +24,7 @@ from ara.graph import (CallPath, SyscallCategory, SigType, single_check,
                        edge_types)
 
 from .os_util import (syscall, Arg, set_next_abb, connect_from_here,
-                      find_instance_node, Paranthesis)
+                      find_instance_node, Parenthesis)
 from .os_base import (OSBase, OSState, CPUList, CPU, ControlInstance,
                       TaskStatus, ControlContext, CrossCoreAction,
                       ExecState, CPUBounded, IRQ)
@@ -865,7 +865,8 @@ class AUTOSAR(OSBase):
         return new_states
 
     @syscall(categories={SyscallCategory.comm},
-             signature=(Arg("resource", ty=Resource, hint=SigType.instance),))
+             signature=(Arg("resource", ty=Resource, hint=SigType.instance),),
+             parenthesis=Parenthesis.LEFT)
     def AUTOSAR_GetResource(cfg, state, cpu_id, args, va):
         assert isinstance(args.resource, Resource)
         # get correct dyn_prio
@@ -880,7 +881,8 @@ class AUTOSAR(OSBase):
         return state
 
     @syscall(categories={SyscallCategory.comm},
-             signature=(Arg("resource", ty=Resource, hint=SigType.instance),))
+             signature=(Arg("resource", ty=Resource, hint=SigType.instance),),
+             parenthesis=Parenthesis.RIGHT)
     def AUTOSAR_ReleaseResource(cfg, state, cpu_id, args, va):
         state.cur_context(cpu_id).dyn_prio.pop()
         if state.cur_context(cpu_id).dyn_prio:
