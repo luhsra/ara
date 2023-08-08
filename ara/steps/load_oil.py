@@ -15,6 +15,8 @@ import pyllco
 
 from itertools import chain
 
+from ara.graph import CFG
+
 from .option import Option, String
 from .step import Step
 
@@ -43,6 +45,7 @@ class LoadOIL(Step):
     def _add_edge(self, instances, src, tgt):
         e = instances.add_edge(src, tgt)
         instances.ep.quantity[e] = 1
+        instances.ep.syscall[e] = CFG.INVALID_ABB
         return e
 
     def run(self):

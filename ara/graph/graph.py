@@ -15,8 +15,10 @@ from graph_tool.topology import label_out_component
 
 from .graph_data import PyGraphData, _get_llvm_obj
 from .mix import ABBType, CFType, SyscallCategory, NodeLevel, StateType, MSTType
+from .mix import CFG_INVALID_ABB as _CFG_INVALID_ABB
 
 from collections.abc import Iterator
+
 
 MAX_INT64 = 2**63 - 1
 _INF = MAX_INT64
@@ -105,6 +107,8 @@ class CFG(graph_tool.Graph):
 
     The pointer to the respective LLVM datastructure is stored via llvm_link.
     """
+    INVALID_ABB = _CFG_INVALID_ABB
+
     def __init__(self, graph=None):
         super().__init__(graph)
 

@@ -31,6 +31,8 @@ namespace ara::graph {
 	static_assert(sizeof(int64_t) == sizeof(void*));
 
 	struct CFG {
+		constexpr static int32_t INVALID_ABB = constants::CFG_INVALID_ABB;
+
 		graph_tool::GraphInterface& graph;
 		/* see graph.py for python definitions */
 		typename graph_tool::vprop_map_t<std::string>::type name;

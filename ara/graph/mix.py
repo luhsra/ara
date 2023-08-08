@@ -200,3 +200,24 @@ ARA_ENTRY_POINT = "__ara_fake_entry"
 pass
 
 #undef pass
+
+#define pass namespace ara::constants { constexpr const int32_t /*
+# do not use CFG_INVALID_ABB directory but use
+#
+# in Python:
+# from ara.graph import CFG
+# CFG.INVALID_ABB
+#
+# in C++
+# include <graph.h>
+# ara::graph::CFG.INVALID_ABB
+# */
+pass
+
+CFG_INVALID_ABB = (1 << 30) + ((1 << 30) - 1)
+
+#undef pass
+#define pass ;}
+pass
+
+#undef pass
