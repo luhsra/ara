@@ -216,17 +216,17 @@ class SysCall:
     """
 
     def __init__(self,
-                 func_body,
-                 categories,
-                 signature,
-                 custom_control_flow,
                  aliases,
-                 name,
-                 signal_safe,
                  atomic,
+                 categories,
+                 custom_control_flow,
+                 func_body,
                  is_stub,
                  isr_call,
-                 parenthesis):
+                 name,
+                 parenthesis,
+                 signal_safe,
+                 signature):
         # visible attributes
         self.syscall = True
         self._func = func_body
@@ -339,39 +339,39 @@ class SysCall:
 
 
 def syscall(*args,
-            categories: Tuple[_SyscallCategory] = None,
-            signature: Tuple[Argument] = None,
-            custom_control_flow: bool = False,
             aliases: Tuple[str] = None,
-            name: str = None,
             atomic: bool = True,
-            parenthesis: Parenthesis = None,
+            categories: Tuple[_SyscallCategory] = None,
+            custom_control_flow: bool = False,
+            is_stub: bool = False,
             isr_call: bool = False,
+            name: str = None,
+            parenthesis: Parenthesis = None,
             signal_safe: bool = False,
-            is_stub: bool = False):
+            signature: Tuple[Argument] = None):
     """System call decorator. Changes a function into a system call.
 
     Returns a Syscall object. See it's documentation for more information.
 
     Arguments:
-    categories          -- Categories of the system call
-    signature           -- Specification of all system call arguments
-    custom_control_flow -- Does this system call alter the control flow?
     aliases             -- Alias names of the system call.
+    atomic              -- Is the syscall self contained or part of a group of
+                           syscalls? (default: True)
+                           A syscall that creates an instance but does not
+                           configure it, is not atomic for example.
+    categories          -- Categories of the system call
+    custom_control_flow -- Does this system call alter the control flow?
+    isr_call            -- Is this a syscall coming from an ISR
+                           (default: False)
     name                -- The name of the syscall.
                            If not set, the name of the syscalls equals the
                            name of the decorated function.
     parenthesis         -- Must this syscall happen pairwise and on which
                            position (left/right), such as open/close,
                            lock/unlock (default: None).
-    atomic              -- Is the syscall self contained or part of a group of
-                           syscalls? (default: True)
-                           A syscall that creates an instance but does not
-                           configure it, is not atomic for example.
-    isr_call            -- Is this a syscall coming from an ISR
-                           (default: False)
     signal_safe         -- Is it safe to call the syscall in a signal handler?
                            (default: False)
+    signature           -- Specification of all system call arguments
     """
     if categories is None:
         categories = {_SyscallCategory.undefined}
@@ -380,32 +380,39 @@ def syscall(*args,
     if aliases is None:
         aliases = []
 
-    outer_categories = categories
-    outer_signature = signature
     outer_aliases = aliases
+    outer_atomic = atomic
+    outer_categories = categories
     outer_ccf = custom_control_flow
+    outer_is_stub = is_stub
+    outer_isr_call = isr_call
     outer_name = name
     outer_parenthesis = parenthesis
-    outer_atomic = atomic
-    outer_isr_call = isr_call
     outer_signal_safe = signal_safe
-    outer_is_stub = is_stub
+    outer_signature = signature
 
-    def wrap(func, categories=outer_categories, signature=outer_signature,
-             custom_control_flow=outer_ccf, aliases=outer_aliases,
-             name=outer_name, parenthesis=outer_parenthesis, atomic=outer_atomic,
-             signal_safe=outer_signal_safe, isr_call=outer_isr_call, is_stub=outer_is_stub):
-        wrapper = SysCall(func_body=func,
-                          categories=categories,
-                          signature=signature,
-                          custom_control_flow=custom_control_flow,
-                          aliases=aliases,
-                          name=name,
-                          signal_safe=signal_safe,
-                          parenthesis=parenthesis,
-                          isr_call=isr_call,
+    def wrap(func,
+             aliases=outer_aliases,
+             atomic=outer_atomic,
+             categories=outer_categories,
+             custom_control_flow=outer_ccf,
+             is_stub=outer_is_stub,
+             isr_call=outer_isr_call,
+             name=outer_name,
+             parenthesis=outer_parenthesis,
+             signal_safe=outer_signal_safe,
+             signature=outer_signature):
+        wrapper = SysCall(aliases=aliases,
                           atomic=atomic,
-                          is_stub=is_stub)
+                          categories=categories,
+                          custom_control_flow=custom_control_flow,
+                          func_body=func,
+                          is_stub=is_stub,
+                          isr_call=isr_call,
+                          name=name,
+                          parenthesis=parenthesis,
+                          signal_safe=signal_safe,
+                          signature=signature)
         return wrapper
 
     if len(args) == 1 and callable(args[0]):
