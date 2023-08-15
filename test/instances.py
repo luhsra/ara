@@ -15,9 +15,10 @@ from init_test import init_test, fail_if_json_not_equal, to_json
 
 def main():
     """Test for correct instance detection."""
-    config = {"steps": ["SIA", "DumpCFG", "DumpInstances", "DumpCallgraph"],
+    config = {"steps": ["SIA"],  # "DumpCFG", "DumpInstances", "DumpCallgraph"],
               "SIA": {"log_level": "debug",
-                      "traversal_mode": sys.argv[3]}}
+                      "traversal_mode": sys.argv[3]},
+              "logger": {"StepManager": "info"}}
     data = init_test(extra_config=config)
     instances = data.graph.instances
     dump = []
