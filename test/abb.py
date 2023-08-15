@@ -7,7 +7,7 @@
 import json
 
 # Note: init_test must be imported first
-from init_test import init_test, fail_if
+from init_test import init_test, fail_if_json_not_equal
 from ara.graph import ABBType, CFType, edge_types
 from hashlib import sha1
 
@@ -57,7 +57,7 @@ def main():
 
     # with open(data.data_file, "w") as f:
     #     json.dump(out, f, indent=2)
-    fail_if(data.data != out, "Data not equal")
+    fail_if_json_not_equal(data.data, out)
 
 
 if __name__ == '__main__':
