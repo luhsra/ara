@@ -225,6 +225,7 @@ class SysCall:
                  signal_safe,
                  atomic,
                  is_stub,
+                 isr_call,
                  parenthesis):
         # visible attributes
         self.syscall = True
@@ -237,6 +238,7 @@ class SysCall:
         self.atomic = atomic
         self.categories = categories
         self.is_stub = is_stub
+        self.isr_call = isr_call
         self.parenthesis = parenthesis
         self.signal_safe = signal_safe
 
@@ -344,6 +346,7 @@ def syscall(*args,
             name: str = None,
             atomic: bool = True,
             parenthesis: Parenthesis = None,
+            isr_call: bool = False,
             signal_safe: bool = False,
             is_stub: bool = False):
     """System call decorator. Changes a function into a system call.
@@ -365,6 +368,8 @@ def syscall(*args,
                            syscalls? (default: True)
                            A syscall that creates an instance but does not
                            configure it, is not atomic for example.
+    isr_call            -- Is this a syscall coming from an ISR
+                           (default: False)
     signal_safe         -- Is it safe to call the syscall in a signal handler?
                            (default: False)
     """
@@ -382,13 +387,14 @@ def syscall(*args,
     outer_name = name
     outer_parenthesis = parenthesis
     outer_atomic = atomic
+    outer_isr_call = isr_call
     outer_signal_safe = signal_safe
     outer_is_stub = is_stub
 
     def wrap(func, categories=outer_categories, signature=outer_signature,
              custom_control_flow=outer_ccf, aliases=outer_aliases,
              name=outer_name, parenthesis=outer_parenthesis, atomic=outer_atomic,
-             signal_safe=outer_signal_safe, is_stub=outer_is_stub):
+             signal_safe=outer_signal_safe, isr_call=outer_isr_call, is_stub=outer_is_stub):
         wrapper = SysCall(func_body=func,
                           categories=categories,
                           signature=signature,
@@ -397,6 +403,7 @@ def syscall(*args,
                           name=name,
                           signal_safe=signal_safe,
                           parenthesis=parenthesis,
+                          isr_call=isr_call,
                           atomic=atomic,
                           is_stub=is_stub)
         return wrapper
@@ -412,6 +419,7 @@ def syscall(*args,
                     name=name,
                     signal_safe=signal_safe,
                     parenthesis=parenthesis,
+                    isr_call=isr_call,
                     atomic=atomic,
                     is_stub=True)
         return func
