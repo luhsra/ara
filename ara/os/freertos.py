@@ -822,9 +822,15 @@ class FreeRTOS(OSBase):
     def vTaskList(graph, state, cpu_id, args, va):
         pass
 
-    @syscall
+    @syscall(categories={SyscallCategory.comm},
+             signature=(Arg("task", hint=SigType.instance),
+                        Arg("higher_task_woken", hint=SigType.symbol)),
+             isr_call=True)
     def vTaskNotifyGiveFromISR(graph, state, cpu_id, args, va):
-        pass
+        task_node = find_instance_node(state.instances, args.task)
+        connect_from_here(state, cpu_id, task_node,
+                          "vTaskNotifyGiveFromISR()")
+        return state
 
     @syscall
     def vTaskPrioritySet(graph, state, cpu_id, args, va):
@@ -922,9 +928,27 @@ class FreeRTOS(OSBase):
     def xQueueCreateStatic(graph, state, cpu_id, args, va):
         pass
 
-    @syscall
+    @syscall(categories={SyscallCategory.comm},
+             signature=(Arg('handler', ty=[Queue, Mutex], hint=SigType.instance),
+                        Arg('item', raw_value=True),
+                        Arg("higher_task_woken", hint=SigType.symbol)),
+             isr_call=True)
     def xQueueGenericSendFromISR(graph, state, cpu_id, args, va):
-        pass
+        cpu = state.cpus[cpu_id]
+        abb = cpu.abb
+        cfg = graph.cfg
+
+        queue = args.handler
+        if not queue:
+            logger.debug(f"Callpath: {cpu.call_path}")
+            logger.error(f"xQueueGenericSendFromISR (files: {cfg.vp.files[abb]}, "
+                         f"lines: {cfg.vp.lines[abb]}, value: {queue.value}): "
+                         "Queue handler cannot be found. Ignoring syscall.")
+            MissingInteractions.add_imprecise(['Queue', 'Mutex'], abb)
+        else:
+            queue_node = find_instance_node(state.instances, queue)
+            connect_from_here(state, cpu_id, queue_node, "xQueueGenericSendFromISR")
+        return state
 
     @syscall
     def xQueueGetMutexHolder(graph, state, cpu_id, args, va):
