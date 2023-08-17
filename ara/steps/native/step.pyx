@@ -116,15 +116,6 @@ cdef class SuperStep:
         """Do the actual action of the step."""
         raise NotImplementedError()
 
-    def get_side_data(self):
-        """Provide arbitrary side data, that are not belonging to the system
-        graph. This can be used to make analysis based on the system graph and
-        extract some data not related to the graph itself.
-
-        Return some step specific kind of side data.
-        """
-        raise NotImplementedError()
-
     def apply_config(self, config: dict):
         """Apply a new config to the step. This can be done multiple times, so
         different runs with different options are possible."""
@@ -356,9 +347,6 @@ cdef class NativeStep(SuperStep):
 
     def get_description(self):
         return self._description
-
-    def get_side_data(self):
-        super().get_side_data()
 
     def _apply_config(self, config: dict):
         # this is a lot easier on the Python side, so do it here
