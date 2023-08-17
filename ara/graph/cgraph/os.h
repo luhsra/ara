@@ -29,6 +29,7 @@ namespace ara::os {
 		explicit SysCall(PyObject* obj, PyObject* os);
 		explicit SysCall(boost::python::object obj, boost::python::object os) : obj(obj), os(os){};
 		std::string get_name() const;
+		bool is_isr_call() const;
 		OS get_os() const;
 		std::vector<graph::SigType> get_signature() const;
 	};

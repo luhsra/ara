@@ -31,6 +31,7 @@ ir_apps = [
   'invalid_mutex',
   'invalid_semaphore',
   'interaction',
+  'isrs',
   'loop_detection',
   'multi_exit',
   'optimization',

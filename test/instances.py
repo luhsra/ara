@@ -12,12 +12,16 @@ import sys
 # Note: init_test must be imported first
 from init_test import init_test, fail_if_json_not_equal, to_json
 
+from ara.os.freertos import ISR
+
 
 def main():
     """Test for correct instance detection."""
     config = {"steps": ["SIA"],  # "DumpCFG", "DumpInstances", "DumpCallgraph"],
               "SIA": {"log_level": "debug",
                       "traversal_mode": sys.argv[3]},
+              "ISRSearch": {"log_level": "debug"},
+              "CreateISR": {"log_level": "debug"},
               "logger": {"StepManager": "info"}}
     data = init_test(extra_config=config)
     instances = data.graph.instances
@@ -28,11 +32,12 @@ def main():
     ids = set()
     for instance in instances.vertices():
         i_dump = {}
+        obj = instances.vp.obj[instance]
         for name, prop in instances.vp.items():
             val = prop[instance]
             if name == 'file':
                 val = os.path.relpath(os.path.realpath(val), start=script_dir)
-            if name == 'llvm_soc':
+            if name == 'llvm_soc' and not isinstance(obj, ISR):
                 # wild pointer, skip this
                 assert val != 0
                 continue

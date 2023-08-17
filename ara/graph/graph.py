@@ -701,6 +701,7 @@ class InstanceGraph(graph_tool.Graph):
                 continue
             yield obj.function, inst
 
+
 class SVFG(graph_tool.Graph):
     """SVFG graphtool version"""
     def __init__(self, graph=None):

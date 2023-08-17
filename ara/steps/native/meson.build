@@ -1,14 +1,12 @@
 # SPDX-FileCopyrightText: 2019 Benedikt Steinmeier
-# SPDX-FileCopyrightText: 2019 Gerion Entrup <entrup@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2019 Manuel Breiden
 # SPDX-FileCopyrightText: 2020 Kenny Albes
 # SPDX-FileCopyrightText: 2020 Manuel Breiden
 # SPDX-FileCopyrightText: 2020 Yannick Loeck
 # SPDX-FileCopyrightText: 2021 Bastian Fuhlenriede
 # SPDX-FileCopyrightText: 2022 Björn Fiedler <fiedler@sra.uni-hannover.de>
-# SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
-# SPDX-FileCopyrightText: 2022 Jan Neugebauer
 # SPDX-FileCopyrightText: 2023 Jan Neugebauer
+# SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -95,6 +93,7 @@ step_mod = py3_inst.extension_module('step',
         'fn_single_exit.cpp',
         'ir_reader.cpp',
         'ir_writer.cpp',
+        'isr_search.cpp',
         'llvm_map.cpp',
         'llvm_optimization.cpp',
         'load_freertos_config.cpp',

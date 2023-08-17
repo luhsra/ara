@@ -16,6 +16,8 @@ namespace ara::os {
 
 	std::string SysCall::get_name() const { return py_syscall_get_name(obj.ptr()); }
 
+	bool SysCall::is_isr_call() const { return py_syscall_is_isr_call(obj.ptr()); }
+
 	std::vector<graph::SigType> SysCall::get_signature() const { return py_syscall_get_signature(obj.ptr()); }
 
 	OS SysCall::get_os() const { return OS(os); }

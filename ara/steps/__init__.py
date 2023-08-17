@@ -1,5 +1,4 @@
 # SPDX-FileCopyrightText: 2019 Benedikt Steinmeier
-# SPDX-FileCopyrightText: 2020 Björn Fiedler <fiedler@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2020 Fredo Nowak
 # SPDX-FileCopyrightText: 2020 Kenny Albes
 # SPDX-FileCopyrightText: 2020 Manuel Breiden
@@ -25,6 +24,7 @@ def provide_steps():
     from .cfg_stats import CFGStats
     from .classify_specializations_freertos import ClassifySpecializationsFreeRTOS
     from .create_abbs import CreateABBs
+    from .create_isr import CreateISR
     from .dummy import Dummy
     from .dump_callgraph import DumpCallgraph
     from .dump_cfg import DumpCFG
@@ -64,6 +64,7 @@ def provide_steps():
     yield CallGraphStats
     yield ClassifySpecializationsFreeRTOS
     yield CreateABBs
+    yield CreateISR
     yield Dummy
     yield DumpCallgraph
     yield DumpCFG

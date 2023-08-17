@@ -96,6 +96,17 @@ if get_option('enable_step_tests')
         suite: ['analysis', 'sia']
     )
 
+    test('instances-isrs',
+        py3_inst,
+        args: [files('instances.py'),
+               files('isrs.json'),
+               freertos_isrs,
+               'mixed'],
+        env: [python_path],
+        depends: ara_py,
+        suite: ['analysis', 'sia']
+    )
+
     test('interactions',
         py3_inst,
         args: [files('interactions.py'), files('interactions.json'), freertos_interaction],

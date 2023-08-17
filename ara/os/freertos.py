@@ -1,14 +1,15 @@
-# SPDX-FileCopyrightText: 2020 Björn Fiedler <fiedler@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2021 Bastian Fuhlenriede
 # SPDX-FileCopyrightText: 2021 Lukas Berg
 # SPDX-FileCopyrightText: 2022 Björn Fiedler <fiedler@sra.uni-hannover.de>
-# SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2022 Jan Neugebauer
+# SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from .os_util import syscall, assign_id, Arg, find_return_value, UnknownArgument, set_next_abb, connect_from_here, find_instance_node
-from .os_base import OSBase, ControlInstance, CPUList, CPU, OSState, ExecState
+from .os_util import (syscall, assign_id, set_next_abb, find_return_value, Arg,
+                      UnknownArgument, connect_from_here, find_instance_node)
+from .os_base import (OSBase, ControlInstance, CPUList, CPU, OSState,
+                      ExecState, NotOSHandledInterrupts)
 
 import pyllco
 import html
@@ -23,7 +24,7 @@ from ara.steps.instance_graph_stats import MissingInteractions
 logger = get_logger("FreeRTOS")
 
 
-@dataclass(eq=False)
+@dataclass(eq=False, kw_only=True)
 class FreeRTOSInstance(object):
     cfg: CFG
     abb: Vertex  # of type ABB
@@ -55,6 +56,17 @@ class FreeRTOSInstance(object):
         if self.specialization_level in ['static', 'initialized']:
             return self.heap_need
         return 0
+
+    def get_maximal_id(self):
+        """Return an as long as possible unique id.
+
+        This is a generic implementation. You may want to override that.
+        """
+        return '.'.join(map(str, [self.__class__.__name__,
+                                  self.name,
+                                  self.vidx,
+                                  self.abb,
+                                  self.call_path.print(call_site=True)]))
 
     def heap_usage_maybe(self):
         if not self.unique:
@@ -152,7 +164,12 @@ class Task(FreeRTOSInstance, ControlInstance):
                      self.function, self.stack_size, self.parameters, self.init_priority, self.handle_p, self.artificial, self.static_stack))
 
 
-@dataclass
+@dataclass(kw_only=True)
+class ISR(FreeRTOSInstance, ControlInstance):
+    pass
+
+
+@dataclass(kw_only=True)
 class Queue(FreeRTOSInstance):
     never_deleted = True
     uid_counter = 0
@@ -286,6 +303,50 @@ class FreeRTOS(OSBase):
     @staticmethod
     def has_dynamic_instances():
         return True
+
+    @staticmethod
+    def register_isr(instances, cfg, isr_label):
+        entry_func = cfg.get_function_by_name(isr_label)
+
+        for _, existing_isr in instances.get(ISR):
+            if existing_isr.function == entry_func:
+                logger.debug("ISR %s already exists.", existing_isr.name)
+                return
+
+        isr_name = f"ISR: {isr_label}"
+
+        v = instances.add_vertex()
+        instances.vp.label[v] = isr_name
+
+        instances.vp.branch[v] = False
+        instances.vp.loop[v] = False
+        instances.vp.recursive[v] = False
+        instances.vp.after_scheduler[v] = False
+        instances.vp.usually_taken[v] = False
+        instances.vp.unique[v] = True
+        instances.vp.soc[v] = CFG.INVALID_ABB
+        instances.vp.llvm_soc[v] = 0
+        instances.vp.is_control[v] = True
+        instances.vp.obj[v] = ISR(cfg=cfg,
+                                  artificial=False,
+                                  function=entry_func,
+                                  cpu_id=-1,
+                                  vidx=v,
+                                  name=isr_name,
+                                  call_path=CallPath(),
+                                  abb=CFG.INVALID_ABB)
+
+        assign_id(instances, v)
+
+        logger.info("Create new ISR %s", isr_name)
+
+    @staticmethod
+    def get_interrupts(instances, cfg=None):
+        assert cfg is None, "Not implemented, yet."
+        isrs = [x[1].name for x in instances.get(ISR)]
+        if len(isrs) == 0:
+            raise NotOSHandledInterrupts()
+        return isrs
 
     @staticmethod
     def get_initial_state(cfg, instances):
@@ -483,7 +544,7 @@ class FreeRTOS(OSBase):
         FreeRTOS.handle_soc(cpu.analysis_context, state.instances, v, cfg, abb)
 
         # TODO: when do we know that this is an unique instance?
-        state.instances.vp.obj[v] = Queue(cfg,
+        state.instances.vp.obj[v] = Queue(cfg=cfg,
                                           vidx=v,
                                           name=handler_name,
                                           handler=queue_handler,
@@ -672,7 +733,7 @@ class FreeRTOS(OSBase):
         state.instances.vp.label[v] = f"StreamBuffer: {handler_name}"
         FreeRTOS.handle_soc(cpu.analysis_context, state.instances, v, cfg, abb)
 
-        state.instances.vp.obj[v] = StreamBuffer(cfg,
+        state.instances.vp.obj[v] = StreamBuffer(cfg=cfg,
                                                  abb=abb,
                                                  call_path=cp,
                                                  vidx=v,

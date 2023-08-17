@@ -385,6 +385,7 @@ def provide_steps():
             _native_step_fac(make_step_fac[cstep.CallGraph]()),
             _native_step_fac(make_step_fac[cstep.IRWriter]()),
             _native_step_fac(make_step_fac[cstep.IRReader]()),
+            _native_step_fac(make_step_fac[cstep.ISRSearch]()),
             _native_step_fac(make_step_fac[cstep.LLVMMap]()),
             _native_step_fac(make_step_fac[cstep.LLVMOptimization]()),
             _native_step_fac(make_step_fac[cstep.LoadFreeRTOSConfig]()),

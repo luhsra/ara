@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2021 Bastian Fuhlenriede
 # SPDX-FileCopyrightText: 2021 Jan Neugebauer
-# SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -264,6 +264,10 @@ def _get_llvm_obj(cfg, vertex):
 # functions for os.h
 cdef public string py_syscall_get_name(object syscall):
     return syscall.get_name().encode('UTF-8')
+
+
+cdef public bool py_syscall_is_isr_call(object syscall):
+    return syscall.isr_call
 
 
 cdef public vector[CSigType] py_syscall_get_signature(object syscall):

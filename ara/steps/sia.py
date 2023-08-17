@@ -18,7 +18,7 @@ from .option import Option, String, Choice
 from .util import is_in_condition, is_usually_taken, is_recursive
 
 
-from ara.os.os_base import CPU, ExecState
+from ara.os.os_base import CPU, ExecState, NotOSHandledInterrupts
 
 from graph_tool import GraphView, Vertex
 from graph_tool.topology import all_paths
@@ -292,7 +292,6 @@ class FlatAnalysis(Step):
                                  0,
                                  categories=self._search_category())
 
-
     def run(self):
         if self.traversal_mode.get() == "flowsensitive":
             for entry_func, instance in self._get_entry_points():
@@ -344,6 +343,12 @@ class SIA(FlatAnalysis):
                 step_data.add(func_name)
 
     def _get_entry_points(self):
+        # there may be entry points missing due to unrecognized interrupts
+        try:
+            self._graph.os.get_interrupts(self._graph.instances)
+        except NotOSHandledInterrupts:
+            self._step_manager.chain_step({"name": "ISRSearch"})
+
         # find entry point in callgraph
         self.ep_name = self.entry_point.get()
         callgraph = self._graph.callgraph

@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2020 Björn Fiedler <fiedler@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2021 Bastian Fuhlenriede
-# SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2022 Jan Neugebauer
+# SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -142,7 +142,7 @@ class CPUBounded:
     cpu_id: int
 
 
-@dataclass
+@dataclass(kw_only=True)
 class ControlInstance(CPUBounded):
     """All operating system instances (system objects) that contain control
     flow should inherit from this class. Typically, these are threads, tasks,
@@ -266,6 +266,15 @@ class OSCreator(type):
         return x
 
 
+class NotOSHandledInterrupts(Exception):
+    """Interrupts are not handled by the OS.
+
+    Interrupts instead can be found with special syscalls that are called from
+    an ISR context (syscall.isr_call == True).
+    """
+    pass
+
+
 class OSBase(metaclass=OSCreator):
     # specify possible edge types for the InstanceGraph
     EdgeType = None
@@ -317,6 +326,10 @@ class OSBase(metaclass=OSCreator):
         If a CFG is provided, the OS model returns full classified interrupts
         of type IRQ. Especially this is a control instance and provides a fake
         function which provides the control flow of the interrupt.
+
+        May raise an NotOSHandledInterrupts exception, if necessary and only
+        instances is given. When called again with an appropriate CFG, the
+        function fills the interrupt instances accordingly.
         """
         raise NotImplementedError
 

@@ -66,6 +66,10 @@ cdef extern from "ir_writer.h" namespace "ara::step":
     cdef cppclass IRWriter:
         pass
 
+cdef extern from "isr_search.h" namespace "ara::step":
+    cdef cppclass ISRSearch:
+        pass
+
 cdef extern from "llvm_map.h" namespace "ara::step":
     cdef cppclass LLVMMap:
         pass
