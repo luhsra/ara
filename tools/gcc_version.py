@@ -19,4 +19,4 @@ args = parser.parse_args()
 # version = subprocess.run([args.gcc, "--version"], capture_output=True)
 # output = version.stdout
 output = subprocess.check_output([args.gcc, "--version"])
-print(re.search('(\d\.\d\.\d)', output.split(b'\n')[0].decode('utf-8')).group(0))
+print(re.search(r'(\d+\.\d+\.\d+)', output.split(b'\n')[0].decode('utf-8')).group(0))
