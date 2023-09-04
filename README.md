@@ -45,7 +45,7 @@ pip3 install --user meson
 
 Outside of the SRA lab some extra dependencies might be needed:
 ```
-sudo apt install cmake pkgconf libboost-all-dev libsparsehash-dev gcc-arm-none-eabi libcairo2-dev python3-dev
+sudo apt install cmake pkgconf libboost-all-dev libsparsehash-dev gcc-arm-none-eabi libcairo3-dev python3-dev clang-format
 pip3 install -U pycairo matplotlib
 ```
 
