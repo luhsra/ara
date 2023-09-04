@@ -32,14 +32,14 @@ def main():
                          "is_exit": cfg.vp.is_exit[bb],
                          "part_of_loop": cfg.vp.part_of_loop[bb],
                          "implemented": cfg.vp.implemented[bb],
-                         "type": str(ABBType(cfg.vp.type[bb])),
+                         "type": ABBType(cfg.vp.type[bb]).name,
                          "lines": list(cfg.vp.lines[bb])})
 
         lout = {"bbs": bout,
                 "is_exit": cfg.vp.is_exit[abb],
                 "part_of_loop": cfg.vp.part_of_loop[abb],
                 "implemented": cfg.vp.implemented[abb],
-                "type": str(ABBType(cfg.vp.type[bb])),
+                "type": ABBType(cfg.vp.type[bb]).name,
                 "id": sha1(json.dumps(bout).encode("UTF-8")).hexdigest()[:8]}
         mapping[abb] = lout["id"]
 
@@ -49,7 +49,7 @@ def main():
     for edge in cf.edges():
         eout = {"source": mapping[edge.source()],
                 "target": mapping[edge.target()],
-                "type": str(CFType(cfg.ep.type[edge]))}
+                "type": CFType(cfg.ep.type[edge]).name}
         out_e.append(eout)
 
     out = {"vertices": sorted(out_v, key=lambda v: v['id']),
