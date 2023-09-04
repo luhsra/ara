@@ -15,113 +15,150 @@ test_dir = meson.current_source_dir()
 
 if get_option('enable_step_tests')
     dummy = files('empty.json')
-    test('create-abbs',
-        py3_inst,
-        args: [files('abb.py'), files('abb.json'), freertos_abb_merge],
-        env: [python_path],
-        depends: ara_py,
-        suite: ['analysis', 'preproc']
-    )
 
-    test('dependency-resolving',
-        py3_inst,
-        args: files('dependency_resolving.py'),
-        env: [python_path],
-        depends: ara_py,
-        suite: ['analysis', 'preproc']
-    )
+    if get_option('arch') != 'posix'
+        test('create-abbs',
+            py3_inst,
+            args: [files('abb.py'), files('abb.json'), freertos_abb_merge],
+            env: [python_path],
+            depends: ara_py,
+            suite: ['analysis', 'preproc']
+        )
 
-    test('dummy-test',
-        py3_inst,
-        args: [ara_py, 'empty',
-               '-v',
-               '--os', 'FreeRTOS',
-               '--step-settings', files('dummy_settings.json')],
-        suite: ['analysis', 'preproc']
-    )
+        test('dependency-resolving',
+            py3_inst,
+            args: files('dependency_resolving.py'),
+            env: [python_path],
+            depends: ara_py,
+            suite: ['analysis', 'preproc']
+        )
 
-    test('equations',
-        py3_inst,
-        args: [files('equations.py')],
-        env: [python_path],
-        depends: ara_py,
-        suite: ['analysis', 'multisse']
-    )
+        test('dummy-test',
+            py3_inst,
+            args: [ara_py, 'empty',
+                  '-v',
+                  '--os', 'FreeRTOS',
+                  '--step-settings', files('dummy_settings.json')],
+            suite: ['analysis', 'preproc']
+        )
 
-    test('function-pointer',
-        py3_inst,
-        args: [files('function_pointer.py'), files('function_pointer.json'), freertos_function_pointer],
-        env: [python_path],
-        depends: ara_py,
-        suite: ['analysis', 'preproc']
-    )
+        test('equations',
+            py3_inst,
+            args: [files('equations.py')],
+            env: [python_path],
+            depends: ara_py,
+            suite: ['analysis', 'multisse']
+        )
 
-    test('icfg',
-        py3_inst,
-        args: [files('icfg.py'), files('icfg.json'), freertos_icfg],
-        env: [python_path],
-        depends: ara_py,
-        suite: ['analysis', 'preproc']
-    )
+        test('function-pointer',
+            py3_inst,
+            args: [files('function_pointer.py'), files('function_pointer.json'), freertos_function_pointer],
+            env: [python_path],
+            depends: ara_py,
+            suite: ['analysis', 'preproc']
+        )
 
-    test('instances-flowsensitive',
-        py3_inst,
-        args: [files('instances.py'),
-               files('instances.json'),
-               freertos_instances,
-               'flowsensitive'],
-        env: [python_path],
-        depends: ara_py,
-        suite: ['analysis', 'sia']
-    )
+        test('icfg',
+            py3_inst,
+            args: [files('icfg.py'), files('icfg.json'), freertos_icfg],
+            env: [python_path],
+            depends: ara_py,
+            suite: ['analysis', 'preproc']
+        )
 
-    test('instances-flowinsensitive',
-        py3_inst,
-        args: [files('instances.py'),
-               files('instances.json'),
-               freertos_instances,
-               'flowinsensitive'],
-        env: [python_path],
-        depends: ara_py,
-        suite: ['analysis', 'sia']
-    )
-    test('instances-mixed',
-        py3_inst,
-        args: [files('instances.py'),
-               files('instances.json'),
-               freertos_instances,
-               'mixed'],
-        env: [python_path],
-        depends: ara_py,
-        suite: ['analysis', 'sia']
-    )
+        test('instances-flowsensitive',
+            py3_inst,
+            args: [files('instances.py'),
+                  files('instances.json'),
+                  freertos_instances,
+                  'flowsensitive'],
+            env: [python_path],
+            depends: ara_py,
+            suite: ['analysis', 'sia']
+        )
 
-    test('instances-isrs',
-        py3_inst,
-        args: [files('instances.py'),
-               files('isrs.json'),
-               freertos_isrs,
-               'mixed'],
-        env: [python_path],
-        depends: ara_py,
-        suite: ['analysis', 'sia']
-    )
+        test('instances-flowinsensitive',
+            py3_inst,
+            args: [files('instances.py'),
+                  files('instances.json'),
+                  freertos_instances,
+                  'flowinsensitive'],
+            env: [python_path],
+            depends: ara_py,
+            suite: ['analysis', 'sia']
+        )
+        test('instances-mixed',
+            py3_inst,
+            args: [files('instances.py'),
+                  files('instances.json'),
+                  freertos_instances,
+                  'mixed'],
+            env: [python_path],
+            depends: ara_py,
+            suite: ['analysis', 'sia']
+        )
 
-    test('interactions',
-        py3_inst,
-        args: [files('interactions.py'), files('interactions.json'), freertos_interaction],
-        env: [python_path],
-        depends: ara_py,
-        suite: ['analysis', 'sia']
-    )
+        test('instances-isrs',
+            py3_inst,
+            args: [files('instances.py'),
+                  files('isrs.json'),
+                  freertos_isrs,
+                  'mixed'],
+            env: [python_path],
+            depends: ara_py,
+            suite: ['analysis', 'sia']
+        )
 
-    test('instance_graph_stats',
-        py3_inst,
-        args: [files('instance_graph_stats.py'), files('instance_graph_stats.json'), freertos_interaction, 'FreeRTOS'],
-        env: [python_path],
-        depends: ara_py,
-        suite: ['analysis', 'sia']
-    )
+        test('interactions',
+            py3_inst,
+            args: [files('interactions.py'), files('interactions.json'), freertos_interaction],
+            env: [python_path],
+            depends: ara_py,
+            suite: ['analysis', 'sia']
+        )
+
+        test('instance_graph_stats',
+            py3_inst,
+            args: [files('instance_graph_stats.py'), files('instance_graph_stats.json'), freertos_interaction, 'FreeRTOS'],
+            env: [python_path],
+            depends: ara_py,
+            suite: ['analysis', 'sia']
+        )
+        
+        test('src-loc',
+            py3_inst,
+            args: [files('src_loc.py'), files('src_loc.json'), freertos_src_loc],
+            env: [python_path],
+            depends: ara_py,
+            suite: ['analysis', 'preproc']
+        )
+
+        test('syscall',
+            py3_inst,
+            args: [files('syscall.py'), files('syscall.json'), freertos_syscall],
+            env: [python_path],
+            depends: ara_py,
+            suite: ['analysis', 'preproc']
+        )
+
+        test('value-analysis',
+            py3_inst,
+            args: [files('value_analysis.py'), files('value_analysis.json'), freertos_svf],
+            env: [python_path],
+            depends: ara_py,
+            suite: ['analysis', 'preproc']
+        )
+
+        test('value-analysis-struct',
+            py3_inst,
+            args: [files('value_analysis.py'), files('value_analysis_struct.json'), freertos_value_analysis_struct],
+            env: [python_path],
+            depends: ara_py,
+            suite: ['analysis', 'preproc']
+        )
+
+        subdir('native_step_test')
+    endif
 
     test('ir-reader-false-syntax',
         py3_inst,
@@ -246,14 +283,6 @@ if get_option('enable_step_tests')
       endif
     endforeach
 
-    test('src-loc',
-        py3_inst,
-        args: [files('src_loc.py'), files('src_loc.json'), freertos_src_loc],
-        env: [python_path],
-        depends: ara_py,
-        suite: ['analysis', 'preproc']
-    )
-
     foreach app : autosar_targets
       if app['core'] != 'singlecore'
         continue
@@ -267,13 +296,6 @@ if get_option('enable_step_tests')
       )
     endforeach
 
-    test('syscall',
-        py3_inst,
-        args: [files('syscall.py'), files('syscall.json'), freertos_syscall],
-        env: [python_path],
-        depends: ara_py,
-        suite: ['analysis', 'preproc']
-    )
     # system runtime test for generator
     if get_option('arch') == 'posix'
       supported = [
@@ -329,24 +351,7 @@ if get_option('enable_step_tests')
 
       endforeach
     endif
-  
-    test('value-analysis',
-        py3_inst,
-        args: [files('value_analysis.py'), files('value_analysis.json'), freertos_svf],
-        env: [python_path],
-        depends: ara_py,
-        suite: ['analysis', 'preproc']
-    )
 
-    test('value-analysis-struct',
-        py3_inst,
-        args: [files('value_analysis.py'), files('value_analysis_struct.json'), freertos_value_analysis_struct],
-        env: [python_path],
-        depends: ara_py,
-        suite: ['analysis', 'preproc']
-    )
-    
-    subdir('native_step_test')
 endif
 
 subdir('posix_test')
