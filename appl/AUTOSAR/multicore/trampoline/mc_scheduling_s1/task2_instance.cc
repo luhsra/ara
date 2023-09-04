@@ -36,14 +36,13 @@
 
 #include "Os.h"
 
-DeclareSpinlock(sync);
+DeclareSpinlock(sync0);
 
 static void test_t2_instance(void)
 {
   SCHEDULING_CHECK_STEP(3);
 
-  TerminateTask();
-  SyncAllCores(sync);
+  SyncAllCores(sync0);
 }
 
 /*create the test suite with all the test cases*/

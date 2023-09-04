@@ -1,3 +1,10 @@
+// SPDX-FileCopyrightText: 2013-2014 Florian Lukas <florian.lukas@gmail.com>
+// SPDX-FileCopyrightText: 2013-2014 Martin Hoffmann <hoffmann@cs.fau.de>
+// SPDX-FileCopyrightText: 2013-2019 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
+// SPDX-FileCopyrightText: 2023 Andreas Kässens
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /**
  * @file
  * @ingroup posix
@@ -6,19 +13,23 @@
 #ifndef __OUTPUT_H__
 #define __OUTPUT_H__
 
+#include "bufferedterminal.h"
 #if DEBUG
 
 // debugging: print kout+debug on stdout/stderr
-#include "colorterminal.h"
-extern ColorTerminal kout;
-extern ColorTerminal debug;
+#include "hardware_threads.h"
+extern BufferedTerminal kout;
+extern BufferedTerminal debug;
+extern BufferedTerminal debug_core_arr[MAX_CPUS];
+
+#define debug_core (debug_core_arr[arch::get_cpuid()])
 
 #else // DEBUG
 
 // not debugging: print kout on stdout, ignore debug
-#include "colorterminal.h"
-extern ColorTerminal kout;
+extern BufferedTerminal kout;
 extern Null_Stream debug;
+#define debug_core debug
 
 #endif // DEBUG
 

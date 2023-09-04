@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2023 Andreas Kässens
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
-
 """Container for IPIAvoidance."""
 from ara.graph import MSTType, single_check
 from .step import Step
@@ -10,12 +10,13 @@ import timeit
 
 
 class IPIAvoidance(Step):
-    """Detect unnecessary IPIs for ActivateTask calls.
+    """Detect unnecessary IPIs for ActivateTask, ChainTask, SetEvent calls.
 
     If an ActivateTask should activate a Task on another core but this core is
     running a higher priority task on all possible synchronisation points, the
     operating system does not have to trigger an IPI but can set a flag only.
     """
+
     def get_single_dependencies(self):
         return ["MultiSSE"]
 
@@ -69,16 +70,21 @@ class IPIAvoidance(Step):
             if st2sy.vertex(sync).in_degree() == 2:
                 for state in st2sy.vertex(sync).in_neighbors():
                     syscall_name = mstg.get_syscall_name(state)
-                    if syscall_name == "AUTOSAR_ActivateTask":
+                    if syscall_name in [
+                            "AUTOSAR_ActivateTask", "AUTOSAR_ChainTask",
+                            "AUTOSAR_SetEvent"
+                    ]:
                         ipi_needed, handled = self._is_ipi_needed(state)
                         out.append({
                             "state": mstg.vp.state[state].id,
+                            "abb": mstg.vp.state[state].cpus.one().abb,
                             "ipi_needed": ipi_needed
                         })
                         handled_sync |= handled
 
         for res in out:
             s = {True: "needs", False: "doesn't need"}[res['ipi_needed']]
-            self._log.warn(f"State {res['state']} {s} an IPI.")
+            abb_name = self._graph.cfg.vp.name[res['abb']]
+            self._log.warn(f"State {res['state']} ({abb_name}) {s} an IPI.")
 
         self._set_step_data(out)

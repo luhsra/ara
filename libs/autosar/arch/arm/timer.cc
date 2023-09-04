@@ -1,3 +1,10 @@
+// SPDX-FileCopyrightText: 2013-2014 Florian Lukas <florian.lukas@gmail.com>
+// SPDX-FileCopyrightText: 2013-2014 Martin Hoffmann <hoffmann@cs.fau.de>
+// SPDX-FileCopyrightText: 2013-2019 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
+// SPDX-FileCopyrightText: 2023 Andreas Kässens
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /**
  * @file
  * @ingroup arm
@@ -5,46 +12,47 @@
  */
 
 #include "timer.h"
+
 #include "gic.h"
 #include "os/counter.h"
 
 namespace arch {
 
-volatile Timer::PRV_Timer_regs * const Timer::timer = reinterpret_cast<volatile Timer::PRV_Timer_regs * const>(PRIVATE_TIMER_BASE);
+	volatile Timer::PRV_Timer_regs* const Timer::timer =
+	    reinterpret_cast<volatile Timer::PRV_Timer_regs* const>(PRIVATE_TIMER_BASE);
 
-void Timer::init() {
-    GIC::set_irq_priority(IRQ_LOCAL_TIMER, IRQ_PRIO_LOCAL_TIMER);
-    GIC::enable_irq(IRQ_LOCAL_TIMER);
+	void Timer::init() {
+		GIC::set_irq_priority(IRQ_LOCAL_TIMER, IRQ_PRIO_LOCAL_TIMER);
+		GIC::enable_irq(IRQ_LOCAL_TIMER);
 
-    set_periodic(1); // TODO find correct interval
-}
+		set_periodic(1); // TODO find correct interval
+	}
 
-void Timer::stop() {
-    timer->control = 0; // Clear control register; disable
-}
+	void Timer::stop() {
+		timer->control = 0; // Clear control register; disable
+	}
 
+	void Timer::set_periodic(uint16_t rate_in_ms) {
+		timer->control = 0; // Clear control register; disable
 
-void Timer::set_periodic(uint16_t rate_in_ms) {
-    timer->control = 0; // Clear control register; disable
+		// Calculate Reload value
+		const uint32_t TIMER_FREQ_IN_kHZ = (CPU_FREQ_HZ / 2) / 1000;
 
-    // Calculate Reload value
-    const uint32_t TIMER_FREQ_IN_kHZ = (CPU_FREQ_HZ / 2) / 1000;
+		timer->load = rate_in_ms * TIMER_FREQ_IN_kHZ;
+		timer->counter = 0;
+		timer->isr_status = 1;
 
-    timer->load = rate_in_ms * TIMER_FREQ_IN_kHZ;
-	timer->counter = 0;
-	timer->isr_status = 1;
+		timer->control = (1 << 2) | (1 << 1) | (1 << 0); // Enable ISR, Auto reload, enable
+	}
 
-    timer->control = (1<<2) | (1 << 1) | (1 << 0); // Enable ISR, Auto reload, enable
-}
+	extern "C" void* irq_handler_29(void* task_sp, uint32_t irq) {
+		(void)irq;
+		Timer::ack_isr(); // acknowledge timer IRQ
 
-extern "C" void* irq_handler_29(void* task_sp, uint32_t irq) {
-	(void)irq;
-    Timer::ack_isr(); // acknowledge timer IRQ
+		GIC::set_task_prio(IRQ_PRIO_LOWEST); // TODO: enable ISR2, in_syscall -> false
+		os::Counter::tick();
 
-    GIC::set_task_prio(IRQ_PRIO_LOWEST); // TODO: enable ISR2, in_syscall -> false
-	os::Counter::tick();
-
-    return task_sp;
-}
+		return task_sp;
+	}
 
 }; // namespace arch

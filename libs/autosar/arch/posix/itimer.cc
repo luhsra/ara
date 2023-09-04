@@ -1,3 +1,10 @@
+// SPDX-FileCopyrightText: 2013-2014 Florian Lukas <florian.lukas@gmail.com>
+// SPDX-FileCopyrightText: 2013-2014 Martin Hoffmann <hoffmann@cs.fau.de>
+// SPDX-FileCopyrightText: 2013-2019 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
+// SPDX-FileCopyrightText: 2023 Andreas Kässens
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /**
  * @file
  * @ingroup posix
@@ -5,57 +12,50 @@
  */
 
 #include "itimer.h"
+
 #include "machine.h"
 #include "os/counter.h"
+
+#include <pthread.h>
 #include <signal.h>
 #include <sys/time.h>
 
 namespace arch {
 
+	/** \brief Timer signal handler */
+	void timer_handler(__attribute__((unused)) int signum) { os::Counter::tick(); }
 
-/** \brief Timer signal handler */
-void timer_handler(__attribute__((unused)) int signum) {
-	os::Counter::tick();
-}
+	void ITimer::init() {
+		arch::irq.set_handler(SIGALRM, timer_handler);
+		arch::irq.enable(SIGALRM);
 
-void ITimer::init() {
-    /* Install timer_handler as the signal handler for SIGVTALRM. */
-	arch::irq.set_handler(SIGALRM, timer_handler);
-	arch::irq.enable(SIGALRM);
-	arch::irq.set_handler(SIGVTALRM, timer_handler);
-	arch::irq.enable(SIGVTALRM);
+		// generate signal @ 1 kHz
+		set_periodic(1000);
+	}
 
-	// generate signal @ 1 kHz
-	set_periodic(1000);
-}
+	void ITimer::set_periodic(uint16_t rateHz) {
 
+		timer_t timerid;
+		struct sigevent sev;
+		struct itimerspec its;
+		long long freq_nanosecs;
 
-void ITimer::set_periodic(uint16_t rateHz) {
-    time_t secs = 0;
-    suseconds_t usecs = 0;
+		/**
+		 * SIGEV_THREAD_ID is Linux only
+		 * setitimer cannot be used because it will distribute signals to random threads
+		 */
+		sev.sigev_notify = SIGEV_THREAD_ID;
+		sev._sigev_un._tid = gettid();
+		sev.sigev_signo = SIGALRM;
+		sev.sigev_value.sival_ptr = &timerid;
+		timer_create(CLOCK_REALTIME, &sev, &timerid);
 
-    if( rateHz == 1 ){
-        secs = 1;
-    } else {
-        float period_in_us = (1000000. / rateHz);
-        usecs = static_cast<suseconds_t>(period_in_us);
-    }
-
-    struct itimerval timer;
-
-    /* initial phase */
-    timer.it_value.tv_sec = secs;
-    timer.it_value.tv_usec = usecs;
-
-    /* period */
-    timer.it_interval.tv_sec = secs;
-    timer.it_interval.tv_usec = usecs;
-
-    /* start timer: counting whenever process is executing! */
-    if(setitimer(ITIMER_VIRTUAL, &timer, NULL) == -1 ) {
-        kout << "setitimer failed in set_periodic." << endl;
-        exit(EXIT_FAILURE);
-    }
-}
+		freq_nanosecs = 1e9 / rateHz;
+		its.it_value.tv_sec = freq_nanosecs / 1000000000;
+		its.it_value.tv_nsec = freq_nanosecs % 1000000000;
+		its.it_interval.tv_sec = its.it_value.tv_sec;
+		its.it_interval.tv_nsec = its.it_value.tv_nsec;
+		timer_settime(timerid, 0, &its, NULL);
+	}
 
 }; // namespace arch

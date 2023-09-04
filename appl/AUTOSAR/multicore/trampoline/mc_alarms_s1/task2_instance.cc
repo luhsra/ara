@@ -38,7 +38,7 @@
 
 DeclareAlarm(should_not_expire);
 DeclareEvent(t2_event, 0);
-DeclareSpinlock(sync);
+DeclareSpinlock(sync0);
 
 static void test_t2_instance(void)
 {
@@ -84,7 +84,7 @@ static void test_t2_instance(void)
   r7 = WaitEvent(t2_event);
   SCHEDULING_CHECK_AND_EQUAL_INT(9, E_OK, r7);
 
-  SyncAllCores(sync);
+  SyncAllCores(sync0);
 }
 
 TestRef t2_instance(void)

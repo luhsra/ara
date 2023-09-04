@@ -1,4 +1,4 @@
-autosar_includes = ['-I', meson.current_source_dir() / 'source' / 'os']
+autosar_includes += ['-I', meson.current_source_dir() / 'source' / 'os']
 
 autosar_targets = []
 autosar_apps = [
@@ -139,6 +139,29 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'complex',            'name': 'copter-with-alarms',    'oil': 'copter-with-alarms_system.json', 'timing': 'BB'},
   {'core': 'multicore',  'path': 'complex',            'name': 'copter-single-alarm',   'oil': 'copter-single-alarm_system.json', 'timing': 'BB'},
   {'core': 'multicore',  'path': 'complex',            'name': 'copter-autostart',      'oil': 'copter-autostart_system.json', 'locks': 'EXTRACT', 'timing': 'BB'},
+  {'core': 'multicore',  'path': 'andreas'/ 'ipi',     'name': 'a',                     'oil': 'system.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'ipi',     'name': 'b',                     'oil': 'system.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'ipi',     'name': 'c',                     'oil': 'system.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'ipi',     'name': 'd',                     'oil': 'system.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'ipi',     'name': 'e',                     'oil': 'system.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'ipi',     'name': 'f',                     'oil': 'system.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'ipi',     'name': 'g',                     'oil': 'system.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'ipi2',    'name': 'a',                     'oil': 'system_a.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'ipi2',    'name': 'b',                     'oil': 'system_b.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'ipi2',    'name': 'c',                     'oil': 'system_c.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'ipi2',    'name': 'd',                     'oil': 'system_d.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'ipi2',    'name': 'e',                     'oil': 'system_e.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'ipi2',    'name': 'f',                     'oil': 'system_f.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'ipi2',    'name': 'g',                     'oil': 'system_f.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'spinlock','name': 'a',                     'oil': 'system.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'spinlock','name': 'b',                     'oil': 'system.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'spinlock','name': 'c',                     'oil': 'system.json'},
+#  {'core': 'multicore',  'path': 'andreas'/ 'spinlock','name': 'd',                     'oil': 'system_d.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'spinlock','name': 'e',                     'oil': 'system.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'spinlock','name': 'f',                     'oil': 'system.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'cores',   'name': '4',                     'oil': 'system.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'cores',   'name': '12',                    'oil': 'system.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'cores',   'name': '16',                    'oil': 'system.json'},
 ]
 # conformance tests for trampoline
 subdir('multicore' / 'trampoline')
@@ -181,7 +204,7 @@ foreach app : autosar_apps
                          output : full_name + '.ll',
                          depfile : full_name + '.ll.dep',
                          command : clang_cpp +
-                                   libs_includes +
+                                   autosar_includes +
                                    ir_flags +
                                    clang_flags)
   app += {'ll': app_ll}
@@ -243,6 +266,8 @@ foreach app : autosar_apps
 
 
 endforeach
+
+autosar_generated_targets = []
 foreach app: autosar_targets
   full_name = app['full_name']
   generate_timing_settings = custom_target(
@@ -281,6 +306,62 @@ foreach app: autosar_targets
                                       '--timings', app['sys_timings'],
                                       '--step-data', '@OUTPUT@'],
                            )
+
+
+  if get_option('arch') == 'posix'
+
+    out = custom_target(full_name + '_mod',
+                        input : app_ll,
+                        output : [
+                          full_name + '_mod.ll',
+                          full_name+'_autosar.unfmt.cc'
+                        ],
+                        depfile : full_name + '_mod.ll.dep',
+                        command : [
+                          py3_inst, ara_py, app['ll'],
+                          '--os', 'AUTOSAR',
+                          '--oilfile', app['oil'],
+                          '--ir_output', '@OUTPUT0@',
+                          '--step-settings', '../settings/autosar_generator.json',
+		                      '--generator_output', '@OUTPUT1@',
+                        ])
+    app_ll_mod = out[0]
+    autosar_unfmt = out[1]
+    app += {'app_ll_mod': app_ll_mod}
+
+    autosar = custom_target(full_name + '_autosar',
+                        input : autosar_unfmt,
+                        output : full_name+'_autosar.cc',
+                        capture: true,
+                        command : [
+                          clang_format,
+                          '--style=file',
+                          '@INPUT@',
+                        ])
+
+    app += {'autosar': autosar}
+
+    app_image = custom_target(full_name + '_image',
+                            input: [
+                              app_ll_mod,
+                              autosar,
+                              libautosar_test,
+                              libautosar_os,
+                              libautosar_posix,
+                              libautosar_generic
+                            ],
+                            output : full_name,
+                            depfile : full_name + '.dep',
+                            command : clang_cpp +
+                                      autosar_includes +
+                                      ld_flags +
+                                      clang_flags)
+
+    app += {'app_image': app_image}
+    run_target('run_' + full_name, command: [app_image])
+
+    autosar_generated_targets += app
+  endif
 
 endforeach
 

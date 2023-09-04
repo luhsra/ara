@@ -1,3 +1,10 @@
+// SPDX-FileCopyrightText: 2013-2014 Florian Lukas <florian.lukas@gmail.com>
+// SPDX-FileCopyrightText: 2013-2014 Martin Hoffmann <hoffmann@cs.fau.de>
+// SPDX-FileCopyrightText: 2013-2019 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
+// SPDX-FileCopyrightText: 2023 Andreas Kässens
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #ifndef __ARCH_GENERIC_STDINT_H
 #define __ARCH_GENERIC_STDINT_H
 
@@ -40,21 +47,20 @@
 #endif
 #endif
 
-typedef __UINT8_TYPE__   uint8_t;
-typedef __UINT16_TYPE__  uint16_t;
-typedef __UINT32_TYPE__  uint32_t;
-typedef __UINT64_TYPE__  uint64_t;
+typedef __UINT8_TYPE__ uint8_t;
+typedef __UINT16_TYPE__ uint16_t;
+typedef __UINT32_TYPE__ uint32_t;
+typedef __UINT64_TYPE__ uint64_t;
 typedef __UINTPTR_TYPE__ uintptr_t;
 
-typedef __UINTPTR_TYPE__    size_t;
+typedef __UINTPTR_TYPE__ size_t;
 
-typedef __INT8_TYPE__   int8_t;
-typedef __INT16_TYPE__  int16_t;
-typedef __INT32_TYPE__  int32_t;
-typedef __INT64_TYPE__  int64_t;
+typedef __INT8_TYPE__ int8_t;
+typedef __INT16_TYPE__ int16_t;
+typedef __INT32_TYPE__ int32_t;
+typedef __INT64_TYPE__ int64_t;
 typedef __INTPTR_TYPE__ intptr_t;
 
 typedef __INTPTR_TYPE__ ptrdiff_t;
-
 
 #endif

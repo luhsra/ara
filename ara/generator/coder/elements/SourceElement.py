@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2020 Björn Fiedler <fiedler@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2020 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2023 Andreas Kässens
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -98,7 +99,7 @@ class Block(SourceElement):
         return ret
 
     def return_statement(self, expression):
-        block.add(Statement("return %s" % expression))
+        self.add(Statement("return %s" % expression))
 
     def statement_count(self):
         return sum([x.statement_count() for x in self.inner])
@@ -106,6 +107,13 @@ class Block(SourceElement):
     def __str__(self):
         return "<<" + ", ".join([str(x) for x in self.inner]) + ">>"
 
+class If(Block):
+    def __init__(self, condition):
+        Block.__init__(self)
+        self.condition = condition
+
+    def block_guard(self):
+        return "if(%s)"%self.condition
 
 class ForRange(Block):
     count = 0
@@ -162,7 +170,7 @@ class VariableDefinition(SourceElement):
     def new(generator, datatype, array_length = None):
         if datatype == "void":
             return None
-        varname = generator.variable_name_for_datatype(datatype)
+        varname = "ret"
         return VariableDefinition(datatype, varname, array_length)
 
 class FunctionCall(SourceElement):

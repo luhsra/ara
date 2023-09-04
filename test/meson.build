@@ -274,7 +274,62 @@ if get_option('enable_step_tests')
         depends: ara_py,
         suite: ['analysis', 'preproc']
     )
+    # system runtime test for generator
+    if get_option('arch') == 'posix'
+      supported = [
+        'bcc1/alarm1',
+        'bcc1/alarm2',
+        'bcc1/alarm3',
+        'bcc1/complex1',
+        'bcc1/complex2',
+        'bcc1/counter1',
+        'bcc1/isr2',
+        'bcc1/resource1',
+        'bcc1/resource2',
+        'bcc1/sse1',
+        'bcc1/task1',
+        'bcc1/task2',
+        'ecc1/bt1',
+        'ecc1/event1',
+        'ecc1/eventisr1',
+        'sched',
+        'andreas/ipi',
+        'andreas/ipi2',
+        'andreas/spinlock',
+        'andreas/cores',
+        'trampoline/mc_coreid_s1',
+        'trampoline/mc_autostart_s1',
+        'trampoline/mc_autostart_s2',
+        'trampoline/mc_startOs_s1',
+        'trampoline/mc_startup_s1',
+        'trampoline/mc_events_s1',
+        'trampoline/mc_scheduling_s1',
+        'trampoline/mc_taskActivation_s1',
+        'trampoline/mc_taskChaining_s1',
+        'trampoline/mc_eventSetting_s1',
+      ]
+      foreach app : autosar_generated_targets
+        is_parallel = true
+        testsuite_extra = []
+        if app.has_key('core') and app['core'] == 'multicore'
+          is_parallel = false
+          testsuite_extra = 'autosar_generator_multicore'
+        endif
 
+        if app.has_key('path') and app['path'] in supported
+          test('autosar_generator_' + app['full_name'],
+              py3_inst,
+              args: [files('autosar_generator.py'), app['app_image']],
+              env: [python_path],
+              depends: ara_py,
+              is_parallel: is_parallel,
+              suite: ['autosar_generator'] + testsuite_extra
+          )
+        endif
+
+      endforeach
+    endif
+  
     test('value-analysis',
         py3_inst,
         args: [files('value_analysis.py'), files('value_analysis.json'), freertos_svf],
@@ -290,7 +345,7 @@ if get_option('enable_step_tests')
         depends: ara_py,
         suite: ['analysis', 'preproc']
     )
-
+    
     subdir('native_step_test')
 endif
 

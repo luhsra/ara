@@ -2,6 +2,9 @@
   "cpus": [
     {
       "id": 0,
+      "os": {
+        "OsUseResScheduler": true
+      },
       "task_groups": {
         "H1Group": {
           "promises": [],

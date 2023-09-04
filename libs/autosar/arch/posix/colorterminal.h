@@ -1,3 +1,10 @@
+// SPDX-FileCopyrightText: 2013-2014 Florian Lukas <florian.lukas@gmail.com>
+// SPDX-FileCopyrightText: 2013-2014 Martin Hoffmann <hoffmann@cs.fau.de>
+// SPDX-FileCopyrightText: 2013-2019 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
+// SPDX-FileCopyrightText: 2023 Andreas Kässens
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #ifndef __COLORTERMINAL_H__
 #define __COLORTERMINAL_H__
 
@@ -10,42 +17,41 @@
  */
 
 #include "terminal.h"
+
 #include <stdint.h>
 
 /** Terminal colors
  */
-typedef enum class  Color {
-	BLACK    = 0,
-	RED      = 1,
-	GREEN    = 2,
-    YELLOW   = 3,
-	BLUE     = 4,
-	MAGENTA  = 5,
-	CYAN     = 6,
-	WHITE    = 7,
+typedef enum class Color {
+	BLACK = 0,
+	RED = 1,
+	GREEN = 2,
+	YELLOW = 3,
+	BLUE = 4,
+	MAGENTA = 5,
+	CYAN = 6,
+	WHITE = 7,
 } Color;
-
 
 class ColorTerminal : public Terminal {
 
-    char m_colorcode[sizeof("\033[0;3X;4Ym")]; //! set color in terminal: 3X = foreground, 4Y = background
+	char m_colorcode[sizeof("\033[0;3X;4Ym")]; //! set color in terminal: 3X = foreground, 4Y = background
 
-public:
-    ColorTerminal(Terminal::port_t port = STDOUT) : Terminal(port), m_colorcode("\033[0;3X;4Ym")  {};
+  public:
+	ColorTerminal(Terminal::port_t port = STDOUT) : Terminal(port), m_colorcode("\033[0;3X;4Ym"){};
 
 	void clear(){};
 
-	void setcolor(Color fg,  Color bg){
-        m_colorcode[5] = ('0' + static_cast<uint8_t>(fg)); //! replace X for foreground color
-        m_colorcode[8] = ('0' + static_cast<uint8_t>(bg)); //! replace Y for background color
-        *this << m_colorcode;
-    };
+	void setcolor(Color fg, Color bg) {
+		m_colorcode[5] = ('0' + static_cast<uint8_t>(fg)); //! replace X for foreground color
+		m_colorcode[8] = ('0' + static_cast<uint8_t>(bg)); //! replace Y for background color
+		*this << m_colorcode;
+	};
 
-	void putentryat(char c, __attribute__((unused))  uint8_t color, __attribute__((unused))  size_t x, __attribute__((unused))  size_t y){
-         putchar(c);
-    };
-
+	void putentryat(char c, __attribute__((unused)) uint8_t color, __attribute__((unused)) size_t x,
+	                __attribute__((unused)) size_t y) {
+		putchar(c);
+	};
 };
-
 
 #endif

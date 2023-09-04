@@ -18,6 +18,7 @@ app = {'full_name': name_prefix_trampoline + name,
        'oil': files('system.json'),
        'll': ll,
        'core': 'multicore',
+       'path': 'trampoline/' + name,
       }
 
 if fs.exists('trace.json')

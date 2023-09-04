@@ -5,6 +5,7 @@
 # SPDX-FileCopyrightText: 2022 Björn Fiedler <fiedler@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2022 Jan Neugebauer
+# SPDX-FileCopyrightText: 2023 Andreas Kässens
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -29,6 +30,10 @@ cdef extern from "step.h" namespace "ara::step":
         unique_ptr[Step] instantiate(object, cgraph.Graph, object)
 
 # all step following
+
+cdef extern from "autosar_generator_ir.h" namespace "ara::step":
+    cdef cppclass AutosarGeneratorIR:
+        pass
 
 cdef extern from "bb_split.h" namespace "ara::step":
     cdef cppclass BBSplit:

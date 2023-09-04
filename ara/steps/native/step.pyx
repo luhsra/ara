@@ -7,6 +7,7 @@
 # SPDX-FileCopyrightText: 2022 Björn Fiedler <fiedler@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2022 Jan Neugebauer
+# SPDX-FileCopyrightText: 2023 Andreas Kässens
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -376,7 +377,8 @@ def provide_steps():
     """Provide a list of all native steps. This also constructs as many
     objects as steps exist.
     """
-    return [_native_step_fac(make_step_fac[cstep.BBSplit]()),
+    return [_native_step_fac(make_step_fac[cstep.AutosarGeneratorIR]()),
+            _native_step_fac(make_step_fac[cstep.BBSplit]()),
             _native_step_fac(make_step_fac[cstep.BBTimings]()),
             _native_step_fac(make_step_fac[cstep.CDummy]()),
             _native_step_fac(make_step_fac[cstep.CompInsert]()),

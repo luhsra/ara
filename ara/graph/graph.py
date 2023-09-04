@@ -3,6 +3,7 @@
 # SPDX-FileCopyrightText: 2022 Björn Fiedler <fiedler@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2022 Jan Neugebauer
 # SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2023 Andreas Kässens
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -281,7 +282,7 @@ class CFG(graph_tool.Graph):
 
     def get_entry_bb(self, abb):
         """Return the entry BB of the given ABB."""
-        return self._get_entry(function, edge_type=CFType.a2b)
+        return self._get_entry(abb, edge_type=CFType.a2b)
 
     def _get_exit(self, block, level):
         block = self.vertex(block)

@@ -55,7 +55,8 @@
         "C1": {
           "maxallowedvalue": 1000,
           "ticksperbase": 1,
-          "mincycle": 1
+          "mincycle": 1,
+          "softcounter": true
         }
       },
       "isrs": {}

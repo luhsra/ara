@@ -1,5 +1,14 @@
+// SPDX-FileCopyrightText: 2013-2014 Florian Lukas <florian.lukas@gmail.com>
+// SPDX-FileCopyrightText: 2013-2014 Martin Hoffmann <hoffmann@cs.fau.de>
+// SPDX-FileCopyrightText: 2013-2019 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
+// SPDX-FileCopyrightText: 2023 Andreas Kässens
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #ifndef __dosek_osek_types
 #define __dosek_osek_types
+
+#include <stdint.h>
 
 /**
  *  @defgroup os Operating System Layer
@@ -26,6 +35,11 @@ typedef enum {
 	E_OS_STATE = 7,
 	E_OS_VALUE = 8,
 	E_NOT_OK = 9,
+	E_OS_CORE = 10,
+	E_OS_SPINLOCK = 11,
+	E_OS_NESTING_DEADLOCK = 12,
+	E_OS_INTERFERENCE_DEADLOCK = 13,
+	E_OS_MISSINGEND = 14, // hard-coded in IR generator
 } StatusType;
 
 /**
@@ -49,7 +63,8 @@ typedef uint32_t TaskType;
 typedef uint32_t* TaskRefType;
 
 typedef uint32_t ResourceType;
-typedef uint32_t DeviceType;
+typedef uint32_t SpinlockType;
+typedef uint32_t CoreIdType;
 
 typedef unsigned long EventMaskType;
 typedef unsigned long* EventMaskRefType;
@@ -61,6 +76,8 @@ typedef struct {
 	unsigned long ticksperbase;
 	unsigned long mincycle;
 } AlarmBaseType;
+
+typedef enum { TRYTOGETSPINLOCK_SUCCESS, TRYTOGETSPINLOCK_NOSUCCESS } TryToGetSpinlockType;
 
 typedef AlarmBaseType* AlarmBaseRefType;
 

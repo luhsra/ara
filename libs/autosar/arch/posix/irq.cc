@@ -1,113 +1,146 @@
-#include <string.h>
-#include <unistd.h>
-#include "os/util/inline.h"
+// SPDX-FileCopyrightText: 2013-2014 Florian Lukas <florian.lukas@gmail.com>
+// SPDX-FileCopyrightText: 2013-2014 Martin Hoffmann <hoffmann@cs.fau.de>
+// SPDX-FileCopyrightText: 2013-2019 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
+// SPDX-FileCopyrightText: 2023 Andreas Kässens
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "irq.h"
-#include "os/scheduler/scheduler.h"
-#include "dispatch.h"
 
+#include "dispatch.h"
+#include "hardware_threads.h"
+#include "os/scheduler/scheduler.h"
+#include "os/util/inline.h"
+
+#include <pthread.h>
+#include <string.h>
+#include <unistd.h>
 
 using namespace arch;
 
-static void panic(int signal) {
-	kout << "spurious interrupt: " << signal << endl;
+namespace arch {
+	extern unsigned int get_thread_id(int id);
 }
+
+static void panic(int signal) { kout << "spurious interrupt: " << signal << endl; }
 
 IRQ::IRQ() {
-    for(unsigned int i = 0; i < SIGMAX; i++)
-        m_gate[i] = &panic;
-    ast_level = 0;
-    sigfillset(&full_mask);
+	for (unsigned int i = 0; i < SIGMAX; i++)
+		m_gate[i] = &panic;
+	for (unsigned int i = 0; i < MAX_CPUS; i++)
+		ast_level[i] = 0;
+	sigfillset(&full_mask);
 }
 
-void IRQ::set_handler(int signum, irq_handler_t handler) {
-    m_gate[signum] = handler;
-}
+void IRQ::set_handler(int signum, irq_handler_t handler) { m_gate[signum] = handler; }
 
 void IRQ::enable(int signum) {
-    struct sigaction sig;
+	struct sigaction sig;
 
-    memset(&sig, 0, sizeof(sig));
-    sig.sa_handler = guardian;
-    sig.sa_flags = SA_RESTART;
-    sigfillset(&sig.sa_mask);
+	memset(&sig, 0, sizeof(sig));
+	sig.sa_handler = guardian;
+	sig.sa_flags = SA_RESTART;
+	sigfillset(&sig.sa_mask);
 
-    sigaction(signum, &sig, NULL);
+	sigaction(signum, &sig, NULL);
 }
 
 void IRQ::disable(int signum) {
-    struct sigaction sig;
+	struct sigaction sig;
 
-    memset(&sig, 0, sizeof(sig));
-    sig.sa_handler = SIG_IGN;
-    sig.sa_flags = SA_RESTART;
+	memset(&sig, 0, sizeof(sig));
+	sig.sa_handler = SIG_IGN;
+	sig.sa_flags = SA_RESTART;
 
-    sigaction(signum, &sig, NULL);
+	sigaction(signum, &sig, NULL);
 }
 
-void IRQ::trigger_interrupt(int irq) {
-    /* Send an signal to our own thread */
-    kill(getpid(), irq);
+_Atomic(bool) ipi_cleared[MAX_CPUS];
+
+void IRQ::trigger_interrupt(int irq, int cpuid, bool sync) {
+	/* Send an signal to a specified thread */
+	debug_core << __FUNCTION__ << "(" << irq << ", " << cpuid << ", " << sync << ")" << endl;
+
+	if (!cpu_online(cpuid)) {
+		debug_core << "cpuid " << cpuid << " offline" << endl;
+		return;
+	}
+
+	if (!sync) {
+		pthread_kill(get_thread_id(cpuid), irq);
+		return;
+	}
+
+	/* synchronized interrupt: wait until target core does reschedule */
+	ipi_cleared[cpuid] = false;
+	pthread_kill(get_thread_id(cpuid), irq);
+	while (ipi_cleared[cpuid] == false)
+		;
+	debug_core << __FUNCTION__ << " completed" << endl;
 }
 
 extern void __OS_enable_irq_after_kernel(void);
 
 noinline void IRQ::deliver_interrupt(int irq) {
-    if (interrupts_enabled(irq)) {
-        sigset_t old_mask;
-        disable_interrupts(&old_mask);
-        guardian(irq);
-        __OS_enable_irq_after_kernel();
-    }
+	debug_core << __FUNCTION__ << "(" << irq << ")" << endl;
+
+	if (interrupts_enabled(irq)) {
+		sigset_t old_mask;
+		disable_interrupts(&old_mask);
+		guardian(irq);
+		__OS_enable_irq_after_kernel();
+	}
 }
 
-void IRQ::disable_interrupts(sigset_t *old_mask) {
-    sigprocmask(SIG_BLOCK, &full_mask, old_mask);
+void IRQ::disable_interrupts(sigset_t* old_mask) { pthread_sigmask(SIG_BLOCK, &full_mask, old_mask); }
+
+void IRQ::enable_interrupts(sigset_t* new_mask) {
+	sigset_t* mask = new_mask != nullptr ? new_mask : &full_mask;
+	pthread_sigmask(SIG_UNBLOCK, mask, NULL);
 }
 
-void IRQ::enable_interrupts(sigset_t *new_mask) {
-    sigset_t *mask = new_mask != nullptr ? new_mask: &full_mask;
-    sigprocmask(SIG_UNBLOCK, mask, NULL);
-}
-
-static int my_sigisemptyset(sigset_t *sigset) {
-    for (int i = 1; i < 8*8; i++) {
-        if (sigismember(sigset, i)) {
-            return 0;
-        }
-    }
-    return 1;
+static int my_sigisemptyset(sigset_t* sigset) {
+	for (int i = 1; i < 8 * 8; i++) {
+		if (sigismember(sigset, i)) {
+			return 0;
+		}
+	}
+	return 1;
 }
 
 void IRQ::clear_interrupts() {
-    sigset_t mask;
+	sigset_t mask;
 
-    while (1) {
-        sigpending(&mask);
-        if (my_sigisemptyset(&mask)) break;
-        int signal;
+	while (1) {
+		sigpending(&mask);
+		if (my_sigisemptyset(&mask))
+			break;
+		int signal;
 
-        sigwait(&full_mask, &signal);
-    }
+		sigwait(&full_mask, &signal);
+	}
 }
 
 bool IRQ::interrupts_enabled(int irq) {
 	sigset_t mask;
-    sigprocmask(0, NULL, &mask);
-    if (irq == 0) {
-        return my_sigisemptyset(&mask);
-    } else {
-        return !sigismember(&mask, irq);
-    }
+	pthread_sigmask(0, NULL, &mask);
+	if (irq == 0) {
+		return my_sigisemptyset(&mask);
+	} else {
+		return !sigismember(&mask, irq);
+	}
 }
 
 void IRQ::guardian(int signum) {
 	/* Interrupts are prohibited during the ISR */
-	irq.ast_level++;
-        irq.m_gate[signum](signum);
-	irq.ast_level--;
-	if (irq.ast_level == 0 && irq.ast_requested) {
-		irq.ast_requested = false;
+	int cpuid = arch::get_cpuid();
+	irq.ast_level[cpuid]++;
+	irq.m_gate[signum](signum);
+	irq.ast_level[cpuid]--;
+	if (irq.ast_level[cpuid] == 0 && irq.ast_requested[cpuid]) {
+		irq.ast_requested[cpuid] = false;
+		debug_core << "ipi_cleared" << endl;
+		ipi_cleared[cpuid] = true;
 		__OS_ASTSchedule(0);
 	}
 }

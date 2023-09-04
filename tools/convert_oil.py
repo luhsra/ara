@@ -2,6 +2,7 @@
 
 # SPDX-FileCopyrightText: 2021 Bastian Fuhlenriede
 # SPDX-FileCopyrightText: 2021 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2023 Andreas Kässens
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -771,6 +772,7 @@ def convert_to_json(cpus):
             if isinstance(alarm.action_params, Alarm.SETEVENT):
                 j_alarms[alarm_name]["action"] = {
                     "action": "setevent",
+                    "task": alarm.action_params.TASK.name,
                     "event": alarm.action_params.EVENT.name
                 }
 
@@ -787,7 +789,8 @@ def convert_to_json(cpus):
             j_counters[counter_name] = {
                 "maxallowedvalue": counter.maxallowedvalue,
                 "ticksperbase": counter.ticksperbase,
-                "mincycle": counter.mincycle
+                "mincycle": counter.mincycle,
+                "softcounter": counter.softcounter
             }
 
         # ISRs

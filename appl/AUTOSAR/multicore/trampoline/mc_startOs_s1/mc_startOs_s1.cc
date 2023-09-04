@@ -99,14 +99,12 @@ void ShutdownHook(StatusType error)
 TASK(t1)
 {
   TestRunner_runTest(t1_instance());
-  TerminateTask();
   ShutdownOS(E_OK);
 }
 
 TASK(t2)
 {
   TestRunner_runTest(t2_instance());
-  TerminateTask();
   ShutdownOS(E_OK);
 }
 

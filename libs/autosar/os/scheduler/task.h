@@ -1,3 +1,10 @@
+// SPDX-FileCopyrightText: 2013-2014 Florian Lukas <florian.lukas@gmail.com>
+// SPDX-FileCopyrightText: 2013-2014 Martin Hoffmann <hoffmann@cs.fau.de>
+// SPDX-FileCopyrightText: 2013-2019 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
+// SPDX-FileCopyrightText: 2023 Andreas Kässens
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #ifndef __TASK_H__
 #define __TASK_H__
 /**
@@ -26,11 +33,13 @@ namespace os {
 		 * */
 		class Task {
 		  public:
-			typedef uint8_t id_t;
-			typedef uint8_t prio_t;
+			typedef _Atomic(uint8_t) id_t;
+			typedef _Atomic(uint8_t) prio_t;
 
 			// task ID
 			const id_t id;
+			const uint8_t cpuid;
+
 			template <typename T>
 			constexpr T enc_id() const {
 				return T(id);
@@ -57,8 +66,8 @@ namespace os {
 			/* Constant reference to the TCB */
 			const arch::TCB& tcb;
 
-			constexpr Task(id_t _id, prio_t _prio, bool preemptable, const arch::TCB& tcb)
-			    : id(_id), prio(_prio), preemptable(preemptable), tcb(tcb) {}
+			constexpr Task(id_t _id, uint8_t _cpuid, prio_t _prio, bool preemptable, const arch::TCB& tcb)
+			    : id(_id), cpuid(_cpuid), prio(_prio), preemptable(preemptable), tcb(tcb) {}
 		};
 
 	}; // namespace scheduler

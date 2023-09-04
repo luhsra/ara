@@ -3,6 +3,7 @@
 # SPDX-FileCopyrightText: 2022 Björn Fiedler <fiedler@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2023 Jan Neugebauer
+# SPDX-FileCopyrightText: 2023 Andreas Kässens
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -31,6 +32,10 @@ _sysshort = {
     "AUTOSAR_ChainTask": "CT",
     "AUTOSAR_SetEvent": "SE",
     "AUTOSAR_WaitEvent": "WE",
+    "AUTOSAR_SetRelAlarm": "SRA",
+    "AUTOSAR_GetAlarm": "GA",
+    "AUTOSAR_CancelAlarm": "CA",
+
 }
 
 # from ara.util import get_logger

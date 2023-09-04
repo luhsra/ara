@@ -1,4 +1,9 @@
 libs_includes += ['-I', meson.current_source_dir()]
+autosar_includes = ['-I', meson.current_source_dir()]
+autosar_includes += ['-I', meson.current_source_dir() / '..'] # for autosar/os.h
+autosar_includes += ['-I', meson.current_source_dir() / 'os']
+autosar_includes += ['-I', meson.current_source_dir() / 'os' / 'util']
 
-# subdir('os')
 subdir('arch')
+subdir('os')
+subdir('test')

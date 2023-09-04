@@ -1,8 +1,16 @@
+// SPDX-FileCopyrightText: 2013-2014 Florian Lukas <florian.lukas@gmail.com>
+// SPDX-FileCopyrightText: 2013-2014 Martin Hoffmann <hoffmann@cs.fau.de>
+// SPDX-FileCopyrightText: 2013-2019 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
+// SPDX-FileCopyrightText: 2023 Andreas Kässens
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #ifndef __OS_KRN_ALARM_H__
 #define __OS_KRN_ALARM_H__
 
 #include "counter.h"
 #include "scheduler/task.h"
+#include "spinlock.h"
 #include "stdint.h"
 #include "util/inline.h"
 
@@ -15,32 +23,36 @@ namespace os {
 		inlinehint static void checkCounter(const Counter& counter);
 	};
 
-	template <const UnencodedCounter* const configuration_>
 	class UnencodedAlarm : public Alarm {
 		typedef UnencodedCounter CounterType;
-
-		bool armed_;
-		TickType absoluteTime_;
-		TickType cycleTime_;
+		CounterType* configuration_;
+		_Atomic(bool) armed_;
+		_Atomic(TickType) absoluteTime_;
+		_Atomic(TickType) cycleTime_;
 
 	  public:
 		/** \brief task to activate */
 		const Task* const task_;
 		const uint32_t id_;
 
-		constexpr UnencodedAlarm(const uint32_t id)
-		    : armed_(false), absoluteTime_(0), cycleTime_(0), task_(0), id_(id) {}
-		constexpr UnencodedAlarm(const Task& task, const uint32_t id)
-		    : armed_(false), absoluteTime_(0), cycleTime_(0), task_(&task), id_(id) {}
-		constexpr UnencodedAlarm(const Task& task, bool armed, TickType absoluteTime, TickType cycleTime,
-		                         const uint32_t id)
-		    : armed_(armed), absoluteTime_(absoluteTime), cycleTime_(cycleTime), task_(&task), id_(id) {}
+		constexpr UnencodedAlarm(CounterType* configuration, const uint32_t id)
+		    : configuration_(configuration), armed_(false), absoluteTime_(0), cycleTime_(0), task_(0), id_(id) {}
+		constexpr UnencodedAlarm(CounterType* configuration, const Task& task, const uint32_t id)
+		    : configuration_(configuration), armed_(false), absoluteTime_(0), cycleTime_(0), task_(&task), id_(id) {}
+		constexpr UnencodedAlarm(CounterType* configuration, const Task& task, bool armed, TickType absoluteTime,
+		                         TickType cycleTime, const uint32_t id)
+		    : configuration_(configuration), armed_(armed), absoluteTime_(absoluteTime), cycleTime_(cycleTime),
+		      task_(&task), id_(id) {}
 
-		void setArmed(bool armed) { armed_ = armed; }
+		void setArmed(bool armed) {
+			armed_ = armed;
+		}
 
 		bool getArmed() const { return armed_; }
 
-		void setAbsoluteTime(TickType absoluteTime) { absoluteTime_ = absoluteTime; }
+		void setAbsoluteTime(TickType absoluteTime) {
+			absoluteTime_ = absoluteTime;
+		}
 
 		template <typename Encoded>
 		void setRelativeTime(Encoded encoded) {
@@ -65,7 +77,9 @@ namespace os {
 			setCycleTime(encoded.decode());
 		}
 
-		void setCycleTime(TickType cycleTime) { cycleTime_ = cycleTime; }
+		void setCycleTime(TickType cycleTime) {
+			cycleTime_ = cycleTime;
+		}
 
 		TickType getCycleTime() const { return cycleTime_; }
 
@@ -96,6 +110,7 @@ namespace os {
 		}
 	};
 
+	// TODO: get rid of encoded stuff
 	template <B_t B, B_t CB, const EncodedCounter<CB>* const configuration_>
 	class EncodedAlarm : public Alarm {
 		typedef EncodedCounter<CB> CounterType;

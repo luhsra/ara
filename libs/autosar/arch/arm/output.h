@@ -1,3 +1,10 @@
+// SPDX-FileCopyrightText: 2013-2014 Florian Lukas <florian.lukas@gmail.com>
+// SPDX-FileCopyrightText: 2013-2014 Martin Hoffmann <hoffmann@cs.fau.de>
+// SPDX-FileCopyrightText: 2013-2019 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
+// SPDX-FileCopyrightText: 2023 Andreas Kässens
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /**
  * @file
  * @ingroup i386
@@ -32,9 +39,7 @@ extern Null_Stream kout;
 extern Null_Stream debug;
 
 // define dummy colors here as Null_Stream doesn't
-typedef enum class Color {
-	BLACK, BLUE, GREEN, CYAN, RED, MAGENTA, YELLOW, WHITE
-} Color;
+typedef enum class Color { BLACK, BLUE, GREEN, CYAN, RED, MAGENTA, YELLOW, WHITE } Color;
 
 #endif // FAIL
 

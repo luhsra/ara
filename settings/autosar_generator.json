@@ -1,0 +1,22 @@
+{
+	"steps": [
+		"LockElision",
+		"AutosarGeneratorIR",
+		"IRWriter",
+		"Generator"
+	],
+	"AutosarGeneratorIR": {
+		"log_level": "debug",
+		"rename_syscalls": true
+	},
+	"Generator": {
+		"log_level": "debug",
+		"arch": "posix",
+		"os": "autosar",
+		"lock_elision": true,
+		"ipi_avoidance": true
+	},
+	"LockElision": {
+		"fail_on_deadlock": true
+	}
+}

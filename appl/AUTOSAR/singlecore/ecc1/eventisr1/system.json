@@ -57,6 +57,7 @@
           "counter": "C1",
           "action": {
             "action": "setevent",
+            "task": "H1",
             "event": "E1"
           },
           "autostart": true,

@@ -10,6 +10,7 @@
 # SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2022 Jan Neugebauer
 # SPDX-FileCopyrightText: 2023 Jan Neugebauer
+# SPDX-FileCopyrightText: 2023 Andreas Kässens
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -51,6 +52,7 @@ llvm_dep = dependency('llvm', method: 'config-tool', version: llvm_version, incl
 
 llvm_bindir = llvm_dep.get_variable(configtool: 'bindir')
 clang = find_program(llvm_bindir / 'clang', version: llvm_version)
+clang_format = find_program(llvm_bindir / 'clang-format', version: llvm_version)
 llc = find_program(llvm_bindir / 'llc', version: llvm_version)
 llvm_dis = find_program(llvm_bindir / 'llvm-dis', version: llvm_version)
 llvm_link = find_program(llvm_bindir / 'llvm-link', version: llvm_version)
@@ -107,6 +109,8 @@ if get_option('arch') == 'i386'
     target_triple='x86_64-linux-gnu'
 elif get_option('arch') == 'arm'
     target_triple = 'arm-none-eabi'
+elif get_option('arch') == 'posix'
+    target_triple = 'posix'
 else
     error('unknown arch ' + get_option('arch'))
 endif
@@ -118,7 +122,11 @@ endif
 arch_error = 'Do you have an @0@ toolchain? Otherwise consider to switch to another architecture. See the "arch" config option for that.'
 
 foreach prog_name : ['ar', 'objcopy', 'size', 'nm', 'ld', 'objdump']
-    full_prog_name = target_triple + '-' + prog_name
+    if target_triple == 'posix'
+        full_prog_name = prog_name
+    else
+        full_prog_name = target_triple + '-' + prog_name
+    endif
     prog = find_program(full_prog_name, required: false)
     if not prog.found()
         error(arch_error.format(get_option('arch').to_upper()))
@@ -221,7 +229,11 @@ subdir('startup')
 # Attention: The include order is important here.
 subdir('settings') # generic settings
 subdir('libs') # build libs such as osek/freertos/stm32-init
-subdir('appl')
+if get_option('arch') == 'posix'
+    subdir('appl' / 'AUTOSAR')
+else
+    subdir('appl')
+endif
 subdir('test')
 
 # application tests

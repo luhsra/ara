@@ -5,43 +5,27 @@ namespace scheduler {
 using namespace os::tasks;
 using namespace arch;
 
-#ifdef CONFIG_DEPENDABILITY_STATE_REPLICATON
-extern os::redundant::ClassicTMR<os::scheduler::TaskList> state_replicator_;
-#else
-extern os::redundant::EmptyReplicator state_replicator_;
-#endif
-
-
 struct Scheduler {
-	os::scheduler::TaskList tlist;
+    os::scheduler::TaskList tlist;
 
-	os::scheduler::TaskList::current_prio_t current_prio;
-	os::scheduler::TaskList::current_task_t current_task;
+    TaskList::spinlock_mask_t spinlock_mask = 0;
 
-	template<const bool *possible_tasks = nullptr>
-	forceinline void PartialReschedule() {
-		tlist.head<possible_tasks>(current_task, current_prio);
+    os::scheduler::TaskList::current_prio_t current_prio;
+    os::scheduler::TaskList::current_task_t current_task;
 
-		dispatchToCurrentTask();
-	}
+    template<const bool *possible_tasks = nullptr>
+    forceinline void PartialReschedule() {
+        tlist.head<possible_tasks>(current_task, current_prio);
 
-	forceinline void InlinedReschedule(void) {
-		// update current_task
-		tlist.head(current_task, current_prio);
-		// dispatch
-		dispatchToCurrentTask();
-	}
+        dispatchToCurrentTask();
+    }
 
-	noinline void Reschedule(void);
+    noinline void Reschedule(void);
 
-	forceinline void Schedule_impl(bool from_interrupt=false) {
-        if(!from_interrupt && in_syscall()) {
+    forceinline void Schedule_impl(bool from_interrupt=false) {
+        if(!from_interrupt) {
             // in syscall: reschedule directly
-#ifdef CONFIG_OS_INLINE_SCHEDULER
-			InlinedReschedule();
-#else
-			Reschedule();
-#endif
+            Reschedule();
         } else {
             // not in syscall (probably in ISR): request reschedule AST
             // Calls also Reschedule()
@@ -50,145 +34,251 @@ struct Scheduler {
     }
 
     forceinline void SetReady_impl(const Task &task) {
-		tlist.activate(task.id, task.prio);
-		state_replicator_.update();
+        tlist.activate(task.id, task.prio);
     }
 
 
     forceinline void SetSuspended_impl(const Task &t) {
-		Dispatcher::Destroy(t);
-		tlist.remove(t.id);
-		state_replicator_.update();
+        Dispatcher::Destroy(t);
+        tlist.remove(t.id);
     }
 
     forceinline void ActivateTask_impl(const Task &task, bool from_interrupt=false) {
-        state_replicator_.check();
         SetReady_impl(task);
         Schedule_impl(from_interrupt);
     }
 
-    forceinline void ChainTask_impl(const Task &from, const Task &to) {
-		state_replicator_.check();
-		SetSuspended_impl(from);
-		SetReady_impl(to);
-        Schedule_impl();
+    /*forceinline StatusType ChainTask_impl(const Task &from, const Task &to) {
+        SetReady_impl(to);
+        return TerminateTask_impl(from);
+    }*/
+
+    forceinline StatusType CheckSpinlock_impl(const Task& from) {
+        TaskList::spinlock_mask_t mask = tlist.get_task_spinlock_mask(from.id);
+        if (mask) {
+            debug_core << "Error: Task "<< (int) from.id <<" holds locks, mask: " << mask << endl;
+            return E_OS_SPINLOCK;
+        }
+        return E_OK;
     }
 
-    forceinline void TerminateTask_impl(const Task &from) {
-		state_replicator_.check();
-		SetSuspended_impl(from);
-		Schedule_impl();
+    forceinline StatusType TerminateTask_impl(const Task &from) {
+        if (CheckSpinlock_impl(from)) {
+            return E_OS_SPINLOCK;
+        }
+
+        SetSuspended_impl(from);
+        Schedule_impl();
+        return E_OK;
     }
 
     forceinline void GetResource_impl(const Task &current_task, const Task::prio_t new_prio) {
-		state_replicator_.check();
-		SetPriority(current_task, new_prio);
-		SetSystemPriority(new_prio);
+        SetPriority(current_task, new_prio);
+        SetSystemPriority(new_prio);
     }
 
     forceinline void ReleaseResource_impl(const Task &current_task, const Task::prio_t new_prio) {
-		state_replicator_.check();
-		SetPriority(current_task, new_prio);
-		SetSystemPriority(new_prio);
-		Schedule_impl();
-	}
+        SetPriority(current_task, new_prio);
+        SetSystemPriority(new_prio);
+        Schedule_impl();
+    }
 
-	forceinline void SetEvent_impl(const Task &other_task, const int event_mask) {
-		tlist.set_events(other_task.id, event_mask);
-		Schedule_impl();
-	}
+    forceinline void SetEvent_impl(const Task &other_task, const int event_mask) {
+        tlist.set_events(other_task.id, event_mask);
+        Schedule_impl();
+    }
 
-	forceinline void WaitEvent_impl(const Task &current_task, const int event_mask) {
-		tlist.wait_events(current_task.id, event_mask);
-		Schedule_impl();
-	}
+    forceinline StatusType WaitEvent_impl(const Task &current_task, const int event_mask) {
+        if (CheckSpinlock_impl(current_task)) {
+            return E_OS_SPINLOCK;
+        }
 
-	forceinline void ClearEvent_impl(const Task &current_task, const int event_mask) {
-		tlist.clear_events(current_task.id, event_mask);
-	}
+        tlist.wait_events(current_task.id, event_mask);
+        Schedule_impl();
+        return E_OK;
+    }
 
-	forceinline uint32_t GetEvent_impl(const Task &current_task) {
-		return tlist.get_events(current_task.id);
-	}
+    forceinline void ClearEvent_impl(const Task &current_task, const int event_mask) {
+        tlist.clear_events(current_task.id, event_mask);
+    }
+
+    forceinline uint32_t GetEvent_impl(const Task &current_task) {
+        TaskList::event_mask_t mask = tlist.get_events(current_task.id);
+        return (uint32_t) mask;
+    }
 
     forceinline void SetReadyFromSuspended_impl(const Task &task) {
-		SetPriority(task, task.prio);
-		// Clear all Events
-		tlist.clear_events(task.id, ~0);
-
-		state_replicator_.update();
+        SetPriority(task, task.prio);
+        // Clear all Events
+        tlist.clear_events(task.id, ~0);
     }
 
-	// Low level interface to the task list
-	forceinline void SetCurrentTask(const Task &task) {
-		if (task.preemptable == false) {
-			// promote non-preemptable task to RES_SCHEDULER
-			tlist.set(task.id, tlist.scheduler_prio);
-			current_prio = tlist.scheduler_prio;
-			state_replicator_.update();
+    // Low level interface to the task list
+    forceinline void SetCurrentTask(const Task &task) {
+        if (task.preemptable == false) {
+            // promote non-preemptable task to RES_SCHEDULER
+            tlist.set(task.id, tlist.scheduler_prio);
+            current_prio = tlist.scheduler_prio;
         }
-		current_task = tlist.encode_task_id(task.id);
-	}
-
-	forceinline void SetSystemPriority(const Task::prio_t new_prio) {
-		current_prio = tlist.encode_task_prio(new_prio);
-	}
-
-	forceinline void SetPriority(const Task &task, const Task::prio_t new_prio) {
-		tlist.set(task.id, new_prio);
-        state_replicator_.update();
-	}
-
-	forceinline uint32_t isReady(const Task &task) {
-		return tlist.isReady(task.id);
-	}
-
-    forceinline Task::id_t getCurrent_TaskID(void) const {
-        return tlist.decode_task_id(current_task);
+        current_task = tlist.encode_task_id(task.id);
     }
 
-	forceinline void dispatchToCurrentTask(void) {
-		// dispatch or enter idle
-		{{{!foreach_subtask|
-		if(current_task == {{{!subtask_id}}}) {
-			{{{!if_not_preemptable|
-							// promote non-preemptable task to RES_SCHEDULER
-							tlist.set({{{!subtask_id}}}, tlist.scheduler_prio);
-						current_prio = tlist.scheduler_prio;
-						state_replicator_.update();
-					}}}													\
-			Dispatcher::Dispatch({{{!subtask_desc}}});
-		} else															\
-		}}} if(current_task == TaskList::idle_id) {
-			Dispatcher::Idle();
-	} else {
-		CALL_HOOK(FaultDetectedHook, LOGIC_ERRORdetected, 0, 0);
-	}
+    forceinline void SetSystemPriority(const Task::prio_t new_prio) {
+        current_prio = tlist.encode_task_prio(new_prio);
+    }
+
+    forceinline void SetPriority(const Task &task, const Task::prio_t new_prio) {
+        tlist.set(task.id, new_prio);
+    }
+
+    forceinline uint32_t isReady(const Task &task) {
+        return tlist.isReady(task.id);
+    }
+
+    forceinline uint32_t getCurrent_TaskID(void) const {
+        Task::id_t id = tlist.decode_task_id(current_task);
+        return (uint32_t) id;
+    }
+
+    forceinline StatusType GetSpinlock_impl(os::Spinlock &sl, bool elide = false) {
+        StatusType rc = E_OK;
+        debug_core << __FUNCTION__ << "(" << sl.id << ")" << endl;
+
+        if (spinlock_mask & sl.id) {
+            debug_core << "Error: CPU already holds spinlock " << sl.id << endl;
+            return E_OS_INTERFERENCE_DEADLOCK;
+        }
+
+        if (!elide)
+            rc = sl.lock();
+        if (rc == 0) {
+            spinlock_mask |= sl.id;
+            tlist.task_spin_lock(current_task, sl.id);
+        }
+        return rc;
+    }
+
+    forceinline StatusType TryToGetSpinlock_impl(os::Spinlock &sl, TryToGetSpinlockType* success, bool elide = false) {
+        StatusType rc = E_OK;
+        debug_core << __FUNCTION__ << "(" << sl.id << ")" << endl;
+
+        if (spinlock_mask & sl.id) {
+            debug_core << "Error: CPU already holds spinlock " << sl.id << endl;
+            return E_OS_INTERFERENCE_DEADLOCK;
+        }
+
+        if (!elide)
+            rc = sl.trylock(success);
+        else
+            *success == TRYTOGETSPINLOCK_SUCCESS;
+
+        if (*success == TRYTOGETSPINLOCK_SUCCESS) {
+            spinlock_mask |= sl.id;
+            tlist.task_spin_lock(current_task, sl.id);
+        }
+        return rc;
+    }
+
+    forceinline StatusType ReleaseSpinlock_impl(os::Spinlock &sl, bool elide = false) {
+        StatusType rc = E_OK;
+        debug_core << __FUNCTION__ << "(" << sl.id << ")" << endl;
+
+        if (!(spinlock_mask & sl.id)) {
+            debug_core << "Error: CPU does not hold spinlock " << sl.id << endl;
+            return E_OS_STATE;
+        }
+
+        if (!elide)
+            rc = sl.unlock();
+        if (rc == 0) {
+            spinlock_mask &= ~sl.id;
+            tlist.task_spin_unlock(current_task, sl.id);
+        }
+        return rc;
+    }
+
+    forceinline void dispatchToCurrentTask(void) {
+        // dispatch or enter idle
+        {{{!foreach_subtask|
+        if(current_task == {{{!subtask_id}}}) {
+            {{{!if_not_preemptable|
+                            // promote non-preemptable task to RES_SCHEDULER
+                            tlist.set({{{!subtask_id}}}, tlist.scheduler_prio);
+                        current_prio = tlist.scheduler_prio;
+                    }}}													\
+            Dispatcher::Dispatch({{{!subtask_desc}}});
+        } else															\
+        }}} if(current_task == TaskList::idle_id) {
+            Dispatcher::Idle();
+    } else {
+        CALL_HOOK(FaultDetectedHook, LOGIC_ERRORdetected, 0, 0);
+    }
 }
 
 
 };
 
 void Scheduler::Reschedule() {
-	// update current_task
-	tlist.head(current_task, current_prio);
-	// dispatch
-	dispatchToCurrentTask();
+    // update current_task
+    tlist.head(current_task, current_prio);
+    // dispatch
+    dispatchToCurrentTask();
 }
 
+// TODO statically set MAX_CPUS and related structures
+Scheduler scheduler_[MAX_CPUS];
 
-Scheduler scheduler_;
-
-extern "C" StatusType OSEKOS_GetTaskID(TaskRefType a) {
-    *a = scheduler_.getCurrent_TaskID();
+extern "C" StatusType AUTOSAR_GetTaskID(TaskRefType a) {
+    *a = scheduler_[AUTOSAR_GetCoreID()].getCurrent_TaskID();
     return E_OK;
 }
 
-#ifdef CONFIG_DEPENDABILITY_STATE_REPLICATON
-os::redundant::ClassicTMR<os::scheduler::TaskList> state_replicator_(scheduler_.tlist);
-#else
-os::redundant::EmptyReplicator state_replicator_;
-#endif
+extern "C" CoreIdType AUTOSAR_GetCoreID() {
+    return arch::get_cpuid();
+}
 
 }; // scheduler
 }; // os
+
+extern "C" void AUTOSAR_kickoff() {
+    debug_core << __FUNCTION__ << endl;
+    Machine::enable_interrupts();
+}
+
+extern "C" uint32_t AUTOSAR_GetNumberOfActivatedCores()
+{
+    return arch::get_num_cores();
+}
+
+bool core_started[MAX_CPUS] = {false};
+
+extern "C" void AUTOSAR_StartCore(CoreIdType CoreID, StatusType *status) {
+    debug_core << __FUNCTION__ << endl;
+
+    if (core_started[GetCoreID()]) {
+        *status = E_OS_ACCESS;
+        return;
+    }
+
+    *status = arch::start_hardware_thread(CoreID, nullptr, NULL);
+}
+
+extern "C" void AUTOSAR_ShutdownOS(StatusType arg0){
+    debug_core << __FUNCTION__ << endl;
+
+    // Individual shutdown concept: dont sync before ShutdownHook
+    CALL_HOOK(ShutdownHook, arg0);
+    arch::stop_hardware_thread();
+}
+
+extern "C" void AUTOSAR_ShutdownAllCores(StatusType arg0){
+    debug_core << __FUNCTION__ << endl;
+
+    arch::stop_other_hardware_threads();
+
+    // Synchronized shutdown concept
+    arch::sync_all_hardware_threads(SYNC_PRE_SHUTDOWNHOOK);
+    CALL_HOOK(ShutdownHook, arg0);
+    arch::stop_hardware_thread();
+
+}

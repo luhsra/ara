@@ -37,7 +37,7 @@
 #include "Os.h"
 
 DeclareSpinlock(spin0);
-DeclareSpinlock(sync);
+DeclareSpinlock(sync0);
 DeclareTask(chain);
 
 static void test_t2_instance(void)
@@ -48,7 +48,7 @@ static void test_t2_instance(void)
   r1 = GetSpinlock(spin0);
   SCHEDULING_CHECK_AND_EQUAL_INT(1, E_OK, r1);
 
-  SyncAllCores(sync);
+  SyncAllCores(sync0);
 
   /* Return to call CallTerminateTask */
 }

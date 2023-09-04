@@ -3,17 +3,25 @@
 
 namespace os {
 
-{{{snippet:if_alarm:counter,alarm|
+{{{snippet:if_alarm:alarm,counter|
 	if (%(alarm)s.checkTrigger()) {
+        debug_core << "alarm triggered" << endl;
 }}}
-{{{snippet:endif_alarm:counter,alarm|    }
+
+{{{snippet:if_alarm_cpuid:alarm,counter,cpuid|
+	if (cpuid == %(cpuid)s && %(alarm)s.checkTrigger()) {
+        debug_core << "alarm triggered" << endl;
+}}}
+
+{{{snippet:endif_alarm:alarm,counter|    }
 }}}
 {{{snippet:alarm_alarmcallback:callback|    %(callback)s();}}}
 
 
 void inlinehint Counter::tick() {
-    {{{snippet:increase_counter:name|%(name)s.do_tick();
-}}}
+    int cpuid = AUTOSAR_GetCoreID();
+
+    {{{snippet:increase_counter:name:cpuid|if (cpuid == %(cpuid)s) { %(name)s.do_tick(); } }}}
     {{{generate:increase_counters}}}
     {{{generate:generate_check_alarms}}}
 }

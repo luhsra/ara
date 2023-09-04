@@ -5,6 +5,7 @@
 # SPDX-FileCopyrightText: 2021 Jan Neugebauer
 # SPDX-FileCopyrightText: 2022 Björn Fiedler <fiedler@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2023 Andreas Kässens
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -120,7 +121,13 @@ class LoadOIL(Step):
                 )
                 if "secondspertick" in counter:
                     instances.vp.obj[c].secondspertick = counter["secondspertick"]
+                if "softcounter" in counter:
+                    instances.vp.obj[c].softcounter = counter["softcounter"]
                 instances.vp.label[c] = c_name
+
+                code_instance = va.find_global(_autosar.COUNTER_PREFIX + c_name)
+                if code_instance is not None:
+                    va.assign_system_object(code_instance, instances.vp.obj[c])
 
             # events
             for e_name in cpu["events"].keys():
@@ -284,6 +291,11 @@ class LoadOIL(Step):
                     e = self._add_edge(instances, a, event)
                     instances.ep.label[e] = "set"
                     instances.ep.type[e] = _autosar.InstanceEdge.activate
+
+                    task = find_instance_by_name(action["task"], _autosar.Task)
+                    e = self._add_edge(instances, a, task)
+                    instances.ep.label[e] = "activate"
+
                 else:
                     raise NotImplementedError
 
@@ -303,6 +315,7 @@ class LoadOIL(Step):
                         function=i_function,
                         priority=isr["priority"],
                         category=isr["category"],
+                        device=isr["device"],
                         artificial=False
                 )
                 instances.vp.is_control[i] = True

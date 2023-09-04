@@ -37,7 +37,7 @@
 #include "Os.h"
 
 DeclareSpinlock(spin0);
-DeclareSpinlock(sync);
+DeclareSpinlock(sync0);
 DeclareTask(chain);
 
 static void test_t2_instance(void)
@@ -56,7 +56,7 @@ static void test_t2_instance(void)
   r3 = ChainTask(chain);
   SCHEDULING_CHECK_AND_EQUAL_INT(3, E_OS_SPINLOCK, r3);
 
-  SyncAllCores(sync);
+  SyncAllCores(sync0);
 
   while(1); /* Wait for the tp watchdog to kill this task */
 }

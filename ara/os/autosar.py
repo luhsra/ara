@@ -3,6 +3,7 @@
 # SPDX-FileCopyrightText: 2022 Björn Fiedler <fiedler@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2022 Jan Neugebauer
 # SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2023 Andreas Kässens
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -33,6 +34,7 @@ from .interrupts import fake_interrupt_function
 TASK_PREFIX = "AUTOSAR_TASK_"
 ALARM_PREFIX = "AUTOSAR_ALARM_"
 RESOURCE_PREFIX = "AUTOSAR_RESOURCE_"
+COUNTER_PREFIX = "AUTOSAR_COUNTER_"
 SPINLOCK_PREFIX = "AUTOSAR_SPINLOCK_"
 
 logger = get_logger("AUTOSAR")
@@ -120,6 +122,7 @@ class Task(AUTOSARInstance, ControlInstance):
 class TaskContext(ControlContext):
     received_events: int = 0
     waited_events: int = 0
+    in_critical_section: bool = False
 
     def __hash__(self):
         return hash(("TaskContext",
@@ -135,12 +138,17 @@ class TaskContext(ControlContext):
                            call_path=copy(self.call_path),
                            dyn_prio=list(self.dyn_prio),
                            received_events=self.received_events,
-                           waited_events=self.waited_events)
+                           waited_events=self.waited_events,
+                           in_critical_section=self.in_critical_section)
 
-
-@dataclass(frozen=True)
+"""
+(frozen=True)
+"""
+@dataclass
 class Spinlock:
     name: str
+    def __hash__(self):
+        return hash(("Spinlock", self.name))
 
 
 @dataclass
@@ -161,12 +169,13 @@ class SpinlockContext:
                                wait_for=[x for x in self.wait_for])
 
 
-@dataclass
+@dataclass(eq=False)
 class Counter(AUTOSARInstance):
     mincycle: int
     maxallowedvalue: int
     ticksperbase: int
     secondspertick: int = 1
+    softcounter: bool = False
 
 
 @dataclass(eq=False)
@@ -187,6 +196,7 @@ class AlarmContext:
 class ISR(AUTOSARInstance, ControlInstance):
     priority: int
     category: int
+    device: int
 
     def __hash__(self):
         return AUTOSARInstance.__hash__(self)
@@ -655,9 +665,11 @@ class AUTOSAR(OSBase):
                           ty=InstanceEdge.activate)
         return state
 
-    @syscall
-    def AUTOSAR_AdvanceCounter(cfg, abb, state):
-        pass
+    @syscall(categories={SyscallCategory.comm},
+             signature=(Arg("counter", ty=Counter, hint=SigType.instance),))
+    def AUTOSAR_AdvanceCounter(cfg, state, cpu_id, args, va):
+        assert(isinstance(args.counter, Counter))
+        return state
 
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("alarm", ty=Alarm, hint=SigType.instance),))
@@ -679,6 +691,16 @@ class AUTOSAR(OSBase):
 
         cur_task = state.cur_control_inst(cpu_id)
         assert isinstance(cur_task, Task), "ChainTask must be called in a task"
+
+        # check if we are holding a spinlock
+        if state.context[cur_task].in_critical_section:
+            logger.debug(f"TerminateTask {cur_task.name} holding a spinlock")
+            return state
+
+        if args.task.accessing_application is not None:
+            if cpu_id not in args.task.accessing_application:
+                logger.debug(f"Unallowed CT of {args.task} from {cpu_id=}.")
+                return state
 
         state = AUTOSAR.TerminateTask(state, cpu_id)
         state = AUTOSAR.ActivateTask(state, cpu_id, args.task)
@@ -721,9 +743,11 @@ class AUTOSAR(OSBase):
         state.cpus[cpu_id].irq_on = True
         return state
 
-    @syscall
-    def AUTOSAR_GetAlarm(cfg, abb, state):
-        pass
+    @syscall(categories={SyscallCategory.comm},
+             signature=(Arg("alarm", ty=Alarm, hint=SigType.instance),
+                           Arg("tick", ty=Alarm, hint=SigType.symbol)))
+    def AUTOSAR_GetAlarm(cfg, state, cpu_id, args, va):
+        return state
 
     @staticmethod
     def get_cpus_of_spinlock(spinlock, instances):
@@ -790,6 +814,7 @@ class AUTOSAR(OSBase):
         # just go to the next block but set the lock
         lock_ctx.on_hold = True
         lock_ctx.held_by = cur_ctl
+        state.context[cur_ctl].in_critical_section = True
         set_next_abb(state, cpu_id)
         return state
 
@@ -846,6 +871,7 @@ class AUTOSAR(OSBase):
         lock_ctx.wait_for = []
         lock_ctx.on_hold = False
         lock_ctx.held_by = None
+        state.context[cur_ctl].in_critical_section = False
 
         # the current CPU just follows the control flow
         set_next_abb(state, cpu_id)
@@ -940,7 +966,7 @@ class AUTOSAR(OSBase):
         assert isinstance(args.event_mask, int)
         if args.task.accessing_application is not None:
             if cpu_id not in args.task.accessing_application:
-                logger.debug(f"Unallowed AT of {args.task} from {cpu_id=}.")
+                logger.debug(f"Unallowed SE of {args.task} from {cpu_id=}.")
                 return state
         state = AUTOSAR.SetEvent(state, cpu_id, args.task, args.event_mask)
         AUTOSAR.connect_events(state, cpu_id, args.event_mask, "SetEvent",
@@ -1007,13 +1033,6 @@ class AUTOSAR(OSBase):
         cur_task = state.cur_control_inst(cpu_id)
         assert isinstance(cur_task, Task), "TerminateTask must be called in a task"
 
-        # check if we are holding a spinlock
-        for o_lock_v, o_lock in state.instances.get(Spinlock):
-            if o_lock in state.context:
-                o_ctx = state.context[o_lock]
-                if o_ctx.on_hold and o_ctx.held_by == cur_task:
-                    return state
-
         state.context[cur_task] = TaskContext(status=TaskStatus.suspended,
                                               abb=state.cfg.get_entry_abb(cur_task.function),
                                               call_path=CallPath(),
@@ -1027,6 +1046,14 @@ class AUTOSAR(OSBase):
              signature=tuple(),
              custom_control_flow=True)
     def AUTOSAR_TerminateTask(cfg, state, cpu_id, args, va):
+        # check if we are holding a spinlock
+        cur_task = state.cur_control_inst(cpu_id)
+        assert isinstance(cur_task, Task), "TerminateTask must be called in a task"
+        if state.context[cur_task].in_critical_section:
+            logger.debug(f"TerminateTask {cur_task.name} holding a spinlock")
+            set_next_abb(state, cpu_id)
+            return state
+
         AUTOSAR.TerminateTask(state, cpu_id)
         cur = state.cpus[cpu_id].control_instance
         connect_from_here(state, cpu_id, cur, "TerminateTask",
@@ -1038,6 +1065,12 @@ class AUTOSAR(OSBase):
     def AUTOSAR_WaitEvent(cfg, state, cpu_id, args, va):
         assert(isinstance(args.event_mask, int))
         cur_ctx = state.cur_context(cpu_id)
+
+        cur_task = state.cur_control_inst(cpu_id)
+        # check if we are holding a spinlock
+        if state.context[cur_task].in_critical_section:
+            logger.debug(f"WaitEvent {cur_task.name} holding a spinlock")
+            return state
 
         if args.event_mask & cur_ctx.received_events == 0:
             cur_ctx.status = TaskStatus.blocked

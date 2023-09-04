@@ -1,32 +1,28 @@
 #include "autosar/os.h"
 #pragma once
+#include "test/test.h"
 
 #define NUMBER_OF_CORES 99
 #define uint32 uint32_t
 
-__attribute__((weak)) extern "C" int GetCoreID() {return -1;}
-__attribute__((weak)) extern "C" StatusType GetNumberOfActivatedCores() {return E_OK;}
 #define OS_CORE_ID_MASTER 0
 #define OS_CORE_ID_1 1
 
 
 // fake functions for trampoline
 #define SCHEDULING_CHECK_INIT(a)
-#define SCHEDULING_CHECK_AND_EQUAL_INT(a, b, c)
+#define SCHEDULING_CHECK_AND_EQUAL_INT(a, b, c) test_start(); test_eq(b, c); test_positive_tests_eq(1)
 #define SCHEDULING_CHECK_STEP(a)
 
 using CoreFunc = void (*)();
 using TestRef = unsigned int;
-using TryToGetSpinlockType = int;
 #define TestRef int
 
-#define TestRunner_start()
-#define TestRunner_runTest(t) t
-#define TestRunner_end()
-#define addFailure(msg, line, file)
+#define TestRunner_start() test_init()
+#define TestRunner_runTest(t) t;
+#define TestRunner_end() test_finish(); ShutdownMachine()
+#define addFailure(msg, line, file) debug_core << msg << endl; ShutdownMachine()
 
-
-#define StartCore(id, rv)
 #define OSDEFAULTAPPMODE 0
 
 #define new_TestFixture(unused, func) func();

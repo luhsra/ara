@@ -1,4 +1,4 @@
-option('arch', type: 'combo', choices: ['arm', 'i386'], value: 'arm', yield: true,
+option('arch', type: 'combo', choices: ['arm', 'i386', 'posix'], value: 'arm', yield: true,
     description: 'Set the architecture for which the test applications are built.')
 option('gui_required', type: 'boolean', value: false, yield: true,
     description: 'Set all dependencies of ara gui to required if this option is true')

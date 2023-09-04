@@ -331,6 +331,7 @@ namespace ara::step {
 		llvm::Function* entry = graph.get_module().getFunction(entry_point);
 
 		if (entry == nullptr) {
+			logger.error() << "Empty entry point: " << entry_point << std::endl;
 			fail("entry_point is not a valid LLVM function.");
 		}
 

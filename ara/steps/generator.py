@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2020 Björn Fiedler <fiedler@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2021 Björn Fiedler <fiedler@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2023 Andreas Kässens
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -17,14 +18,17 @@ from ara.generator import *
 from ara.generator.Generator import Generator as GenImpl
 
 from ara.os.freertos import FreeRTOS
+from ara.os.autosar import AUTOSAR
 from ara.generator.coder.freertos import FreeRTOSGenericOS
+from ara.generator.coder.autosar import AUTOSARGenericOS
 
 
 
 class Generator(Step):
     """Generate whole OS code based on the previous analyses."""
 
-    os_choices = {FreeRTOS: FreeRTOSGenericOS}
+    os_choices = {FreeRTOS: FreeRTOSGenericOS,
+                  AUTOSAR:  AUTOSARGenericOS}
 
     arch_choices = []
     for os in os_choices.values():
@@ -43,11 +47,21 @@ class Generator(Step):
                          help='disable all changes, just pipe IR code unchanged',
                          ty=Bool(),
                          default_value=False)
+    lock_elision = Option('lock_elision',
+                        help='specialize locking operations if possible, AUTOSAR only',
+                        ty=Bool(),
+                        default_value=False)
+    ipi_avoidance = Option('ipi_avoidance',
+                        help='specialize IPI-triggering operations if possible, AUTOSAR only',
+                        ty=Bool(),
+                        default_value=False)
 
     def get_single_dependencies(self):
         if self.passthrough.get():
             return ['IRReader', 'SysFuncts']
-        deps = ['SIA', 'ManualCorrections', 'SysFuncts']
+        #TODO needed for autosar ?
+        #deps = ['SIA', 'ManualCorrections', 'SysFuncts']
+        deps = []
         if self.get_os():
             deps += self.get_os().get_dependencies()
         return deps

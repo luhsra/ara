@@ -34,19 +34,18 @@
 
 #include "Os.h"
 
-DeclareSpinlock(sync);
+DeclareSpinlock(sync0);
 DeclareSpinlock(end_of_tests);
 
-DeclareEvent(event, 0);
+DeclareEvent(event, 1);
 
 static void test_t2_instance(void)
 {
-  // SyncAllCores(sync);
+  // SyncAllCores(sync0);
 
   WaitEvent(event);
 
   /* Wait end of tests */
-  TerminateTask();
   SyncAllCores(end_of_tests);
 }
 

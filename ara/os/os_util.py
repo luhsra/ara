@@ -2,6 +2,7 @@
 # SPDX-FileCopyrightText: 2021 Lukas Berg
 # SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2022 Jan Neugebauer
+# SPDX-FileCopyrightText: 2023 Andreas Kässens
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -319,6 +320,9 @@ class SysCall:
         # repack into dataclass
         Arguments = dataclasses.make_dataclass('Arguments', fields)
         args = Arguments(*values)
+
+        #store arguments in syscall abb
+        graph.cfg.vp.arguments[abb] = args
 
         # syscall specific handling
         new_states = self._func(graph, new_state, cpu_id, args, va)
