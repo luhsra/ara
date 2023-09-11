@@ -193,10 +193,10 @@ class LockElision(Step):
             elide, release_abb = self._can_elide(state, cpu_id)
             details[mstg.vp.state[state].id] = {
                 "state": mstg.vp.state[state].id,
-                "abb": mstg.vp.state[state].cpus.one().abb,
+                "abb": int(mstg.vp.state[state].cpus.one().abb),
                 "spins": spins,
                 "elide": elide,
-                "release_abb": release_abb
+                "release_abb": int(release_abb)
             }
             handled_sync |= handled
 
