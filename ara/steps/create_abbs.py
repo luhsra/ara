@@ -282,14 +282,14 @@ class CreateABBs(Step):
         if self.dump.get():
             self._step_manager.chain_step(
                 {"name": "Printer",
-                 "dot": self.dump_prefix.get() + "cfg.dot",
+                 "dot": self.dump_prefix.get() + ".cfg.dot",
                  "graph_name": 'CFG with merged ABBs',
                  "subgraph": 'abbs'}
             )
 
             self._step_manager.chain_step(
                 {"name": "Printer",
-                 "dot": self.dump_prefix.get() + "callgraph.dot",
+                 "dot": self.dump_prefix.get() + ".callgraph.dot",
                  "graph_name": 'CallGraph with merged ABBs',
                  "subgraph": 'callgraph'}
             )
