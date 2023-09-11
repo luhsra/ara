@@ -159,6 +159,8 @@ conv_wrapper = '''
 import importlib
 import sys
 import os
+# see https://git.skewed.de/count0/graph-tool/-/issues/766
+os.environ["OMP_WAIT_POLICY"] = "passive"
 import graph_tool
 
 def load(what, where):

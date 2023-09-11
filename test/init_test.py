@@ -15,6 +15,9 @@ import tempfile
 from ara.os import get_os
 from dataclasses import dataclass
 
+# see https://git.skewed.de/count0/graph-tool/-/issues/766
+os.environ["OMP_WAIT_POLICY"] = "passive"
+
 if bool(os.environ.get('ARA_TEST_USE_INSTALLED_ARA', '')):
     import graph_tool
     sys.setdlopenflags(sys.getdlopenflags() | os.RTLD_GLOBAL)
