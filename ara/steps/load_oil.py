@@ -249,6 +249,7 @@ class LoadOIL(Step):
                 a = instances.add_vertex()
 
                 obj = _autosar.Alarm(name=a_name, cpu_id=cpu_id)
+                self._log.debug("Create Alarm %s", a_name)
                 if "autostart" in alarm:
                     obj.autostart = alarm["autostart"]
                 if "cycletime" in alarm:
@@ -267,6 +268,8 @@ class LoadOIL(Step):
                 # assign object to the concrete code
                 code_instance = va.find_global(_autosar.ALARM_PREFIX + a_name)
                 if code_instance is not None:
+                    self._log.debug("Global Variable for alarm %s found: %s",
+                                    a_name, code_instance)
                     va.assign_system_object(code_instance, instances.vp.obj[a])
 
                 # read alarm action
