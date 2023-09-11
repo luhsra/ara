@@ -60,7 +60,7 @@ COMPILE = """
   input: {name}_cc[0],
   depfile: '{cc_file}.dep',
   output: '{cc_file}.ll',
-  command: clang_cpp + libs_includes + ir_flags + clang_flags)
+  command: clang_cpp + autosar_includes + ir_flags + clang_flags)
 ir_files += {name}_ll
 """
 
