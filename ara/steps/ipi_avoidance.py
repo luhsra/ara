@@ -77,7 +77,7 @@ class IPIAvoidance(Step):
                         ipi_needed, handled = self._is_ipi_needed(state)
                         out.append({
                             "state": mstg.vp.state[state].id,
-                            "abb": mstg.vp.state[state].cpus.one().abb,
+                            "abb": int(mstg.vp.state[state].cpus.one().abb),
                             "ipi_needed": ipi_needed
                         })
                         handled_sync |= handled
