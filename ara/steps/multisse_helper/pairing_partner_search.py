@@ -4,14 +4,14 @@
 
 from dataclasses import dataclass
 from typing import List, Set, Tuple
-from itertools import chain, permutations, product
+from itertools import chain, permutations, product, pairwise
 from collections import defaultdict
 
 import graph_tool
 from graph_tool.topology import shortest_path
 
 from ara.graph import StateType, MSTType, vertex_types, single_check
-from ara.util import get_logger, has_path, pairwise
+from ara.util import get_logger, has_path
 
 from .equations import Equations
 from .constrained_sps import get_constrained_sps

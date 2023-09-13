@@ -12,7 +12,7 @@ import os.path
 from collections import defaultdict
 from dataclasses import dataclass, field
 from functools import reduce
-from itertools import chain, islice
+from itertools import chain, islice, pairwise
 from typing import List, Dict, Set
 
 import graph_tool
@@ -21,7 +21,7 @@ from graph_tool.topology import all_paths, shortest_path
 
 from ara.graph import (MSTGraph, StateType, MSTType, CallPath, single_check,
                        edge_types)
-from ara.util import pairwise, has_path
+from ara.util import has_path
 from ara.os.os_base import (OSState, CPUList, CPU, IRQ, CrossCoreAction,
                             IRQContext, TaskStatus)
 from ara.os.os_util import set_next_abb

@@ -222,22 +222,6 @@ def has_path(graph, source, target):
     return len(elist) > 0
 
 
-def pairwise(iterable):
-    """Backport of Python pairwise. See itertools.pairwise."""
-    # pairwise('ABCDEFG') --> AB BC CD DE EF FG
-    version = sys.version_info
-    if version.major >= 3 and version.minor >= 10:
-        log = get_logger("util")
-        log.warning("You are using Python 3.10 and ara.util.pairwise. "
-                    "Consider switching to native pairwise from itertools.")
-        from itertools import pairwise as pw
-        return pw(iterable)
-
-    a, b = tee(iterable)
-    next(b, None)
-    return zip(a, b)
-
-
 class VarianceDict(dict):
     """Dict that store the values that are requested per `get`."""
     def get(self, key, default_value):
