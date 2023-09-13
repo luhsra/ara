@@ -24,7 +24,7 @@ The following dependencies are needed:
 - [meson](https://mesonbuild.com/) (>=0.60.0)
 - [llvm](http://llvm.org/) (==14)
 - [cython](https://cython.org/) (>=0.29.14)
-- [python](https://www.python.org/) (>=3.7)
+- [python](https://www.python.org/) (>=3.10)
 - [pydot](https://pypi.org/project/pydot/)
 - [graph-tool](https://graph-tool.skewed.de/)
 
