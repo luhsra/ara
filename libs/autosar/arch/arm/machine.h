@@ -187,7 +187,10 @@ struct Machine {
 	 * instruction.
 	 *
 	 */
-	static void trigger_interrupt(uint8_t irq);
+	static forceinline void trigger_interrupt(uint8_t irq_, uint8_t cpuid = 0, bool sync = false) {
+		// TODO: unify with posix/machine.h
+		//arch::irq.trigger_interrupt(irq_, cpuid, sync);
+	}
 
 	/**
 	 * \brief Trigger a non-software interrupt
@@ -201,7 +204,10 @@ struct Machine {
 	// static forceinline void trigger_interrupt(uint8_t irq) {
 	//   //arch::LAPIC::trigger(irq);
 	// }
-	static void trigger_interrupt_from_user(uint8_t irq);
+	static forceinline void trigger_interrupt_from_user(uint8_t irq_, uint8_t cpuid = 0, bool sync = true) {
+		// TODO: unify with posix/machine.h
+		//arch::irq.trigger_interrupt(irq_, cpuid, sync);
+	}
 
 	/**
 	 * \brief Unreachable code

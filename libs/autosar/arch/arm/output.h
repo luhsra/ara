@@ -29,6 +29,7 @@ extern Serial debug;
 #include "serial.h"
 extern Serial kout;
 extern Null_Stream debug;
+#define debug_core debug
 
 #endif // DEBUG
 
