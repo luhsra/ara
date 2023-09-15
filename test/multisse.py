@@ -71,18 +71,37 @@ def _build_graph(data, timings=False):
     return g, core_map
 
 
+def _add_debug_config(config):
+    """Add debug related config."""
+    debug = {"enabled": False,  # set this to True to enable debug logs/dumps
+             "extra_steps": ["DumpCFG", "DumpCallgraph", "DumpInstances"],
+             "extra_config": {
+                 "MultiSSE": {"dump": True, "log_level": "debug"},
+                 "CreateABBs": {"dump": True, "log_level": "debug"},
+                 "LoadOIL": {"dump": True, "log_level": "debug"},
+                 "logger": {"AUTOSAR": "debug"}}}
+    if debug["enabled"]:
+        config["steps"] += debug["extra_steps"]
+        e_conf = debug["extra_config"]
+        for key in e_conf.keys():
+            if key in config:
+                config[key] = {**config[key], **e_conf[key]}
+            else:
+                config[key] = e_conf[key]
+
+
 def main():
     """Test for correct MultiSSE execution."""
     with_timings = len(sys.argv) > 4
     inp = {"oilfile": lambda argv: argv[3]}
     if with_timings:
-        config = {"steps": ["ApplyTimings", "LockElision", "DumpCFG"],
-                  "MultiSSE": {"with_times": True, "dump": True}}
+        config = {"steps": ["ApplyTimings", "LockElision"],
+                  "MultiSSE": {"with_times": True}}
         inp["timings"] = lambda argv: argv[4]
     else:
-        config = {"steps": ["LockElision", "DumpCFG", "DumpCallgraph", "DumpInstances"],
-                  "MultiSSE": {"dump": True, "log_level": "debug"},
-                  "logger": {"AUTOSAR": "debug"}}
+        config = {"steps": ["LockElision"]}
+    _add_debug_config(config)
+    print(config)
     data = init_test(extra_config=config, extra_input=inp, os_name="AUTOSAR")
 
     mstg = data.graph.mstg
@@ -101,10 +120,10 @@ def main():
         if len(list(reduced.vertices())) == 1:
             if len(list(reduced.edges())) == 0:
                 return
-    fail_if(len(data.data["vertices"]) == 0)
+    fail_if(len(data.data["vertices"]) == 0, "No vertices")
     is_isomorph, iso_map = isomorphism(reduced, golden, reduced.vp["cores"],
                                        correct_cores, isomap=True)
-    fail_if(not is_isomorph)
+    fail_if(not is_isomorph, "Not isomorph")
     if with_timings:
         fs = GraphView(reduced,
                        efilt=reduced.ep.type.fa == MSTType.follow_sync)
@@ -113,10 +132,12 @@ def main():
                                 all_edges=True)
             if fs.ep.bcet[e] > 0:
                 fail_if(all([fs.ep.bcet[e] != golden.ep.bcet[o]
-                        for o in other]))
+                             for o in other]),
+                        "BCET not equal")
             if fs.ep.wcet[e] > 0:
                 fail_if(all([fs.ep.wcet[e] != golden.ep.wcet[o]
-                        for o in other]))
+                             for o in other]),
+                        "WCET not equal")
 
 
 if __name__ == '__main__':
