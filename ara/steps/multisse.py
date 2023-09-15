@@ -192,7 +192,8 @@ class MultiSSE(Step):
 
         dot_file = self.dump_prefix.get() + f"mstg.{extra}.sp.dot"
         dot_path = os.path.abspath(dot_file)
-        dot_graph = sp_mstg_to_dot(self._mstg.g, label=f"SP MSTG {extra}")
+        dot_graph = sp_mstg_to_dot(self._mstg.g, self._graph.cfg,
+                                   label=f"SP MSTG {extra}")
         with open_with_dirs(dot_path):
             dot_graph.write(dot_path)
         self._log.info(f"Write SP MSTG to {dot_path}.")

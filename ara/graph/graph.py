@@ -601,6 +601,11 @@ class MSTGraph(graph_tool.Graph):
             if self.get_syscall_name(e.source()):
                 return self.vertex(e.source()), core, -1
 
+    def get_synchronized_abbs(self, sp):
+        """Get all ABBs that an SP is synchronizing."""
+        obj = self.vp.state[sp]
+        return [x.abb for x in obj.cpus]
+
     def get_exec_state(self, state):
         """Return the execution state of the given state.
 

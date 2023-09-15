@@ -375,11 +375,13 @@ def mstg_to_dot(mstg, label="MSTG"):
     return dot_graph
 
 
-def sp_mstg_to_dot(mstg, label="SyncPoints MSTG"):
+def sp_mstg_to_dot(mstg, cfg, label="SyncPoints MSTG"):
     legend = '<br/>'.join([html.escape(x) for x in [
         "state format:",
         "$entry sync point$ -> $exit sync point$",
         "coreX, stateY (trggering syscall)",
+        "abbs of entry SP",
+        "abbs of exit SP",
         "",
         "edge format:",
         "dashed, red: sy2sy (sync point to sync point)",
@@ -394,6 +396,9 @@ def sp_mstg_to_dot(mstg, label="SyncPoints MSTG"):
         return pydot.Node(str(int(vertex)), shape="box",
                           label="<{}>".format('<br/>'.join([html.escape(str(x)) for x in label])))
 
+    def _prettify_abbs(abbs):
+        return ', '.join([cfg.vp.name[x] for x in abbs])
+
     # draw initial sync node
     for init in mstg.get_sync_points(exit=True).vertices():
         init = mstg.vertex(init)
@@ -405,6 +410,8 @@ def sp_mstg_to_dot(mstg, label="SyncPoints MSTG"):
     for sync_point in mstg.get_sync_points(exit=False).vertices():
         sync_point = mstg.vertex(sync_point)
         sys_state, core, irq = mstg.get_syscall_state(sync_point)
+        entry_abbs = mstg.get_synchronized_abbs(sync_point)
+        entry_lbl = "en: " + _prettify_abbs(entry_abbs)
         label = f"c{core}, s{int(sys_state)}"
         if irq > 0:
             irq_name = mstg.vp.state[sys_state].instances.vp.obj[irq].name
@@ -417,19 +424,28 @@ def sp_mstg_to_dot(mstg, label="SyncPoints MSTG"):
                                    label="")
             dot_graph.add_subgraph(sync_m)
             # draw entry_sync
-            sync_m.add_node(_dsp(sync_point, label=[str(int(sync_point)),
-                                                    label]))
+            sync_m.add_node(_dsp(sync_point, label=[
+                str(int(sync_point)),
+                entry_lbl,
+                label
+            ]))
             # draw exit_sync
             for follow in sync_point.out_neighbors():
-                sync_m.add_node(_dsp(sync_point))
+                exit_abbs = mstg.get_synchronized_abbs(follow)
+                sync_m.add_node(_dsp(follow, label=[
+                    str(int(follow)),
+                    "ex: " + _prettify_abbs(exit_abbs)
+                ]))
         else:
             # draw only the exit_sync
             exit_s = single_check(sync_point.out_neighbors())
             title = f"{str(int(sync_point))}->{str(int(exit_s))}"
-            dot_graph.add_node(_dsp(
-                exit_s,
-                label=[title, label]
-            ))
+            dot_graph.add_node(_dsp(exit_s, label=[
+                title,
+                entry_lbl,
+                "ex: " + _prettify_abbs(mstg.get_synchronized_abbs(exit_s)),
+                label
+            ]))
 
     sp_e = mstg.edge_type(MSTType.follow_sync, MSTType.sy2sy)
     for e in sp_e.edges():
@@ -712,8 +728,7 @@ class Printer(Step):
 
     def print_sp_mstg(self):
         name = self._print_init()
-        mstg = self._graph.mstg
-        dot_graph = sp_mstg_to_dot(mstg, name)
+        dot_graph = sp_mstg_to_dot(self._graph.mstg, self._graph.cfg, name)
         self._write_dot(dot_graph)
 
 
