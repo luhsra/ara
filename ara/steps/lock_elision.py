@@ -196,7 +196,7 @@ class LockElision(Step):
                 "abb": int(mstg.vp.state[state].cpus.one().abb),
                 "spins": spins,
                 "elide": elide,
-                "release_abb": int(release_abb)
+                "release_abb": int(release_abb or 0)
             }
             handled_sync |= handled
 
