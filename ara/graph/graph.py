@@ -334,6 +334,8 @@ class CFG(graph_tool.Graph):
         It uses the callgraph for searching. The node_level specifies what
         level should be returned. only_system_relevant restricts the returned
         nodes to system relevant _and_ the entry function.
+
+        ATTENTION: The returned functions are not ordered in any way.
         """
         cg_func = callgraph.vertex(self.vp.call_graph_link[func])
         oc = label_out_component(callgraph, cg_func)
@@ -358,17 +360,26 @@ class CFG(graph_tool.Graph):
                 yield entity
 
     def reachable_functs(self, func, callgraph, only_system_relevant=True):
-        """Generator about all reachable Functions starting at func."""
+        """Generator about all reachable Functions starting at func.
+
+        ATTENTION: The returned functions are not ordered in any way.
+        """
         return self._reachable_nodes(func, callgraph, NodeLevel.function,
                                      only_system_relevant=only_system_relevant)
 
     def reachable_abbs(self, func, callgraph, only_system_relevant=True):
-        """Generator about all reachable ABBs starting at func."""
+        """Generator about all reachable ABBs starting at func.
+
+        ATTENTION: The returned functions are not ordered in any way.
+        """
         return self._reachable_nodes(func, callgraph, NodeLevel.abb,
                                      only_system_relevant=only_system_relevant)
 
     def reachable_bbs(self, func, callgraph, only_system_relevant=True):
-        """Generator about all reachable BBs starting at func."""
+        """Generator about all reachable BBs starting at func.
+
+        ATTENTION: The returned functions are not ordered in any way.
+        """
         return self._reachable_nodes(func, callgraph, NodeLevel.bb,
                                      only_system_relevant=only_system_relevant)
 

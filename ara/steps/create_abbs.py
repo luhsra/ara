@@ -124,7 +124,7 @@ class CreateABBs(Step):
                 edge = icfg.edge(abb, tgt_abb, add_missing=True)
                 cfg.ep.type[edge] = CFType.icf
 
-    def _add_edges(self, abb, exit_v):
+    def _add_edges(self, abb, exit_v, just_icf=False):
         cfg = self._graph.cfg
         lcfg = edge_types(cfg, cfg.ep.type, CFType.lcf)
 
@@ -199,7 +199,9 @@ class CreateABBs(Step):
                 # ICF edges
                 exit_abb = cfg.get_exit_abb(func)
                 if exit_abb is not None:
-                    self._add_icf_edges(exit_abb, cfg.get_exit_bb(exit_abb))
+                    self._log.debug("Function %s handled, but link exit %s",
+                                    name[func], name[exit_abb])
+                    abbs.append((exit_abb, cfg.get_exit_bb(exit_abb), True))
                 continue
             self._log.warn(f"Handle {name[func]}")
 
@@ -261,14 +263,14 @@ class CreateABBs(Step):
 
             for entry, tail in abb_cands.items():
                 abb = self._add_abb(local, func, entry, tail.exit_b, tail.body)
-                abbs.append((abb, tail.exit_b))
+                abbs.append((abb, tail.exit_b, False))
             for call in special:
                 abb = self._add_abb(local, func, call, call, set())
-                abbs.append((abb, call))
+                abbs.append((abb, call, False))
 
         # link edges
-        for abb, exit_v in abbs:
-            self._add_edges(abb, exit_v)
+        for abb, exit_v, just_icf in abbs:
+            self._add_edges(abb, exit_v, just_icf=just_icf)
 
         # remap callgraph links to ABBs instead of BBs
         callgraph = self._graph.callgraph
