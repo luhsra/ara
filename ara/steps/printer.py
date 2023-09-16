@@ -397,7 +397,13 @@ def sp_mstg_to_dot(mstg, cfg, label="SyncPoints MSTG"):
                           label="<{}>".format('<br/>'.join([html.escape(str(x)) for x in label])))
 
     def _prettify_abbs(abbs):
-        return ', '.join([cfg.vp.name[x] for x in abbs])
+        abb_names = []
+        for x in abbs:
+            if x is not None:
+                abb_names.append(cfg.vp.name[x])
+            else:
+                abb_names.append("None")
+        return ', '.join(abb_names)
 
     # draw initial sync node
     for init in mstg.get_sync_points(exit=True).vertices():
