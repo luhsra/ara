@@ -29,10 +29,10 @@ from ara.os.os_util import set_next_abb
 from .option import Option, String, Bool
 from .step import Step
 from .util import open_with_dirs
-from .printer import mstg_to_dot, sp_mstg_to_dot
+from .printer import mstg_to_dot, sp_mstg_to_dot, reduced_mstg_to_dot
 from .cfg_traversal import Visitor, run_sse
 from .multisse_helper.common import (CrossExecState, FakeEdge,
-                                     find_cross_syscalls)
+                                     find_cross_syscalls, get_reachable_states)
 from .multisse_helper.constrained_sps import get_constrained_sps
 from .multisse_helper.equations import TimeRange
 from .multisse_helper.pairing_partner_search import (
@@ -1071,35 +1071,56 @@ class MultiSSE(Step):
             cores = reeval_info.cores
             kwargs = {"start_from": start_from}
             debug = f"starting from {int(start_from)}"
+            excluded_cores = set(self._mstg.sync_point_map[start_from])
         else:
             root = reeval_info.root
             cores = self._mstg.sync_point_map[sp]
             kwargs = {"only_root": root}
             debug = f"evaluating only {int(root)}"
+            excluded_cores = False
 
         self._log.debug(
             f"Node {int(sp)} is already evaluated but some new "
             f"knowledge exists. Reevaluating CPUs {list(cores)} "
             f"{debug}.")
 
+        def core_filter(v):
+            """Filter to exclude all SPs that synchronize excluded_cores."""
+            if v == sp:
+                return True
+            if excluded_cores:
+                return not (set(self._mstg.sync_point_map[v]) & excluded_cores)
+            return False
+
         st2sy = self._mstg.g.edge_type(MSTType.st2sy)
         stack = []
         reevaluates = set()
+
+        sps = graph_tool.GraphView(self._get_sp_graph(), vfilt=core_filter)
         for cpu_id in cores:
             sts = graph_tool.GraphView(st2sy,
                                        efilt=st2sy.ep.cpu_id.fa == cpu_id)
-            entry = single_check(sts.vertex(sp).out_neighbors())
-            to_stack, reeval = self._find_new_sps(
-                sp,
-                Metastate(state=self._mstg.g.get_metastate(entry),
-                          entry=entry,
-                          new_entry=False,
-                          is_new=False,
-                          cross_syscalls=[],
-                          cpu_id=cpu_id),
-                **kwargs)
-            stack.extend(to_stack)
-            reevaluates |= reeval
+            # If an reevaluation happens it does not only affect the (root) SP
+            # but also all follow up SPs that do not share a core with the
+            # causing (start_from) SP. Therefore we iterate all of them.
+            for reeval_sp in get_reachable_states(sps, sps.vertex(sp)).vertices():
+                entries = list(sts.vertex(reeval_sp).out_neighbors())
+                if not entries:
+                    continue
+                self._log.debug("Reevaluate SP %s, as follow up to SP %s",
+                                int(reeval_sp), int(sp))
+                entry = single_check(entries)
+                to_stack, reeval = self._find_new_sps(
+                    reeval_sp,
+                    Metastate(state=self._mstg.g.get_metastate(entry),
+                              entry=entry,
+                              new_entry=False,
+                              is_new=False,
+                              cross_syscalls=[],
+                              cpu_id=cpu_id),
+                    **kwargs)
+                stack.extend(to_stack)
+                reevaluates |= reeval
         return stack, reevaluates
 
     def _calculate_new_metastates(self, sp):
