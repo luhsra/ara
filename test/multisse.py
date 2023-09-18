@@ -76,7 +76,8 @@ def _add_debug_config(config):
     debug = {"enabled": False,  # set this to True to enable debug logs/dumps
              "extra_steps": ["DumpCFG", "DumpCallgraph", "DumpInstances"],
              "extra_config": {
-                 "MultiSSE": {"dump": True, "log_level": "debug"},
+                 "MultiSSE": {"dump": True, "log_level": "debug",
+                              "per_round_dump": True},
                  "CreateABBs": {"dump": True, "log_level": "debug"},
                  "LoadOIL": {"dump": True, "log_level": "debug"},
                  "logger": {"AUTOSAR": "debug"}}}

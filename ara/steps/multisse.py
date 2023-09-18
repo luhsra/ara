@@ -173,6 +173,11 @@ class MultiSSE(Step):
                         ty=Bool(),
                         default_value=False)
 
+    per_round_dump = Option(name="per_round_dump",
+                            help="Dump the MSTG every round",
+                            ty=Bool(),
+                            default_value=False)
+
     def get_single_dependencies(self):
         if self._graph.os is None:
             return ["SysFuncts"]
@@ -180,8 +185,8 @@ class MultiSSE(Step):
         return deps
 
     def _dump_mstg(self, extra):
-        # do not dump anything
-        return
+        if not self.per_round_dump.get():
+            return
 
         dot_file = self.dump_prefix.get() + f"mstg.{extra}.dot"
         dot_path = os.path.abspath(dot_file)
@@ -197,6 +202,14 @@ class MultiSSE(Step):
         with open_with_dirs(dot_path):
             dot_graph.write(dot_path)
         self._log.info(f"Write SP MSTG to {dot_path}.")
+
+        dot_file = self.dump_prefix.get() + f"mstg.{extra}.reduced.dot"
+        dot_path = os.path.abspath(dot_file)
+        dot_graph = reduced_mstg_to_dot(self._mstg.g, self._graph.cfg,
+                                        label=f"SP MSTG {extra}")
+        with open_with_dirs(dot_path):
+            dot_graph.write(dot_path)
+        self._log.info(f"Write reduced MSTG to {dot_path}.")
 
     def _get_initial_state(self):
         os_state = self._graph.os.get_initial_state(self._graph.cfg,
@@ -1172,7 +1185,7 @@ class MultiSSE(Step):
             metastates = self._calculate_new_metastates(sp)
 
             if self.dump.get():
-                self._dump_mstg(extra=f"round.{counter:03d}.wm")
+                self._dump_mstg(extra=f"round.{counter:03d}.with-metastates")
 
             # handle the next sync points
             # we need a new pairing for all CPUs, if somewhere is a new entry,
