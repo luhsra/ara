@@ -12,23 +12,9 @@
 #include "test/test.h"
 #include "machine.h"
 
-
-// TODO: wie geht das für multicore?
-#if TRACE_JSON
-{
-  "vertices": [
-  ],
-  "edges": [
-  ]
-}
-#endif //TRACE_JSON
-
 #if LOCKS_JSON
-{"no_timing": {"spin_states": {"S1": 4, "S2": 0}}}
+{"no_timing": {"spin_states": {"S1": 34, "S2": 0}}}
 #endif //LOCKS_JSON
-
-
-
 
 
 DeclareTask(T01);

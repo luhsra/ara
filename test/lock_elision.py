@@ -34,7 +34,7 @@ def _get_trace(sstg, v):
     start = sstg.vertex(sstg.gp.start)
     if v == start:
         return ("Start",)
-    assert(False)
+    assert False
 
 
 def _to_tuple(t):

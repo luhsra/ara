@@ -101,7 +101,7 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'g',                     'oil': 'system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
   {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'h',                     'oil': 'system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
   {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'i',                     'oil': 'system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
-  {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'j',                     'oil': 'system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
+  {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'j',                     'oil': 'system.json', 'mtrace': 'j.trace.json', 'locks': 'EXTRACT'},
   {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'k',                     'oil': 'system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
   {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'l',                     'oil': 'system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
   {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'm',                     'oil': 'system_m.json'},
