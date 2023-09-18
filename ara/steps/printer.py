@@ -42,6 +42,13 @@ _sysshort = {
 # log = get_logger("Printer")
 
 
+def _abb_name(cfg, abb):
+    """Get an ABB as str."""
+    if abb is None:
+        return 'None'
+    return cfg.vp.name[abb]
+
+
 def _sstg_state_as_dot(sstg, state_vert):
     attrs = {"fontsize": 14}
     size = 12
@@ -124,7 +131,7 @@ def sstg_to_dot(sstg, label="SSTG", reduced=False):
     return dot_graph
 
 
-def reduced_mstg_to_dot(mstg, label="MSTG"):
+def reduced_mstg_to_dot(mstg, cfg, label="MSTG"):
     def _to_str(v):
         return str(int(v))
 
@@ -143,11 +150,15 @@ def reduced_mstg_to_dot(mstg, label="MSTG"):
                 if isinstance(cpu, IRQCPU):
                     cpu_name = ("\u26A1" + f"{cpu.reference_cpu_id} " +
                                 f"({cpu_id}, {cpu.irq.name})")
-                cols.append(f"<TD PORT=\"c{cpu_id}\">{cpu_name}</TD>")
+                abb_name = _abb_name(cfg, cpu.abb)
+                cols.append((f"<TD PORT=\"c{cpu_id}\">{cpu_name}</TD>",
+                             f"<TD PORT=\"a{cpu_id}\">{abb_name}</TD>"))
         if cols:
+            cpus, abbs = zip(*sorted(cols))
             label = '<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">' \
                     '<TR>{}</TR>' \
-                    '</TABLE>>'.format(''.join(sorted(cols)))
+                    '<TR>{}</TR>' \
+                    '</TABLE>>'.format(''.join(cpus), ''.join(abbs))
             shape = "plaintext"
         else:
             label = "undiscovered"
@@ -190,8 +201,8 @@ def reduced_mstg_to_dot(mstg, label="MSTG"):
     sy2sy = mstg.edge_type(MSTType.sy2sy)
     added_edges = set()
 
-    def _sync_str(v, cpu_id):
-        return f"{_to_str(v)}:c{cpu_id}"
+    def _sync_str(v, cpu_id, port):
+        return f"{_to_str(v)}:{port}{cpu_id}"
 
     def _add_edge(from_sp, to_sp, core):
         exit_state = mstg.get_exit_state(to_sp, core)
@@ -220,8 +231,8 @@ def reduced_mstg_to_dot(mstg, label="MSTG"):
             n_tgt = to_sp
 
         # examine start and end for the dot edge
-        dot_tgt = _sync_str(n_tgt, core)
-        dot_src = _sync_str(from_sp, core)
+        dot_tgt = _sync_str(n_tgt, core, 'c')
+        dot_src = _sync_str(from_sp, core, 'a')
         if (dot_src, dot_tgt) in added_edges:
             return None
         added_edges.add((dot_src, dot_tgt))
@@ -397,13 +408,7 @@ def sp_mstg_to_dot(mstg, cfg, label="SyncPoints MSTG"):
                           label="<{}>".format('<br/>'.join([html.escape(str(x)) for x in label])))
 
     def _prettify_abbs(abbs):
-        abb_names = []
-        for x in abbs:
-            if x is not None:
-                abb_names.append(cfg.vp.name[x])
-            else:
-                abb_names.append("None")
-        return ', '.join(abb_names)
+        return ', '.join([_abb_name(cfg, x) for x in abbs])
 
     # draw initial sync node
     for init in mstg.get_sync_points(exit=True).vertices():
@@ -729,7 +734,9 @@ class Printer(Step):
 
     def print_reduced_mstg(self):
         name = self._print_init()
-        dot_graph = reduced_mstg_to_dot(self._graph.mstg, name)
+        dot_graph = reduced_mstg_to_dot(self._graph.mstg,
+                                        self._graph.cfg,
+                                        name)
         self._write_dot(dot_graph)
 
     def print_sp_mstg(self):
