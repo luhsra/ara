@@ -917,7 +917,8 @@ class MultiSSE(Step):
         sp         -- root sync point (entry for the metastate)
         metastate  -- the metastate for which new SPs are searched
         start_from -- starting sync point (narrows the search space, make
-                      reevaluations more efficient)
+                      reevaluations more efficient) for the pairing partner
+                      search
         only_root  -- respect only this SP as root SP.
 
         The function returns a pair:
@@ -940,17 +941,18 @@ class MultiSSE(Step):
         else:
             cross_syscalls = list(metastate.cross_syscalls)
 
-        sf = f", start from {int(start_from)}" if start_from else ''
+        s_from = f", start from {int(start_from)}" if start_from else ''
         self._log.debug("Search for candidates for the cross syscalls: "
                         f"{[int(x) for x in metastate.cross_syscalls]} "
-                        f"(last sync point {int(sp)}{sf})")
+                        f"(last sync point {int(sp)}{s_from})")
         while cross_syscalls:
             cross_state = cross_syscalls.pop(0)
-            it = self._find_pairing_partners(cross_state, sp,
-                                             start_from=start_from,
-                                             only_root=only_root)
+            pps = self._find_pairing_partners(cross_state, sp,
+                                              start_from=start_from,
+                                              only_root=only_root)
 
-            for cands in it:
+            # pps is a set[TimeCandidateSet]
+            for cands in pps:
                 root_sp = cands.root_sp
                 self._log.debug(
                     f"Evaluating sync point between {int(cross_state)} and "
@@ -1021,8 +1023,8 @@ class MultiSSE(Step):
                             sp_graph, self._mstg.sync_point_map,
                             unsynced_cpus, Range(start=new_sp, end=None))
                         on_stack = defaultdict(list)
-                        for core, ran in new_sps.items():
-                            on_stack[ran.range.start].append(core)
+                        for core, sp_range in new_sps.items():
+                            on_stack[sp_range.range.start].append(core)
                         for i_sp, cores in on_stack.items():
                             self._log.debug(
                                 f"Current sync point {int(new_sp)} may add "
@@ -1068,12 +1070,12 @@ class MultiSSE(Step):
             start_from = reeval_info.from_sp
             cores = reeval_info.cores
             kwargs = {"start_from": start_from}
-            debug = f" starting from {int(start_from)}"
+            debug = f"starting from {int(start_from)}"
         else:
             root = reeval_info.root
             cores = self._mstg.sync_point_map[sp]
             kwargs = {"only_root": root}
-            debug = f" evaluating only {int(root)}"
+            debug = f"evaluating only {int(root)}"
 
         self._log.debug(
             f"Node {int(sp)} is already evaluated but some new "
@@ -1176,7 +1178,7 @@ class MultiSSE(Step):
 
             if reeval_info:
                 t_stack, reevals = self._reevaluate_sync_point(sp,
-                                                                reeval_info)
+                                                               reeval_info)
                 stack.extend([(x, None) for x in t_stack])
                 reevaluates.update(reevals)
                 continue

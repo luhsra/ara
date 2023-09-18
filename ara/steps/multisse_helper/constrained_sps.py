@@ -10,7 +10,6 @@ from ara.util import has_path
 from .common import SPRange, Range
 
 
-
 def _check_barriers(graph, new_barriers, old_barriers):
     """Check, if new_barriers are tighter than old_barriers.
 
@@ -28,7 +27,11 @@ def _check_barriers(graph, new_barriers, old_barriers):
 
 
 def get_constrained_sps(g, core_map, cores, new_range, old_sps=None):
-    """Get the SPs that are restricted by new_range.
+    """Get the SPs bounds for the given cores that best fit to new_range.
+
+    `new_range` describes an SP range that synchronize some cores of which
+    `cores` might be a superset of. This algorithm finds the tightest SP range
+    for every wanted core that is as close to new_range as possible.
 
     Arguments:
     g --         A graph of SPs.
