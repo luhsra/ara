@@ -1173,6 +1173,8 @@ class MultiSSE(Step):
         # store sync_point that need a reevaluation
         reevaluates = set()
 
+        already_handled_sps = set()
+
         # actual algorithm
         counter = 0
         while stack:
@@ -1187,12 +1189,13 @@ class MultiSSE(Step):
                                 "reevaluation.")
                 continue
 
-            # if counter == 8:
+            # if counter == 70:
             #     self._fail("foo")
-
-            self._log.debug(
+            msg = " Already handled." if int(sp) in already_handled_sps else ""
+            self._log.info(
                 f"Round {counter:3d}, handle SP {int(sp)}. "
-                f"Stack with {len(stack)} state(s)")
+                f"Stack with {len(stack)} state(s).{msg}")
+            already_handled_sps.add(int(sp))
             if self.dump.get():
                 self._dump_mstg(extra=f"round.{counter:03d}")
             counter += 1
@@ -1246,7 +1249,7 @@ class MultiSSE(Step):
             # The stack is empty. Copy the sync points that need a
             # reevaluation back to the stack and perform the next round.
             if not stack:
-                self._log.debug("Stack empty. Beginning with reevaluations")
+                self._log.info("Stack empty. Beginning with reevaluations")
                 stack.extend(list(set(reevaluates)))
                 reevaluates.clear()
 
