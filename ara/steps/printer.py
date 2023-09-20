@@ -8,12 +8,13 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 """Container for Printer."""
-from ara.graph import ABBType, CFType, CFGView, MSTType, StateType, single_check
+from ara.graph import (ABBType, CFType, CFGView, MSTType, StateType,
+                       single_check, vertex_types)
 from ara.os.os_base import ExecState
 
 from .option import Option, String, Choice, Bool
 from .step import Step
-from .util import open_with_dirs
+from .util import open_with_dirs, has_path
 
 from graph_tool import GraphView
 from graph_tool.topology import all_paths
@@ -89,11 +90,11 @@ def _sstg_state_as_dot(sstg, state_vert):
     graph_attrs = f"<font point-size='{size}'>{graph_attrs}</font>"
     attrs["label"] = f"<{label}<br/>{graph_attrs}>"
     tooltip = str(state_vert)
-    if cpu.abb:
-        code = "\r".join([str(cfg.get_llvm_obj(bb))
-                          for bb in cfg.get_bbs(cpu.abb)])
-        code = code.replace('\n', '\r')
-        tooltip = f'<{tooltip + code}>'
+    # if cpu.abb:
+    #     code = "\r".join([str(cfg.get_llvm_obj(bb))
+    #                       for bb in cfg.get_bbs(cpu.abb)])
+    #     code = code.replace('\n', '\r')
+    #     tooltip = f'<{tooltip + code}>'
 
     attrs["tooltip"] = tooltip
 
@@ -196,8 +197,10 @@ def reduced_mstg_to_dot(mstg, cfg, label="MSTG"):
                                           entry=sync_point))
 
     time_sync = mstg.edge_type(MSTType.follow_sync, MSTType.en2ex)
-    ms_sync = mstg.edge_type(MSTType.m2sy, MSTType.en2ex)
+    time_sync = vertex_types(time_sync, time_sync.vp.type,
+                             StateType.entry_sync, StateType.exit_sync)
     time_sync.set_reversed(True)
+    ms_sync = mstg.edge_type(MSTType.m2sy, MSTType.en2ex)
     sy2sy = mstg.edge_type(MSTType.sy2sy)
     added_edges = set()
 
@@ -240,12 +243,41 @@ def reduced_mstg_to_dot(mstg, cfg, label="MSTG"):
 
     # edge printing
     # we want to find the edges to the last core-local root SP
-    # we therefore first retrieve the root
+    # we therefore first retrieve the parent
+    import sys
     for entry_sp in mstg.get_sync_points(exit=False).vertices():
         for parent_sp in sy2sy.vertex(entry_sp).in_neighbors():
-            # now we can iterate all pathes from the SP to the root
-            cores = core_map[int(entry_sp)]
-            for path in all_paths(time_sync, entry_sp, parent_sp):
+            cores = set(core_map[int(entry_sp)])
+            counter = 1
+            # We want to connect every core of the SP (entry_sp) with all
+            # predecessors (I name it pred_sp). This predecessor depends on
+            # four things:
+            #   1. There is a connection of entry_sp and pred_sp over exactly
+            #      one metastate specific for this core.
+            #   2. At the same time entry_sp and pred_sp have an SP connection
+            #      in the time domain.
+            #   3. pred_sp has a path to the parent_sp.
+            #   4. All pred_sps (for each core) should be on one path.
+            #
+            # The algorithm iterates all paths and find on that for every core
+            # the correct nearest SP. To restrict the number of paths, the
+            # graph is filtered: Only the parent SP and the entry SP are able
+            # to have to full set of cores.
+
+            def _has_cores(v):
+                if int(v) == int(entry_sp) or int(v) == int(parent_sp):
+                    return True
+                if set(core_map[int(v)]) >= cores:
+                    return False
+                return True
+
+            core_graph = GraphView(time_sync, vfilt=_has_cores)
+            for path in all_paths(core_graph, entry_sp, parent_sp):
+                counter += 1
+                if counter > 200:
+                    print(path, file=sys.stderr)
+                    core_path = [list(core_map[int(x)]) for x in path]
+                    print(core_path, file=sys.stderr)
                 # every path of follow_sync edges between the SP and its
                 # root SP must also have a path for each core. Otherwise the
                 # path is not valid.
@@ -274,6 +306,8 @@ def reduced_mstg_to_dot(mstg, cfg, label="MSTG"):
                         edge = _add_edge(x, entry_sp, core)
                         if edge:
                             dot_graph.add_edge(edge)
+                        else:
+                            print("Nothing added", file=sys.stderr)
                     if invalid:
                         break
                     handled_cores |= x_cores
