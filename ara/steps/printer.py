@@ -17,12 +17,13 @@ from .step import Step
 from .util import open_with_dirs, has_path
 
 from graph_tool import GraphView
-from graph_tool.topology import all_paths
 
 import pydot
 import html
 import os
 import os.path
+
+from itertools import chain
 
 
 _sysshort = {
@@ -199,7 +200,6 @@ def reduced_mstg_to_dot(mstg, cfg, label="MSTG"):
     time_sync = mstg.edge_type(MSTType.follow_sync, MSTType.en2ex)
     time_sync = vertex_types(time_sync, time_sync.vp.type,
                              StateType.entry_sync, StateType.exit_sync)
-    time_sync.set_reversed(True)
     ms_sync = mstg.edge_type(MSTType.m2sy, MSTType.en2ex)
     sy2sy = mstg.edge_type(MSTType.sy2sy)
     added_edges = set()
@@ -244,7 +244,6 @@ def reduced_mstg_to_dot(mstg, cfg, label="MSTG"):
     # edge printing
     # we want to find the edges to the last core-local root SP
     # we therefore first retrieve the parent
-    import sys
     for entry_sp in mstg.get_sync_points(exit=False).vertices():
         for parent_sp in sy2sy.vertex(entry_sp).in_neighbors():
             cores = set(core_map[int(entry_sp)])
@@ -257,12 +256,6 @@ def reduced_mstg_to_dot(mstg, cfg, label="MSTG"):
             #   2. At the same time entry_sp and pred_sp have an SP connection
             #      in the time domain.
             #   3. pred_sp has a path to the parent_sp.
-            #   4. All pred_sps (for each core) should be on one path.
-            #
-            # The algorithm iterates all paths and find on that for every core
-            # the correct nearest SP. To restrict the number of paths, the
-            # graph is filtered: Only the parent SP and the entry SP are able
-            # to have to full set of cores.
 
             def _has_cores(v):
                 if int(v) == int(entry_sp) or int(v) == int(parent_sp):
@@ -272,47 +265,27 @@ def reduced_mstg_to_dot(mstg, cfg, label="MSTG"):
                 return True
 
             core_graph = GraphView(time_sync, vfilt=_has_cores)
-            for path in all_paths(core_graph, entry_sp, parent_sp):
-                counter += 1
-                if counter > 200:
-                    print(path, file=sys.stderr)
-                    core_path = [list(core_map[int(x)]) for x in path]
-                    print(core_path, file=sys.stderr)
-                # every path of follow_sync edges between the SP and its
-                # root SP must also have a path for each core. Otherwise the
-                # path is not valid.
-                # We therefore also check the metastates for each core.
-                handled_cores = set()
-                for x in path[1:]:
-                    # just handle exit sync points
-                    if mstg.vp.type[x] == StateType.entry_sync:
+
+            for core in cores:
+                def good_edge(e):
+                    if mstg.ep.type[e] == MSTType.m2sy:
+                        return mstg.ep.cpu_id[e] == core
+                    return True
+                cg = GraphView(ms_sync, efilt=good_edge)
+                # condition 1
+                cands = [x.in_neighbors()
+                         for x in cg.vertex(entry_sp).in_neighbors()]
+                for cand in chain(*cands):
+                    try:
+                        core_graph.vertex(cand)
+                    except ValueError:
                         continue
-                    x_cores = core_map[int(x)] & cores
-                    invalid = False
-                    for core in x_cores - handled_cores:
-                        # there must be a connection via metastates, otherwise
-                        # the path is not valid
-                        def good_edge(e):
-                            if mstg.ep.type[e] == MSTType.m2sy:
-                                return mstg.ep.cpu_id[e] == core
-                            return True
-                        cg = GraphView(ms_sync, efilt=good_edge)
-                        ms1 = set(cg.vertex(entry_sp).in_neighbors())
-                        ms2 = set(cg.vertex(x).out_neighbors())
-                        if len(ms2) > 0 and ms1 != ms2:
-                            # this is an invalid path
-                            invalid = True
-                            break
-                        edge = _add_edge(x, entry_sp, core)
+                    # condition 2 and 3
+                    if (has_path(core_graph, parent_sp, cand) and
+                            has_path(core_graph, cand, entry_sp)):
+                        edge = _add_edge(cand, entry_sp, core)
                         if edge:
                             dot_graph.add_edge(edge)
-                        else:
-                            print("Nothing added", file=sys.stderr)
-                    if invalid:
-                        break
-                    handled_cores |= x_cores
-                    if len(cores - handled_cores) == 0:
-                        break
 
     for edge in en2ex.edges():
         src = edge.source()
