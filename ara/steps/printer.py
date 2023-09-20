@@ -252,6 +252,7 @@ def reduced_mstg_to_dot(mstg, cfg, label="MSTG"):
                 # We therefore also check the metastates for each core.
                 handled_cores = set()
                 for x in path[1:]:
+                    # just handle exit sync points
                     if mstg.vp.type[x] == StateType.entry_sync:
                         continue
                     x_cores = core_map[int(x)] & cores
@@ -281,7 +282,7 @@ def reduced_mstg_to_dot(mstg, cfg, label="MSTG"):
 
     for edge in en2ex.edges():
         src = edge.source()
-        if (src.out_degree() > 1):
+        if src.out_degree() > 1:
             dot_graph.add_edge(pydot.Edge(_to_str(src),
                                           _to_str(edge.target())))
 
