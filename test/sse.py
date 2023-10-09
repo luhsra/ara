@@ -6,10 +6,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 # Note: init_test must be imported first
-from init_test import init_test, fail_if
+from init_test import init_test, fail_if_json_not_equal
 
 import json
-import difflib
 import sys
 
 
@@ -32,7 +31,7 @@ def _get_trace(sstg, v):
     start = sstg.vertex(sstg.gp.start)
     if v == start:
         return ("Start",)
-    assert(False)
+    assert False
 
 
 def _to_tuple(t):
@@ -63,7 +62,7 @@ def main():
     states = [(idx, obj, vert) for idx, (obj, vert) in enumerate(verts)]
     trace["vertices"] = tuple([(idx, obj) for idx, obj, _ in states])
 
-    edge_map = dict([(vert, idx) for idx, _, vert in states])
+    edge_map = {vert: idx for idx, _, vert in states}
 
     edges = []
     for e in sstg.edges():
@@ -74,12 +73,7 @@ def main():
 
     dt = _dump_trace(trace)
     print(dt, file=sys.stderr)
-    with open(sys.argv[1]) as f:
-        golden_trace = f.readlines()
-    sys.stderr.writelines(difflib.unified_diff(golden_trace, dt.splitlines(True)))
-
-    fail_if(_to_tuple(data.data["vertices"]) != trace["vertices"])
-    fail_if(_to_tuple(data.data["edges"]) != trace["edges"])
+    fail_if_json_not_equal(data.data, trace)
 
 
 if __name__ == '__main__':
