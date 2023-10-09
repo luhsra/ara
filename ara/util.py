@@ -14,9 +14,13 @@ import sys
 import logging
 import re
 import functools
+import pprint
 
 from inspect import Parameter, signature
 from itertools import tee, chain, repeat
+
+import graph_tool
+
 from graph_tool.topology import shortest_path
 
 LEVEL = {"critical": logging.CRITICAL,
@@ -305,3 +309,43 @@ def debug_log(original_function=None, *,
         return _decorate(original_function)
 
     return _decorate
+
+
+def prettify(obj):
+    """Return an arbitrary object as prettyfied string."""
+    from .graph import CFG, InstanceGraph
+    from .os.os_base import CPUList
+
+    class ARAPrinter(pprint.PrettyPrinter):
+        def __init__(self, *args, **kwargs):
+            self._dispatch = {**pprint.PrettyPrinter._dispatch}
+
+            # own types
+            self._dispatch[CFG.__repr__] = ARAPrinter._pprint_cfg
+            self._dispatch[InstanceGraph.__repr__] = ARAPrinter._pprint_instancegraph
+            self._dispatch[CPUList.__repr__] = ARAPrinter._pprint_cpulist
+
+            super().__init__(*args, **kwargs)
+
+        def _format(self, object, stream, indent, allowance, context, level):
+            # import sys
+            # print("OBJECTTYPE", type(object), file=sys.stderr)
+
+            # graph_tool.Vertex is strange
+            if isinstance(object, graph_tool.Vertex):
+                object = int(object)
+            super()._format(object, stream, indent, allowance, context, level)
+
+        def _pprint_cpulist(self, object, stream, indent, allowance, context, level):
+            stream.write('CPUList([')
+            self._format_items(object, stream, indent + 8, allowance + 1,
+                               context, level)
+            stream.write('])')
+
+        def _pprint_cfg(self, object, stream, *_):
+            stream.write("CFG()")
+
+        def _pprint_instancegraph(self, object, stream, *_):
+            stream.write("InstanceGraph()")
+
+    return ARAPrinter(indent=2).pformat(obj)
