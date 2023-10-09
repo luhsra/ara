@@ -6,11 +6,11 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import os.path
-import sys
-
 # Note: init_test must be imported first
 from init_test import init_test, fail_if_json_not_equal, to_json
+
+import os.path
+import sys
 
 from ara.os.freertos import ISR
 
