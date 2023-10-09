@@ -66,25 +66,8 @@ if get_option('enable_step_tests')
       suite: ['analysis', 'preproc']
     )
 
-    py_spy = find_program('py-spy')
-    foreach mode : ['flowsensitive', 'flowinsensitive', 'mixed']
-      test('profile-instances-' + mode,
-          py_spy,
-          args: [
-            'record', '--native', '-r', '200',
-            '-o', 'profile.' + mode + '.svg',
-            '--',
-            py3_inst.full_path(),
-            files('instances.py'),
-            files('instances.json'),
-            freertos_instances,
-            mode
-          ],
-          env: [python_path, 'RUST_LOG=debug'],
-          depends: ara_py,
-          suite: ['analysis', 'sia', 'profiling']
-      )
 
+    foreach mode : ['flowsensitive', 'flowinsensitive', 'mixed']
       test('instances-' + mode,
           py3_inst,
           args: [
