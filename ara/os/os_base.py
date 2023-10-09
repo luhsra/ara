@@ -109,6 +109,12 @@ class CrossCoreAction(Exception):
         self.cpu_ids = cpu_ids
 
 
+class InterruptMissing(Exception):
+    """The OS must modify interrupt handling but it is missing in the state."""
+    def __init__(self, irq_vertex):
+        self.irq_vertex = irq_vertex
+
+
 @dataclass()
 class ControlContext:
     """Changing context for a ControlInstance"""
@@ -153,7 +159,7 @@ class ControlInstance(CPUBounded):
     function: graph_tool.Vertex
 
 
-@dataclass
+@dataclass(kw_only=True)
 class IRQ(ControlInstance):
     """Full qualified IRQ.
 
@@ -162,6 +168,8 @@ class IRQ(ControlInstance):
     """
     id: int
     name: str
+    isr_handler: int  # node in the instance graph that handles this IRQ
+    active: bool
 
     def __hash__(self):
         # the id should be unique already
@@ -206,6 +214,29 @@ class CPU:
         return hash((self.irq_on, ci, abb, self.call_path, self.exec_state))
 
 
+@dataclass
+class IRQCPU(CPU):
+    irq: IRQ
+    reference_cpu_id: int
+
+    def __hash__(self):
+        return hash((self.irq, super().__hash__()))
+
+    def copy(self):
+        new_ac = None if not self.analysis_context else self.analysis_context.copy()
+        return IRQCPU(id=self.id,
+                      irq_on=self.irq_on,
+                      control_instance=self.control_instance,
+                      abb=self.abb,
+                      call_path=copy.copy(self.call_path),
+                      analysis_context=new_ac,
+                      exec_state=self.exec_state,
+                      irq=self.irq,
+                      reference_cpu_id=self.reference_cpu_id)
+
+
+
+
 _state_id = 0
 def _get_id():
     global _state_id
@@ -213,7 +244,7 @@ def _get_id():
     return _state_id
 
 
-@dataclass
+@dataclass(kw_only=True)
 class OSState:
     id: int = field(init=False, default_factory=_get_id)
     cpus: CPUList
@@ -316,20 +347,6 @@ class OSBase(metaclass=OSCreator):
         Arguments:
         cfg       -- the control flow graph
         instances -- the already detected global instances
-        """
-        raise NotImplementedError
-
-    @staticmethod
-    def get_interrupts(instances, cfg=None):
-        """Get all interrupts that lead to an OS action.
-
-        If a CFG is provided, the OS model returns full classified interrupts
-        of type IRQ. Especially this is a control instance and provides a fake
-        function which provides the control flow of the interrupt.
-
-        May raise an NotOSHandledInterrupts exception, if necessary and only
-        instances is given. When called again with an appropriate CFG, the
-        function fills the interrupt instances accordingly.
         """
         raise NotImplementedError
 

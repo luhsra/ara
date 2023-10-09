@@ -6,6 +6,9 @@
 import math
 
 from ara.graph import NodeLevel, ABBType, CFType
+from ara.util import get_child_logger_or_none
+
+from .os_base import IRQCPU, TaskStatus, ExecState
 
 
 def fake_interrupt_function(cfg, name, iit=0):
@@ -53,3 +56,24 @@ def fake_interrupt_function(cfg, name, iit=0):
     cfg.ep.type[si_i] = CFType.icf
 
     return func_v
+
+
+def irq_schedule(state, logger=None):
+    """Schedule an IRQCPU"""
+    logger = get_child_logger_or_none(logger, "irq_schedule")
+
+    for cpu in filter(lambda x: isinstance(x, IRQCPU),
+                      state.cpus):
+        ctx = state.context[cpu.irq]
+        if ctx.status == TaskStatus.running and cpu.abb is None:
+            # unmask interrupt
+            cpu.abb = ctx.abb
+            cpu.exec_state = ExecState.computation
+            logger.debug("Unmask interrupt %i", cpu.irq.id)
+        elif (ctx.status != TaskStatus.running and
+                cpu.abb is not None):
+            # mask interrupt
+            ctx.abb = cpu.abb
+            cpu.abb = None
+            cpu.exec_state = ExecState.idle
+            logger.debug("Mask interrupt %i", cpu.irq.id)

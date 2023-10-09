@@ -23,6 +23,9 @@ from .step import Step
 
 import ara.os.autosar as _autosar
 
+from ara.os.os_base import IRQ
+from ara.os.interrupts import fake_interrupt_function
+
 
 
 class LoadOIL(Step):
@@ -327,6 +330,33 @@ class LoadOIL(Step):
                 # trigger other steps
                 self._step_manager.chain_step({"name": "Syscall",
                                                "entry_point": i_function_name})
+
+        # artificial IRQ objects
+        for v, obj in chain(instances.get(_autosar.Alarm),
+                            instances.get(_autosar.ISR)):
+            func_v = fake_interrupt_function(cfg, obj.name)
+            active = True
+            if isinstance(obj, _autosar.Alarm):
+                active = obj.autostart
+            irq = IRQ(
+                id=v,
+                name=f"IRQ {obj.name}",
+                isr_handler=v,
+                active=active,
+                cpu_id=obj.cpu_id,
+                cfg=cfg,
+                artificial=True,
+                function=func_v,
+            )
+            irq_v = instances.add_vertex()
+            instances.vp.obj[irq_v] = irq
+            instances.vp.label[irq_v] = irq.name
+            instances.vp.id[irq_v] = f"{irq.name}.{v}"
+            instances.vp.is_control[irq_v] = True
+            instances.add_edge(irq_v, v)
+            e = self._add_edge(instances, irq_v, v)
+            instances.ep.label[e] = "interrupts"
+            instances.ep.type[e] = _autosar.InstanceEdge.interrupts
 
         self._log.debug(
             "find_instance_by_name " f"{find_instance_by_name.cache_info()}"

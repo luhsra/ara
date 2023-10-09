@@ -21,15 +21,31 @@ from graph_tool.search import dfs_iterator
 import pyllco
 
 from ara.util import get_logger, has_path
-from ara.graph import (CallPath, SyscallCategory, SigType, single_check,
-                       edge_types)
+from ara.graph import CallPath, SyscallCategory, SigType, single_check, edge_types
 
-from .os_util import (syscall, Arg, set_next_abb, connect_from_here,
-                      find_instance_node, Parenthesis)
-from .os_base import (OSBase, OSState, CPUList, CPU, ControlInstance,
-                      TaskStatus, ControlContext, CrossCoreAction,
-                      ExecState, CPUBounded, IRQ)
-from .interrupts import fake_interrupt_function
+from .os_util import (
+    syscall,
+    Arg,
+    set_next_abb,
+    connect_from_here,
+    find_instance_node,
+    Parenthesis,
+)
+from .os_base import (
+    OSBase,
+    OSState,
+    CPUList,
+    CPU,
+    ControlInstance,
+    TaskStatus,
+    ControlContext,
+    CrossCoreAction,
+    ExecState,
+    CPUBounded,
+    IRQ,
+    IRQContext,
+    InterruptMissing,
+)
 
 TASK_PREFIX = "AUTOSAR_TASK_"
 ALARM_PREFIX = "AUTOSAR_ALARM_"
@@ -62,6 +78,7 @@ class InstanceEdge(IntEnum):
     release = 1 << 8
     sete = 1 << 9
     wait = 1 << 10
+    interrupts = 1 << 11
 
 
 @dataclass(eq=False)
@@ -362,6 +379,12 @@ class AUTOSAR(OSBase):
                 dyn_prio=[prio],
             )
 
+        for v, obj in instances.get(Alarm):
+            if obj.autostart:
+                state.context[obj] = AlarmContext(
+                    active=True, cycle=obj.cycletime, increment=obj.alarmtime
+                )
+
         for _, obj in instances.get(ISR):
             state.context[obj] = ISRContext(
                 status=TaskStatus.suspended,
@@ -370,19 +393,18 @@ class AUTOSAR(OSBase):
                 dyn_prio=[max_prio + obj.priority],
             )
 
+        for _, obj in instances.get(IRQ):
+            status = TaskStatus.running if obj.active else TaskStatus.blocked
+            abb = cfg.get_entry_abb(obj.function)
+            state.context[obj] = IRQContext(
+                status=status, abb=abb, call_path=CallPath(), dyn_prio=[1]
+            )
+
         for task in running_tasks:
             ctx = state.context[task]
             ctx.status = TaskStatus.running
             ctx.abb = None
             ctx.call_path = CallPath()
-
-        for _, alarm in instances.get(Alarm):
-            if alarm.autostart:
-                state.context[alarm] = AlarmContext(
-                        active=True,
-                        cycle=alarm.cycletime,
-                        increment=alarm.alarmtime
-                )
 
         for _, spinlock in instances.get(Spinlock):
             state.context[spinlock] = SpinlockContext()
@@ -414,10 +436,7 @@ class AUTOSAR(OSBase):
     def handle_irq(graph, state, cpu_id, irq):
         # we handle alarms and ISRs
         instances = state.instances
-        if isinstance(irq, IRQ):
-            irq = irq.id
-        vertex = instances.vertex(irq)
-        obj = instances.vp.obj[vertex]
+        obj = instances.vp.obj[irq.isr_handler]
 
         activates = edge_types(instances, instances.ep.type, InstanceEdge.activate)
         event_tgt = edge_types(instances, instances.ep.type, InstanceEdge.have)
@@ -435,7 +454,7 @@ class AUTOSAR(OSBase):
             alarm_ctx = state.context.get(obj, False)
             # TODO interarrival times
             if alarm_ctx and alarm_ctx.active:
-                acty_vertex = single_check(activates.vertex(vertex).out_neighbors())
+                acty_vertex = single_check(activates.vertex(irq.isr_handler).out_neighbors())
                 acty = instances.vp.obj[acty_vertex]
                 if isinstance(acty, Task):
                     # do not trigger alarms, if in handling task or taskgroup
@@ -492,28 +511,6 @@ class AUTOSAR(OSBase):
             )
             return [new_state]
         return []
-
-    @staticmethod
-    def get_interrupts(instances, cfg=None):
-        interrupts = []
-        for v, obj in chain(instances.get(Alarm), instances.get(ISR)):
-            if cfg:
-                func_v = fake_interrupt_function(cfg, obj.name)
-                irq = IRQ(id=v,
-                          name=f"IRQ {obj.name}",
-                          cpu_id=obj.cpu_id,
-                          cfg=cfg,
-                          artificial=True,
-                          function=func_v)
-                irq_v = instances.add_vertex()
-                instances.vp.obj[irq_v] = irq
-                instances.vp.label[irq_v] = irq.name
-                instances.vp.id[irq_v] = f"{irq.name}.{v}"
-                instances.vp.is_control[irq_v] = True
-                interrupts.append(irq)
-            else:
-                interrupts.append(v)
-        return interrupts
 
     @staticmethod
     def interpret(graph, state, cpu_id, categories=SyscallCategory.every):
@@ -581,6 +578,9 @@ class AUTOSAR(OSBase):
         cpu_map = defaultdict(list)
         for v in state.instances.get_controls().vertices():
             obj = state.instances.vp.obj[v]
+            # we do not handle IRQs here
+            if isinstance(obj, IRQ):
+                continue
             if obj.cpu_id in cpus:
                 status = state.context[obj].status
                 if status in [TaskStatus.running, TaskStatus.ready]:
@@ -1053,6 +1053,20 @@ class AUTOSAR(OSBase):
         )
         return state
 
+    @staticmethod
+    def check_and_get_irq_ctx(state, isr_v):
+        # get IRQ
+        t_graph = state.instances.edge_type(InstanceEdge.interrupts)
+        irq_v = single_check(t_graph.vertex(isr_v).in_neighbors())
+        irq = state.instances.vp.obj[irq_v]
+
+        # try to get IRQContext
+        try:
+            ctx = state.context[irq]
+        except KeyError:
+            raise InterruptMissing(irq_v)
+        return ctx
+
     @syscall(
         categories={SyscallCategory.comm},
         signature=(
@@ -1082,13 +1096,19 @@ class AUTOSAR(OSBase):
         assert isinstance(args.increment, int)
         assert isinstance(args.cycle, int)
 
-        logger.error(repr(args.alarm))
-
-        AUTOSAR.check_cpu(state, args.alarm.cpu_id)
+        alarm_v = state.instances.get_node(args.alarm)
+        irq_ctx = AUTOSAR.check_and_get_irq_ctx(state, alarm_v)
 
         state.context[args.alarm] = AlarmContext(
             increment=args.increment, cycle=args.cycle, active=True
         )
+        irq_ctx.status = TaskStatus.running
+
+        a_vert = find_instance_node(state.instances, args.alarm)
+        connect_from_here(
+            state, cpu_id, a_vert, "CancelAlarm", ty=InstanceEdge.terminate
+        )
+
         return state
 
     @syscall

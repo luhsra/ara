@@ -10,7 +10,7 @@
 """Container for Printer."""
 from ara.graph import (ABBType, CFType, CFGView, MSTType, StateType,
                        single_check, vertex_types)
-from ara.os.os_base import ExecState
+from ara.os.os_base import ExecState, IRQCPU
 
 from .option import Option, String, Choice, Bool
 from .step import Step
@@ -148,7 +148,6 @@ def reduced_mstg_to_dot(mstg, cfg, label="MSTG"):
                 cores.add(cpu_id)
                 cpu_name = f"CPU {cpu_id}"
                 cpu = mstg.vp.state[sync].cpus[cpu_id]
-                from .multisse import IRQCPU
                 if isinstance(cpu, IRQCPU):
                     cpu_name = ("\u26A1" + f"{cpu.reference_cpu_id} " +
                                 f"({cpu_id}, {cpu.irq.name})")

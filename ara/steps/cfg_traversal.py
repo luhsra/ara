@@ -12,7 +12,13 @@ from dataclasses import dataclass
 from ara.graph import SyscallCategory
 from ara.util import get_child_logger_or_none
 from ara.steps.util import is_recursive, is_in_condition, is_usually_taken
-from ara.os.os_base import OSState, CrossCoreAction, ExecState
+from ara.os.os_base import (
+        OSState,
+        CrossCoreAction,
+        IRQ,
+        ExecState,
+        InterruptMissing
+)
 
 
 @dataclass(kw_only=True)
@@ -72,6 +78,14 @@ class Visitor:
         """
         pass
 
+    def interrupt_missing(self, state, irq_vertex):
+        """Handle a missing IRQ.
+
+        state      -- the state, which triggers the action
+        irq_vertex -- the affected IRQ in the instance graph
+        """
+        pass
+
     def next_step(self, state_id):
         pass
 
@@ -96,9 +110,6 @@ class _SSERunner:
         self._cond_func = {}
         self._ut_func = {}
         self._loop_func = {}
-
-        if self._visitor.HANDLE_INTERRUPTS:
-            self._available_irqs = self._os.get_interrupts(graph.instances)
 
     def _fail(self, msg, error=RuntimeError):
         """Print msg to as error and raise error."""
@@ -168,14 +179,15 @@ class _SSERunner:
             return []
 
         irq_states = []
-        for irq in self._available_irqs:
+        for _, irq in state.instances.get(IRQ):
             try:
                 i_st = self._os.handle_irq(self._graph, state, cpu.id, irq)
                 if i_st is not None:
                     irq_states.append(i_st)
             except CrossCoreAction as cca:
-                self._log.debug(f"Cross core action for IRQ {irq} (CPUs: "
-                                f"{cca.cpu_ids}).")
+                self._log.error(f"Cross core action for IRQ {irq} (CPUs. "
+                                f"{cca.cpu_ids}). This should not happen")
+                raise cca
                 self._visitor.cross_core_action(state, cca.cpu_ids, irq=irq)
                 # end analysis on this path
                 return []
@@ -222,6 +234,12 @@ class _SSERunner:
             except CrossCoreAction as cca:
                 self._log.debug(f"Got cross core action (CPUs: {cca.cpu_ids}).")
                 self._visitor.cross_core_action(state, cca.cpu_ids)
+                # end analysis on this path
+                return []
+            except InterruptMissing as inm:
+                self._log.debug("Got a missing irq for isr %s",
+                                inm.irq_vertex)
+                self._visitor.interrupt_missing(state, inm.irq_vertex)
                 # end analysis on this path
                 return []
 
@@ -311,11 +329,12 @@ class _SSERunner:
     def run(self):
         init_state = self._visitor.get_initial_state()
         self._set_context_caches(init_state, init_state.cpus.one().call_path)
+        cpu = init_state.cpus.one()
         stack = [init_state]
 
         counter = 0
         while stack:
-            self._log.debug(f"Local SSE: Round {counter:3d}, "
+            self._log.debug(f"Local SSE (CPU {cpu.id}): Round {counter:3d}, "
                             f"Stack with {len(stack)} state(s)")
             state = stack.pop(0)
             for new_state in self._system_semantic(state):

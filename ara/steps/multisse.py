@@ -10,6 +10,7 @@ import copy
 import os.path
 
 from collections import defaultdict
+from copy import copy
 from dataclasses import dataclass, field
 from functools import reduce
 from itertools import chain, islice, pairwise
@@ -17,14 +18,14 @@ from typing import List, Dict, Set
 
 import graph_tool
 
-from graph_tool.topology import all_paths, shortest_path
+from graph_tool.topology import all_paths
 
-from ara.graph import (MSTGraph, StateType, MSTType, CallPath, single_check,
-                       edge_types)
+from ara.graph import MSTGraph, StateType, MSTType, single_check, edge_types
 from ara.util import has_path
-from ara.os.os_base import (OSState, CPUList, CPU, IRQ, CrossCoreAction,
-                            IRQContext, TaskStatus)
+from ara.os.os_base import (OSState, CPUList, IRQ, CrossCoreAction,
+                            TaskStatus, IRQCPU)
 from ara.os.os_util import set_next_abb
+from ara.os.interrupts import irq_schedule
 
 from .option import Option, String, Bool
 from .step import Step
@@ -52,27 +53,6 @@ class NewNodeReevaluation:
 class NewEdgeReevaluation:
     """Store necessary data for the reevaluation of a new edge."""
     root: graph_tool.Vertex  # the root sync point
-
-
-@dataclass
-class IRQCPU(CPU):
-    irq: IRQ
-    reference_cpu_id: int
-
-    def __hash__(self):
-        return hash((self.irq, super().__hash__()))
-
-    def copy(self):
-        new_ac = None if not self.analysis_context else self.analysis_context.copy()
-        return IRQCPU(id=self.id,
-                      irq_on=self.irq_on,
-                      control_instance=self.control_instance,
-                      abb=self.abb,
-                      call_path=copy.copy(self.call_path),
-                      analysis_context=new_ac,
-                      exec_state=self.exec_state,
-                      irq=self.irq,
-                      reference_cpu_id=self.reference_cpu_id)
 
 
 @dataclass
@@ -224,26 +204,27 @@ class MultiSSE(Step):
         cpu_idx = max([x.id for x in os_state.cpus]) + 1
         instances = os_state.instances
         # add interrupts
-        for irq in self._graph.os.get_interrupts(instances,
-                                                 cfg=self._graph.cfg):
+        for _, irq in instances.get(IRQ):
             # every irq gets an own CPU
-            cur_abb = self._graph.cfg.get_entry_abb(irq.function)
+            ctx = os_state.context[irq]
+            if ctx.status == TaskStatus.running:
+                exec_state = CrossExecState.computation
+                cur_abb = ctx.abb
+            else:
+                exec_state = CrossExecState.idle
+                cur_abb = None
             irq_cpu = IRQCPU(id=cpu_idx,
                              irq=irq,
                              reference_cpu_id=irq.cpu_id,
-                             irq_on=True,
+                             irq_on=False,
                              control_instance=instances.get_node(irq),
                              abb=cur_abb,
-                             call_path=CallPath(),
-                             exec_state=CrossExecState.computation,
+                             call_path=copy(ctx.call_path),
+                             exec_state=exec_state,
                              analysis_context=None)
             os_state.cpus[irq_cpu.id] = irq_cpu
+            # reassign irq
             irq.cpu_id = irq_cpu.id
-            irq_ctx = IRQContext(status=TaskStatus.running,
-                                 abb=None,  # already "coded" in the CPU
-                                 call_path=CallPath(),
-                                 dyn_prio=[1])
-            os_state.context[irq] = irq_ctx
             cpu_idx += 1
 
         # initial sync point
@@ -330,7 +311,27 @@ class MultiSSE(Step):
                 cross_syscalls.append(v)
 
             @staticmethod
+            def interrupt_missing(state, irq_vertex):
+                # in the MultiSSE, solve the IRQ handling by pairing with the
+                # appropriate IRQCPU
+                irq = state.instances.vp.obj[irq_vertex]
+                ids = [irq.cpu_id]
+                # it may be that the action configures an interrupt on another
+                # core so we need to include that core, too
+                isr_id = state.instances.vp.obj[irq.isr_handler].cpu_id
+                if isr_id != cpu_id:
+                    ids.append(isr_id)
+                v = self._state_map[hash(state)]
+                self._mstg.cross_core_map[v] = ids
+                self._mstg.type_map[v] = CrossExecState.cross_syscall
+                cross_syscalls.append(v)
+
+            @staticmethod
             def schedule(new_state):
+                if isinstance(new_state.cpus[cpu_id], IRQCPU):
+                    # do nothing in single core case
+                    return
+
                 return self._graph.os.schedule(new_state, [cpu_id])
 
             @staticmethod
@@ -769,6 +770,18 @@ class MultiSSE(Step):
 
         return new_sp
 
+    def _schedule(self, state):
+        """Combined schedule of CPUs and IRQCPUs.
+
+        The OS model cannot schedule IRQCPUs, thus we need to handle them
+        separately. This function calls the OS model's schedule function for
+        normal CPUs, and irq_schedule for IRQCPUs.
+        """
+        irq_schedule(state, logger=self._log)
+        ids = [cpu.id for cpu in state.cpus
+               if not isinstance(cpu, IRQCPU)]
+        self._graph.os.schedule(state, cpus=ids)
+
     def _evaluate_syncpoint(self, sp, cpu_id, multi_state,
                             irq_exit_state=None):
         """Evaluate an entry sync point.
@@ -776,6 +789,12 @@ class MultiSSE(Step):
         The algorithm in principle works as following:
         Interpret the state if necessary.
         Make an exit sync point of every outcome.
+
+        For IRQs there is a short path. IRQs needs to be evaluated beforehand
+        to get the information if they need further pairing with other CPUs
+        (for example an ActivateTask on another CPU than the one that triggered
+        the interrupt). In that case, the already evaluated `irq_exit_state` is
+        given to this function.
 
         Return a list of exit sync points.
         """
@@ -789,7 +808,9 @@ class MultiSSE(Step):
             new_states = [irq_exit_state]
         else:
             for new_state in os.interpret(self._graph, multi_state, cpu_id):
-                os.schedule(new_state)
+                # some syscalls can have an effect on the IRQs
+                # we need to handle this specially for the IRQ cores
+                self._schedule(new_state)
                 new_states.append(new_state)
 
         # add follow up sync points for the outcome
@@ -994,12 +1015,12 @@ class MultiSSE(Step):
                                                            sc_cpu.reference_cpu_id,
                                                            sc_cpu.irq)
                             if irq_exit_state is None:
-                                # just skip the rest, the interrupt does not
-                                # do anything, so we omit the SP
+                                self._log.info("IRQ %s cannot be handled.",
+                                               sc_cpu.irq.id)
                                 continue
                             # advance the virtual interrupt CPU
                             set_next_abb(irq_exit_state, sc_cpu.id)
-                            os.schedule(irq_exit_state)
+                            self._schedule(irq_exit_state)
                         except CrossCoreAction as cca:
                             # we need other pairing partners
                             ccm = self._mstg.cross_core_map
@@ -1020,6 +1041,7 @@ class MultiSSE(Step):
 
                     new_sp = self._create_sync_point(
                         multi_state, cross_state, cands.candidates, root_sp, cands.pred_sps)
+                    self._log.debug("New entry sp %d", int(new_sp))
                     exits += self._evaluate_syncpoint(new_sp, sc_cpu.id,
                                                       multi_state,
                                                       irq_exit_state=irq_exit_state)
@@ -1201,8 +1223,8 @@ class MultiSSE(Step):
                                 "reevaluation.")
                 continue
 
-            # if counter == 70:
-            #     self._fail("foo")
+            # if counter == 4:
+            #     break
             msg = " Already handled." if int(sp) in already_handled_sps else ""
             self._log.info(
                 f"Round {counter:3d}, handle SP {int(sp)}. "
