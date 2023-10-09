@@ -14,7 +14,7 @@
 #ifndef GIC_H_
 #define GIC_H_
 
-#include "autosar/util/inline.h"
+#include "util/inline.h"
 #include "machine.h"
 #include "platform.h"
 #include "stdint.h"
