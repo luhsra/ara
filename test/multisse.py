@@ -77,7 +77,8 @@ def _add_debug_config(config):
              "extra_steps": ["DumpCFG", "DumpCallgraph", "DumpInstances"],
              "extra_config": {
                  "MultiSSE": {"dump": True, "log_level": "debug",
-                              "per_round_dump": True},
+                              "per_round_dump": True,
+                              "log_single_core_transitions": True},
                  "CreateABBs": {"dump": True, "log_level": "debug"},
                  "LoadOIL": {"dump": True, "log_level": "debug"},
                  "logger": {"AUTOSAR": "debug"}}}

@@ -178,6 +178,13 @@ class MultiSSE(Step):
                             ty=Bool(),
                             default_value=False)
 
+    log_single_core_transitions = Option(
+        name="log_single_core_transitions",
+        help="Log SSE transitions (logging in cfg_traversal.py)",
+        ty=Bool(),
+        default_value=False
+    )
+
     def get_single_dependencies(self):
         if self._graph.os is None:
             return ["SysFuncts"]
@@ -387,11 +394,16 @@ class MultiSSE(Step):
 
         to_assign_states.add(init_v)
 
+        if self.log_single_core_transitions.get():
+            sub_log = self._log
+        else:
+            sub_log = None
+
         run_sse(
             self._graph,
             IRQOS,
             visitor=SSEVisitor(),
-            # logger=self._log,
+            logger=sub_log,
         )
 
         mstg = self._mstg.g
