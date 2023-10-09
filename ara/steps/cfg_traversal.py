@@ -10,7 +10,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 
 from ara.graph import SyscallCategory
-from ara.util import get_null_logger
+from ara.util import get_child_logger_or_none
 from ara.steps.util import is_recursive, is_in_condition, is_usually_taken
 from ara.os.os_base import OSState, CrossCoreAction, ExecState
 
@@ -334,8 +334,7 @@ class _SSERunner:
 def run_sse(graph, os, visitor=Visitor(), logger=None):
     # we new a lot of state during the analyiss, so pass the handling to an
     # object that can hold the data
-    if logger is None:
-        logger = get_null_logger()
+    logger = get_child_logger_or_none(logger, "cfg_trav")
     runner = _SSERunner(graph=graph, os=os, logger=logger,
                         visitor=visitor)
     return runner.run()

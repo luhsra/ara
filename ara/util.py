@@ -175,6 +175,13 @@ def get_null_logger():
     return null
 
 
+def get_child_logger_or_none(logger, name):
+    """Return either a child logger or none."""
+    if logger is None:
+        return get_null_logger()
+    return logger.getChild(name)
+
+
 def init_logging(level=logging.DEBUG, max_stepname=20, root_name='root',
                  werr=False):
     """Init logging with color and timestamps.
