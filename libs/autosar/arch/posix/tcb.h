@@ -173,7 +173,7 @@ namespace arch {
 				if (old->basic_task) {
 					// We switch away from the basic stack. Therefore we have
 					// to reset the shared stack pointer.
-					old->sp = (void*)((int)old->basic_task_frame_pointer());
+					old->sp = (void*) old->basic_task_frame_pointer();
 				}
 				set_running();
 				// Lets go to an extended stack
