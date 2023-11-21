@@ -277,34 +277,6 @@ freertos_examples = run_target('freertos-examples',
                                command: nop,
                                depends: freertos_targets)
 
-# OSEK examples
-
-osek_includes = ['-I', join_paths(meson.current_source_dir(), 'OSEK', 'source', 'os')]
-osek_folder = 'OSEK'
-
-osek_targets = []
-foreach app : [['a',                     'a.oil'],
-               ['b',                     'oilfile.oil'],
-               ['c',                     'oilfile.oil'],
-               ['coptermok',             'coptermok.oil'],
-               ['copter-without-alarms', 'copter-without-alarms.oil'],
-               ['oiltest',               'oiltest.oil']]
-  app_vanilla_ll = custom_target('osek-' + app[0],
-                            input : [join_paths([osek_folder, app[0] + '.cc'])],
-                            output : ['osek-' + app[0] + '.ll'],
-                            depfile : 'osek-' + app[0] + '.ll.dep',
-                            command : clang_cpp +
-                                      libs_includes +
-                                      ir_flags +
-                                      clang_flags)
-    set_variable('osek_' + app[0].underscorify(), [app_vanilla_ll, files(join_paths([osek_folder, app[1]]))])
-    osek_targets += app_vanilla_ll
-endforeach
-
-osek_examples = run_target('osek-examples',
-                           command: nop,
-                           depends: osek_targets)
-
 # AUTOSAR examples
 subdir('AUTOSAR')
 
