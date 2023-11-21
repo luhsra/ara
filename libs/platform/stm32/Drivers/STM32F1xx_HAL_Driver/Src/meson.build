@@ -24,6 +24,7 @@ foreach src : src_files
                              command: clang_c+
                                       libs_includes +
                                       ld_flags +
+                                      arm_ld_flags +
                                       obj_flags +
                                       clang_flags)
   obj_targets += obj_target
@@ -33,6 +34,6 @@ endforeach
 libstm_hal_target = custom_target('stm_hal.ar',
                           input: obj_targets,
                           output: 'libstm_hal.a',
-                          command: ar_cmd)
+                          command: [arm_ar, ar_args])
 
 # ld_flags += ['-Wl,-L' + meson.current_build_dir()]

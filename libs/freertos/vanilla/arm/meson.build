@@ -8,9 +8,10 @@ foreach src : src_files
                              input: src+'.c',
                              output: src+'.c.o',
                              depfile: src+'.dep',
-                             command: clang_c+
+                             command: clang_c +
+                                      arm_clang_flags +
                                       libs_includes +
-                                      freertos_default_config +
+                                      arm_freertos_default_config +
                                       ld_flags +
                                       obj_flags +
                                       clang_flags)

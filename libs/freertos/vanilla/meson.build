@@ -1,3 +1,6 @@
+# currently, we support only ARM compilation
+# TODO refactor to also support other architectures
+# TODO merge this with https://scm.sra.uni-hannover.de/research/freertos
 src_files = [
   'croutine',
   'event_groups',
@@ -18,9 +21,10 @@ foreach src : src_files
                              input: src+'.c',
                              output: src+'.c.o',
                              depfile: src+'.dep',
-                             command: clang_c+
+                             command: clang_c +
+                                      arm_clang_flags +
                                       libs_includes +
-                                      freertos_default_config +
+                                      arm_freertos_default_config +
                                       obj_flags +
                                       clang_flags)
   obj_targets += obj_target
@@ -39,9 +43,10 @@ foreach src : cpp_src_files
                              input: src+'.cc',
                              output: src+'.cc.o',
                              depfile: src+'.cc.dep',
-                             command: clang_cpp+
+                             command: clang_cpp +
+                                      arm_clang_flags +
                                       libs_includes +
-                                      freertos_default_config +
+                                      arm_freertos_default_config +
                                       obj_flags +
                                       clang_flags)
   obj_targets += obj_target
@@ -50,18 +55,13 @@ foreach src : cpp_src_files
 endforeach
 
 
-if get_option('arch') == 'arm'
-  subdir('arm')
-elif get_option('arch') == 'i386'
-  warning('i396 is not very well supported. problems are likely')
-  subdir('IA32_flat')
-else
-  error('unknown arch')
-endif
+subdir('arm')
+
+# subdir('IA32_flat') <- only a stub
 
 libfreertos_vanilla = custom_target('libfreertos_vanilla.a',
                                     input: obj_targets,
                                     output: 'libfreertos_vanilla.a',
-                                    command: ar_cmd)
+                                    command: [arm_ar, ar_args])
 libfreertos_passthrough = libfreertos_vanilla
 

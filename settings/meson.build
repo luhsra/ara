@@ -32,89 +32,66 @@ ir_flags = ['-S', '-emit-llvm',]
 
 obj_flags = ['-c']
 
-if get_option('arch') == 'i386'
-  clang_flags += '--target=i386-pc-linux-gnu'
-  clang_flags += '-DX86_STUB=1'
-elif get_option('arch') == 'posix'
-  clang_flags += '-m32'
-  clang_flags += '-gdwarf-4' # for valgrind
+# posix
+if enable_posix
+  posix_clang_flags = [
+    '-m32',
+    '-gdwarf-4' # for valgrind
+  ]
   if get_option('debug') == true
-    clang_flags += '-DDEBUG'
+    posix_clang_flags += '-DDEBUG'
   endif
-  ld_flags += [
+  posix_ld_flags = [
     '-lpthread',
     '-lrt',
   ]
-elif get_option('arch') == 'arm'
-  clang_flags += ['--target=' + target_triple,
-                  '-mthumb',
-                  '-mcpu=cortex-m3',
-                  '-march=armv7-m',
-                  '-mfloat-abi=soft',
-                  '-mabi=aapcs',
-                  '-DF_CPU=72000000L',
-                  '-DMCU_STM32F103RB',
-                  '-DSTM32F1',
-                  '-DSTM32F103RB',
-                  '-DSTM32F103xB',
-                  '-fomit-frame-pointer',
-                  '-fno-builtin',
-                  '-fno-threadsafe-statics',
-                  '-fshort-enums',
-                  '--rtlib=libgcc',
-                 ]
-  path_error = '@0@ "@1@" does not exist or is not absolute'
-  foreach include_dir : get_option('arm_include_dirs')
-    # requires meson 0.54
-    # assert(fs.exists(include_dir) and fs.is_absolute(include_dir), path_error.format('arm_include_dir', include_dir))
-    assert(fs.exists(include_dir), path_error.format('arm_include_dir', include_dir))
-    clang_flags += ['-I', include_dir]
-  endforeach
+  posix_ar = toolchains.get_variable('posix_ar')
+endif
 
-  ld_flags += ['-Wl,-Map,@OUTPUT0@.map',
-               '-Wl,--cref',
-               '-fuse-ld=' + ld.path(),
-               '-nostdlib',
-               '-nodefaultlibs',
-               '-lc',
-              ]
-  # external arm dirs
-  found_libc = false
-  foreach link_dir : get_option('arm_link_dirs')
-    # requires meson 0.54
-    # assert(fs.exists(link_dir) and fs.is_absolute(link_dir), path_error.format('arm_link_dir', link_dir))
-    assert(fs.exists(link_dir), path_error.format('arm_link_dir', link_dir))
-    if fs.exists(link_dir / 'libc.a')
-      found_libc = true
-    endif
+if enable_arm
+  arm_triple = toolchains.get_variable('arm_triple')
+  arm_clang_flags = [
+    '--target=' + arm_triple,
+    '-mthumb',
+    '-mcpu=cortex-m3',
+    '-march=armv7-m',
+    '-mfloat-abi=soft',
+    '-mabi=aapcs',
+    '-DF_CPU=72000000L',
+    '-DMCU_STM32F103RB',
+    '-DSTM32F1',
+    '-DSTM32F103RB',
+    '-DSTM32F103xB',
+    '-fomit-frame-pointer',
+    '-fno-builtin',
+    '-fno-threadsafe-statics',
+    '-fshort-enums',
+    '--rtlib=libgcc',
+  ]
+  arm_include_path = toolchains.get_variable('arm_include_path')
+  arm_link_path = toolchains.get_variable('arm_link_path')
 
-    ld_flags += ['-Wl,-L,' + link_dir]
-  endforeach
-  assert(found_libc, 'Do not found libc. Set the arm_link_dirs to v7-m/nofp. Something with a libc.a')
-  # external gcc dir
-  if get_option('arm_gcc_version') == 'default'
-    system_gcc = find_program('arm-none-eabi-gcc')
-    r = run_command(py3_inst, gcc_version, system_gcc.path(), check: true)
-    if r.returncode() != 0
-      error('Cannot extract default GCC option. Consider setting "arm_gcc_version".')
-    endif
-    gcc_arm_version = r.stdout().strip()
-  else
-    gcc_arm_version = get_option('arm_gcc_version')
-  endif
-  libgcc_dir = get_option('arm_gcc_dir').format(gcc_arm_version)
-  # requires meson 0.54
-  # assert(fs.exists(libgcc_dir) and fs.is_absolute(libgcc_dir), path_error.format('arm_gcc_dir', libgcc_dir))
-  assert(fs.exists(libgcc_dir), path_error.format('arm_gcc_dir', libgcc_dir))
-  assert(fs.exists(libgcc_dir), 'arm_gcc_dir is non-existent.')
-  assert(fs.exists(libgcc_dir / 'libgcc.a'), 'libgcc is non-existent. Set the gcc to v7-m/nofp')
-  message('libgcc directory: @0@'.format(libgcc_dir))
-  ld_flags += ['-Wl,-L,' + (libgcc_dir )]
+  llvm_ld = toolchains.get_variable('llvm_ld')
+  arm_ld_flags = [
+    '-Wl,-Map,@OUTPUT0@.map',
+    '-Wl,--cref',
+    '-fuse-ld=' + llvm_ld.path(),
+    '-nostdlib',
+    '-nodefaultlibs',
+    '-lc',
+  ]
 
+  # tools
+  arm_gcc = toolchains.get_variable('arm_gcc')
+  arm_ar = toolchains.get_variable('arm_ar')
+  arm_objcopy = toolchains.get_variable('arm_objcopy')
+  arm_size = toolchains.get_variable('arm_size')
+  arm_nm = toolchains.get_variable('arm_nm')
 
-  llc_flags += ['--frame-pointer=none']
-else
-  error('unknown arch ' + get_option('arch'))
+  libgcc_dir = toolchains.get_variable('libgcc_dir')
+  arm_ld_flags += ['-Wl,-L,' + (libgcc_dir)]
+
+  arm_llc_flags = ['--frame-pointer=none']
 endif
 
 # standard invocations for clang with c and cpp
@@ -129,9 +106,9 @@ clang_c = [clang, clang_base, c_std]
 clang_cpp = [clang, clang_base, cxx_std]
 
 # standard invocations for rest of the toolchain
-ar_cmd = [ar, 'qcs', '@OUTPUT@', '@INPUT@']
+ar_args = ['qcs', '@OUTPUT@', '@INPUT@']
 llc_cmd = [llc, '-filetype=obj', '-o', '@OUTPUT@', '@INPUT@', ] + llc_flags
-objcopy_cmd = [objcopy, '-Obinary', '@INPUT@', '@OUTPUT@']
+objcopy_args = ['-Obinary', '@INPUT@', '@OUTPUT@']
 llvm_link_cmd = [ara_link, '-S', '-o', '@OUTPUT@', '@INPUT@',]
 llvm_opt_cmd = [llvm_opt, '-S', '-o', '@OUTPUT@', '@INPUT@'] + llvm_opt_flags
 

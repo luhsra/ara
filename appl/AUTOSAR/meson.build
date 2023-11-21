@@ -204,6 +204,8 @@ foreach app : autosar_apps
                          output : full_name + '.ll',
                          depfile : full_name + '.ll.dep',
                          command : clang_cpp +
+                                   posix_clang_flags +
+                                   posix_autosar_includes +
                                    autosar_includes +
                                    ir_flags +
                                    clang_flags)
@@ -267,6 +269,8 @@ foreach app : autosar_apps
 
 endforeach
 
+llvm_bindir = toolchains.get_variable('llvm_bindir')
+clang_format = find_program(llvm_bindir / 'clang-format', version: llvm_version)
 autosar_generated_targets = []
 foreach app: autosar_targets
   full_name = app['full_name']
@@ -308,8 +312,7 @@ foreach app: autosar_targets
                            )
 
 
-  if get_option('arch') == 'posix'
-
+  if enable_posix
     out = custom_target(full_name + '_mod',
                         input : app_ll,
                         output : [
@@ -345,14 +348,16 @@ foreach app: autosar_targets
                             input: [
                               app_ll_mod,
                               autosar,
-                              libautosar_test,
-                              libautosar_os,
-                              libautosar_posix,
+                              posix_libautosar_test,
+                              posix_libautosar_os,
+                              posix_libautosar,
                               libautosar_generic
                             ],
                             output : full_name,
                             depfile : full_name + '.dep',
                             command : clang_cpp +
+                                      posix_clang_flags +
+                                      posix_autosar_includes +
                                       autosar_includes +
                                       ld_flags +
                                       clang_flags)

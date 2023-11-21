@@ -1,11 +1,10 @@
 autosar_includes += ['-I', meson.current_source_dir() / 'generic']
 
-if get_option('arch') == 'arm'
+if enable_arm
   subdir('arm')
-elif get_option('arch') == 'posix'
-  subdir('posix')
-else
-  warning('unknown arch')
+endif
+
+if enable_arm
   subdir('posix')
 endif
 

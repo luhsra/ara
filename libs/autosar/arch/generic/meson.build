@@ -14,7 +14,9 @@ foreach src : src_files
         output: src+'.cc.o',
         depfile: src+'.dep',
         command: clang_cpp +
+                posix_clang_flags +
                 autosar_includes +
+                posix_autosar_includes +
                 ld_flags +
                 obj_flags +
                 clang_flags)
@@ -24,4 +26,4 @@ endforeach
 libautosar_generic = custom_target('libautosar_generic',
                                     input: obj_targets,
                                     output: 'libautosar_generic.a',
-                                    command: ar_cmd)
+                                    command: [posix_ar, ar_args])

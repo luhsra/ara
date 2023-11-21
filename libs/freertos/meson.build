@@ -1,5 +1,3 @@
-if get_option('arch') == 'posix'
-  warning('unsupported arch')
-else
+if enable_arm
   subdir('vanilla')
 endif

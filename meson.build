@@ -50,13 +50,14 @@ endif
 llvm_version = ['>=14', '<15']
 llvm_dep = dependency('llvm', method: 'config-tool', version: llvm_version, include_type: 'system')
 
-llvm_bindir = llvm_dep.get_variable(configtool: 'bindir')
-clang = find_program(llvm_bindir / 'clang', version: llvm_version)
-clang_format = find_program(llvm_bindir / 'clang-format', version: llvm_version)
-llc = find_program(llvm_bindir / 'llc', version: llvm_version)
-llvm_dis = find_program(llvm_bindir / 'llvm-dis', version: llvm_version)
-llvm_link = find_program(llvm_bindir / 'llvm-link', version: llvm_version)
-llvm_opt = find_program(llvm_bindir / 'opt', version: llvm_version)
+toolchains = subproject('toolchains')
+enable_arm = toolchains.get_variable('enable_arm')
+enable_posix = toolchains.get_variable('enable_posix')
+
+clang = toolchains.get_variable('clang')
+llc = toolchains.get_variable('llc')
+llvm_dis = toolchains.get_variable('llvm_dis')
+llvm_opt = toolchains.get_variable('llvm_opt')
 
 boost_dep = dependency('boost', modules: ['graph', 'python' + py3_inst.language_version().replace('.', '')])
 graph_tool_dep = dependency('graph-tool-py' + py3_inst.language_version(), include_type: 'system')
@@ -105,34 +106,34 @@ st_flash = find_program('st-flash', required: false, disabler: true)
 sed = find_program('sed')
 
 ## arch specific build tools
-if get_option('arch') == 'i386'
-    target_triple='x86_64-linux-gnu'
-elif get_option('arch') == 'arm'
-    target_triple = 'arm-none-eabi'
-elif get_option('arch') == 'posix'
-    target_triple = 'posix'
-else
-    error('unknown arch ' + get_option('arch'))
-endif
+# if get_option('arch') == 'i386'
+#     target_triple='x86_64-linux-gnu'
+# elif get_option('arch') == 'arm'
+#     target_triple = 'arm-none-eabi'
+# elif get_option('arch') == 'posix'
+#     target_triple = 'posix'
+# else
+#     error('unknown arch ' + get_option('arch'))
+# endif
 
 if not get_option('execute_ara') and get_option('enable_generator_tests')
   error('execute_ara has to be true to set enable_generator_tests')
 endif
 
-arch_error = 'Do you have an @0@ toolchain? Otherwise consider to switch to another architecture. See the "arch" config option for that.'
-
-foreach prog_name : ['ar', 'objcopy', 'size', 'nm', 'ld', 'objdump']
-    if target_triple == 'posix'
-        full_prog_name = prog_name
-    else
-        full_prog_name = target_triple + '-' + prog_name
-    endif
-    prog = find_program(full_prog_name, required: false)
-    if not prog.found()
-        error(arch_error.format(get_option('arch').to_upper()))
-    endif
-    set_variable(prog_name, prog)
-endforeach
+# arch_error = 'Do you have an @0@ toolchain? Otherwise consider to switch to another architecture. See the "arch" config option for that.'
+#
+# foreach prog_name : ['ar', 'objcopy', 'size', 'nm', 'ld', 'objdump']
+#     if target_triple == 'posix'
+#         full_prog_name = prog_name
+#     else
+#         full_prog_name = target_triple + '-' + prog_name
+#     endif
+#     prog = find_program(full_prog_name, required: false)
+#     if not prog.found()
+#         error(arch_error.format(get_option('arch').to_upper()))
+#     endif
+#     set_variable(prog_name, prog)
+# endforeach
 
 # all dependencies found, build the actual program
 
@@ -231,11 +232,7 @@ subdir('startup')
 # Attention: The include order is important here.
 subdir('settings') # generic settings
 subdir('libs') # build libs such as osek/freertos/stm32-init
-if get_option('arch') == 'posix'
-    subdir('appl' / 'AUTOSAR')
-else
-    subdir('appl')
-endif
+subdir('appl')
 subdir('test')
 
 # application tests
