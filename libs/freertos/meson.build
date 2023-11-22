@@ -1,3 +1,3 @@
-if enable_arm
+if arm_enabled
   subdir('vanilla')
 endif

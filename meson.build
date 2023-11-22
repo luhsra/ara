@@ -51,8 +51,8 @@ llvm_version = ['>=14', '<15']
 llvm_dep = dependency('llvm', method: 'config-tool', version: llvm_version, include_type: 'system')
 
 toolchains = subproject('toolchains')
-enable_arm = toolchains.get_variable('enable_arm')
-enable_posix = toolchains.get_variable('enable_posix')
+arm_enabled = toolchains.get_variable('arm_enabled')
+posix_enabled = toolchains.get_variable('posix_enabled')
 
 clang = toolchains.get_variable('clang')
 llc = toolchains.get_variable('llc')

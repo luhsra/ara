@@ -15,7 +15,7 @@ test_dir = meson.current_source_dir()
 if get_option('enable_step_tests')
   dummy = files('empty.json')
 
-  if enable_arm
+  if arm_enabled
     test('create-abbs',
       py3_inst,
       args: [files('abb.py'), files('abb.json'), freertos_abb_merge],
@@ -279,7 +279,7 @@ if get_option('enable_step_tests')
   endforeach
 
   # system runtime test for generator
-  if enable_posix
+  if posix_enabled
     supported = [
       'bcc1/alarm1',
       'bcc1/alarm2',

@@ -16,7 +16,7 @@ dump_cmds = files('dump_cmds.py')
 ctimeout = files('ctimeout')
 get_all_ara_python_files = files('get_all_ara_python_files.py')
 
-if enable_arm
+if arm_enabled
   qemu_cmd = files('qemu_stm32.sh')
   gdb_qemu_cmd = files('gdb_qemu_stm32.sh')
 else

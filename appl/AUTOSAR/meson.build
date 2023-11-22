@@ -312,7 +312,7 @@ foreach app: autosar_targets
                            )
 
 
-  if enable_posix
+  if posix_enabled
     out = custom_target(full_name + '_mod',
                         input : app_ll,
                         output : [

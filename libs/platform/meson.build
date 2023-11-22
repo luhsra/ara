@@ -1,6 +1,6 @@
 lib_platform_src_files = []
 libplatform_includes = []
-if enable_arm
+if arm_enabled
   subdir('stm32')
   libplatform_target = custom_target('libplatform.a',
                                      input: lib_platform_targets,

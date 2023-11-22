@@ -5,7 +5,7 @@ ShowGenericTimingExperiment = files('make_figures.py')
 InstanceGraphExperiment = files('instance_graph_experiment.py')
 
 
-if enable_arm
+if arm_enabled
   ## FreeRTOS apps, we build them currently with an ARM toolchain
 
   app_flags = ['-DconfigINCLUDE_ALL_DECLS=1']
@@ -284,7 +284,7 @@ endif
 
 # AUTOSAR examples
 # it is POSIX only currently
-if enable_posix
+if posix_enabled
   subdir('AUTOSAR')
   i4copter = autosar_singlecore_complex_isorc
   run_target('i4copter_instance_exp',

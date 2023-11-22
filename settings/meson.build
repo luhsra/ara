@@ -33,7 +33,7 @@ ir_flags = ['-S', '-emit-llvm',]
 obj_flags = ['-c']
 
 # posix
-if enable_posix
+if posix_enabled
   posix_clang_flags = [
     '-m32',
     '-gdwarf-4' # for valgrind
@@ -48,7 +48,7 @@ if enable_posix
   posix_ar = toolchains.get_variable('posix_ar')
 endif
 
-if enable_arm
+if arm_enabled
   arm_triple = toolchains.get_variable('arm_triple')
   arm_clang_flags = [
     '--target=' + arm_triple,

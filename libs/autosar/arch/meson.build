@@ -1,10 +1,10 @@
 autosar_includes += ['-I', meson.current_source_dir() / 'generic']
 
-if enable_arm
+if arm_enabled
   subdir('arm')
 endif
 
-if enable_arm
+if arm_enabled
   subdir('posix')
 endif
 
