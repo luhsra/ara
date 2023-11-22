@@ -313,21 +313,27 @@ foreach app: autosar_targets
 
 
   if posix_enabled
-    out = custom_target(full_name + '_mod',
-                        input : app_ll,
-                        output : [
-                          full_name + '_mod.ll',
-                          full_name+'_autosar.unfmt.cc'
-                        ],
-                        depfile : full_name + '_mod.ll.dep',
-                        command : [
-                          py3_inst, ara_py, app['ll'],
-                          '--os', 'AUTOSAR',
-                          '--oilfile', app['oil'],
-                          '--ir_output', '@OUTPUT0@',
-                          '--step-settings', '../settings/autosar_generator.json',
-		                      '--generator_output', '@OUTPUT1@',
-                        ])
+    if get_option('execute_ara')
+      out = custom_target(
+        full_name + '_mod',
+        input : app_ll,
+        output : [
+          full_name + '_mod.ll',
+          full_name+'_autosar.unfmt.cc'
+        ],
+        depfile : full_name + '_mod.ll.dep',
+        command : [
+          py3_inst, ara_py, app['ll'],
+          '--os', 'AUTOSAR',
+          '--oilfile', app['oil'],
+          '--ir_output', '@OUTPUT0@',
+          '--step-settings', '../settings/autosar_generator.json',
+          '--generator_output', '@OUTPUT1@',
+        ]
+      )
+    else
+      out = disabler()
+    endif
     app_ll_mod = out[0]
     autosar_unfmt = out[1]
     app += {'app_ll_mod': app_ll_mod}
