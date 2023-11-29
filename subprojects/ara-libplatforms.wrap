@@ -1,0 +1,4 @@
+[wrap-git]
+url = git@scm.sra.uni-hannover.de:research/ara-libplatforms.git
+revision = main
+depth = 1

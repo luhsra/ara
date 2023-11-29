@@ -16,12 +16,17 @@ dump_cmds = files('dump_cmds.py')
 ctimeout = files('ctimeout')
 get_all_ara_python_files = files('get_all_ara_python_files.py')
 
+qemu_cmd = disabler()
+gdb_qemu_cmd = disabler()
+
 if arm_enabled
-  qemu_cmd = files('qemu_stm32.sh')
-  gdb_qemu_cmd = files('gdb_qemu_stm32.sh')
-else
-  qemu_cmd = disabler()
-  gdb_qemu_cmd = disabler()
+  qemu = find_program('qemu-system-stm32', required: false)
+  if qemu.found()
+    # TODO qemu_stm32.sh uses qemu-system-stm32 internally. Use always the binary provided by Meson
+    # TODO port qemu_stm32 to Python
+    qemu_cmd = files('qemu_stm32.sh')
+    gdb_qemu_cmd = files('gdb_qemu_stm32.sh')
+  endif
 endif
 
 meson.add_install_script('post_meson_install.sh', py3_inst.path(),

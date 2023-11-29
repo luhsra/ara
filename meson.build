@@ -230,7 +230,7 @@ subdir('startup')
 
 # build test applications with help of ARA
 # Attention: The include order is important here.
-subdir('settings') # generic settings
+subdir('settings')
 subdir('libs') # build libs such as osek/freertos/stm32-init
 subdir('appl')
 subdir('test')

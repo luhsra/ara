@@ -1,2 +1,0 @@
-subdir('Inc')
-subdir('Src')

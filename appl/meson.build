@@ -4,9 +4,23 @@ GenericTimingExperiment = files('GenericTimingExperiment.py')
 ShowGenericTimingExperiment = files('make_figures.py')
 InstanceGraphExperiment = files('instance_graph_experiment.py')
 
+libsra_proj = subproject('ara-libsra')
 
 if arm_enabled
   ## FreeRTOS apps, we build them currently with an ARM toolchain
+  arm_objcopy = toolchains.get_variable('arm_objcopy')
+  arm_size = toolchains.get_variable('arm_size')
+  arm_nm = toolchains.get_variable('arm_nm')
+
+  libplatform_link_with = libplatform_proj.get_variable('libplatform_link_with')
+  libplatform_includes = []
+  libplatform_include_directories = libplatform_proj.get_variable('libplatform_include_directories')
+  foreach include_dir : libplatform_include_directories
+    libplatform_includes += ['-I', include_dir]
+  endforeach
+
+  libsra_link_with = libsra_proj.get_variable('libsra_link_with')
+  libsra_include_directories = libsra_proj.get_variable('libsra_include_directories')
 
   app_flags = ['-DconfigINCLUDE_ALL_DECLS=1']
   # FreeRTOS examples
@@ -68,6 +82,14 @@ if arm_enabled
     'timing_xQueueCreate',
   ]
 
+  if meson.version().version_compare('>=1.4.0')
+    error('Please remove the horrible hack below and use the "libplatform_linkerscript.full_path()" directly.')
+  endif
+  libplatform_linkerscript_fixed = fs.copyfile(libplatform_linkerscript, 'libplatform.ld')
+
+  arm_llc_flags = ['--frame-pointer=none']
+  arm_ld_flags = libplatform_proj.get_variable('arm_ld_flags')
+  arm_compiler_flags = clang_flags + arm_clang_flags + arm_ld_flags
 
   foreach app : ir_apps + hw_apps
     app_vanilla_ll = custom_target('freertos-' + app,
@@ -75,14 +97,13 @@ if arm_enabled
                               output : ['freertos-' + app + '.ll'],
                               depfile : 'freertos-' + app + '.ll.dep',
                               command : clang_cpp +
-                                        arm_clang_flags +
                                         app_flags +
                                         libs_includes +
+                                        libplatform_includes +
                                         arm_freertos_includes +
                                         arm_freertos_default_config +
-                                        libplatform_default_config +
                                         ir_flags +
-                                        clang_flags)
+                                        arm_compiler_flags)
     set_variable('freertos_' + app.underscorify(), app_vanilla_ll)
 
     named_elf_targets = []
@@ -144,10 +165,11 @@ if arm_enabled
                                    depfile : name_prefix + '-os.cc.ll.dep',
                                    command : clang_cpp +
                                              libs_includes +
+                                             libplatform_includes +
+                                             arm_freertos_includes +
                                              arm_freertos_default_config +
-                                             libplatform_default_config +
                                              ir_flags +
-                                             clang_flags)
+                                             arm_compiler_flags)
 
 
       # compile freertos
@@ -160,10 +182,12 @@ if arm_enabled
                                   depends: ara_target,
                                   command: clang_c +
                                            libs_includes +
+                                           libplatform_includes +
+                                           arm_freertos_includes +
                                            arm_freertos_default_config +
                                            ['-DFREERTOS_OVERRIDES="'+freertos_overrides.full_path()+'"'] +
                                            ir_flags +
-                                           clang_flags)
+                                           arm_compiler_flags)
         freertos_ll_targets += ll_target
       endforeach
 
@@ -183,7 +207,7 @@ if arm_enabled
         lto_o = custom_target(lto_prefix + '-app_os.o',
                               input: lto_app_os,
                               output: lto_prefix + '-os_app.ll.o',
-                              command: llc_cmd)
+                              command: llc_cmd + arm_llc_flags)
 
         lto_elf = custom_target(lto_prefix + '.elf',
                                 input: [lto_o,
@@ -192,13 +216,14 @@ if arm_enabled
                                        ],
                                 output: lto_prefix + '.elf',
                                 depfile: lto_prefix + '.elf.dep',
-                                depend_files: default_linkerscript,
+                                depends: [libplatform_linkerscript_fixed, libsra_link_with, libplatform_link_with],
                                 command: clang_cpp +
                                          libs_includes +
                                          ld_flags +
-                                         ['-lsra'] +
-                                         ['-T' + default_linkerscript ] +
-                                         clang_flags)
+                                         ['-L' + fs.parent(libsra_link_with.full_path()), '-lsra'] +
+                                         ['-L' + fs.parent(libplatform_link_with.full_path()), '-lplatform'] +
+                                         ['-T' + libplatform_linkerscript_fixed.full_path() ] +
+                                         arm_compiler_flags)
 
         bin_target = custom_target(lto_prefix + '.bin',
                                    input: [lto_elf],

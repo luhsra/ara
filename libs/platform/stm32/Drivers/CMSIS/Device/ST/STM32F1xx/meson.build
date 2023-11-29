@@ -1,2 +1,0 @@
-subdir('Include')
-subdir('Source')
