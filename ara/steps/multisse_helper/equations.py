@@ -12,6 +12,7 @@ import math
 
 from copy import deepcopy
 from scipy.optimize import linprog
+from numpy import base_repr
 
 log = get_logger("MultiSSE.EQs", inherit=True)
 
@@ -37,10 +38,8 @@ def e_str(h_edge):
 def _to_var(idx):
     """Converts a number into a meaningful string."""
     alphabet = 'abcdefghijklmnopqrstuvwxyz'
-    if idx >= len(alphabet):
-        return f'v{idx}'
-    return alphabet[idx]
-
+    digits = base_repr(idx, base=26)
+    return ''.join([alphabet[int(x, base=26)] for x in digits])
 
 class Equations:
     """Equation system for calculation of possible pairing partners."""
