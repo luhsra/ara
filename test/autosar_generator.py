@@ -16,7 +16,7 @@ import subprocess
 def main():
     """Test for successful AUTOSAR image creation."""
 
-    executable = sys.argv[1]
+    executable = sys.argv[1:]
 
     print("running", executable)
 
