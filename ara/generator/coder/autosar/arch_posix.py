@@ -4,7 +4,7 @@
 
 from .arch_generic import GenericArch
 from ..elements import *
-from ara.os.autosar import Task, ISR
+from ara.os.autosar import Task, ISR, Counter
 
 from ara.graph import ABBType
 
@@ -33,6 +33,19 @@ class PosixArch(GenericArch):
 
     def generate_functions(self):
         self.generate_enable_irq_after_kernel()
+
+        kickoff = Function("AUTOSAR_kickoff", "void", [], extern_c=True)
+        kickoff.add(Statement("debug_core << __FUNCTION__ << endl"))
+
+        self.call(kickoff, "Machine::enable_interrupts")
+        self.generator.source_file.function_manager.add(kickoff)
+
+        # check if hardware timer is needed
+        for v, counter in self.ara_graph.instances.get(Counter):
+            if counter.softcounter == False:
+                self.generator.source_file.include("itimer.h")
+                self.call(self.generator.syscall_rules.StartOS, "ITimer::init", prepend=True)
+                break
 
     def generate_dataobjects_tcbs(self):
         for v, task in self.ara_graph.instances.get(Task):

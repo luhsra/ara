@@ -253,8 +253,8 @@ class GenericOS(BaseCoder):
             if hook == "FaultDetectedHook":
                 hook_function.add(
                     Statement(f"debug_core << \"{hook} \" << arg0 << endl"))
-                self.call(hook_function, "ShutdownMachine", "void", [])
-                self.call(hook_function, "Machine::unreachable", "void", [])
+                #self.call(hook_function, "ShutdownMachine", "void", [])
+                #self.call(hook_function, "Machine::unreachable", "void", [])
 
             elif hook == "ErrorHook":
                 hook_function.add(

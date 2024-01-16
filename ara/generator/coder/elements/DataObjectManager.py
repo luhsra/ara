@@ -130,7 +130,7 @@ class ExternalDataObject(DataObject):
 class DataObjectArray(DataObject):
     def __init__(self, typename, name, elements, dynamic_initializer = False, extern_c = False, alignment=None):
         DataObject.__init__(self, typename, name, None, dynamic_initializer,
-                            extern_c, alignment)
+                            extern_c=extern_c, alignment=alignment)
         self.elements = elements
         self.__element_values = {}
 

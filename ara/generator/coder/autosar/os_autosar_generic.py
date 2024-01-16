@@ -8,6 +8,7 @@ from .os_generic import GenericOS
 from ..elements.IncludeManager import Include
 
 from .arch_posix import PosixArch
+from .arch_arm import ArmArch
 
 from .syscall_generic import GenericSystemCalls
 from .syscall_specialized import SpecializedSystemCalls
@@ -25,7 +26,8 @@ class AUTOSARGenericOS(GenericOS):
 
         self.return_variables = {}
 
-    arch_choices = {'posix': PosixArch}
+    arch_choices = {'posix': PosixArch,
+                    'arm': ArmArch}
 
     def set_generator(self, generator):
         super().set_generator(generator)

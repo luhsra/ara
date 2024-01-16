@@ -14,11 +14,15 @@ class Function:
         self.function_name = name
         self.rettype = rettype
         self.argstype = argstype
+        self.argsname = []
         self.statements = []
         self.extern_c = extern_c
         self.attributes = attributes
         if self.attributes is None:
             self.attributes = []
+        if self.argstype:
+            for i in range(0, len(self.argstype)):
+                self.argsname.append(f"arg{i}")
 
     def __repr__(self):
         def attr(attr):
@@ -77,7 +81,7 @@ class Function:
     def arguments(self):
         ret = []
         for i in range(0, len(self.argstype)):
-            ret.append(("arg%d" % (i), self.argstype[i]))
+            ret.append((self.argsname[i], self.argstype[i]))
         return ret
 
     def return_statement(self, expression):

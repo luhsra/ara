@@ -21,7 +21,8 @@ class GenericArch(BaseCoder):
         # Ignore the Idle thread and ISR subtasks
         for v, task in self.ara_graph.instances.get(Task):
 
-            task.impl.basic_task = True
+            # TODO test basic tasks
+            task.impl.basic_task = False
 
             for n in self.ara_graph.instances.get_out_neighbors(v):
                 if isinstance(self.ara_graph.instances.vp.obj[n], Event):
@@ -150,3 +151,64 @@ class GenericArch(BaseCoder):
             self.enable_irq_after_kernel(userspace)
 
         return self.KernelSpace(pre_hook, system, post_hook)
+
+    def generate_kernelspace__syscall(self, userspace, abb, args):
+        """When a systemcall is done from a app (synchronous syscall), then we
+           disable interrupts. In the interrupt handler they are already
+           disabled.
+        """
+
+        call_inst = self.syscall_rules.get_calling_inst(abb)
+
+        if isinstance(call_inst, ISR):
+            userspace.is_isr = True
+        else:
+            userspace.is_isr = False
+
+    
+        pre_hook  = Hook("SystemEnterHook", arguments=args)
+        system = Block(arguments=args)
+        system.add(Statement("result = E_OK"))
+        post_hook = Hook("SystemLeaveHook", arguments=userspace.arguments())
+
+        userspace.attributes.append("inlinehint")
+
+        if userspace.is_isr:
+            return self.generate_kernelspace__inline(userspace, abb, args)
+        else:
+            userspace.calling_task = call_inst
+            userspace.add(Comment("Callsite: %s" % call_inst.name))
+
+        # Generate a function, that will be executed in system mode,
+        # but is specific for this systemcall
+        syscall_name = self.ara_graph.cfg.get_syscall_name(abb)
+
+        argstypes = ["StatusType&"]
+        args = ["result"]
+        signature = self.generator.syscall_rules.AUTOSAR_SYSCALLS[syscall_name]
+        if len(signature) > 2: # additional pointer argument
+            argstypes += ["void*"]
+            args += ["arg1"]
+        
+        syscall = Function("__OS_syscall_" + userspace.function_name,
+                           "void", argstypes, extern_c = True)
+        syscall.argsname[0] = "result"
+        syscall.argsname += ["arg1"]
+
+        self.generator.source_file.function_manager.add(syscall)
+
+        # The syscall function is called from the function that will
+        # be inlined into the application
+        syscall.add(pre_hook)
+        syscall.add(system)
+        
+
+        self.call(userspace, "syscall", "void", [syscall.function_name] + args)
+        userspace.add(post_hook)
+
+        # Since we return to userspace with closed interrupts, we have
+        # to enable them again.
+        self.call(userspace, "Machine::enable_interrupts")
+
+        return self.KernelSpace(pre_hook, system, post_hook)
+
