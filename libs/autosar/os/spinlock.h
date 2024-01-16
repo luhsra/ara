@@ -22,6 +22,7 @@ namespace os {
 		const int id;
 		Spinlock(const Spinlock&) = delete;
 		Spinlock& operator=(const Spinlock&) = delete;
+		~Spinlock();
 
 		Spinlock(const int id = 0);
 

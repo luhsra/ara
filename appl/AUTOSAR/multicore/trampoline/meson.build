@@ -4,7 +4,7 @@ cxx_std = libplatform_proj.get_variable('cxx_std')
 tramp_clang = generator(clang,
                         output : '@BASENAME@.ll',
                         depfile : '@BASENAME@.ll.dep',
-                        arguments : [clang_base, cxx_std, ir_flags, posix_clang_flags, clang_flags, posix_autosar_includes, autosar_includes, '-I', meson.current_source_dir()])
+                        arguments : [clang_base, cxx_std, ir_flags, autosar_posix_clang_flags, clang_flags, posix_autosar_includes, autosar_includes, '-I', meson.current_source_dir()])
 
 subdir('mc_alarms_s1')
 subdir('mc_appTermination_s1')

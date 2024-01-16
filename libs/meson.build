@@ -12,6 +12,7 @@ ld_flags = libplatform_proj.get_variable('ld_flags')
 ir_flags = libplatform_proj.get_variable('ir_flags')
 
 if arm_enabled
+  # TODO: arm_clang_flags -> freertos_stm32_clang_flags
   arm_clang_flags = libplatform_proj.get_variable('arm_clang_flags')
   ar_args = libplatform_proj.get_variable('ar_args')
   arm_ar = toolchains.get_variable('arm_ar')
@@ -20,17 +21,6 @@ if arm_enabled
 endif
 
 if posix_enabled
-  posix_clang_flags = [
-    '-m32',
-    '-gdwarf-4' # for valgrind
-  ]
-  if get_option('debug') == true
-    posix_clang_flags += '-DDEBUG'
-  endif
-  posix_ld_flags = [
-    '-lpthread',
-    '-lrt',
-  ]
   posix_ar = toolchains.get_variable('posix_ar')
 endif
 

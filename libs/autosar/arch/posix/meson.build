@@ -1,5 +1,4 @@
-libs_includes += ['-I', meson.current_source_dir()]
-autosar_includes += ['-I', meson.current_source_dir()]
+posix_autosar_includes = ['-I', meson.current_source_dir()]
 
 src_files = [
   'dispatch',
@@ -22,14 +21,16 @@ foreach src : src_files
         output: src+'.cc.o',
         depfile: src+'.dep',
         command: clang_cpp +
+                posix_autosar_includes +
                 autosar_includes +
-                ld_flags +
+                autosar_posix_ld_flags +
                 obj_flags +
+                autosar_posix_clang_flags +
                 clang_flags)
     obj_targets += obj_target
 endforeach
 
-libautosar_arch = custom_target('libautosar_arch',
-                                    input: obj_targets,
-                                    output: 'libautosar_arch.a',
-                                    command: ar_cmd)
+libautosar_arch_posix = custom_target('libautosar_arch_posix',
+                                      input: obj_targets,
+                                      output: 'libautosar_arch_posix.a',
+                                      command: posix_ar_cmd)

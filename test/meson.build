@@ -317,17 +317,17 @@ if get_option('enable_step_tests')
       testsuite_extra = []
       if app.has_key('core') and app['core'] == 'multicore'
         is_parallel = false
-        testsuite_extra = 'autosar_generator_multicore'
+        testsuite_extra = 'autosar_generator_posix_multicore'
       endif
 
       if app.has_key('path') and app['path'] in supported
         test('autosar_generator_' + app['full_name'],
           py3_inst,
-          args: [files('autosar_generator.py'), app['app_image']],
+          args: [files('autosar_generator.py'), app['app_image_posix']],
           env: [python_path],
           depends: ara_py,
           is_parallel: is_parallel,
-          suite: ['autosar_generator'] + testsuite_extra
+          suite: ['autosar_generator_posix'] + testsuite_extra
         )
       endif
     endforeach

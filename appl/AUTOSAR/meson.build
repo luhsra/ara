@@ -125,6 +125,7 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'timing',             'name': 'b',                     'oil': 'system_b.json', 'timing': 'b_timing.json'},
   {'core': 'multicore',  'path': 'timing',             'name': 'c',                     'oil': 'system_c.json', 'timing': 'c_timing.json'},
   {'core': 'multicore',  'path': 'paper',              'name': 'running',               'oil': 'system_running.json', 'mtrace': 'running.trace.json', 'locks': 'EXTRACT', 'timing': 'BB', 'ttrace': 'running.timing.trace.json'},
+# {'core': 'multicore',  'path': 'paper',              'name': 'running_pmu',           'oil': 'system_running.json', 'mtrace': 'running.trace.json', 'locks': 'EXTRACT', 'timing': 'BB', 'ttrace': 'running.timing.trace.json'},
   {'core': 'multicore',  'path': 'paper',              'name': 'running_long11',        'oil': 'system_running.json', 'locks': 'EXTRACT', 'timing': 'BB'},
   {'core': 'multicore',  'path': 'paper',              'name': 'deadlock',              'oil': 'system_running.json', 'locks': 'EXTRACT', 'timing': 'BB', 'mtrace': 'deadlock.trace.json'},
   {'core': 'multicore',  'path': 'paper',              'name': 'minimal',               'oil': 'system_minimal.json', 'locks': 'EXTRACT'},
@@ -139,6 +140,7 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'complex',            'name': 'copter-with-alarms',    'oil': 'copter-with-alarms_system.json', 'timing': 'BB'},
   {'core': 'multicore',  'path': 'complex',            'name': 'copter-single-alarm',   'oil': 'copter-single-alarm_system.json', 'timing': 'BB'},
   {'core': 'multicore',  'path': 'complex',            'name': 'copter-autostart',      'oil': 'copter-autostart_system.json', 'locks': 'EXTRACT', 'timing': 'BB'},
+# {'core': 'multicore',  'path': 'complex',            'name': 'copter-autostart_pmu',  'oil': 'copter-autostart_system.json', 'locks': 'EXTRACT', 'timing': 'BB'},
   {'core': 'multicore',  'path': 'andreas'/ 'ipi',     'name': 'a',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'ipi',     'name': 'b',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'ipi',     'name': 'c',                     'oil': 'system.json'},
@@ -162,6 +164,12 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'andreas'/ 'cores',   'name': '4',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'cores',   'name': '12',                    'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'cores',   'name': '16',                    'oil': 'system.json'},
+#  {'core': 'multicore',  'path': 'andreas'/ 'pmu',    'name': 'minimal',                'oil': 'system_spinlock.json'},
+#  {'core': 'multicore',  'path': 'andreas'/ 'pmu',    'name': 'ipi_send',               'oil': 'system_ipi_send.json'},
+#  {'core': 'multicore',  'path': 'andreas'/ 'pmu',    'name': 'ipi_recv',               'oil': 'system_ipi_recv.json'},
+#  {'core': 'multicore',  'path': 'andreas'/ 'pmu',    'name': 'ipi_recv_cache',         'oil': 'system_ipi_recv.json'},
+#  {'core': 'multicore',  'path': 'andreas'/ 'pmu',    'name': 'ipi_max',                'oil': 'system_ipi_max.json'},
+#  {'core': 'multicore',  'path': 'andreas'/ 'pmu',    'name': 'get_spinlock',           'oil': 'system_spinlock.json'},
 ]
 # conformance tests for trampoline
 subdir('multicore' / 'trampoline')
@@ -204,11 +212,11 @@ foreach app : autosar_apps
                          output : full_name + '.ll',
                          depfile : full_name + '.ll.dep',
                          command : clang_cpp +
-                                   posix_clang_flags +
-                                   posix_autosar_includes +
+                                   arm_autosar_includes + # TODO REMOVE
                                    autosar_includes +
-                                   ir_flags +
-                                   clang_flags)
+                                   clang_flags +
+                                   autosar_pi4_clang_flags + # TODO REMOVE
+                                   ir_flags)
   app += {'ll': app_ll}
 
 
@@ -269,8 +277,6 @@ foreach app : autosar_apps
 
 endforeach
 
-llvm_bindir = toolchains.get_variable('llvm_bindir')
-clang_format = find_program(llvm_bindir / 'clang-format', version: llvm_version)
 autosar_generated_targets = []
 foreach app: autosar_targets
   full_name = app['full_name']
@@ -315,11 +321,11 @@ foreach app: autosar_targets
   if posix_enabled
     if get_option('execute_ara')
       out = custom_target(
-        full_name + '_mod',
+        full_name + '_mod_posix',
         input : app_ll,
         output : [
-          full_name + '_mod.ll',
-          full_name+'_autosar.unfmt.cc'
+          full_name + '_mod.posix.ll',
+          full_name+'_autosar.posix.cc'
         ],
         depfile : full_name + '_mod.ll.dep',
         command : [
@@ -327,7 +333,7 @@ foreach app: autosar_targets
           '--os', 'AUTOSAR',
           '--oilfile', app['oil'],
           '--ir_output', '@OUTPUT0@',
-          '--step-settings', '../settings/autosar_generator.json',
+          '--step-settings', '../settings/autosar_generator_posix.json',
           '--generator_output', '@OUTPUT1@',
         ]
       )
@@ -335,43 +341,91 @@ foreach app: autosar_targets
       out = disabler()
     endif
     app_ll_mod = out[0]
-    autosar_unfmt = out[1]
+    autosar = out[1]
     app += {'app_ll_mod': app_ll_mod}
+    app += {'autosar_posix': autosar}
 
-    autosar = custom_target(full_name + '_autosar',
-                        input : autosar_unfmt,
-                        output : full_name+'_autosar.cc',
-                        capture: true,
-                        command : [
-                          clang_format,
-                          '--style=file',
-                          '@INPUT@',
-                        ])
-
-    app += {'autosar': autosar}
-
-    app_image = custom_target(full_name + '_image',
+    app_image_posix = custom_target(full_name + '_image_posix',
                             input: [
                               app_ll_mod,
                               autosar,
-                              posix_libautosar_test,
-                              posix_libautosar_os,
-                              posix_libautosar,
-                              libautosar_generic
+                              libautosar_test_posix,
+                              libautosar_os_posix,
+                              libautosar_arch_posix,
+                              libautosar_generic_posix
                             ],
-                            output : full_name,
-                            depfile : full_name + '.dep',
+                            output : full_name + '_posix',
+                            depfile : full_name + '.posix.dep',
                             command : clang_cpp +
-                                      posix_clang_flags +
                                       posix_autosar_includes +
                                       autosar_includes +
                                       ld_flags +
-                                      clang_flags)
+                                      autosar_posix_clang_flags +
+                                      clang_flags
+                                      )
 
-    app += {'app_image': app_image}
-    run_target('run_' + full_name, command: [app_image])
+    app += {'app_image_posix': app_image_posix}
+    run_target('run_' + full_name + '_posix', command: [app_image_posix])
 
     autosar_generated_targets += app
+  endif
+
+
+
+  if arm_enabled
+    if get_option('execute_ara')
+      out = custom_target(
+        full_name + '_mod_pi4',
+        input : app_ll,
+        output : [
+          full_name + '_arm_mod.pi4.ll',
+          full_name+'_autosar.pi4.cc',
+          full_name+'_autosar.pi4.ld'
+        ],
+        depfile : full_name + '_mod.ll.dep',
+        command : [
+          py3_inst, ara_py, app['ll'],
+          '--os', 'AUTOSAR',
+          '--oilfile', app['oil'],
+          '--ir_output', '@OUTPUT0@',
+          '--step-settings', '../settings/autosar_generator_arm.json',
+          '--generator_output', '@OUTPUT1@',
+          #'--timings', app['sys_timings']
+        ]
+      )
+    else
+      out = disabler()
+    endif
+    app_ll_mod = out[0]
+    autosar = out[1]
+    linker_script = out[2]
+    app += {'app_ll_mod': app_ll_mod}
+    app += {'autosar_pi4': autosar}
+    app += {'linker_script_pi4': linker_script}
+
+    app_image_pi4 = custom_target(full_name + '_image_pi4',
+                            input: [
+                              app_ll_mod,
+                              autosar,
+                              libautosar_test_pi4,
+                              libautosar_os_pi4,
+                              libautosar_arch_pi4,
+                              libautosar_generic_pi4
+                            ],
+                            output : full_name + '_pi4',
+                            depfile : full_name + '.pi4.dep',
+                            command : clang_cpp +
+                                      ['-T', linker_script] +
+                                      arm_autosar_includes +
+                                      autosar_includes +
+                                      ld_flags +
+                                      autosar_pi4_ld_flags +
+                                      clang_flags +
+                                      autosar_pi4_clang_flags)
+
+    app += {'app_image_pi4': app_image_pi4}
+
+    run_target('run_' + full_name + '_pi4', command: [meson.current_source_dir() / 'qemu-system-aarch64', '-M', 'raspi4b1g', '-no-reboot', '-nographic', '-serial', 'null', '-serial','mon:stdio', '-kernel', app_image_pi4])
   endif
 
 endforeach
