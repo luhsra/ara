@@ -103,13 +103,6 @@ namespace ara::step {
 		// only a subset of system calls are renamed
 		std::regex re("Resource|Task|Event|Spinlock|Alarm|Counter");
 
-		for (const std::string& call : SystemCalls) {
-			if (std::regex_search(call, re))
-				continue;
-
-			SystemCalls.erase(call);
-		}
-
 		for (auto& function : module) {
 			for (auto& bb : function) {
 				for (auto& inst : bb) {
@@ -119,7 +112,7 @@ namespace ara::step {
 							continue;
 						// Found a Call. Is it a systemcall?
 						for (auto syscall : SystemCalls) {
-							if (func->getName() == syscall) {
+							if (func->getName() == syscall && std::regex_search(syscall, re)) {
 								RenameSystemcall(module, callInst);
 								break;
 							}
