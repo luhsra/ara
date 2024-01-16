@@ -23,18 +23,16 @@
 #include "syscall.h"
 #include "tcb.h"
 
+extern _Atomic(bool) ipi_cleared[MAX_CPUS];
 namespace arch {
 
 	extern volatile void* startup_sp;
 
 // next task to dispatch (used by dispatch interrupt)
-#ifdef CONFIG_DEPENDABILITY_ENCODED
-	extern os::redundant::MergedDMR<uint32_t> save_sp;
-	extern volatile Encoded_Static<A0, 42> dispatch_task;
-#else
-	extern os::redundant::Plain<uint32_t> save_sp;
-	extern volatile uint16_t dispatch_task;
-#endif
+
+extern uint32_t save_sp[MAX_CPUS];
+extern volatile uint16_t dispatch_task[MAX_CPUS];
+
 
 	class Dispatcher {
 
@@ -58,20 +56,20 @@ namespace arch {
 			Machine::unreachable(); // should never come here
 		}
 #endif
+		static void do_dispatch();
 
 		static forceinline void dispatch_syscall(const os::scheduler::Task& task) {
 			// set task to dispatch
-#ifdef CONFIG_DEPENDABILITY_ENCODED
-			dispatch_task.encode(task.id);
-#else
-			dispatch_task = task.id;
-#endif
+			dispatch_task[arch::get_cpuid()] = task.id;
 			CALL_HOOK(PreTaskHook);
 
 			// kout << "dispatch to " << (int) task.id << endl;
 
 			// request dispatcher AST
-			GIC::trigger(IRQ_DISPATCH);
+			//GIC::trigger(IRQ_DISPATCH);
+
+			// Dispatch directly
+			do_dispatch();
 
 			// unblock ISR2s by lowering GIC task priority
 			GIC::set_task_prio(IRQ_PRIO_LOWEST);
@@ -103,15 +101,15 @@ namespace arch {
 
 		/** \brief Syscall to start idle loop (in ring 0) */
 		static forceinline void Idle(void) {
+			debug_core << "Idle" << endl;
 #ifdef CONFIG_ARCH_IDLE_HALT
 			syscall(&idle_loop);
 #else
-			/* Call the idle loop callback (ends with
-			   Machine::enable_interrupts())*/
-			CALL_HOOK(PreIdleHook);
-
 			// allow all interrupts
 			GIC::set_task_prio(IRQ_PRIO_LOWEST);
+
+			/* Call the idle loop callback */
+			CALL_HOOK(PreIdleHook);
 
 			// do nothing forever
 			while (true)

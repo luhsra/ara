@@ -14,8 +14,8 @@
  * @brief The EAN Encoding Data Type
  */
 
-#include "../../arch/posix/machine.h"
-#include "../../os/hooks.h"
+#include "machine.h"
+#include "hooks.h"
 #include "assert.h"
 
 #include <stdint.h>

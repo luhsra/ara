@@ -19,10 +19,10 @@ extern void (*__CTORS_START)(void);
 //! Address of the last global constructor (Defined by the linker script)
 extern void (*__CTORS_END)(void);
 
-extern char _erom, _data, _edata, _bstart, _bend;
+extern char _sidata, _data, _edata, _bstart, _bend;
 
 void run_constructors(void) {
-	char* src = &_erom;
+	char* src = &_sidata;
 	volatile char* dst = &_data;
 
 	/* ROM has data at end of text; copy it. */

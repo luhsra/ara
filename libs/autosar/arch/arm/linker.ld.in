@@ -2,7 +2,7 @@
 ENTRY(interrupt_vector_table)
 
 MEMORY {
-   ROM : ORIGIN = 0x100000, LENGTH = 4M
+   ROM : ORIGIN = 0x0, LENGTH = 4M
    RAM : ORIGIN = 0x500000, LENGTH = 4M
 }
 
@@ -10,6 +10,8 @@ REGION_ALIAS("REGION_TEXT", ROM);
 REGION_ALIAS("REGION_RODATA", ROM);
 REGION_ALIAS("REGION_DATA", RAM);
 REGION_ALIAS("REGION_BSS", RAM);
+
+_sidata = LOADADDR(.data); /* initialized data to copy at boot */
 
 SECTIONS {
 
@@ -34,6 +36,8 @@ SECTIONS {
         /* fill gaps with invalid opcode to detect invalid jumps */
         /* FILL(0xFEDEFFE7)*/
 
+        . = 0x8000;
+
         /* start of interrupt handlers */
         _stext_irqs = .;
 
@@ -42,7 +46,7 @@ SECTIONS {
         KEEP (*(".text.irq_handler*")) /* C */
         *(".text.isrs*") /* C */
         *(".text.isr_*") /* C */
-        KEEP (*(".text.OSEKOS_ISR*"))
+        KEEP (*(".text.AUTOSAR_ISR*"))
         KEEP (*(".text.idt")) /* ASM */
 
         /* sysenter handler */
@@ -117,10 +121,10 @@ SECTIONS {
         _etext_os = .;
 
         /* task code regions */
-        . = ALIGN(4096);
+        /*. = ALIGN(4096);
         _stext_application = .;
         {{{generate:task_code_regions}}}
-        _etext_application = .;
+        _etext_application = .;*/
 
         /* remaining code and rodata*/
         . = ALIGN(0x1000);
@@ -129,11 +133,17 @@ SECTIONS {
         *(".rodata*")
         _etext = .;
 
+        . = ALIGN(0x100000);
+        _cachetest_start = .;
+        . += 0x200000;
+        _cachetest_end = .;
+
+
     /* Page tables and directories */
-	   . = ALIGN(32768);
+	/*   . = ALIGN(32768);
 	   __mmu_tbl_start = .;
 	   *(.mmu_tbl)
-	   __mmu_tbl_end = .;
+	   __mmu_tbl_end = .;*/
 
        /* End of ROM marker. In the ROM, here the initialized .data
           section follows */
@@ -142,7 +152,6 @@ SECTIONS {
 
     .stacks : {
             . = ALIGN(4096);
-            _bstart = .;
             /* Stacks */
             _sstack = .;
 
@@ -157,7 +166,8 @@ SECTIONS {
      } > RAM
 
      .bss : {
-            *(COMMON);
+            _bstart = .;
+            *(".bss.*");
             _bend   = .;
      } > RAM
 
@@ -165,6 +175,7 @@ SECTIONS {
 
     /* Data and Stacks */
     /* . = 0x200000; */
+    . = ALIGN(4096);
     .data : {
         /* Marker for the begin of the Data section */
         _data = .;

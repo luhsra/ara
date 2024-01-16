@@ -23,7 +23,7 @@ struct Scheduler {
     noinline void Reschedule(void);
 
     forceinline void Schedule_impl(bool from_interrupt=false) {
-        if(!from_interrupt) {
+        if(!from_interrupt && in_syscall()) {
             // in syscall: reschedule directly
             Reschedule();
         } else {
@@ -151,6 +151,7 @@ struct Scheduler {
 
         if (!elide)
             rc = sl.lock();
+
         if (rc == 0) {
             spinlock_mask |= sl.id;
             tlist.task_spin_lock(current_task, sl.id);
@@ -170,7 +171,7 @@ struct Scheduler {
         if (!elide)
             rc = sl.trylock(success);
         else
-            *success == TRYTOGETSPINLOCK_SUCCESS;
+            *success = TRYTOGETSPINLOCK_SUCCESS;
 
         if (*success == TRYTOGETSPINLOCK_SUCCESS) {
             spinlock_mask |= sl.id;
@@ -221,6 +222,21 @@ struct Scheduler {
 void Scheduler::Reschedule() {
     // update current_task
     tlist.head(current_task, current_prio);
+
+#ifdef PMU_TRACE_B
+    // checkpoint 2
+    if (arch::get_cpuid() == 0)
+        arch::PMU::trace_cycles();
+#endif
+    // reset other cores request to reschedule (IPIs)
+    ipi_cleared[arch::get_cpuid()] = true;
+
+#ifdef PMU_TRACE_B
+    // checkpoint 3
+    if (arch::get_cpuid() == 0)
+        arch::PMU::trace_cycles();
+#endif
+
     // dispatch
     dispatchToCurrentTask();
 }
@@ -240,11 +256,6 @@ extern "C" CoreIdType AUTOSAR_GetCoreID() {
 }; // scheduler
 }; // os
 
-extern "C" void AUTOSAR_kickoff() {
-    debug_core << __FUNCTION__ << endl;
-    Machine::enable_interrupts();
-}
-
 extern "C" uint32_t AUTOSAR_GetNumberOfActivatedCores()
 {
     return arch::get_num_cores();
@@ -260,7 +271,7 @@ extern "C" void AUTOSAR_StartCore(CoreIdType CoreID, StatusType *status) {
         return;
     }
 
-    *status = arch::start_hardware_thread(CoreID, nullptr, NULL);
+    *status = arch::start_hardware_thread(CoreID, nullptr, 0);
 }
 
 extern "C" void AUTOSAR_ShutdownOS(StatusType arg0){

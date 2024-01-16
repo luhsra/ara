@@ -35,8 +35,7 @@ typedef enum class Color {
 class Serial : public O_Stream<Serial> {
   public:
 	Serial();
-
-	void putchar(char c);
+	virtual void putchar(char c);
 
 	void puts(const char* data);
 

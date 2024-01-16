@@ -18,6 +18,7 @@
 #include "machine.h"
 #include "platform.h"
 #include "stdint.h"
+#include "pmu.h"
 
 namespace arch {
 
@@ -174,8 +175,8 @@ namespace arch {
 		/** \brief Accept interrupt and get interrupt ID */
 		static forceinline irq_id accept() {
 			// accept the interrupt and read its ID
-
-			irq_id id = GICcpu().IAR & 0xfff;
+			// IAR [12:10] contains the sending CPU number
+			irq_id id = GICcpu().IAR & 0x3ff;
 
 			// if(id & 0x1FF == 1023) spurious_interrupt();
 
@@ -193,19 +194,24 @@ namespace arch {
 
 		/** \brief Trigger SGI (software-generated interrupt) */
 		static forceinline void trigger(uint8_t irq) {
+			debug_core << "trigger " << (int) irq << endl;
 			// pseudo_static_assert(irq < 0xFF, "Software-generated interrupt numbers are only 0-15");
 
 			// write software generated irq register
 			// distribute only to requesting (this) CPU: 0b10 at bit 24
 			GICdist().SGIR = ((irq & 0xFF) | (2 << 24));
-			/* We add this loop here, since QEMU triggers software generated
-			   interrupts only with a large delay. For details on this bug, see:
 
-			   http://lists.gnu.org/archive/html/qemu-discuss/2014-03/msg00028.html
-			*/
-			volatile int i = 0;
-			while (i < 100)
-				i++;
+		}
+		static forceinline void trigger(uint8_t irq, uint8_t cpuid) {
+			debug_core << "trigger " << (int) irq << " " << (int) cpuid << endl;
+			// CPUTargetList [23:16] bitmask
+			GICdist().SGIR = ((irq & 0xFF) | (1 << cpuid << 16));
+		}
+
+		static forceinline void trigger_others(uint8_t irq) {
+			debug_core << "trigger others " << (int) irq << endl;
+			// distribute only to all other CPUs: 0b01 at bit 24
+			GICdist().SGIR = ((irq & 0xFF) | (1 << 24));
 		}
 
 		/** \brief Set task priority
@@ -227,6 +233,8 @@ namespace arch {
  */
 #define IRQ_RESCHEDULE 1   //!< reschedule (AST) software interrupt
 #define IRQ_DISPATCH 0     //!< dispatcher (AST) software interrupt
+#define IRQ_TERM 12
+#define IRQ_V_TIMER 27
 #define IRQ_LOCAL_TIMER 29 //!< local CPU timer interrupt
 #define IRQ_WDT 30         //!< local watchdog timer interrupt
 	/**@}*/
@@ -325,8 +333,9 @@ namespace arch {
  * 1 = Rescheduler
  * 29 = Timer
  */
-extern "C" void* irq_handler_0(void* task_sp, uint32_t id);
+//extern "C" void* irq_handler_0(void* task_sp, uint32_t id);
 extern "C" void* irq_handler_1(void* task_sp, uint32_t id);
+extern "C" void* irq_handler_27(void* task_sp, uint32_t id);
 extern "C" void* irq_handler_29(void* task_sp, uint32_t id);
 extern "C" void* irq_handler_unhandled(void* task_sp, uint32_t id);
 

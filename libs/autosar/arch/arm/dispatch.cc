@@ -10,6 +10,7 @@
 #include "os/util/assert.h"
 #include "os/util/encoded.h"
 #include "os/util/inline.h"
+#include "dispatch.h"
 #include "tcb.h"
 
 namespace arch {
@@ -19,43 +20,34 @@ namespace arch {
 	/** \brief Startup stackpointer (save location) */
 	volatile void* startup_sp = 0;
 
-	static uint32_t _save_sp = 0;
+	uint32_t save_sp[MAX_CPUS] = {0};
 
-#ifdef CONFIG_DEPENDABILITY_ENCODED
-	os::redundant::MergedDMR<uint32_t> save_sp(_save_sp);
-	volatile Encoded_Static<A0, 42> dispatch_task;
-#else
-	os::redundant::Plain<uint32_t> save_sp(_save_sp);
-	volatile uint16_t dispatch_task;
-#endif
+	volatile uint16_t dispatch_task[MAX_CPUS];
 
 	/** \brief Dispatch interrupt handler
 	 *
 	 * This interrupt is called after the next task is determined by the scheduler in ring 3
 	 * and performs the actual dispatching in ring 0.
 	 */
-	IRQ_HANDLER(IRQ_DISPATCH) {
-#ifdef CONFIG_DEPENDABILITY_ENCODED
-		// decode task ID
-		uint16_t id = dispatch_task.decode();
-#else
-		uint16_t id = dispatch_task;
-#endif
+	//IRQ_HANDLER(IRQ_DISPATCH) {
+	void __attribute__((noreturn)) Dispatcher::do_dispatch() {
+		uint16_t id = dispatch_task[arch::get_cpuid()];
 
 		// get TCB
 		const TCB* const tcb = OS_tcbs[id];
 
 		// set save_sp
-		if (save_sp.get() != 0) {
+		if (save_sp[arch::get_cpuid()] != 0) {
+			debug_core << "ERROR" << endl;
 			CALL_HOOK(FaultDetectedHook, LOGIC_ERRORdetected, 0, 0);
 		}
-		save_sp.set(id);
+		save_sp[arch::get_cpuid()] = id;
 
 		// set new page directory
 		// MMU::switch_task(id);
 
 		// push instruction pointer
-		void* ip;
+		uint32_t ip;
 		uint32_t* sp = (uint32_t*)tcb->get_sp();
 		tcb->check_sp();
 
@@ -64,44 +56,28 @@ namespace arch {
 
 		if (tcb->is_running()) {
 			// resume from saved IP on stack
-			// requires new page directory set before!
-			uint32_t ip = (uint32_t) * (sp - 1);
-#ifdef CONFIG_DEPENDABILITY_ENCODED
-			uint32_t ip2 = (uint32_t) * (sp - 2);
-			if (ip != ip2) {
-				CALL_HOOK(FaultDetectedHook, DMRdetected, ip, ip2);
-			}
-			// clear IP to prevent this from remaining valid in memory
-			*(sp - 2) = 0;
-#endif
-			// clear IP to prevent this from remaining valid in memory
-			*(sp - 1) = 0;
+			ip = * (sp - 1);
 
-			// kout << "D: " << id << " " << ip << " " << sp << endl;
-
-			// Set the user's stack pointer
-			// We leave to the user mode in system mode
-			asm volatile("mov r1, %0;"
-			             "mov r0, %1;"
-			             "bx r1" ::"l"(ip),
-			             "l"(sp)
-			             : "r0", "r1");
+			asm volatile("mov r1, %0 \n\t"
+					"mov r0, %1  \n\t"
+					"bx r1"
+					::"l"(ip), "l"(sp)
+					: "r0", "r1");
 		} else {
 			// start function from beginning
-			ip = (void*)tcb->fun;
-
-			// kout << "D(S): " << id << " " << ip << " " << sp << endl;
+			ip = (uint32_t) tcb->fun;
 
 			// Set the user's stack pointer
 			// We leave to the user mode in system mode
-			asm volatile("mov r1, %0;"
-			             "mov r0, %1;"
-			             "cps #31;"
-			             "mov sp, r0;"
-			             "bx r1" ::"l"(ip),
-			             "l"(sp)
-			             : "r0", "r1");
+			asm volatile("mov r1, %0 \n\t"
+						"mov r0, %1  \n\t"
+						"cps #31  \n\t"
+						"mov sp, r0  \n\t"
+						"bx r1"
+						::"l"(ip), "l"(sp)
+						: "r0", "r1");
 		}
+
 		Machine::unreachable();
 		return 0;
 	}

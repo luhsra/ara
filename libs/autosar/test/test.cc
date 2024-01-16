@@ -69,12 +69,39 @@ noinline void test_trace_assert(const char* expected) {
 }
 
 void test_trace(char chr) {
-	debug_core << "test_trace: " << chr << endl;
+	debug_core << "test_trace: " << (int) chr << endl;
 	fail_trace = (uint32_t)chr;
 	if (trace_table_idx < 0xff)
 		trace_table[trace_table_idx++] = chr;
 	// kout << trace_table[trace_table_idx-1] << endl;
 }
 
-void ara_timing_info(int a, int b){};
+#ifndef PMU_TRACE_C
+void ara_timing_info(int a, int b) {};
+
+#else
+
+#include "pmu.h"
+void ara_timing_info(int a, int b){
+	int counter = 0;
+	if (a == 0) return;
+	uint32_t starttime = arch::PMU::get_cycles();
+	const int time_resolution = 1000; // clocks per time unit
+	uint32_t endtime = starttime + a*time_resolution;
+	//kout << "waiting for " << a*time_resolution << " cycles" << endl;
+
+	// wait for at least BCET, assuming 1*time_resolution is already caclulated for, because of system call 
+	/*volatile int c;
+	if (a == 60) { //for running_pmu T02
+		while (counter < 6661) {
+			c = arch::PMU::get_cycles();
+			counter++;
+		}
+	} else {*/
+		while (endtime >= arch::PMU::get_cycles()) {
+			counter++;
+		};
+	//}
+};
+#endif
 }

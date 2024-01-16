@@ -24,7 +24,6 @@ namespace os {
 		Spinlock& operator=(const Spinlock&) = delete;
 
 		Spinlock(const int id = 0);
-		~Spinlock();
 
 		StatusType lock();
 		StatusType trylock(TryToGetSpinlockType* success);

@@ -254,7 +254,7 @@ O_Stream<T>& O_Stream<T>::operator<<(O_Stream<T>& (*stream)(O_Stream<T>&)) {
 
 template <typename T>
 O_Stream<T>& endl(O_Stream<T>& out) {
-	out << '\n';
+	out << "\r\n";
 	return out;
 }
 

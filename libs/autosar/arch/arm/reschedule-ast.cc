@@ -23,15 +23,16 @@ namespace arch {
 		// PageDirectory::enable(pagedir_os);
 
 		// reset save_sp to detect IRQ from non-userspace in idt.S
-		save_sp.set(0);
+		save_sp[arch::get_cpuid()] = 0;
 
 		// set user SP
-		Machine::switch_mode(Machine::SYSTEM);
-		asm volatile("mov sp, %0" ::"r"(&_estack_os - 2048));
-		Machine::switch_mode(Machine::SUPERVISOR);
+		//Machine::switch_mode(Machine::SYSTEM);
+		//asm volatile("mov sp, %0" ::"r"(&_estack_os - 2048 - 4096*arch::get_cpuid()));
+		//Machine::switch_mode(Machine::SUPERVISOR);
 
-		asm volatile("mov lr, %0" ::"r"((uint32_t)__OS_ASTSchedule));
-		asm volatile("subs pc, lr, #0");
+		//asm volatile("mov lr, %0" ::"r"((uint32_t)__OS_ASTSchedule));
+		//asm volatile("subs pc, lr, #0");
+		__OS_ASTSchedule(0);
 
 		Machine::unreachable();
 		while (1)

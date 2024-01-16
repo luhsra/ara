@@ -42,14 +42,15 @@ panic_d:
 .global panic
 panic:
 	# bkpt
-
 	ldr sp, =_estack_os-16
+	sub sp, sp, r9, LSL #12 // use per-CPU stack
 	sub lr, lr, #4
 	push {lr}
 	push {r0,r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12}
 	mov r0, sp
 	blx kernel_dump
 	b .
+
 .size panic, . - panic
 
 .extern __OS_HOOK_FaultDetectedHook
@@ -58,6 +59,7 @@ panic:
 irq_entry:
     # Switch to the OS stack
 	ldr sp, =_estack_os
+	sub sp, sp, r9, LSL #12 // use per-CPU stack
     # Calculate the return address
     sub lr, lr, #4
     # Store LR and SPSR to the task's stack (adjust task's SP)
@@ -195,7 +197,8 @@ firq_hndlr:
 
 .global syscall_hndlr
 syscall_hndlr:
-   ldr sp, =_estack_os-16
-   blx syscall_handler
+	ldr sp, =_estack_os-16
+	sub sp, sp, r9, LSL #12 // use per-CPU stack
+	blx syscall_handler
 .size syscall_hndlr, . - syscall_hndlr
 

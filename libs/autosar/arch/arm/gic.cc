@@ -22,12 +22,12 @@
 #define CONTINUE_UNHANDLED_IRQ 0
 
 namespace arch {
-
 	extern void** const OS_stackptrs[];
 
 	void GIC::init() { enable(); }
 
 	extern "C" void* irq_handler_unhandled(void* task_sp, uint32_t id) {
+		debug_core << "unhandled IRQ "<< id << endl;
 		CALL_HOOK(FaultDetectedHook, IRQ_SPURdetected, id, (uint32_t)task_sp);
 		return task_sp;
 	}
@@ -44,6 +44,12 @@ namespace arch {
 		if (id >= 96) {
 			return irq_handler_unhandled(task_sp, id);
 		}
+
+#ifdef PMU_TRACE_B
+		// checkpoint 1
+		if (arch::get_cpuid() == 0)
+			arch::PMU::trace_cycles();
+#endif
 
 		// void *lr;
 		// asm volatile("mov %0, lr" : "=r"(lr) ::);
@@ -62,16 +68,10 @@ namespace arch {
 		// asm volatile("bfc r1, #12, #20" ::: "r0", "r1"); // place interrupt number in r1
 
 		// save stack pointer
-		uint16_t ssp = save_sp.get();
+		uint16_t ssp = save_sp[arch::get_cpuid()];
 		if (ssp != 0) {
-#ifdef CONFIG_DEPENDABILITY_ENCODED
-			save_sp.check();
-			os::redundant::HighParity<void*> SP(*OS_stackptrs[ssp]);
-			SP.set(task_sp);
-#else
-			save_sp.check();
+
 			*OS_stackptrs[ssp] = task_sp;
-#endif
 		}
 
 		void* ret = irq_handlers[id](task_sp, id);

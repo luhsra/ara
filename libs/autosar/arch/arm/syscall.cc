@@ -14,13 +14,15 @@
 
 extern "C" uint8_t _estack_os;
 
+typedef void (*syscall_type)(uint32_t,uint32_t);
+
 namespace arch {
 
 	extern void** const OS_stackptrs[];
 
 	/* Syscalls that run in userspace, this are indirect syscall, they
 	   are intended for longer syscalls */
-	extern "C" __attribute__((naked)) void syscall_handler(void* fun, void* sp, uint32_t arg1, uint32_t arg2) {
+	extern "C" /*__attribute__((naked))*/ void syscall_handler(void* fun, void* sp, uint32_t arg1, uint32_t arg2) {
 		// change to OS page directory
 		// PageDirectory::enable(pagedir_os);
 
@@ -33,28 +35,26 @@ namespace arch {
 		Machine::enable_interrupts();
 
 		// save stack pointer
-		uint32_t ssp = save_sp.get();
-#ifdef CONFIG_DEPENDABILITY_ENCODED
-		save_sp.check();
-		os::redundant::HighParity<void*> SP(*OS_stackptrs[ssp]);
-		SP.set(sp);
-#else
+		uint32_t ssp = save_sp[arch::get_cpuid()];
 		*OS_stackptrs[ssp] = sp;
-#endif
-		save_sp.set(0); // to detect IRQ from userspace in idt.S
+		save_sp[arch::get_cpuid()] = 0; // to detect IRQ from userspace in idt.S
 
 		// exit system
-		Machine::set_spsr(0x30);
+		//Machine::set_spsr(0x30);
 
 		// set user SP
-		Machine::switch_mode(Machine::SYSTEM);
-		asm volatile("mov sp, %0" ::"r"(&_estack_os - 2048));
-		Machine::switch_mode(Machine::SUPERVISOR);
+		//Machine::switch_mode(Machine::SYSTEM);
+		//asm volatile("mov sp, %0" ::"r"(&_estack_os - 2048 - 4096*arch::get_cpuid()));
+		//Machine::switch_mode(Machine::SUPERVISOR);
 		// TODO: setup args r0, r1 within system mode or supervisor mode?!
-		asm volatile("mov r0, %0" ::"l"(arg1) : "r0");       // prepare syscall arg1
-		asm volatile("mov r1, %0" ::"l"(arg2) : "r0", "r1"); // prepare syscall arg2
-		asm volatile("mov lr, %0" ::"r"(fun) : "r0", "r1");
-		asm volatile("subs pc, lr, #0");
+
+		syscall_type syscall_fun = (syscall_type) fun;
+		syscall_fun(arg1, arg2);
+
+		//asm volatile("mov r0, %0" ::"l"(arg1) : "r0");       // prepare syscall arg1
+		//asm volatile("mov r1, %0" ::"l"(arg2) : "r0", "r1"); // prepare syscall arg2
+		//asm volatile("mov lr, %0" ::"r"(fun) : "r0", "r1");
+		//asm volatile("subs pc, lr, #0");
 		Machine::unreachable();
 	}
 

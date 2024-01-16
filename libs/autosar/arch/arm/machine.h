@@ -11,6 +11,7 @@
 #include "os/util/inline.h"
 #include "output.h"
 #include "stdint.h"
+#include "hardware_threads.h"
 
 /**
  *  @ingroup arch
@@ -64,6 +65,10 @@ struct Machine {
 		uint32_t r;
 		asm("mrs %[ps], cpsr" : [ps] "=r"(r));
 		return r;
+	}
+
+	static forceinline uint32_t get_mode() {
+		return get_cpsr() & 0x1f;
 	}
 
 	// TODO
@@ -187,10 +192,7 @@ struct Machine {
 	 * instruction.
 	 *
 	 */
-	static forceinline void trigger_interrupt(uint8_t irq_, uint8_t cpuid = 0, bool sync = false) {
-		// TODO: unify with posix/machine.h
-		//arch::irq.trigger_interrupt(irq_, cpuid, sync);
-	}
+	static void trigger_interrupt(uint8_t irq_, uint8_t cpuid = 0, bool sync = false);
 
 	/**
 	 * \brief Trigger a non-software interrupt
@@ -204,10 +206,7 @@ struct Machine {
 	// static forceinline void trigger_interrupt(uint8_t irq) {
 	//   //arch::LAPIC::trigger(irq);
 	// }
-	static forceinline void trigger_interrupt_from_user(uint8_t irq_, uint8_t cpuid = 0, bool sync = true) {
-		// TODO: unify with posix/machine.h
-		//arch::irq.trigger_interrupt(irq_, cpuid, sync);
-	}
+	static void trigger_interrupt_from_user(uint8_t irq_, uint8_t cpuid = 0, bool sync = true);
 
 	/**
 	 * \brief Unreachable code
@@ -235,20 +234,8 @@ struct Machine {
 	 * At the moment there is no real shutdown sequence.
 	 */
 	static forceinline void shutdown(void) {
-#if DEBUG
-		// don't really shutdown when debugging
-		debug << "shutdown requested" << endl;
-#else
-		// TODO
-		// write EOT on serial console to exit gem5 simulation
-		//		kout << ((char) 0x04);
+		//debug << ("Machine::shutdown!\n");
 		Machine::reset();
-#endif
-
-		// No unreachable() here, otherwise the generator will be unhappy!
-		// stop in case ACPI shutdown failed
-		// halt(); // causes exception when called from ring 3
-		// while(true) nop();
 	}
 };
 

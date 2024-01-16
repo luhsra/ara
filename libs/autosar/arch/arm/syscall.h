@@ -32,7 +32,7 @@ namespace arch {
 	 * \tparam direct execute syscall directly in IRQ handler instead of userspace (default: false)
 	 */
 	template <typename F>
-	forceinline void syscall(F fun) {
+	forceinline __attribute__((optnone)) void syscall(F fun) {
 		// use clobber instead of pusha to save and restore only required registers:
 		// gcc documentation says to list modified input in outputs and they must not be included
 		// in clobber list, but LLVM works only the other way ...
@@ -43,7 +43,7 @@ namespace arch {
 		   clobber of the frame pointer correctly. */
 		asm volatile("push {r7,lr};"
 		             "mov r1, sp;"                  // save stackptr ...
-		             "adr r0, $1f; orr r0, r0, #1;" // Add thumb mode bit
+		             "add r0, pc, #7;"/*"adr r0, $1f;"orr r0, r0, #1;" // Add thumb mode bit */
 		             "push {r0};"                   // save return address ...
 #ifdef CONFIG_DEPENDABILITY_ENCODED
 		             "push {r0};" // .. twice

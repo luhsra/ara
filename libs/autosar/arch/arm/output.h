@@ -20,8 +20,12 @@
 
 // debugging: print kout+debug on UART
 #include "serial.h"
-extern Serial kout;
-extern Serial debug;
+#include "bufferedserial.h"
+extern BufferedSerial kout;
+extern BufferedSerial debug;
+extern BufferedSerial debug_core_arr[MAX_CPUS];
+
+#define debug_core (debug_core_arr[arch::get_cpuid()])
 
 #else // DEBUG
 
@@ -29,7 +33,7 @@ extern Serial debug;
 #include "serial.h"
 extern Serial kout;
 extern Null_Stream debug;
-#define debug_core debug
+extern Null_Stream debug_core;
 
 #endif // DEBUG
 
