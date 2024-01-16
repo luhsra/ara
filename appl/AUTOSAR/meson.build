@@ -207,17 +207,34 @@ foreach app : autosar_apps
   app += {'oil': oil}
 
   # compile the application
-  app_ll = custom_target(full_name,
-                         input : sys + '.cc',
-                         output : full_name + '.ll',
-                         depfile : full_name + '.ll.dep',
-                         command : clang_cpp +
-                                   arm_autosar_includes + # TODO REMOVE
-                                   autosar_includes +
-                                   clang_flags +
-                                   autosar_pi4_clang_flags + # TODO REMOVE
-                                   ir_flags)
-  app += {'ll': app_ll}
+  if posix_enabled
+    app_ll_posix = custom_target(full_name + '_ll_posix',
+                          input : sys + '.cc',
+                          output : full_name + '.posix.ll',
+                          depfile : full_name + '.posix.ll.dep',
+                          command : clang_cpp +
+                                    posix_autosar_includes +
+                                    autosar_includes +
+                                    clang_flags +
+                                    autosar_posix_clang_flags +
+                                    ir_flags)
+    app += {'ll': app_ll_posix} # store in ll to not break dependencies
+    app += {'ll_pi4': app_ll_posix}
+  endif
+
+  if arm_enabled
+    app_ll_pi4 = custom_target(full_name + '_ll_pi4',
+                          input : sys + '.cc',
+                          output : full_name + '.pi4.ll',
+                          depfile : full_name + '.pi4.ll.dep',
+                          command : clang_cpp +
+                                    arm_autosar_includes +
+                                    autosar_includes +
+                                    clang_flags +
+                                    autosar_pi4_clang_flags +
+                                    ir_flags)
+    app += {'ll_pi4': app_ll_pi4}
+  endif
 
 
   # trace file for sse testing
@@ -322,12 +339,12 @@ foreach app: autosar_targets
     if get_option('execute_ara')
       out = custom_target(
         full_name + '_mod_posix',
-        input : app_ll,
+        input : app['ll'],
         output : [
           full_name + '_mod.posix.ll',
           full_name+'_autosar.posix.cc'
         ],
-        depfile : full_name + '_mod.ll.dep',
+        depfile : full_name + '_mod.posix.ll.dep',
         command : [
           py3_inst, ara_py, app['ll'],
           '--os', 'AUTOSAR',
@@ -342,7 +359,7 @@ foreach app: autosar_targets
     endif
     app_ll_mod = out[0]
     autosar = out[1]
-    app += {'app_ll_mod': app_ll_mod}
+    app += {'ll_posix_mod': app_ll_mod}
     app += {'autosar_posix': autosar}
 
     app_image_posix = custom_target(full_name + '_image_posix',
@@ -372,19 +389,19 @@ foreach app: autosar_targets
 
 
 
-  if arm_enabled
+  if arm_enabled and 'trampoline' not in full_name
     if get_option('execute_ara')
       out = custom_target(
         full_name + '_mod_pi4',
-        input : app_ll,
+        input : app['ll_pi4'],
         output : [
-          full_name + '_arm_mod.pi4.ll',
+          full_name + '_mod.pi4.ll',
           full_name+'_autosar.pi4.cc',
           full_name+'_autosar.pi4.ld'
         ],
-        depfile : full_name + '_mod.ll.dep',
+        depfile : full_name + '_mod.pi4.ll.dep',
         command : [
-          py3_inst, ara_py, app['ll'],
+          py3_inst, ara_py, app['ll_pi4'],
           '--os', 'AUTOSAR',
           '--oilfile', app['oil'],
           '--ir_output', '@OUTPUT0@',
@@ -399,7 +416,7 @@ foreach app: autosar_targets
     app_ll_mod = out[0]
     autosar = out[1]
     linker_script = out[2]
-    app += {'app_ll_mod': app_ll_mod}
+    app += {'ll_pi4_mod': app_ll_mod}
     app += {'autosar_pi4': autosar}
     app += {'linker_script_pi4': linker_script}
 

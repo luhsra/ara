@@ -119,6 +119,19 @@ class PosixArch(GenericArch):
                        category=0,
                        device=self.TERM_SIG,
                        artificial=True)
+        
+        # add IPI handler
+        IPI_handler = Function("AUTOSAR_ISR_IPI", "void", [], extern_c=True)
+        self.generator.syscall_rules.Reschedule(IPI_handler, True)
+        self.generator.source_file.function_manager.add(IPI_handler)
+
+        # add termination handler for shutdownAllCores
+        TERM_handler = Function("AUTOSAR_ISR_TERM", "void", [], extern_c=True)
+
+        self.call(TERM_handler, "arch::sync_all_hardware_threads", "void",
+                  ["SYNC_PRE_SHUTDOWNHOOK"])
+        self.call(TERM_handler, "AUTOSAR_ShutdownOS", "void", ["E_OK"])
+        self.generator.source_file.function_manager.add(TERM_handler)
 
         for isr in isrs + [ipi, shutdown]:
             self.generate_isr(isr)

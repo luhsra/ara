@@ -34,10 +34,10 @@ if arm_enabled
 
     foreach src : src_files
         obj_target = custom_target(
-            src+'_arm',
+            src+'_pi4',
             input: src+'.cc',
-            output: src+'.cc.arm.o',
-            depfile: src+'.arm.dep',
+            output: src+'.cc.pi4.o',
+            depfile: src+'.pi4.dep',
             command: clang_cpp +
                     arm_autosar_includes +
                     autosar_includes +

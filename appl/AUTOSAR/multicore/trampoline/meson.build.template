@@ -18,6 +18,7 @@ app = {'full_name': name_prefix_trampoline + name,
        'name': name,
        'oil': files('system.json'),
        'll': ll,
+       'll_pi4': ll,
        'core': 'multicore',
        'path': 'trampoline/' + name,
       }
