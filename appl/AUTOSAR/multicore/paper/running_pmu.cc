@@ -1,0 +1,137 @@
+/**
+ * @defgroup apps Applications
+ * @brief The applications...
+ */
+
+/**
+ * @file
+ * @ingroup apps
+ * @brief Just a simple test application
+ */
+#include "autosar/os.h"
+#include "test/test.h"
+#include "machine.h"
+
+#define PMU_TRACE_C
+#include "pmu.h"
+
+typedef struct {int a;} result;
+
+result* do_computation() {return nullptr;}
+void ara_timing_info(int, int);
+
+#if LOCKS_JSON
+{"no_timing": {"spin_states": {"S1": 4}}, "with_timing": {"spin_states": {"S1": 0}}}
+#endif //LOCKS_JSON
+
+// CPU 0
+DeclareTask(T01);
+DeclareTask(T02);
+// CPU 1
+DeclareTask(T11); // autostart
+// CPU 2
+DeclareTask(T21);
+
+DeclareSpinlock(S1);
+DeclareSpinlock(S2);
+
+
+void start() {
+	StatusType rv;
+	switch (GetCoreID()) {
+	case OS_CORE_ID_MASTER:
+		StartCore(OS_CORE_ID_1, &rv);
+		StartCore(OS_CORE_ID_2, &rv);
+	default:
+		StartOS(0);
+	}
+}
+
+TEST_MAKE_OS_MAIN( start() )
+
+/* 
+ * CPU0
+ */
+TASK(T01) {
+	arch::PMU::start();
+	//arch::PMU::trace_cycles();
+	//test_trace('6');
+	ara_timing_info(20, 25);
+	GetSpinlock(S1);
+	ara_timing_info(5, 10);
+	/* ... some computation */
+	ReleaseSpinlock(S1);
+	ara_timing_info(2, 4);
+
+	//test_trace_assert("123456");
+	//test_finish();
+	//arch::PMU::trace_cycles();
+	arch::PMU::print_cycles();
+
+	ShutdownMachine();
+}
+
+TASK(T02) {
+	arch::PMU::start();
+	//test_trace('3');
+	arch::PMU::trace_cycles();
+	ara_timing_info(60, 80);
+	arch::PMU::trace_cycles();
+	//test_trace('5');
+	/* ... some computation ... */
+	TerminateTask();
+}
+
+/*
+ * CPU 1
+ */
+
+
+TASK(T11) {
+	//test_trace('1');
+	arch::PMU::start();
+	// heat up measurement caching
+	ara_timing_info(1, 1);
+	//arch::PMU::trace_cycles();
+	arch::PMU::reset_counters();
+	arch::PMU::reset();
+
+	//arch::PMU::trace_cycles(); // T11 start
+	ara_timing_info(1, 2);		//
+	/* ... some computation ... */
+	GetSpinlock(S1);
+	//arch::PMU::trace_cycles(); // ABB9+10
+	ara_timing_info(8, 16);		//
+	/* ... */
+	ReleaseSpinlock(S1);
+	//arch::PMU::trace_cycles(); // ABB11+12
+	ara_timing_info(1, 3);
+	//test_trace('2');
+	ActivateTask(T02);
+	//arch::PMU::trace_cycles(); // ABB13+14
+	ara_timing_info(10, 20);	// 
+	//test_trace('4');
+	ActivateTask(T01);
+	//arch::PMU::trace_cycles(); // ABB15+16
+	ara_timing_info(20, 30);	// 
+	ActivateTask(T21);
+	//arch::PMU::trace_cycles(); // ABB17+18
+	ara_timing_info(3, 4);
+
+	TerminateTask();
+}
+
+/*
+ * CPU 2
+ */
+TASK(T21) {
+	arch::PMU::start();
+	ara_timing_info(5, 9);
+	/* ... some computation ... */
+	GetSpinlock(S1);
+	ara_timing_info(8, 16);
+	/* ... */
+	ReleaseSpinlock(S1);
+	ara_timing_info(1, 2);
+	TerminateTask();
+}

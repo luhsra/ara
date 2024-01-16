@@ -18,7 +18,7 @@ TASK(H1) {
 }
 
 TASK(H2) {
-	static int i = 0;
+	//static int i = 0;
 	if (i == 0) {
 		i++;
 		test_trace('2');

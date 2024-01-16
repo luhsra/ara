@@ -20,7 +20,7 @@ TASK(T0) {
 	int cores = GetNumberOfActivatedCores();
 	test_init();
 	test_start();
-	int expected_cores = get_nprocs() < 4 ? get_nprocs() : 4;
+	int expected_cores = 4;
 	test_eq(cores, expected_cores);
 	test_positive_tests_eq(1);
 	test_finish();

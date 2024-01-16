@@ -5,8 +5,8 @@
 #define NUMBER_OF_CORES 99
 #define uint32 uint32_t
 
-#define OS_CORE_ID_MASTER 0
-#define OS_CORE_ID_1 1
+//#define OS_CORE_ID_MASTER 0
+//#define OS_CORE_ID_1 1
 
 
 // fake functions for trampoline

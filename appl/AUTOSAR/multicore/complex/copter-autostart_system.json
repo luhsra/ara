@@ -129,7 +129,7 @@
             "MavlinkSendTask": {
               "activation": 1,
               "autostart": false,
-              "priority": 0,
+              "priority": 1,
               "spinlocks": ["SPIBusLock"],
               "resources": ["SPIBus1"],
               "schedule": true

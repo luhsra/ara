@@ -197,7 +197,7 @@ TASK(CopterControlTask) {
 	TerminateTask();
 }
 
-ISR2(MavLinkRecvHandler) {
+/*ISR2(MavLinkRecvHandler) {
 	ara_timing_info(1, 2);
 #ifndef CONFIG_ARCH_OSEK_V
 	test_trace(0xA1);
@@ -207,7 +207,7 @@ ISR2(MavLinkRecvHandler) {
 #ifndef CONFIG_ARCH_OSEK_V
 	test_trace(0xA2);
 #endif
-}
+}*/
 
 TASK(CopterControlWatchdogTask) {
 	ara_timing_info(3, 6);

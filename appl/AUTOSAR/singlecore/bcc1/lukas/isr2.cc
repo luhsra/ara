@@ -5,7 +5,7 @@
  */
 
 #include "test/test.h"
-#include "os/os.h"
+#include "autosar/os.h"
 
 DeclareTask(Task1);
 DeclareTask(Task2);
