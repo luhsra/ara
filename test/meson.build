@@ -279,65 +279,29 @@ if get_option('enable_step_tests')
   endforeach
 
   # system runtime test for generator
-  supported = [
-    'bcc1/alarm1',
-    'bcc1/alarm2',
-    'bcc1/alarm3',
-    'bcc1/complex1',
-    'bcc1/complex2',
-    'bcc1/counter1',
-    'bcc1/isr2',
-    'bcc1/resource1',
-    'bcc1/resource2',
-    'bcc1/sse1',
-    'bcc1/task1',
-    'bcc1/task2',
-    'ecc1/bt1',
-    'ecc1/event1',
-    'ecc1/eventisr1',
-    'sched',
-    'andreas/ipi',
-    'andreas/ipi2',
-    'andreas/spinlock',
-    'andreas/cores',
-    'trampoline/mc_coreid_s1',
-    'trampoline/mc_autostart_s1',
-    'trampoline/mc_autostart_s2',
-    'trampoline/mc_startOs_s1',
-    'trampoline/mc_startup_s1',
-    'trampoline/mc_events_s1',
-    'trampoline/mc_scheduling_s1',
-    'trampoline/mc_taskActivation_s1',
-    'trampoline/mc_taskChaining_s1',
-    'trampoline/mc_eventSetting_s1',
-  ]
   if posix_enabled
     foreach app : autosar_generated_targets_posix
-      if app.has_key('path') and app['path'] in supported
-        test('autosar_generator_' + app['full_name'],
-          py3_inst,
-          args: [files('autosar_generator.py'), app['run_cmd_posix']],
-          env: [python_path],
-          depends: ara_py,
-          is_parallel: false,
-          suite: ['autosar_generator_posix']
-        )
-      endif
+      test('autosar_generator_posix_' + app['full_name'],
+        py3_inst,
+        args: [files('autosar_generator.py'), app['run_cmd_posix']],
+        env: [python_path],
+        depends: ara_py,
+        is_parallel: false,
+        suite: ['autosar_generator_posix']
+      )
     endforeach
   endif
 
   if arm_enabled
     foreach app : autosar_generated_targets_pi4
-      if app.has_key('path') and app['path'] in supported
-        test('autosar_generator_' + app['full_name'],
-          py3_inst,
-          args: [files('autosar_generator.py'), app['run_cmd_pi4']],
-          env: [python_path],
-          depends: ara_py,
-          is_parallel: false,
-          suite: ['autosar_generator_posix']
-        )
-      endif
+      test('autosar_generator_pi4_' + app['full_name'],
+        py3_inst,
+        args: [files('autosar_generator.py'), app['run_cmd_pi4']],
+        env: [python_path],
+        depends: ara_py,
+        is_parallel: false,
+        suite: ['autosar_generator_pi4']
+      )
     endforeach
   endif
 endif
