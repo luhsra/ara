@@ -19,6 +19,7 @@ src_files = [
   'platforms/raspberry/timer',
   'platforms/raspberry/mmu',
   'platforms/raspberry/serial',
+  'platforms/raspberry/pmu'
 ]
 
 as_files = [

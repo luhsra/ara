@@ -30,7 +30,6 @@ namespace arch {
 	static int counter0_nr;
 
 	  public:
-#if defined(PMU_TRACE_A) || defined(PMU_TRACE_B) || defined(PMU_TRACE_C)
 		static forceinline void start() {
 
 			// Performance Monitor Control Register (PMCR) : initialize
@@ -107,14 +106,5 @@ namespace arch {
 			}
 		}
 
-#else // PMU_TRACE
-	// empty stubs
-	static forceinline void start() {}
-	static forceinline void trace_cycles() {}
-	static forceinline void trace_counter0() {}
-	static forceinline void stop() {}
-	static forceinline void print_cycles() {}
-	static forceinline void print_counter0() {}
-#endif
 	};
 } // namespace arch

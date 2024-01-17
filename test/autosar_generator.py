@@ -23,15 +23,20 @@ def main():
     with subprocess.Popen(executable, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as process:
 
         stdout_log = process.stdout.read().decode('utf-8')
+        stderr_log = process.stderr.read().decode('utf-8')
 
         # log the results
-        print(process.stderr.read().decode('utf-8'))
+        print(stderr_log)
         print(stdout_log)
 
-        # result is in last line
-        result = "".join(stdout_log.splitlines()[-1:])
+        # result is in stdout
+        result = False
+        for line in stdout_log.splitlines():
+            if line == "Tests finished: ALL OK":
+                result = True
+                break
 
-        fail_if(result != "Tests finished: ALL OK", "Runtime test failed")
+        fail_if(result == False, "Runtime test failed")
 
 
 
