@@ -125,7 +125,7 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'timing',             'name': 'b',                     'oil': 'system_b.json', 'timing': 'b_timing.json'},
   {'core': 'multicore',  'path': 'timing',             'name': 'c',                     'oil': 'system_c.json', 'timing': 'c_timing.json'},
   {'core': 'multicore',  'path': 'paper',              'name': 'running',               'oil': 'system_running.json', 'mtrace': 'running.trace.json', 'locks': 'EXTRACT', 'timing': 'BB', 'ttrace': 'running.timing.trace.json'},
-# {'core': 'multicore',  'path': 'paper',              'name': 'running_pmu',           'oil': 'system_running.json', 'mtrace': 'running.trace.json', 'locks': 'EXTRACT', 'timing': 'BB', 'ttrace': 'running.timing.trace.json'},
+  {'core': 'multicore',  'path': 'paper',              'name': 'running_pmu',           'oil': 'system_running.json', 'mtrace': 'running.trace.json', 'locks': 'EXTRACT', 'timing': 'BB', 'ttrace': 'running.timing.trace.json', 'disabled': ['posix']},
   {'core': 'multicore',  'path': 'paper',              'name': 'running_long11',        'oil': 'system_running.json', 'locks': 'EXTRACT', 'timing': 'BB'},
   {'core': 'multicore',  'path': 'paper',              'name': 'deadlock',              'oil': 'system_running.json', 'locks': 'EXTRACT', 'timing': 'BB', 'mtrace': 'deadlock.trace.json'},
   {'core': 'multicore',  'path': 'paper',              'name': 'minimal',               'oil': 'system_minimal.json', 'locks': 'EXTRACT'},
@@ -140,11 +140,11 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'complex',            'name': 'copter-with-alarms',    'oil': 'copter-with-alarms_system.json', 'timing': 'BB'},
   {'core': 'multicore',  'path': 'complex',            'name': 'copter-single-alarm',   'oil': 'copter-single-alarm_system.json', 'timing': 'BB'},
   {'core': 'multicore',  'path': 'complex',            'name': 'copter-autostart',      'oil': 'copter-autostart_system.json', 'locks': 'EXTRACT', 'timing': 'BB'},
-# {'core': 'multicore',  'path': 'complex',            'name': 'copter-autostart_pmu',  'oil': 'copter-autostart_system.json', 'locks': 'EXTRACT', 'timing': 'BB'},
+  {'core': 'multicore',  'path': 'complex',            'name': 'copter-autostart_pmu',  'oil': 'copter-autostart_system.json', 'locks': 'EXTRACT', 'timing': 'BB', 'disabled': ['posix']},
   {'core': 'multicore',  'path': 'andreas'/ 'ipi',     'name': 'a',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'ipi',     'name': 'b',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'ipi',     'name': 'c',                     'oil': 'system.json'},
-  {'core': 'multicore',  'path': 'andreas'/ 'ipi',     'name': 'd',                     'oil': 'system.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'ipi',     'name': 'd',                     'oil': 'system.json', 'disabled': ['posix', 'pi4']},
   {'core': 'multicore',  'path': 'andreas'/ 'ipi',     'name': 'e',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'ipi',     'name': 'f',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'ipi',     'name': 'g',                     'oil': 'system.json'},
@@ -153,23 +153,23 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'andreas'/ 'ipi2',    'name': 'c',                     'oil': 'system_c.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'ipi2',    'name': 'd',                     'oil': 'system_d.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'ipi2',    'name': 'e',                     'oil': 'system_e.json'},
-  {'core': 'multicore',  'path': 'andreas'/ 'ipi2',    'name': 'f',                     'oil': 'system_f.json'},
-  {'core': 'multicore',  'path': 'andreas'/ 'ipi2',    'name': 'g',                     'oil': 'system_f.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'ipi2',    'name': 'f',                     'oil': 'system_f.json', 'disabled': ['pi4']},
+  {'core': 'multicore',  'path': 'andreas'/ 'ipi2',    'name': 'g',                     'oil': 'system_f.json', 'disabled': ['pi4']},
   {'core': 'multicore',  'path': 'andreas'/ 'spinlock','name': 'a',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'spinlock','name': 'b',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'spinlock','name': 'c',                     'oil': 'system.json'},
-#  {'core': 'multicore',  'path': 'andreas'/ 'spinlock','name': 'd',                     'oil': 'system_d.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'spinlock','name': 'd',                     'oil': 'system_d.json', 'disabled': ['posix', 'pi4']},
   {'core': 'multicore',  'path': 'andreas'/ 'spinlock','name': 'e',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'spinlock','name': 'f',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'cores',   'name': '4',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'cores',   'name': '12',                    'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'cores',   'name': '16',                    'oil': 'system.json'},
-#  {'core': 'multicore',  'path': 'andreas'/ 'pmu',    'name': 'minimal',                'oil': 'system_spinlock.json'},
-#  {'core': 'multicore',  'path': 'andreas'/ 'pmu',    'name': 'ipi_send',               'oil': 'system_ipi_send.json'},
-#  {'core': 'multicore',  'path': 'andreas'/ 'pmu',    'name': 'ipi_recv',               'oil': 'system_ipi_recv.json'},
-#  {'core': 'multicore',  'path': 'andreas'/ 'pmu',    'name': 'ipi_recv_cache',         'oil': 'system_ipi_recv.json'},
-#  {'core': 'multicore',  'path': 'andreas'/ 'pmu',    'name': 'ipi_max',                'oil': 'system_ipi_max.json'},
-#  {'core': 'multicore',  'path': 'andreas'/ 'pmu',    'name': 'get_spinlock',           'oil': 'system_spinlock.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'pmu',    'name': 'minimal',                'oil': 'system_spinlock.json', 'disabled': ['posix']},
+  {'core': 'multicore',  'path': 'andreas'/ 'pmu',    'name': 'ipi_send',               'oil': 'system_ipi_send.json', 'disabled': ['posix']},
+  {'core': 'multicore',  'path': 'andreas'/ 'pmu',    'name': 'ipi_recv',               'oil': 'system_ipi_recv.json', 'disabled': ['posix']},
+  {'core': 'multicore',  'path': 'andreas'/ 'pmu',    'name': 'ipi_recv_cache',         'oil': 'system_ipi_recv.json', 'disabled': ['posix']},
+  {'core': 'multicore',  'path': 'andreas'/ 'pmu',    'name': 'ipi_max',                'oil': 'system_ipi_max.json', 'disabled': ['posix']},
+  {'core': 'multicore',  'path': 'andreas'/ 'pmu',    'name': 'get_spinlock',           'oil': 'system_spinlock.json', 'disabled': ['posix']},
 ]
 # conformance tests for trampoline
 subdir('multicore' / 'trampoline')
@@ -294,7 +294,9 @@ foreach app : autosar_apps
 
 endforeach
 
-autosar_generated_targets = []
+autosar_generated_targets_posix = []
+autosar_generated_targets_pi4 = []
+
 foreach app: autosar_targets
   full_name = app['full_name']
   generate_timing_settings = custom_target(
@@ -335,7 +337,7 @@ foreach app: autosar_targets
                            )
 
 
-  if posix_enabled
+  if posix_enabled and not (app.has_key('disabled') and 'posix' in app['disabled'])
     if get_option('execute_ara')
       out = custom_target(
         full_name + '_mod_posix',
@@ -382,14 +384,16 @@ foreach app: autosar_targets
                                       )
 
     app += {'app_image_posix': app_image_posix}
-    run_target('run_' + full_name + '_posix', command: [app_image_posix])
 
-    autosar_generated_targets += app
+    run_cmd = [app_image_posix]
+    app += {'run_cmd_posix': run_cmd}
+    run_target('run_' + full_name + '_posix', command: run_cmd)
+
+    autosar_generated_targets_posix += app
   endif
 
 
-
-  if arm_enabled and 'trampoline' not in full_name
+  if arm_enabled and not (app.has_key('disabled') and 'pi4' in app['disabled'])
     if get_option('execute_ara')
       out = custom_target(
         full_name + '_mod_pi4',
@@ -441,8 +445,11 @@ foreach app: autosar_targets
                                       autosar_pi4_clang_flags)
 
     app += {'app_image_pi4': app_image_pi4}
+    run_cmd = [meson.current_source_dir() / 'qemu-system-aarch64', '-M', 'raspi4b1g', '-no-reboot', '-nographic', '-serial', 'null', '-serial','mon:stdio', '-kernel', app_image_pi4]
+    app += {'run_cmd_pi4': run_cmd}
+    run_target('run_' + full_name + '_pi4', command: run_cmd)
 
-    run_target('run_' + full_name + '_pi4', command: [meson.current_source_dir() / 'qemu-system-aarch64', '-M', 'raspi4b1g', '-no-reboot', '-nographic', '-serial', 'null', '-serial','mon:stdio', '-kernel', app_image_pi4])
+    autosar_generated_targets_pi4 += app
   endif
 
 endforeach

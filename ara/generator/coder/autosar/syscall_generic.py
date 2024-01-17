@@ -230,9 +230,8 @@ class GenericSystemCalls(BaseCoder):
             kernelspace.add(Statement("result = E_OS_ACCESS"))
             kernelspace.add(Statement("CALL_HOOK(ErrorHook, result)"))
             kernelspace.add(Comment("Dispatch directly back to Userland"))
-            self.call(check_error, "Dispatcher::ResumeToTask", "void",
+            self.call(kernelspace, "Dispatcher::ResumeToTask", "void",
                     [self.task_desc(curr_task)])
-            kernelspace.add(check_error)
             return False
 
         # if PMU_TRACE_A

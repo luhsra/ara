@@ -29,7 +29,7 @@ TASK(T00) {
 	test_trace('1');
 	ReleaseSpinlock(S1);
 	TerminateTask();
-	//ShutdownOS(E_OK);
+	ShutdownOS(E_OK);
 }
 
 TASK(T01) { TerminateTask(); }
@@ -50,5 +50,6 @@ void ShutdownHook(StatusType status) {
 	if (GetCoreID() == OS_CORE_ID_1) {
 		test_trace_assert("12");
 		test_finish();
+		ShutdownMachine();
 	}
 }

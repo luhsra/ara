@@ -11,6 +11,8 @@ Spinlock::Spinlock(int id) : id(id) {
 	this->sl = 0;
 }
 
+//Spinlock::~Spinlock() {}
+
 StatusType Spinlock::lock() {
     int result = 1;
 
