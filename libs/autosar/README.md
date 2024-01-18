@@ -7,7 +7,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 MACAW (Multicore AUTOSAR Compatible Application-specific Whole-system-optimizer) is based upon [dOSEK](https://www4.cs.fau.de/Research/dOSEK/).
 It requires ARA for system analysis and can leverage MultiSSE results for system call specialization.
-Currently, MACAW only supports the POSIX platform on x86.
+MACAW supports the POSIX "platform" on x86-Linux and the Raspberry Pi 4B.
 
 ## Components
 
@@ -20,23 +20,21 @@ Currently, MACAW only supports the POSIX platform on x86.
 
 ```bash
 # configure meson for posix architecture
-meson build -Darch=posix -Denable_toplevel_tests=false
+meson build --native-file native-lab.txt --reconfigure -D execute_ara=true -D enable_arm=enabled -D toolchains:arm_libs=/usr/arm-none-eabi
 cd build
 
 # build and run single application
-ninja run_autosar_multicore_andreas_ipi_a
+ninja run_autosar_multicore_andreas_ipi_a_posix
+ninja run_autosar_multicore_andreas_ipi_a_pi4
 
-# run all tests
-meson test --suite autosar_generator
-# multicore tests only
-meson test --suite autosar_generator_multicore
+# run all tests for posix
+meson test --suite autosar_generator_multicore_posix
 ```
 
 ## Specialization
 
-By default, images are generated using the settings defined in `ara/settings/autosar_generator.json` and the options `lock_elision` and `ipi_avoidance` are enabled.
+By default, images are generated using the ARA settings defined in `settings/autosar_generator_{posix|arm}.json`.
 
 ## Debugging
 
-When the meson `debug` configuration is set (default true), the binaries are built with debug output (`-DDEBUG`).
-Debug information is written to STDERR, while the execution test results are in STDOUT.
+To get debug output, the binaries can be built with `-DDEBUG`.
