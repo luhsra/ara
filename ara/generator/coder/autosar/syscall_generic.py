@@ -280,9 +280,10 @@ class GenericSystemCalls(BaseCoder):
 
         check_error = If("result != E_OK")
         check_error.add(Statement("CALL_HOOK(ErrorHook, result)"))
-        kernelspace.add(Comment("Dispatch directly back to Userland"))
+        check_error.add(Comment("Dispatch directly back to Userland"))
         self.call(check_error, "Dispatcher::ResumeToTask", "void",
                   [self.task_desc(curr_task)])
+        check_error.add(Statement("return E_OS_ACCESS"))
         kernelspace.add(check_error)
 
         self.call(kernelspace, f"scheduler_[{task.cpu_id}].SetReady_impl",

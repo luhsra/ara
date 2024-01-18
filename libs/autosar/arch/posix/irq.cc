@@ -139,8 +139,6 @@ void IRQ::guardian(int signum) {
 	irq.ast_level[cpuid]--;
 	if (irq.ast_level[cpuid] == 0 && irq.ast_requested[cpuid]) {
 		irq.ast_requested[cpuid] = false;
-		debug_core << "ipi_cleared" << endl;
-		ipi_cleared[cpuid] = true;
 		__OS_ASTSchedule(0);
 	}
 }

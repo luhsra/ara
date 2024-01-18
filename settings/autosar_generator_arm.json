@@ -15,7 +15,7 @@
 		"log_level": "debug",
 		"arch": "arm",
 		"os": "autosar",
-		"lock_elision": true,
+		"lock_elision": false,
 		"ipi_avoidance": false
 	},
 	"LockElision": {

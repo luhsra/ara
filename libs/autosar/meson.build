@@ -14,7 +14,7 @@ if arm_enabled
     #'-DPMU_TRACE_A', # PMU tracing (syscall)
     #'-DPMU_TRACE_B', # PMU tracing (IRQ)
     #'-DPMU_TRACE_C', # only user
-    #'-DDEBUG'
+    #'-DDEBUG',
     '-DQEMU', #QEMU
   ]
 
@@ -45,15 +45,15 @@ if posix_enabled
   autosar_posix_clang_flags = [
     '--target=i386-pc-linux-gnu',
     '-m32',
+    #'-DDEBUG',
   ]
   autosar_posix_ld_flags = [
     '-lpthread',
     '-lrt',
   ]
   libplatforms_proj = subproject('ara-libplatforms')
-  ar_args = libplatforms_proj.get_variable('ar_args')
   arm_ar_cmd = libplatforms_proj.get_variable('ar_cmd')
-  posix_ar_cmd = [toolchains.get_variable('llvm_ar'), ar_args]
+  posix_ar_cmd = [toolchains.get_variable('llvm_ar'), ['rcs', '@OUTPUT@', '@INPUT@']]
 endif
 
 subdir('arch')

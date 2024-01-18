@@ -13,8 +13,8 @@
 		"log_level": "debug",
 		"arch": "posix",
 		"os": "autosar",
-		"lock_elision": true,
-		"ipi_avoidance": true
+		"lock_elision": false,
+		"ipi_avoidance": false
 	},
 	"LockElision": {
 		"fail_on_deadlock": true
