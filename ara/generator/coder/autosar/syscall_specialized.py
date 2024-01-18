@@ -38,27 +38,30 @@ class SpecializedSystemCalls(GenericSystemCalls):
     def GetSpinlock(self, syscall, userspace, kernelspace):
         # check if Locking not needed
         if self.elide_lock(syscall, False):
-            super().GetSpinlock(syscall, userspace, kernelspace) # needed
+            super().GetSpinlock(syscall, userspace, kernelspace)  # needed
         else:
             userspace.prepend(Comment("Lock elision"))
             userspace.prepend(Statement("return E_OK"))
-            userspace.prepend(Statement("debug_core << \"Lock elided\" << endl"))
+            userspace.prepend(
+                Statement("debug_core << \"Lock elided\" << endl"))
 
     def TryToGetSpinlock(self, syscall, userspace, kernelspace):
         if self.elide_lock(syscall, False):
-            super().TryToGetSpinlock(syscall, userspace, kernelspace) # needed
+            super().TryToGetSpinlock(syscall, userspace, kernelspace)  # needed
         else:
             userspace.prepend(Comment("Lock elision"))
             userspace.prepend(Statement("return E_OK"))
-            userspace.prepend(Statement("debug_core << \"Lock elided\" << endl"))
+            userspace.prepend(
+                Statement("debug_core << \"Lock elided\" << endl"))
 
     def ReleaseSpinlock(self, syscall, userspace, kernelspace):
         if self.elide_lock(syscall, True):
-            super().ReleaseSpinlock(syscall, userspace, kernelspace) # needed
+            super().ReleaseSpinlock(syscall, userspace, kernelspace)  # needed
         else:
             userspace.prepend(Comment("Lock elision"))
             userspace.prepend(Statement("return E_OK"))
-            userspace.prepend(Statement("debug_core << \"Lock elided\" << endl"))
+            userspace.prepend(
+                Statement("debug_core << \"Lock elided\" << endl"))
 
     def avoid_ipi(self, abb, block):
         needed = True
@@ -99,6 +102,5 @@ class SpecializedSystemCalls(GenericSystemCalls):
                 return
 
             needed = False
-            
+
         return needed
-            

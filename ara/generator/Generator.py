@@ -7,7 +7,9 @@
 import os
 from .coder.elements import SourceFile, Include
 
+
 class Generator:
+
     def __init__(self, ara_graph, ara_step, arch_rules, os_rules,
                  syscall_rules, _log):
         self.ara_graph = ara_graph
@@ -27,7 +29,6 @@ class Generator:
         os_rules.set_generator(self)
         arch_rules.set_generator(self)
         syscall_rules.set_generator(self)
-
 
     def generate(self, out_file, passthrough=False):
         self.file_prefix = out_file
@@ -57,7 +58,6 @@ class Generator:
         self.os_rules.generate_system_code()
         self.syscall_rules.generate_system_code()
 
-
         self.arch_rules.generate_default_interrupt_handlers()
 
     def generate_startup_code(self):
@@ -72,7 +72,6 @@ class Generator:
             with self.open_file(name) as f:
                 data = content.expand(self)
                 f.write(data)
-
 
     def open_file(self, name, mode='w+'):
         # if not os.path.isdir(self.file_prefix):

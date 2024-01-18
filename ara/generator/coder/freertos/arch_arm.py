@@ -73,7 +73,6 @@ default_traps = [
 ]
 
 
-
 class ArmArch(GenericArch):
 
     def static_stack(self, task):
@@ -81,7 +80,7 @@ class ArmArch(GenericArch):
         stack = DataObjectArray("StackType_t",
                                 f't{task.name}_{task.uid}_static_stack',
                                 f'{task.stack_size}',
-                                extern_c = True)
+                                extern_c=True)
         self.generator.source_file.data_manager.add(stack)
         task.impl.stack = stack
         return stack
@@ -89,16 +88,20 @@ class ArmArch(GenericArch):
     def static_unchanged_tcb(self, task):
         self._log.debug("Generating TCB mem for %s", task.name)
         if task.specialization_level == 'initialized':
-            name_length = self.ara_graph.os.config['configMAX_TASK_NAME_LEN'].get()
+            name_length = self.ara_graph.os.config[
+                'configMAX_TASK_NAME_LEN'].get()
             try:
-                tcb = self.TCB(task, True, extern_c=True, name_length=name_length)
+                tcb = self.TCB(task,
+                               True,
+                               extern_c=True,
+                               name_length=name_length)
             except:
                 task.specialization_level == 'static'
                 return self.static_unchanged_tcb(task)
         else:
             tcb = DataObject("StaticTask_t",
                              f't{task.name}_{task.uid}_tcb',
-                             extern_c = True)
+                             extern_c=True)
         self.generator.source_file.data_manager.add(tcb)
         task.impl.tcb = tcb
         return tcb
@@ -115,18 +118,21 @@ class ArmArch(GenericArch):
         elif task.specialization_level == 'static':
             return self.static_stack(task)
         else:
-            self._log.error(f"unknown init type: {task.specialization_level} for {task}")
+            self._log.error(
+                f"unknown init type: {task.specialization_level} for {task}")
 
     def initialized_stack(self, task):
         self._log.debug("Generating initialized stack for %s", task.name)
-        if isinstance(task.parameters, str) or isinstance(task.parameters, int):
+        if isinstance(task.parameters, str) or isinstance(
+                task.parameters, int):
             task_parameters = task.parameters
         elif isinstance(task.parameters, pyllco.Constant):
             try:
                 task_parameters = task.parameters.get()
             except:
                 task_parameters = "&" + task.parameters.get_name()
-                param_decl = ExternalDataObject('unsigned', task.parameters.get_name())
+                param_decl = ExternalDataObject('unsigned',
+                                                task.parameters.get_name())
                 self.generator.source_file.data_manager.add(param_decl)
         else:
             assert False, 'unexpected init stack fallback'
@@ -134,11 +140,11 @@ class ArmArch(GenericArch):
             task_function = 'prvIdleTask'
         else:
             task_function = task.cfg.vp.name[task.cfg.vertex(task.function)]
-        stack = InstanceDataObject("InitializedStack_t",
-                                   f't{task.name}_{task.uid}_static_stack',
-                                   [f'{task.stack_size}'],
-                                   [f'(void *){task_function}', f'(void *){task_parameters}'],
-                                   extern_c = False)
+        stack = InstanceDataObject(
+            "InitializedStack_t",
+            f't{task.name}_{task.uid}_static_stack', [f'{task.stack_size}'],
+            [f'(void *){task_function}', f'(void *){task_parameters}'],
+            extern_c=False)
         self.generator.source_file.data_manager.add(stack)
         task.impl.stack = stack
         stack.tos = f"((StackType_t*)&{stack.name}) + {task.stack_size} - 17"
@@ -151,7 +157,8 @@ class ArmArch(GenericArch):
             return
         if int(queue.size) == 0 or int(queue.length) == 0:
             self._log.debug("queue size/length = 0: %s", queue)
-            queue.impl.data = self.generator.source_file.data_manager.get_nullptr()
+            queue.impl.data = self.generator.source_file.data_manager.get_nullptr(
+            )
         else:
             try:
                 size = queue.size * queue.length
@@ -173,9 +180,11 @@ class ArmArch(GenericArch):
 
         self.generator.source_file.includes.add(Include('time_markers.h'))
         for marker in startup_asm.time_markers:
-            m = StructDataObject('__time_marker_t', f'__time_{marker}',
-                                 attributes=['section(".data.__time_markers")'],
-                                 extern_c=True)
+            m = StructDataObject(
+                '__time_marker_t',
+                f'__time_{marker}',
+                attributes=['section(".data.__time_markers")'],
+                extern_c=True)
             m['name'] = f'"{marker}"'
             self.generator.source_file.data_manager.add(m)
 
@@ -189,7 +198,8 @@ class ArmArch(GenericArch):
 class StartupCodeTemplate(CodeTemplate):
 
     def __init__(self, arm, debug=True):
-        super().__init__(arm.generator, 'arch/arm/stm32F103xb/startup_stm32f103xb.s')
+        super().__init__(arm.generator,
+                         'arch/arm/stm32F103xb/startup_stm32f103xb.s')
         self.arm = arm
         self.ara_graph = arm.ara_graph
         self.debug = debug
@@ -200,13 +210,15 @@ class StartupCodeTemplate(CodeTemplate):
         letters = [chr(x) for x in range(ord('a'), ord('z'))]
         letters += [chr(x) for x in range(ord('A'), ord('Z'))]
         letters += [chr(x) for x in range(ord('0'), ord('9'))]
-        for i,t in enumerate(default_traps):
+        for i, t in enumerate(default_traps):
             ret.append(f'.weak {t}')
             if self.debug:
                 letter = letters[i]
                 ret.append(f'DEFAULT_{t}:')
                 ret.append(f'  movs r1, #{ord(letter)} // {letter}')
-                ret.append(f'  bl _ZN6Serial7putcharEc //call Serial::putchar({letter})')
+                ret.append(
+                    f'  bl _ZN6Serial7putcharEc //call Serial::putchar({letter})'
+                )
                 ret.append(f'DEFAULT_{t}_loop:')
                 ret.append(f'  b DEFAULT_{t}_loop')
                 ret.append(f'.thumb_set {t},DEFAULT_{t}\n')

@@ -9,7 +9,13 @@ from collections import namedtuple
 
 
 class Function:
-    def __init__(self, name, rettype, argstype, extern_c=False, attributes=None):
+
+    def __init__(self,
+                 name,
+                 rettype,
+                 argstype,
+                 extern_c=False,
+                 attributes=None):
         self.name = name
         self.function_name = name
         self.rettype = rettype
@@ -25,11 +31,16 @@ class Function:
                 self.argsname.append(f"arg{i}")
 
     def __repr__(self):
+
         def attr(attr):
             return f"{attr}={getattr(self, attr)}"
-        attrs = [attr(x) for x in ["name", "function_name", "rettype",
-                                   "argstype", "statements", "extern_c",
-                                   "attributes"]]
+
+        attrs = [
+            attr(x) for x in [
+                "name", "function_name", "rettype", "argstype", "statements",
+                "extern_c", "attributes"
+            ]
+        ]
         return f"Function({', '.join(attrs)})"
 
     def unused_parameter(self, parameter):
@@ -50,20 +61,15 @@ class Function:
 
     def source_element_declarations(self):
         attributes = " ".join(self.attributes)
-        decl = "%s %s %s(%s)" % (self.rettype,
-                                 attributes,
-                                 self.name,
+        decl = "%s %s %s(%s)" % (self.rettype, attributes, self.name,
                                  ", ".join(self.argstype))
         if self.extern_c:
             decl = 'extern "C" %s' % decl
         return Statement(decl)
 
     def source_element_definitions(self):
-        args = ["%s %s" % (x[1], x[0])
-                for x in self.arguments()]
-        guard = "%s %s(%s)" % (self.rettype,
-                               self.name,
-                               ", ".join(args))
+        args = ["%s %s" % (x[1], x[0]) for x in self.arguments()]
+        guard = "%s %s(%s)" % (self.rettype, self.name, ", ".join(args))
         if self.extern_c:
             guard = 'extern "C" %s' % guard
 
@@ -92,7 +98,13 @@ class Function:
 
 
 class FunctionDeclaration(Function):
-    def __init__(self, name, rettype="void", argstype=[], extern_c=False, attributes=None):
+
+    def __init__(self,
+                 name,
+                 rettype="void",
+                 argstype=[],
+                 extern_c=False,
+                 attributes=None):
         Function.__init__(self, name, rettype, argstype, extern_c, attributes)
 
     def add(self, statement):
@@ -110,9 +122,15 @@ class FunctionDefinitionBlock(Function):
     """
 
     def __init__(self, name, definition_args):
-        Function.__init__(self, name, rettype = None, argstype = None, extern_c = None, attributes = None)
+        Function.__init__(self,
+                          name,
+                          rettype=None,
+                          argstype=None,
+                          extern_c=None,
+                          attributes=None)
         self.definition_args = definition_args
-        self.function_name = "%s(%s) " %(self.name, ", ".join(self.definition_args))
+        self.function_name = "%s(%s) " % (self.name, ", ".join(
+            self.definition_args))
         self.name = self.function_name
 
     def source_element_declarations(self):
@@ -124,7 +142,8 @@ class FunctionDefinitionBlock(Function):
             block.add(stmt)
         return [block, "\n"]
 
-class  FunctionManager:
+
+class FunctionManager:
     Namespace = namedtuple("Namespace", ["name", "functions"])
 
     def __init__(self, _log):
@@ -132,7 +151,7 @@ class  FunctionManager:
         self.namespaces = []
         self._log = _log.getChild(self.__class__.__name__)
 
-    def add(self, function, namespace = None):
+    def add(self, function, namespace=None):
         current_scope = None
         if namespace is None:
             current_scope = self.functions
@@ -147,7 +166,8 @@ class  FunctionManager:
         for x in current_scope:
             if x.name == function.name:
                 if isinstance(function, FunctionDeclaration):
-                    self._log.info("Duplicate function declaration name %s", function.name)
+                    self._log.info("Duplicate function declaration name %s",
+                                   function.name)
                 else:
                     assert x.name != function.name, "Duplicate function name %s" % function.name
         current_scope.append(function)
@@ -159,7 +179,7 @@ class  FunctionManager:
             ret.append(func.source_element_declarations())
         ret.append("\n")
         for ns in self.namespaces:
-            ret.append("namespace " + ns.name + " {\n");
+            ret.append("namespace " + ns.name + " {\n")
             for func in ns.functions:
                 ret.append(func.source_element_declarations())
             ret.append("\n}\n")
@@ -172,7 +192,7 @@ class  FunctionManager:
         for func in self.functions:
             ret.append(func.source_element_definitions())
         for ns in self.namespaces:
-            ret.append("namespace " + ns.name + " {\n");
+            ret.append("namespace " + ns.name + " {\n")
             for func in ns.functions:
                 ret.append(func.source_element_definitions())
             ret.append("\n}\n")

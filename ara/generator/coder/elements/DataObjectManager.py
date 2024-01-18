@@ -7,21 +7,27 @@
 from .SourceElement import Block, Statement, ForRange
 from collections import namedtuple
 
+
 class UnderscorifyMap:
+
     def __getitem__(self, key):
         if chr(key).isalnum():
             return key
         return '_'
 
+
 class DataObject:
     """Manages a variable"""
 
-    def __init__(self, typename, name,
-                 static_initializer = None,
-                 dynamic_initializer = False,
-                 do_cast = False,
-                 attributes = None,
-                 extern_c = False, alignment=None):
+    def __init__(self,
+                 typename,
+                 name,
+                 static_initializer=None,
+                 dynamic_initializer=False,
+                 do_cast=False,
+                 attributes=None,
+                 extern_c=False,
+                 alignment=None):
         self.typename = typename
         self.name = name.translate(UnderscorifyMap())
         self.__static_initializer = static_initializer
@@ -50,7 +56,8 @@ class DataObject:
     def source_element_declaration(self):
         """Builds an extern declaration of the data object"""
 
-        return Statement(self.generate_prefix() + self.typename + " " + self.name)
+        return Statement(self.generate_prefix() + self.typename + " " +
+                         self.name)
 
     def source_element_allocation(self):
         """Builds an allocation statement for the object.
@@ -65,18 +72,17 @@ class DataObject:
 
             @return A Statement comprising the C allocation code
         """
-        if self.static_initializer() != None and self.static_initializer()[0] != "(":
-            return Statement(self.allocation_prefix
-                             + self.typename + " "
-                             + self.name + " = "
-                             + self.typecast
-                             + str(self.static_initializer()))
-        if self.static_initializer() != None and self.static_initializer()[0] == "(":
-            return Statement(self.allocation_prefix
-                             + self.typename + " "
-                             + self.name
-                             + str(self.static_initializer()))
-        return Statement(self.allocation_prefix + self.typename + " " + self.name)
+        if self.static_initializer() != None and self.static_initializer(
+        )[0] != "(":
+            return Statement(self.allocation_prefix + self.typename + " " +
+                             self.name + " = " + self.typecast +
+                             str(self.static_initializer()))
+        if self.static_initializer() != None and self.static_initializer(
+        )[0] == "(":
+            return Statement(self.allocation_prefix + self.typename + " " +
+                             self.name + str(self.static_initializer()))
+        return Statement(self.allocation_prefix + self.typename + " " +
+                         self.name)
 
     def static_initializer(self, indent=0):
         ret = self.__static_initializer
@@ -109,11 +115,13 @@ class DataObject:
             :returns: A Statement invoking the init() method of the object
         """
         if self.dynamic_initializer:
-            return Statement(self.data_object_manager.get_namespace() + "::" + self.name + ".init()")
+            return Statement(self.data_object_manager.get_namespace() + "::" +
+                             self.name + ".init()")
         return []
 
     def __str__(self):
         return f"<{self.typename} {self.name} {self.__static_initializer}>"
+
 
 class ExternalDataObject(DataObject):
     """Manages an external declaration"""
@@ -127,10 +135,23 @@ class ExternalDataObject(DataObject):
     def source_element_allocation(self):
         return ""
 
+
 class DataObjectArray(DataObject):
-    def __init__(self, typename, name, elements, dynamic_initializer = False, extern_c = False, alignment=None):
-        DataObject.__init__(self, typename, name, None, dynamic_initializer,
-                            extern_c=extern_c, alignment=alignment)
+
+    def __init__(self,
+                 typename,
+                 name,
+                 elements,
+                 dynamic_initializer=False,
+                 extern_c=False,
+                 alignment=None):
+        DataObject.__init__(self,
+                            typename,
+                            name,
+                            None,
+                            dynamic_initializer,
+                            extern_c=extern_c,
+                            alignment=alignment)
         self.elements = elements
         self.__element_values = {}
 
@@ -141,8 +162,10 @@ class DataObjectArray(DataObject):
     def source_element_initializer(self):
         if self.dynamic_initializer:
             loop = ForRange(0, self.elements)
-            loop.add(Statement("%s::%s[%s].init()"%(self.data_object_manager.get_namespace(),
-                                                   self.name, loop.get_counter())))
+            loop.add(
+                Statement("%s::%s[%s].init()" %
+                          (self.data_object_manager.get_namespace(), self.name,
+                           loop.get_counter())))
             return loop
         return []
 
@@ -164,9 +187,12 @@ class DataObjectArray(DataObject):
         return self.__element_values[key]
 
     def static_initializer(self, indent=2):
-        ret = [self.__element_values[key].static_initializer(indent=indent+2)
-               for key in range(max(self.__element_values.keys(), default=-1)+1)]
-        return "{ " +", ".join(ret) + "}"
+        ret = [
+            self.__element_values[key].static_initializer(indent=indent + 2)
+            for key in range(
+                max(self.__element_values.keys(), default=-1) + 1)
+        ]
+        return "{ " + ", ".join(ret) + "}"
 
     def lvalue(self, child=None):
         lv = self.container.lvalue(self) if self.container else self.name
@@ -176,8 +202,8 @@ class DataObjectArray(DataObject):
 
 
 class StructDataObject(DataObject):
-    def __init__(self, typename, name,
-                 **kwargs):
+
+    def __init__(self, typename, name, **kwargs):
         DataObject.__init__(self, typename, name, **kwargs)
         self.__entries = {}
 
@@ -197,8 +223,10 @@ class StructDataObject(DataObject):
         self.__entries[key] = value
 
     def static_initializer(self, indent=2):
-        ret = [f".{k} = {v.typecast}{v.static_initializer(indent+2)}"
-               for k,v in self.__entries.items()]
+        ret = [
+            f".{k} = {v.typecast}{v.static_initializer(indent+2)}"
+            for k, v in self.__entries.items()
+        ]
         ret = f"{{\n{'':{indent}}" + f",\n{'':{indent}}".join(ret) + "\n"
 
         if indent > 2:
@@ -212,13 +240,21 @@ class StructDataObject(DataObject):
             lv += f'.{child.name}'
         return lv
 
+
 class InstanceDataObject(DataObject):
-    def __init__(self, typename, name,
-               template_params = None,
-               constructor_args = None,
-               extern_c = False, alignment=None):
-        DataObject.__init__(self, typename, name,
-                            extern_c=extern_c, alignment=alignment)
+
+    def __init__(self,
+                 typename,
+                 name,
+                 template_params=None,
+                 constructor_args=None,
+                 extern_c=False,
+                 alignment=None):
+        DataObject.__init__(self,
+                            typename,
+                            name,
+                            extern_c=extern_c,
+                            alignment=alignment)
         self.template_params = template_params
         self.constructor_args = constructor_args
 
@@ -229,9 +265,8 @@ class InstanceDataObject(DataObject):
             template = '<'
             template += ",".join(self.template_params)
             template += '> '
-        return Statement(self.generate_prefix()
-                         + self.typename + template
-                         + self.name)
+        return Statement(self.generate_prefix() + self.typename + template +
+                         self.name)
 
     def source_element_allocation(self):
         """Builds an allocation statement for the object.
@@ -255,11 +290,12 @@ class InstanceDataObject(DataObject):
         args += ",".join(self.constructor_args)
         args += ')'
 
-        return Statement(self.allocation_prefix
-                         + self.typename + template
-                         + self.name + args)
+        return Statement(self.allocation_prefix + self.typename + template +
+                         self.name + args)
+
 
 class DataObjectManager:
+
     def __init__(self, _log):
         # Namespace -> [DataObjects]
         self.__objects = {}
@@ -272,7 +308,7 @@ class DataObjectManager:
             ret.extend(obj_list)
         return ret
 
-    def add(self, obj, phase = 0, namespace=None):
+    def add(self, obj, phase=0, namespace=None):
         self._log.debug("add: %s", obj)
         obj.data_object_manager = self
         # Check whether data object was already defined with that
@@ -281,10 +317,13 @@ class DataObjectManager:
             if obj.name == old_obj.name:
                 assert obj.typename == old_obj.typename, "Variable %s already defined with different type" % obj.name
                 # Do not add another instance for this object
-                if isinstance(obj, ExternalDataObject) and isinstance(old_obj, ExternalDataObject):
-                    self._log.debug("skipping duplicate extern declaration: %s", obj)
+                if isinstance(obj, ExternalDataObject) and isinstance(
+                        old_obj, ExternalDataObject):
+                    self._log.debug(
+                        "skipping duplicate extern declaration: %s", obj)
                     continue
-                raise ValueError(f"duplicated element {obj.name} ({obj.typename})")
+                raise ValueError(
+                    f"duplicated element {obj.name} ({obj.typename})")
         obj.phase = phase
 
         if not namespace in self.__objects:
@@ -296,7 +335,7 @@ class DataObjectManager:
         for namespace in self.__objects:
             if namespace is None:
                 for x in func(self.__objects[None]):
-                    ret.append( x )
+                    ret.append(x)
             else:
                 namespaces = list(namespace)
                 assert len(namespaces) > 0
@@ -308,30 +347,36 @@ class DataObjectManager:
                     last = n
 
                 for x in func(self.__objects[namespace]):
-                    last.add( x )
+                    last.add(x)
 
                 ret += [ns, "\n"]
 
         return ret
 
     def source_element_declaration(self):
+
         def iterate(objects):
             ret = []
             for o in objects:
                 ret.append(o.source_element_declaration())
             return ret
+
         return self.__iterate_in_namespaces(iterate) + ["\n"]
 
     def source_element_allocation(self):
+
         def iterate(objects):
             ret = []
             for o in objects:
                 ret.append(o.source_element_allocation())
             return ret
-        ret =  self.__iterate_in_namespaces(iterate)
+
+        ret = self.__iterate_in_namespaces(iterate)
         for namespace in self.__objects:
             if namespace:
-                ret += [Statement("using namespace " + "::".join(list(namespace)))]
+                ret += [
+                    Statement("using namespace " + "::".join(list(namespace)))
+                ]
 
         return ret + ["\n"]
 

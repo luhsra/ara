@@ -5,8 +5,14 @@
 
 from .SourceElement import CPPStatement, Comment
 
+
 class Include:
-    def __init__(self, filename, system_include=False, comment = None, overwrites=None):
+
+    def __init__(self,
+                 filename,
+                 system_include=False,
+                 comment=None,
+                 overwrites=None):
         self.filename = filename
         self.system_include = system_include
         self.comment = comment
@@ -24,10 +30,13 @@ class Include:
         for overwrite in self.overwrites:
             ret.append(overwrite)
         return ret
+
     def add_overwrite(self, overwrite):
         self.overwrites.append(overwrite)
 
+
 class IncludeManager:
+
     def __init__(self, _log):
         self.included_files = []
         self._log = _log.getChild(self.__class__.__name__)
@@ -35,8 +44,8 @@ class IncludeManager:
     def add(self, include, position=None):
         # Filter out duplicate includes
         for idx, inc in enumerate(self.included_files):
-            if (inc.filename == include.filename and
-                inc.system_include == include.system_include):
+            if (inc.filename == include.filename
+                    and inc.system_include == include.system_include):
                 if position is None:
                     return
                 if idx != position:
@@ -55,4 +64,3 @@ class IncludeManager:
         for include in self.included_files:
             ret.append(include.source_elements())
         return ret
-

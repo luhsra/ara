@@ -26,8 +26,7 @@ class AUTOSARGenericOS(GenericOS):
 
         self.return_variables = {}
 
-    arch_choices = {'posix': PosixArch,
-                    'arm': ArmArch}
+    arch_choices = {'posix': PosixArch, 'arm': ArmArch}
 
     def set_generator(self, generator):
         super().set_generator(generator)

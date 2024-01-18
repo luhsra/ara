@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+
 class TaskBase(Object):
 
     def __init__(self, name, function=None, stack_size=None):
@@ -11,8 +12,6 @@ class TaskBase(Object):
         self._stack_size = None
 
 
-
-
 class DynamicTask(TaskBase):
     pass
-    #def 
+    #def

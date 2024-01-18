@@ -210,7 +210,7 @@ class GenericSystemCalls(BaseCoder):
         # in case of Terminate error
         kernelspace.add(Comment("Dispatch directly back to Userland"))
         self.call(kernelspace, "Dispatcher::ResumeToTask", "void",
-                [self.task_desc(curr_task)])
+                  [self.task_desc(curr_task)])
 
     def ActivateTask(self, syscall, userspace, kernelspace):
         if userspace.is_isr:
@@ -231,17 +231,23 @@ class GenericSystemCalls(BaseCoder):
             kernelspace.add(Statement("CALL_HOOK(ErrorHook, result)"))
             kernelspace.add(Comment("Dispatch directly back to Userland"))
             self.call(kernelspace, "Dispatcher::ResumeToTask", "void",
-                    [self.task_desc(curr_task)])
+                      [self.task_desc(curr_task)])
             return False
 
         # if PMU_TRACE_A
-        kernelspace.add(Statement("#ifdef PMU_TRACE_A // checkpoint 1\narch::PMU::trace_cycles();\n#endif"))
+        kernelspace.add(
+            Statement(
+                "#ifdef PMU_TRACE_A // checkpoint 1\narch::PMU::trace_cycles();\n#endif"
+            ))
 
         self.call(kernelspace, f"scheduler_[{target_cpu}].SetReady_impl",
                   "void", [self.task_desc(task)])
 
         # if PMU_TRACE_A
-        kernelspace.add(Statement("#ifdef PMU_TRACE_A // checkpoint 2\narch::PMU::trace_cycles();\n#endif"))
+        kernelspace.add(
+            Statement(
+                "#ifdef PMU_TRACE_A // checkpoint 2\narch::PMU::trace_cycles();\n#endif"
+            ))
 
         if curr_cpu != target_cpu:
             self.call(kernelspace, "Machine::trigger_interrupt", "void", [
@@ -250,7 +256,7 @@ class GenericSystemCalls(BaseCoder):
             ])
             kernelspace.add(Comment("Dispatch directly back to Userland"))
             self.call(kernelspace, "Dispatcher::ResumeToTask", "void",
-                    [self.task_desc(curr_task)])
+                      [self.task_desc(curr_task)])
         else:
             self.call(kernelspace, f"scheduler_[{curr_cpu}].Schedule_impl",
                       "void", [from_interrupt])
@@ -269,7 +275,7 @@ class GenericSystemCalls(BaseCoder):
             kernelspace.add(Statement("CALL_HOOK(ErrorHook, result)"))
             kernelspace.add(Comment("Dispatch directly back to Userland"))
             self.call(kernelspace, "Dispatcher::ResumeToTask", "void",
-                    [self.task_desc(curr_task)])
+                      [self.task_desc(curr_task)])
             return False
 
         ifblock = If(
@@ -306,13 +312,19 @@ class GenericSystemCalls(BaseCoder):
         curr_cpu = curr_task.cpu_id
         spinlock = kernelspace.arguments().spinlock.impl.descriptor.name
         # if PMU_TRACE_A
-        kernelspace.add(Statement("#ifdef PMU_TRACE_A // checkpoint 1\narch::PMU::trace_cycles();\n#endif"))
+        kernelspace.add(
+            Statement(
+                "#ifdef PMU_TRACE_A // checkpoint 1\narch::PMU::trace_cycles();\n#endif"
+            ))
         self.call(kernelspace,
                   f"scheduler_[{curr_cpu}].GetSpinlock_impl",
                   "StatusType", [spinlock],
                   name="result")
         # if PMU_TRACE_A
-        kernelspace.add(Statement("#ifdef PMU_TRACE_A // checkpoint 3\narch::PMU::trace_cycles();\n#endif"))
+        kernelspace.add(
+            Statement(
+                "#ifdef PMU_TRACE_A // checkpoint 3\narch::PMU::trace_cycles();\n#endif"
+            ))
 
         check_error = If("result != E_OK")
         check_error.add(Statement("CALL_HOOK(ErrorHook, result)"))
@@ -344,13 +356,19 @@ class GenericSystemCalls(BaseCoder):
         curr_cpu = curr_task.cpu_id
         spinlock = kernelspace.arguments().spinlock.impl.descriptor.name
         # if PMU_TRACE_A
-        kernelspace.add(Statement("#ifdef PMU_TRACE_A // checkpoint 1\narch::PMU::trace_cycles();\n#endif"))
+        kernelspace.add(
+            Statement(
+                "#ifdef PMU_TRACE_A // checkpoint 1\narch::PMU::trace_cycles();\n#endif"
+            ))
         self.call(kernelspace,
                   f"scheduler_[{curr_cpu}].ReleaseSpinlock_impl",
                   "StatusType", [spinlock],
                   name="result")
         # if PMU_TRACE_A
-        kernelspace.add(Statement("#ifdef PMU_TRACE_A // checkpoint 3\narch::PMU::trace_cycles();\n#endif"))
+        kernelspace.add(
+            Statement(
+                "#ifdef PMU_TRACE_A // checkpoint 3\narch::PMU::trace_cycles();\n#endif"
+            ))
 
         check_error = If("result != E_OK")
         check_error.add(Statement("CALL_HOOK(ErrorHook, result)"))
@@ -420,7 +438,7 @@ class GenericSystemCalls(BaseCoder):
             kernelspace.add(Statement("CALL_HOOK(ErrorHook, result)"))
             kernelspace.add(Comment("Dispatch directly back to Userland"))
             self.call(kernelspace, "Dispatcher::ResumeToTask", "void",
-                    [self.task_desc(curr_task)])
+                      [self.task_desc(curr_task)])
             return
 
         tid = str(task.impl.task_id)
@@ -436,7 +454,7 @@ class GenericSystemCalls(BaseCoder):
             ])
             kernelspace.add(Comment("Dispatch directly back to Userland"))
             self.call(kernelspace, "Dispatcher::ResumeToTask", "void",
-                    [self.task_desc(curr_task)])
+                      [self.task_desc(curr_task)])
         else:
             self.call(kernelspace, f"scheduler_[{target_cpu}].Schedule_impl",
                       "void", [from_interrupt])
@@ -457,7 +475,6 @@ class GenericSystemCalls(BaseCoder):
         self.call(kernelspace, "Dispatcher::ResumeToTask", "void",
                   [self.task_desc(curr_task)])
 
-
     def AdvanceCounter(self, syscall, userspace, kernelspace):
         curr_task = userspace.calling_task
         curr_cpu = curr_task.cpu_id
@@ -468,7 +485,7 @@ class GenericSystemCalls(BaseCoder):
             kernelspace.add(Statement("CALL_HOOK(ErrorHook, result)"))
             kernelspace.add(Comment("Dispatch directly back to Userland"))
             self.call(kernelspace, "Dispatcher::ResumeToTask", "void",
-                [self.task_desc(curr_task)])
+                      [self.task_desc(curr_task)])
             return
 
         kernelspace.add(Statement(f"{counter.impl.name}.do_tick()"))
@@ -483,18 +500,17 @@ class GenericSystemCalls(BaseCoder):
         self.call(kernelspace, "Dispatcher::ResumeToTask", "void",
                   [self.task_desc(curr_task)])
 
-
     def GetAlarm(self, abb, userspace, kernelspace):
         alarm = kernelspace.arguments().alarm
         curr_task = userspace.calling_task
 
         kernelspace.add(
-            Statement(f"*(TickRefType)arg1 = {alarm.impl.name}.getRemainingTicks()"))
+            Statement(
+                f"*(TickRefType)arg1 = {alarm.impl.name}.getRemainingTicks()"))
 
         kernelspace.add(Comment("Dispatch directly back to Userland"))
         self.call(kernelspace, "Dispatcher::ResumeToTask", "void",
                   [self.task_desc(curr_task)])
-
 
     def CancelAlarm(self, abb, userspace, kernelspace):
         alarm = kernelspace.arguments().alarm

@@ -14,7 +14,7 @@ class ArmArch(GenericArch):
 
     def __init__(self):
         super(ArmArch, self).__init__()
-        self.IPI_SIG = 1 # IPI is just a resehdule interrupt on remote core
+        self.IPI_SIG = 1  # IPI is just a resehdule interrupt on remote core
         self.TERM_SIG = 12
 
     def generate_startup_code(self):
@@ -44,7 +44,7 @@ class ArmArch(GenericArch):
         self.generate_dataobjects_task_stacks()  # From GenericArch
         self.generate_dataobjects_task_entries()  # From GenericArch
         self.generate_dataobjects_tcbs()
-    
+
     def generate_dataobjects_task_stacks(self):
         """Generate the stacks for the tasks, including the task pointers"""
         super(ArmArch, self).generate_dataobjects_task_stacks()
@@ -54,11 +54,12 @@ class ArmArch(GenericArch):
         stackptr_arr = DataObjectArray("void * const", "OS_stackptrs", "")
         stackptr_arr[0] = "&startup_sp"
 
-        arr_idx=0
+        arr_idx = 0
         for v, task in self.ara_graph.instances.get(Task):
-            arr_idx+=1
+            arr_idx += 1
             stackptr_arr[arr_idx] = "&" + task.impl.stackptr.name
-        self.generator.source_file.data_manager.add(stackptr_arr, namespace = ("arch",))
+        self.generator.source_file.data_manager.add(stackptr_arr,
+                                                    namespace=("arch", ))
 
     #def generate_functions(self):
     #    self.generate_enable_irq_after_kernel()
@@ -93,20 +94,19 @@ class ArmArch(GenericArch):
             #if not subtask.is_real_thread():
             #    continue
             initializer = "(&%s, %s, %s, %s)" % (
-                task.impl.entry_function.name,
-                task.impl.stack.name,
-                task.impl.stackptr.name,
-                task.impl.stacksize
-            )
+                task.impl.entry_function.name, task.impl.stack.name,
+                task.impl.stackptr.name, task.impl.stacksize)
 
             desc = DataObject("const arch::TCB", "OS_" + task.name + "_tcb",
                               initializer)
             desc.allocation_prefix = "constexpr "
-            self.generator.source_file.data_manager.add(desc, namespace = ("arch",))
+            self.generator.source_file.data_manager.add(desc,
+                                                        namespace=("arch", ))
             task.impl.tcb_descriptor = desc
             tcb_arr[arr_idx] = "&" + desc.name
 
-        self.generator.source_file.data_manager.add(tcb_arr, namespace = ("arch",))
+        self.generator.source_file.data_manager.add(tcb_arr,
+                                                    namespace=("arch", ))
 
     def generate_isr(self, isr):
         self.generator.source_file.include("machine.h")
@@ -130,7 +130,8 @@ class ArmArch(GenericArch):
 
         # Forward declaration for our handler
         forward = FunctionDeclaration(f"irq_handler_{irq_number}",
-                                      "void*", ["void*", "uint32_t"], extern_c=True)
+                                      "void*", ["void*", "uint32_t"],
+                                      extern_c=True)
         self.generator.source_file.function_manager.add(forward)
 
         self.call(handler, isr.function_name)
@@ -139,13 +140,13 @@ class ArmArch(GenericArch):
 
         # Call give the IRQ a priority at startuo, and enable it
         self.call(self.generator.syscall_rules.StartOS,
-                           "arch::GIC::enable_irq",
-                           "void", [str(irq_number)],
-                           prepend = True)
+                  "arch::GIC::enable_irq",
+                  "void", [str(irq_number)],
+                  prepend=True)
         self.call(self.generator.syscall_rules.StartOS,
-                           "arch::GIC::set_irq_priority",
-                           "void", [str(irq_number), prio],
-                           prepend = True)
+                  "arch::GIC::set_irq_priority",
+                  "void", [str(irq_number), prio],
+                  prepend=True)
 
         return irq_number
         pass
@@ -154,22 +155,24 @@ class ArmArch(GenericArch):
         self.generator.source_file.include("machine.h")
         self.generator.source_file.include("gic.h")
 
-        installed_irq_handlers = {#0,      # Dispatch
-                                  1,      # Reschedule
-                                  12,     # TERM
-                                  27,     # V Alarm (raspi)
-                                  #29,     # P Alarm (zedboard)
-                              }
+        installed_irq_handlers = {  #0,      # Dispatch
+            1,  # Reschedule
+            12,  # TERM
+            27,  # V Alarm (raspi)
+            #29,     # P Alarm (zedboard)
+        }
         for isr in isrs:
             irq_number = self.generate_isr(isr)
             installed_irq_handlers.add(irq_number)
 
         # Generate the ISR table
-        irq_handler_arr = DataObjectArray("arch::irq_handler_t const", "irq_handlers", "",
-                                          extern_c = True)
+        irq_handler_arr = DataObjectArray("arch::irq_handler_t const",
+                                          "irq_handlers",
+                                          "",
+                                          extern_c=True)
         self.generator.source_file.data_manager.add(irq_handler_arr)
-        assert max(installed_irq_handlers)+1 < 96
-        for irq in range(0, 96): # 96 should be enough for everyone
+        assert max(installed_irq_handlers) + 1 < 96
+        for irq in range(0, 96):  # 96 should be enough for everyone
             if irq in installed_irq_handlers:
                 irq_handler_arr[irq] = f"/*{irq}*/ irq_handler_{irq}"
             else:
@@ -188,22 +191,28 @@ class ArmArch(GenericArch):
         self.call(TERM_handler, "AUTOSAR_ShutdownOS", "void", ["E_OK"])
         self.generator.source_file.function_manager.add(TERM_handler)
 
-        irq_handler_term = Function(f"irq_handler_{self.TERM_SIG}", "void*", ["void*", "uint32_t"], extern_c=True)
-        self.call(irq_handler_term, "AUTOSAR_ISR_TERM", "void",[])
+        irq_handler_term = Function(f"irq_handler_{self.TERM_SIG}",
+                                    "void*", ["void*", "uint32_t"],
+                                    extern_c=True)
+        self.call(irq_handler_term, "AUTOSAR_ISR_TERM", "void", [])
         irq_handler_term.add(Statement("return arg0"))
         self.generator.source_file.function_manager.add(irq_handler_term)
 
     def generate_kernelspace(self, userspace, abb, arguments):
-        kernelspace = self.generate_kernelspace__syscall(userspace, abb, arguments)
+        kernelspace = self.generate_kernelspace__syscall(
+            userspace, abb, arguments)
         if not userspace.is_isr:
-            self.call(userspace, "Machine::switch_mode", "void", ["Machine::USER"])
+            self.call(userspace, "Machine::switch_mode", "void",
+                      ["Machine::USER"])
         return kernelspace
 
+
 class LinkerScriptTemplate(CodeTemplate):
+
     def __init__(self, ARM):
         CodeTemplate.__init__(self, ARM.generator, "arch/arm/linker.ld.in")
         self.ARM = ARM
-        self.ara_graph    = self.ARM.ara_graph
+        self.ara_graph = self.ARM.ara_graph
 
         # Link the foreach_subtask method from the rules
         self.foreach_subtask = self.ARM.generator.syscall_rules.foreach_subtask
@@ -213,10 +222,11 @@ class LinkerScriptTemplate(CodeTemplate):
         corresponding sections"""
         ret = ""
         for sec in sections:
-            ret += 'KEEP(%s(".%s.%s"));\n' %(library, sec, symbol)
+            ret += 'KEEP(%s(".%s.%s"));\n' % (library, sec, symbol)
         return ret
 
     def task_code_regions(self, snippet, args):
+
         def do(subtask):
             ret = ". = ALIGN(4096);\n"
             ret += "_stext_task%s = .;\n" % subtask.impl.task_id
@@ -235,6 +245,7 @@ class LinkerScriptTemplate(CodeTemplate):
         return self.foreach_subtask(do)
 
     def task_stacks(self, snippet, args):
+
         def do(subtask):
             ret = ". = ALIGN(4096);\n"
             ret += "_sstack_task%s = .;\n" % subtask.impl.task_id
@@ -246,6 +257,7 @@ class LinkerScriptTemplate(CodeTemplate):
         return self.foreach_subtask(do)
 
     def task_data(self, snippet, args):
+
         def do(subtask):
             ret = ". = ALIGN(4096);\n"
             ret += "_sdata_task%s = .;\n" % subtask.impl.task_id

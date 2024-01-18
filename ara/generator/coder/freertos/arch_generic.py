@@ -8,7 +8,9 @@ from ..base import BaseCoder
 from ..elements import StructDataObject, DataObjectArray, DataObject
 from ara.os.freertos import Queue, Mutex
 
+
 class VanillaTaskList(StructDataObject):
+
     def __init__(self, tasks, container, index):
         StructDataObject.__init__(self, "PRIVILEGED_DATA List_t", str(index))
         self.container = container
@@ -29,15 +31,16 @@ class VanillaTaskList(StructDataObject):
             #print(prev)
             prev['pxNext'] = task.impl.tcb['xStateListItem'].address
             prev = task.impl.tcb['xStateListItem']
-        self.tasks[-1].impl.tcb['xStateListItem']['pxNext'] = self['xListEnd'].address
-        self['xListEnd']['pxPrevious'] = self.tasks[-1].impl.tcb['xStateListItem'].address
+        self.tasks[-1].impl.tcb['xStateListItem']['pxNext'] = self[
+            'xListEnd'].address
+        self['xListEnd']['pxPrevious'] = self.tasks[-1].impl.tcb[
+            'xStateListItem'].address
 
 
 class VanillaTasksLists(DataObjectArray):
+
     def __init__(self, name, max_prio, tasks, prio_is_bit_encoded):
-        DataObjectArray.__init__(self,
-                                 "PRIVILEGED_DATA List_t",
-                                 name,
+        DataObjectArray.__init__(self, "PRIVILEGED_DATA List_t", name,
                                  max_prio)
         self.tasks = tasks
         self.current_tcb = None
@@ -45,9 +48,11 @@ class VanillaTasksLists(DataObjectArray):
         self.used_prios = []
         for prio in range(max_prio):
             # skip tasks where xTaskCreate is called after the scheduler starts
-            p_tasks = [t for t in tasks if (t.priority == prio
-                                            and t.specialization_level == 'initialized'
-                                            and not t.after_scheduler)]
+            p_tasks = [
+                t for t in tasks
+                if (t.priority == prio and t.specialization_level ==
+                    'initialized' and not t.after_scheduler)
+            ]
             self[prio] = self.arch.TaskList(p_tasks, self, prio)
             #print('after insert', self[prio]['xListEnd'].address)
             if p_tasks:
@@ -56,17 +61,16 @@ class VanillaTasksLists(DataObjectArray):
 
     @property
     def top_ready_prio(self):
-        if(self.prio_is_bit_encoded):
+        if (self.prio_is_bit_encoded):
             return " | ".join([f"1 << {p}" for p in self.used_prios])
         return str(max(self.used_prios))
 
 
-
 class VanillaTCB(StructDataObject):
+
     def __init__(self, task, initialized, name_length, **kwargs):
-        StructDataObject.__init__(self,
-                                    "TCB_t", f"t{task.name}_{task.uid}_tcb",
-                                  **kwargs)
+        StructDataObject.__init__(self, "TCB_t",
+                                  f"t{task.name}_{task.uid}_tcb", **kwargs)
         self.task = task
         task.impl.tcb = self
 
@@ -75,25 +79,32 @@ class VanillaTCB(StructDataObject):
         self['uxPriority'] = task.priority or 0
         self['pxTopOfStack'] = task.impl.stack.tos
         self['pxStack'] = f"(StackType_t*) &{task.impl.stack.name}"
-        name = [f"'{task.name[i]}'" for i in range(min(len(task.name), name_length-1))]
+        name = [
+            f"'{task.name[i]}'"
+            for i in range(min(len(task.name), name_length - 1))
+        ]
         name.append('0')
         self['pcTaskName'] = "{" + ", ".join(name) + "}"
         self['uxBasePriority'] = f"{task.priority or 0}"
         self['xStateListItem'] = self.arch.ListItem('xStateListItem')
         self['xEventListItem'] = self.arch.ListItem('xEventListItem')
 
+
 class VanillaListItem(StructDataObject):
+
     def __init__(self, name, mini=False):
         tn = 'MiniListItem_t' if mini else 'ListItem_t'
         StructDataObject.__init__(self, tn, name)
         self.mini = mini
         # empty lists are mini loops
-        self['pxNext'] = DataObject('ListItem_t *', 'pxNext', lambda: self.address)
-        self['pxPrevious'] = DataObject('ListItem_t *', 'pxPrevious', lambda: self.address)
+        self['pxNext'] = DataObject('ListItem_t *', 'pxNext',
+                                    lambda: self.address)
+        self['pxPrevious'] = DataObject('ListItem_t *', 'pxPrevious',
+                                        lambda: self.address)
         if mini:
             return
         self['xItemValue'] = 0
-        self['pvOwner'] = lambda:self.container.address
+        self['pvOwner'] = lambda: self.container.address
         self['pvContainer'] = 'NULL'
 
     def static_initializer(self, indent=2):
@@ -101,7 +112,9 @@ class VanillaListItem(StructDataObject):
         self['pxPrevious'].do_cast = True
         return StructDataObject.static_initializer(self, indent)
 
+
 class VanillaListHead(StructDataObject):
+
     def __init__(self, name):
         StructDataObject.__init__(self, 'List_t', name)
         self['pxIndex'] = DataObject('ListItem_t *', 'pxIndex')
@@ -115,15 +128,17 @@ class VanillaListHead(StructDataObject):
         self['xListEnd']['pxNext'].do_cast = True
         self['xListEnd']['pxPrevious'].do_cast = True
 
+
 class VanillaQueue(StructDataObject):
+
     def __init__(self, queue, **kwargs):
-        StructDataObject.__init__(self,
-                                  "Queue_t", f"__queue_head_{queue.name}{queue.uid}",
+        StructDataObject.__init__(self, "Queue_t",
+                                  f"__queue_head_{queue.name}{queue.uid}",
                                   **kwargs)
         self.queue = queue
         queue.impl.head = self
 
-        assert queue.specialization_level != 'unchanged' , "Queue is to be generated but is marked as 'unchanged': %s"
+        assert queue.specialization_level != 'unchanged', "Queue is to be generated but is marked as 'unchanged': %s"
         if queue.specialization_level == 'static':
             return
         try:
@@ -144,7 +159,8 @@ class VanillaQueue(StructDataObject):
             self['u']['xQueue']['pcTail'] = (f"{queue.impl.data.address} +"
                                              f"({length} * {size})")
             self['u']['xQueue']['pcTail'].do_cast = True
-            self['u']['xQueue']['pcReadFrom'] = DataObject('int8_t*', 'pcReadFrom')
+            self['u']['xQueue']['pcReadFrom'] = DataObject(
+                'int8_t*', 'pcReadFrom')
             self['u']['xQueue']['pcReadFrom'] = (f"{queue.impl.data.address} +"
                                                  f"(({length} - 1U) *"
                                                  f"{size})")
@@ -154,13 +170,14 @@ class VanillaQueue(StructDataObject):
             self['u']['xSemaphore'] = StructDataObject("NONE", "xSemaphore")
             self['u']['xSemaphore']['xMutexHolder'] = 'NULL'
             self['u']['xSemaphore']['uxRecursiveCallCount'] = 0
-            self['pcHead'] = 'NULL' # aka. uxQueueType = 'queueQUEUE_IS_MUTEX'
+            self['pcHead'] = 'NULL'  # aka. uxQueueType = 'queueQUEUE_IS_MUTEX'
             self['pcWriteTo'] = 'nullptr'
-            self['uxMessagesWaiting'] = 1 # aka. xQueueGenericSend()
+            self['uxMessagesWaiting'] = 1  # aka. xQueueGenericSend()
         else:
             raise RuntimeError(f"unknown queue type: {type(queue)}")
         self['xTasksWaitingToSend'] = VanillaListHead("xTasksWaitingToSend")
-        self['xTasksWaitingToReceive'] = VanillaListHead("xTasksWaitingToReceive")
+        self['xTasksWaitingToReceive'] = VanillaListHead(
+            "xTasksWaitingToReceive")
         self['uxLength'] = length
         self['uxItemSize'] = size
         self['cRxLock'] = "queueUNLOCKED"
@@ -186,19 +203,18 @@ class GenericArch(BaseCoder):
         self.TCB.arch = self
         self.QUEUE.arch = self
 
-
     def generate_linkerscript(self):
-        self._log.error("generate_linkerscript not implemented: %s",
-                            self)
+        self._log.error("generate_linkerscript not implemented: %s", self)
 
     def generate_default_interrupt_handlers(self):
-        self._log.error("generate_default_interrupt_handlers not implemented: %s",
-                            self)
+        self._log.error(
+            "generate_default_interrupt_handlers not implemented: %s", self)
 
     def generate_startup_code(self):
         self._log.error("generate_startup_code not implemented: %s", self)
 
     def generate_data_objects(self):
         pass
+
     def generate_system_code(self):
         pass

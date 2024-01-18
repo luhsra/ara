@@ -3,7 +3,6 @@
 # SPDX-FileCopyrightText: 2023 Andreas Kässens
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
-
 """
     @file
     @ingroup primitives
@@ -12,14 +11,18 @@
 
 from ara.generator.tools import format_source_tree
 
+
 class SourceElement():
+
     def __init__(self):
         pass
+
     def statement_count(self):
         return 0
 
 
 class Comment(SourceElement):
+
     def __init__(self, text):
         SourceElement.__init__(self)
         if len(text) > 72:
@@ -37,19 +40,25 @@ class Comment(SourceElement):
             self.text = self.text.strip()
         else:
             self.text = text
+
     def expand(self, generator):
         if "\n" in self.text:
             # A multiline comment
-            prefixed = [Indent(), "/* ",]
+            prefixed = [
+                Indent(),
+                "/* ",
+            ]
             for line in self.text.split("\n"):
-                prefixed += [line + "\n", Indent(), " * " ]
+                prefixed += [line + "\n", Indent(), " * "]
             prefixed = prefixed[:-2] + [Indent(), " */\n"]
             return prefixed
         else:
             # Single line comment
             return [Indent(), "// " + self.text + "\n"]
 
+
 class CPPStatement(SourceElement):
+
     def __init__(self, cmd, arg):
         SourceElement.__init__(self)
         self.cmd = cmd
@@ -57,6 +66,7 @@ class CPPStatement(SourceElement):
 
     def expand(self, generator):
         return ["#", Indent(), self.cmd + " " + self.arg + "\n"]
+
 
 class Block(SourceElement):
     # Class Member
@@ -66,7 +76,7 @@ class Block(SourceElement):
     def indent_spaces():
         return " " * (Block.indentation_level * 4)
 
-    def __init__(self, static_guard = "", statements = None, arguments = None):
+    def __init__(self, static_guard="", statements=None, arguments=None):
         SourceElement.__init__(self)
         if statements is None:
             self.inner = []
@@ -107,18 +117,21 @@ class Block(SourceElement):
     def __str__(self):
         return "<<" + ", ".join([str(x) for x in self.inner]) + ">>"
 
+
 class If(Block):
+
     def __init__(self, condition):
         Block.__init__(self)
         self.condition = condition
 
     def block_guard(self):
-        return "if(%s)"%self.condition
+        return "if(%s)" % self.condition
+
 
 class ForRange(Block):
     count = 0
 
-    def __init__(self, lower = 0, upper = 0):
+    def __init__(self, lower=0, upper=0):
         Block.__init__(self)
         self.lower = lower
         self.upper = upper
@@ -126,34 +139,41 @@ class ForRange(Block):
         self.count += 1
 
     def block_guard(self):
-        return "for (int %s = %s; %s < %s; %s++)"%(self.__var, self.lower,
-                                                   self.__var, self.upper,
-                                                   self.__var)
+        return "for (int %s = %s; %s < %s; %s++)" % (
+            self.__var, self.lower, self.__var, self.upper, self.__var)
 
     def get_counter(self):
         return self.__var
 
+
 class Statement(SourceElement):
+
     def __init__(self, statement):
         SourceElement.__init__(self)
         self.statement = statement
+
     def expand(self, generator):
         return [Indent(), self.statement + ";\n"]
 
     def statement_count(self):
-        return 1;
+        return 1
 
     def __repr__(self):
         return "<Statement: %s>" % self.statement
 
+
 class Indent(SourceElement):
+
     def __init__(self):
         SourceElement.__init__(self)
+
     def expand(self, generator):
         return [Block.indent_spaces()]
 
+
 class VariableDefinition(SourceElement):
-    def __init__(self, datatype, name, array_length = None):
+
+    def __init__(self, datatype, name, array_length=None):
         SourceElement.__init__(self)
         self.datatype = datatype
         self.name = name
@@ -161,20 +181,23 @@ class VariableDefinition(SourceElement):
 
     def expand(self, generator):
         if self.array_length:
-            statement = "%s %s[%s]" % ( self.datatype, self.name, self.array_length )
+            statement = "%s %s[%s]" % (self.datatype, self.name,
+                                       self.array_length)
         else:
-            statement = "%s %s" % ( self.datatype, self.name )
+            statement = "%s %s" % (self.datatype, self.name)
         return [Statement(statement)]
 
     @staticmethod
-    def new(generator, datatype, array_length = None):
+    def new(generator, datatype, array_length=None):
         if datatype == "void":
             return None
         varname = "ret"
         return VariableDefinition(datatype, varname, array_length)
 
+
 class FunctionCall(SourceElement):
-    def __init__(self, name, arguments, return_variable = None):
+
+    def __init__(self, name, arguments, return_variable=None):
         SourceElement.__init__(self)
         self.function = name
         self.arguments = arguments
@@ -183,19 +206,20 @@ class FunctionCall(SourceElement):
     def expand(self, generator):
         statement = ""
         if self.return_variable != None:
-            statement += "%s = "% self.return_variable
+            statement += "%s = " % self.return_variable
 
-        statement += "%s(%s)" % (self.function,
-                                 ", ".join(self.arguments))
+        statement += "%s(%s)" % (self.function, ", ".join(self.arguments))
 
         return [Statement(statement)]
 
     def statement_count(self):
         return 1
 
+
 class Hook(Block):
-    def __init__(self, name, arguments = None):
-        Block.__init__(self, arguments = arguments)
+
+    def __init__(self, name, arguments=None):
+        Block.__init__(self, arguments=arguments)
         self.name = name
 
     def expand(self, generator):

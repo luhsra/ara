@@ -165,8 +165,7 @@ class GenericArch(BaseCoder):
         else:
             userspace.is_isr = False
 
-    
-        pre_hook  = Hook("SystemEnterHook", arguments=args)
+        pre_hook = Hook("SystemEnterHook", arguments=args)
         system = Block(arguments=args)
         system.add(Statement("result = E_OK"))
         post_hook = Hook("SystemLeaveHook", arguments=userspace.arguments())
@@ -186,12 +185,14 @@ class GenericArch(BaseCoder):
         argstypes = ["StatusType&"]
         args = ["result"]
         signature = self.generator.syscall_rules.AUTOSAR_SYSCALLS[syscall_name]
-        if len(signature) > 2: # additional pointer argument
+        if len(signature) > 2:  # additional pointer argument
             argstypes += ["void*"]
             args += ["arg1"]
-        
+
         syscall = Function("__OS_syscall_" + userspace.function_name,
-                           "void", argstypes, extern_c = True)
+                           "void",
+                           argstypes,
+                           extern_c=True)
         syscall.argsname[0] = "result"
         syscall.argsname += ["arg1"]
 
@@ -201,7 +202,6 @@ class GenericArch(BaseCoder):
         # be inlined into the application
         syscall.add(pre_hook)
         syscall.add(system)
-        
 
         self.call(userspace, "syscall", "void", [syscall.function_name] + args)
         userspace.add(post_hook)
@@ -211,4 +211,3 @@ class GenericArch(BaseCoder):
         self.call(userspace, "Machine::enable_interrupts")
 
         return self.KernelSpace(pre_hook, system, post_hook)
-

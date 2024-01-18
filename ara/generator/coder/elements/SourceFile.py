@@ -2,13 +2,11 @@
 # SPDX-FileCopyrightText: 2020 Gerion Entrup <entrup@sra.uni-hannover.de>
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
-
 """
     @file
     @ingroup primitives
     @brief Constructs the source file.
 """
-
 
 from .IncludeManager import IncludeManager, Include
 from .DataObjectManager import DataObjectManager
@@ -16,7 +14,9 @@ from .FunctionManager import FunctionManager
 from .SourceElement import CPPStatement
 from ara.generator import tools
 
+
 class SourceFile:
+
     def __init__(self, _log=None):
         self.includes = IncludeManager(_log)
         self.declarations = []

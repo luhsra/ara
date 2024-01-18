@@ -8,10 +8,10 @@ import os
 from collections import namedtuple
 from ara.generator.tools import format_source_tree
 
+
 class CodeTemplate:
     Snippet = namedtuple("Snippet", ["name", "args", "body"])
     Generate = namedtuple("Generate", ["name", "args"])
-
 
     def __init__(self, generator, filename, begin='{{{', end='}}}'):
         self.filename = filename
@@ -21,7 +21,7 @@ class CodeTemplate:
             generator.add_dependency(filename)
 
         self.begin = begin
-        self.end   = end
+        self.end = end
 
         self.env_stack = []
 
@@ -37,14 +37,14 @@ class CodeTemplate:
         level = 0
         current_braces = ""
         while True:
-            match = re.search('(.*?)(%s|%s)(.*)' %(self.begin, self.end), rest,
-                              re.MULTILINE | re.DOTALL)
+            match = re.search('(.*?)(%s|%s)(.*)' % (self.begin, self.end),
+                              rest, re.MULTILINE | re.DOTALL)
             if not match:
                 stream.append(rest)
                 break
             before = match.group(1)
-            token  = match.group(2)
-            after  = match.group(3)
+            token = match.group(2)
+            after = match.group(3)
             if level == 0:
                 stream.append(before)
             else:
@@ -58,8 +58,8 @@ class CodeTemplate:
                 level -= 1
                 if level == 0:
                     # Match Snippets
-                    match = re.match("^(?:snippet:|#)(.*?)(?::(.*?))?\\|(.*)", current_braces,
-                                     re.MULTILINE | re.DOTALL)
+                    match = re.match("^(?:snippet:|#)(.*?)(?::(.*?))?\\|(.*)",
+                                     current_braces, re.MULTILINE | re.DOTALL)
                     if match:
                         # Skip after define
                         while after[0] in " \n":
@@ -71,18 +71,24 @@ class CodeTemplate:
                         args = match.group(2)
                         body = match.group(3)
                         body = body.lstrip("\n")
-                        body = re.sub('\\\\\n\s*', '', body, flags = re.MULTILINE)
+                        body = re.sub('\\\\\n\s*',
+                                      '',
+                                      body,
+                                      flags=re.MULTILINE)
                         if args:
-                            args = [x.strip() for x in args.split(",")
-                                    if x.strip() != ""]
+                            args = [
+                                x.strip() for x in args.split(",")
+                                if x.strip() != ""
+                            ]
                         else:
                             args = []
-                        snippets[name] = self.Snippet(name = name,
-                                                      args = args,
-                                                      body = body)
+                        snippets[name] = self.Snippet(name=name,
+                                                      args=args,
+                                                      body=body)
                         current_braces = ""
-                    match = re.search("^(?:generate:|!)([^:\\|]*)(?::([^\\|]*))?(?:\\|(.*))?", current_braces,
-                                      re.MULTILINE | re.DOTALL)
+                    match = re.search(
+                        "^(?:generate:|!)([^:\\|]*)(?::([^\\|]*))?(?:\\|(.*))?",
+                        current_braces, re.MULTILINE | re.DOTALL)
                     # Match Generates
                     if match:
                         name = match.group(1)
@@ -94,7 +100,10 @@ class CodeTemplate:
                             args = []
                         if body:
                             body = body.lstrip("\n")
-                            body = re.sub('\\\\\n\s*', '', body, flags = re.MULTILINE)
+                            body = re.sub('\\\\\n\s*',
+                                          '',
+                                          body,
+                                          flags=re.MULTILINE)
                             snippet = self.Snippet(name, [], body)
                             args.append(snippet)
                         gen = self.Generate(name, args)
@@ -104,7 +113,7 @@ class CodeTemplate:
             rest = after
         return snippets, stream
 
-    def expand(self, stream = None, args = None, snippets = None):
+    def expand(self, stream=None, args=None, snippets=None):
         if not stream:
             stream = self.stream
         if not args:
@@ -117,18 +126,21 @@ class CodeTemplate:
         ret = []
         for elem in stream:
             if isinstance(elem, str):
-                text = elem #% args
+                text = elem  #% args
                 ret.append(text)
             else:
                 assert isinstance(elem, self.Generate)
                 snippet = snippets.get(elem.name)
-                ret.append(self.__expand_snippet(elem.name, snippet, elem.args))
+                ret.append(self.__expand_snippet(elem.name, snippet,
+                                                 elem.args))
         return "".join(ret)
 
     def __expand_snippet(self, name, snippet, args):
         if hasattr(self, name):
             if snippet:
-                ret = getattr(self, name)(snippet, **dict(list(zip(snippet.args, args))))
+                ret = getattr(self, name)(snippet,
+                                          **dict(list(zip(snippet.args,
+                                                          args))))
             else:
                 ret = getattr(self, name)(snippet, args)
 
@@ -137,7 +149,8 @@ class CodeTemplate:
             return ret
 
         assert snippet, "snippet:'%s' not found (%s)" % (name, args)
-        return self.expand_snippet(snippet, **dict(list(zip(snippet.args, args))))
+        return self.expand_snippet(snippet,
+                                   **dict(list(zip(snippet.args, args))))
 
     def __format(self, text, prefix_length):
         if text is None:
@@ -150,7 +163,7 @@ class CodeTemplate:
         if type(snippet) == str:
             snippet = self.snippets[snippet]
         try:
-            formatted =  snippet.body % kwargs
+            formatted = snippet.body % kwargs
             if self.begin in formatted:
                 # Recursive Snippet
                 n_snippets, n_stream = self.__find_snippets(formatted)
@@ -159,7 +172,8 @@ class CodeTemplate:
                 return self.expand(n_stream, list(), n_snippets)
             return formatted
         except:
-            raise TypeError("Instanciation of %s failed (%s)" %(snippet.name, kwargs))
+            raise TypeError("Instanciation of %s failed (%s)" %
+                            (snippet.name, kwargs))
 
     def get(self, snippet, args):
         path = args[0].split(".")
@@ -170,23 +184,28 @@ class CodeTemplate:
                 obj = obj()
         return str(obj)
 
+
 import unittest
 
+
 class CodeTemplateTest(unittest.TestCase):
+
     class Inner(CodeTemplate):
         foobar = 23
+
         def the_calling(self):
             return self.foobar + 10
+
         def this(self):
             return self
 
-        def indirection_A(self,snippet, args):
+        def indirection_A(self, snippet, args):
             return "XYZ"
 
         def counter(self, snippet, args):
             ret = ""
             for i in range(int(args[0]), int(args[1])):
-                ret += self.expand_snippet(args[2], i = i)
+                ret += self.expand_snippet(args[2], i=i)
             return ret
 
     def setUp(self):
@@ -199,6 +218,7 @@ class CodeTemplateTest(unittest.TestCase):
             if "=" in line:
                 expect, got = line.split("=")
                 self.assertEqual(expect, got)
+
 
 if __name__ == '__main__':
     unittest.main()

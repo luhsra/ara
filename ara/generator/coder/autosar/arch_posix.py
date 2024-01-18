@@ -44,7 +44,9 @@ class PosixArch(GenericArch):
         for v, counter in self.ara_graph.instances.get(Counter):
             if counter.softcounter == False:
                 self.generator.source_file.include("itimer.h")
-                self.call(self.generator.syscall_rules.StartOS, "ITimer::init", prepend=True)
+                self.call(self.generator.syscall_rules.StartOS,
+                          "ITimer::init",
+                          prepend=True)
                 break
 
     def generate_dataobjects_tcbs(self):
@@ -119,7 +121,7 @@ class PosixArch(GenericArch):
                        category=0,
                        device=self.TERM_SIG,
                        artificial=True)
-        
+
         # add IPI handler
         IPI_handler = Function("AUTOSAR_ISR_IPI", "void", [], extern_c=True)
         self.generator.syscall_rules.Reschedule(IPI_handler, True)

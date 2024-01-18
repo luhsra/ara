@@ -68,24 +68,31 @@
 
 __all__ = [
 
-# decorators
+    # decorators
+    "typecheck",
+    "typecheck_with_exceptions",
 
-"typecheck", "typecheck_with_exceptions",
+    # check predicates
+    "optional",
+    "with_attr",
+    "by_regex",
+    "callable",
+    "anything",
+    "nothing",
+    "tuple_of",
+    "list_of",
+    "dict_of",
+    "one_of",
+    "either",
 
-# check predicates
+    # exceptions
+    "TypeCheckError",
+    "TypeCheckSpecificationError",
+    "InputParameterError",
+    "ReturnValueError",
 
-"optional", "with_attr", "by_regex", "callable", "anything", "nothing",
-"tuple_of", "list_of", "dict_of", "one_of", "either",
-
-# exceptions
-
-"TypeCheckError", "TypeCheckSpecificationError",
-"InputParameterError", "ReturnValueError",
-
-# utility methods
-
-"disable",
-
+    # utility methods
+    "disable",
 ]
 
 ################################################################################
@@ -102,24 +109,41 @@ nothing = lambda x: x is None
 
 _enabled = True
 
+
 def disable():
     global _enabled
     _enabled = False
 
-################################################################################
-
-class TypeCheckError(Exception): pass
-class TypeCheckSpecificationError(Exception): pass
-class InputParameterError(TypeCheckError): pass
-class ReturnValueError(TypeCheckError): pass
 
 ################################################################################
+
+
+class TypeCheckError(Exception):
+    pass
+
+
+class TypeCheckSpecificationError(Exception):
+    pass
+
+
+class InputParameterError(TypeCheckError):
+    pass
+
+
+class ReturnValueError(TypeCheckError):
+    pass
+
+
+################################################################################
+
 
 class Checker:
 
     class NoValue:
+
         def __str__(self):
             return "<no value>"
+
     no_value = NoValue()
 
     _registered = []
@@ -141,7 +165,9 @@ class Checker:
     def __call__(self, value):
         return self.check(value)
 
+
 ################################################################################
+
 
 class TypeChecker(Checker):
 
@@ -151,11 +177,13 @@ class TypeChecker(Checker):
     def check(self, value):
         return isinstance(value, self._cls)
 
+
 Checker.register(inspect.isclass, TypeChecker)
 
 ################################################################################
 
 iterable = lambda x: hasattr(x, "__iter__")
+
 
 class IterableChecker(Checker):
 
@@ -171,9 +199,11 @@ class IterableChecker(Checker):
                functools.reduce(lambda r, c_v: r and c_v[0].check(c_v[1]),
                                 zip(self._checks, vals), True)
 
+
 Checker.register(iterable, IterableChecker)
 
 ################################################################################
+
 
 class CallableChecker(Checker):
 
@@ -183,9 +213,11 @@ class CallableChecker(Checker):
     def check(self, value):
         return bool(self._func(value))
 
+
 Checker.register(callable, CallableChecker)
 
 ################################################################################
+
 
 class OptionalChecker(Checker):
 
@@ -193,11 +225,14 @@ class OptionalChecker(Checker):
         self._check = Checker.create(check)
 
     def check(self, value):
-        return value is Checker.no_value or value is None or self._check.check(value)
+        return value is Checker.no_value or value is None or self._check.check(
+            value)
+
 
 optional = OptionalChecker
 
 ################################################################################
+
 
 class WithAttrChecker(Checker):
 
@@ -211,14 +246,16 @@ class WithAttrChecker(Checker):
         else:
             return True
 
+
 with_attr = WithAttrChecker
 
 ################################################################################
 
+
 class ByRegexChecker(Checker):
 
-    _regex_eols = { str: "$", bytes: b"$" }
-    _value_eols = { str: "\n", bytes: b"\n" }
+    _regex_eols = {str: "$", bytes: b"$"}
+    _value_eols = {str: "\n", bytes: b"\n"}
 
     def __init__(self, regex):
         self._regex_t = type(regex)
@@ -231,9 +268,11 @@ class ByRegexChecker(Checker):
                (not self._regex_eol or not value.endswith(self._value_eol)) and \
                self._regex.match(value) is not None
 
+
 by_regex = ByRegexChecker
 
 ################################################################################
+
 
 class TupleOfChecker(Checker):
 
@@ -244,9 +283,11 @@ class TupleOfChecker(Checker):
         return isinstance(value, tuple) and \
                functools.reduce(lambda r, v: r and self._check.check(v), value, True)
 
+
 tuple_of = TupleOfChecker
 
 ################################################################################
+
 
 class ListOfChecker(Checker):
 
@@ -257,9 +298,11 @@ class ListOfChecker(Checker):
         return isinstance(value, list) and \
                functools.reduce(lambda r, v: r and self._check.check(v), value, True)
 
+
 list_of = ListOfChecker
 
 ################################################################################
+
 
 class DictOfChecker(Checker):
 
@@ -273,9 +316,11 @@ class DictOfChecker(Checker):
                                              self._value_check.check(t[1]),
                                 value.items(), True)
 
+
 dict_of = DictOfChecker
 
 ################################################################################
+
 
 class OneOfChecker(Checker):
 
@@ -285,9 +330,11 @@ class OneOfChecker(Checker):
     def check(self, value):
         return value in self._values
 
+
 one_of = OneOfChecker
 
 ################################################################################
+
 
 class EitherChecker(Checker):
 
@@ -301,12 +348,16 @@ class EitherChecker(Checker):
         else:
             return False
 
+
 either = EitherChecker
 
 ################################################################################
 
-def typecheck(method, *, input_parameter_error = InputParameterError,
-                         return_value_error = ReturnValueError):
+
+def typecheck(method,
+              *,
+              input_parameter_error=InputParameterError,
+              return_value_error=ReturnValueError):
 
     argspec = inspect.getfullargspec(method)
     if not argspec.annotations or not _enabled:
@@ -324,12 +375,14 @@ def typecheck(method, *, input_parameter_error = InputParameterError,
     for n, v in argspec.annotations.items():
         checker = Checker.create(v)
         if checker is None:
-            raise TypeCheckSpecificationError("invalid typecheck for {0}".format(n))
+            raise TypeCheckSpecificationError(
+                "invalid typecheck for {0}".format(n))
         if n in argspec.kwonlyargs:
             if n in kwarg_defaults and \
                not checker.check(kwarg_defaults[n]):
-                raise TypeCheckSpecificationError("the default value for {0} is incompatible "
-                                                  "with its typecheck".format(n))
+                raise TypeCheckSpecificationError(
+                    "the default value for {0} is incompatible "
+                    "with its typecheck".format(n))
             kwarg_checkers[n] = checker
         elif n == "return":
             return_checker = checker
@@ -337,8 +390,9 @@ def typecheck(method, *, input_parameter_error = InputParameterError,
             i = argspec.args.index(n)
             if i >= non_default_arg_count and \
                not checker.check(argspec.defaults[i - non_default_arg_count]):
-                raise TypeCheckSpecificationError("the default value for {0} is incompatible "
-                                                  "with its typecheck".format(n))
+                raise TypeCheckSpecificationError(
+                    "the default value for {0} is incompatible "
+                    "with its typecheck".format(n))
             arg_checkers[i] = (n, checker)
 
     def typecheck_invocation_proxy(*args, **kwargs):
@@ -346,22 +400,26 @@ def typecheck(method, *, input_parameter_error = InputParameterError,
             if check is not None:
                 arg_name, checker = check
                 if not checker.check(arg):
-                    raise input_parameter_error("{0}() has got an incompatible value "
-                                                "for {1}: {2}".format(method_name, arg_name,
-                                                                      str(arg) == "" and "''" or arg))
+                    raise input_parameter_error(
+                        "{0}() has got an incompatible value "
+                        "for {1}: {2}".format(method_name, arg_name,
+                                              str(arg) == "" and "''" or arg))
 
         for arg_name, checker in kwarg_checkers.items():
             kwarg = kwargs.get(arg_name, Checker.no_value)
             if not checker.check(kwarg):
-                raise input_parameter_error("{0}() has got an incompatible value "
-                                            "for {1}: {2}".format(method_name, arg_name,
-                                                                  str(kwarg) == "" and "''" or kwarg))
+                raise input_parameter_error(
+                    "{0}() has got an incompatible value "
+                    "for {1}: {2}".format(method_name, arg_name,
+                                          str(kwarg) == "" and "''" or kwarg))
 
         result = method(*args, **kwargs)
 
         if return_checker is not None and not return_checker.check(result):
             raise return_value_error("{0}() has returned an incompatible "
-                                     "value: {1}".format(method_name, str(result) == "" and "''" or result))
+                                     "value: {1}".format(
+                                         method_name,
+                                         str(result) == "" and "''" or result))
 
         return result
 
@@ -369,16 +427,24 @@ def typecheck(method, *, input_parameter_error = InputParameterError,
 
     return typecheck_invocation_proxy
 
+
 ################################################################################
 
 _exception_class = lambda t: isinstance(t, type) and issubclass(t, Exception)
 
-@typecheck
-def typecheck_with_exceptions(*, input_parameter_error: optional(_exception_class) = InputParameterError,
-                                 return_value_error: optional(_exception_class) = ReturnValueError):
 
-    return lambda method: typecheck(method, input_parameter_error = input_parameter_error,
-                                            return_value_error = return_value_error)
+@typecheck
+def typecheck_with_exceptions(
+        *,
+        input_parameter_error: optional(
+            _exception_class) = InputParameterError,
+        return_value_error: optional(_exception_class) = ReturnValueError):
+
+    return lambda method: typecheck(method,
+                                    input_parameter_error=
+                                    input_parameter_error,
+                                    return_value_error=return_value_error)
+
 
 ################################################################################
 # EOF

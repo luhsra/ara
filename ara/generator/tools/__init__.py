@@ -13,10 +13,12 @@ from ara.util import get_logger
 
 _logger = get_logger('Generator.Tools')
 
+
 def abstract():
     import inspect
     caller = inspect.getouterframes(inspect.currentframe())[1][3]
     raise NotImplementedError(caller + ' must be implemented in subclass')
+
 
 def format_source_tree(generator, tree):
     if type(tree) == str:
@@ -29,7 +31,8 @@ def format_source_tree(generator, tree):
         else:
             return "".join(flatten(tree))
 
-def flatten(seq : iterable):
+
+def flatten(seq: iterable):
     ret = []
     for i in seq:
         if type(i) == list:
@@ -38,38 +41,49 @@ def flatten(seq : iterable):
             ret += [i]
     return ret
 
+
 def stringify(string):
     if type(string) == str:
         return '"%s"' % repr(string)[1:-1]
     return stringify(repr(string).replace('"', '\"'))
 
 
-def panic(fmt : str, *args):
+def panic(fmt: str, *args):
     _logger.error(fmt, *args)
     sys.exit(-1)
+
 
 def unwrap_seq(seq):
     assert len(seq) == 1
     return list(seq)[0]
+
 
 def wrap_in_list(seq):
     if type(seq) == list:
         return seq
     return [seq]
 
+
 class stack(list):
+
     def push(self, item):
         self.append(item)
+
     def pull(self):
         return self.pop()
+
     def isEmpty(self):
         return not self
 
+
 class queue(list):
+
     def push(self, item):
         self.insert(0, item)
+
     def pull(self):
         return self.pop()
+
     def isEmpty(self):
         return not self
 
@@ -81,13 +95,15 @@ def select_distinct(seq, field):
         ret.add(key)
     return ret
 
-def group_by(seq : iterable, field):
+
+def group_by(seq: iterable, field):
     ret = {}
     for item in seq:
         key = getattr(item, field)
         ret.setdefault(key, [])
         ret[key].append(item)
     return ret
+
 
 def pairwise(elements):
     tmp = []
@@ -96,10 +112,11 @@ def pairwise(elements):
             yield (x, y)
         tmp.append(x)
 
-def wrap_typecheck_functions(prefix = "generator",
-                             ignore = "generator.tools.typecheck"):
+
+def wrap_typecheck_functions(prefix="generator",
+                             ignore="generator.tools.typecheck"):
     functions = set()
-    fixup     = defaultdict(list)
+    fixup = defaultdict(list)
     # Collect all possible functions
     for name, module in sys.modules.items():
         if name.startswith(prefix) or name == "__main__":
@@ -115,7 +132,6 @@ def wrap_typecheck_functions(prefix = "generator",
                             functions.add(method)
                             fixup[method].append((element, name_))
 
-
     for function in functions:
         if len(function.__annotations__) == 0:
             continue
@@ -125,6 +141,7 @@ def wrap_typecheck_functions(prefix = "generator",
         wrapped = typecheck(function)
         for obj, attrname in fixup[function]:
             setattr(obj, attrname, wrapped)
+
 
 # Hook for coloured tracebacks on the console :-)
 def myexcepthook(type, value, tb):
@@ -138,23 +155,30 @@ def myexcepthook(type, value, tb):
     formatter = TerminalFormatter()
     sys.stderr.write(highlight(tbtext, lexer, formatter))
 
+
 sys.excepthook = myexcepthook
+
 
 def bitwidth(self, A):
     """Number of bits needed to encode this number"""
     return int(math.ceil(math.log(A, 2)))
+
 
 def one(seq):
     print(seq)
     assert len(seq) == 1
     return list(seq)[0]
 
+
 class SimpleNamespace:
+
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
+
     def __repr__(self):
         keys = sorted(self.__dict__)
         items = ("{}={!r}".format(k, self.__dict__[k]) for k in keys)
         return "{}({})".format(type(self).__name__, ", ".join(items))
+
     def __eq__(self, other):
         return self.__dict__ == other.__dict__

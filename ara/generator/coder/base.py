@@ -4,11 +4,18 @@
 # SPDX-FileCopyrightText: 2023 Andreas Kässens
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
-from .elements import (FunctionCall,VariableDefinition)
+from .elements import (FunctionCall, VariableDefinition)
+
 
 class BaseCoder:
 
-    def call(self, block, function, rettype="void", arguments=None, prepend = False, name=None):
+    def call(self,
+             block,
+             function,
+             rettype="void",
+             arguments=None,
+             prepend=False,
+             name=None):
         """Generates a call to a function and stores the result in an
            variable, if it isn't void"""
 
@@ -21,9 +28,9 @@ class BaseCoder:
         if arguments is None:
             arguments = []
         if prepend:
-            block.prepend( FunctionCall(function, arguments, name))
+            block.prepend(FunctionCall(function, arguments, name))
         else:
-            block.add( FunctionCall(function, arguments, name))
+            block.add(FunctionCall(function, arguments, name))
 
     def __init__(self):
         self.generator = None
@@ -34,7 +41,6 @@ class BaseCoder:
         self.syscall_rules = None
         self._log = None
 
-
     def set_generator(self, generator):
         self.generator = generator
         self.ara_graph = generator.ara_graph
@@ -43,11 +49,8 @@ class BaseCoder:
         self.syscall_rules = generator.syscall_rules
         self._log = generator._log.getChild(self.__class__.__name__)
 
-
     def generate_data_objects(self):
-        self._log.info("generate_data_objects not implemented: %s",
-                            self)
+        self._log.info("generate_data_objects not implemented: %s", self)
 
     def generate_system_code(self):
-        self._log.info("generate_system_code not implemented: %s",
-                            self)
+        self._log.info("generate_system_code not implemented: %s", self)
