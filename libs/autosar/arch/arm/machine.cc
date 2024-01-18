@@ -6,45 +6,45 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "machine.h"
+
 #include "hardware_threads.h"
-#include "syscall.h"
 #include "pmu.h"
+#include "syscall.h"
 
 using namespace arch;
 
 _Atomic(bool) ipi_cleared[MAX_CPUS];
 
 void Machine::trigger_interrupt(uint8_t irq, uint8_t cpuid, bool sync) {
-    // TODO: check if CPU is online
+	// TODO: check if CPU is online
 
-    if (!sync) {
-        arch::GIC::trigger(irq, cpuid);
-        return;
-    }
+	if (!sync) {
+		arch::GIC::trigger(irq, cpuid);
+		return;
+	}
 
 	/* synchronized interrupt: wait until target core does reschedule */
 	ipi_cleared[cpuid] = false;
-	
-    arch::GIC::trigger(irq, cpuid);
+
+	arch::GIC::trigger(irq, cpuid);
 #ifdef PMU_TRACE_A
-    //checkpoint 3
-    arch::PMU::trace_cycles();
+	// checkpoint 3
+	arch::PMU::trace_cycles();
 #endif
-    
-	while (ipi_cleared[cpuid] == false)
-    {
-        Machine::nop();
-    }
+
+	while (ipi_cleared[cpuid] == false) {
+		Machine::nop();
+	}
 #ifdef PMU_TRACE_A
-    // checkpoint 4
-    arch::PMU::trace_cycles();
+	// checkpoint 4
+	arch::PMU::trace_cycles();
 #endif
 	debug_core << __FUNCTION__ << " completed" << endl;
 }
 
 void Machine::trigger_interrupt_from_user(uint8_t irq, uint8_t cpuid, bool sync) {
-    // limit irqs
-    irq = irq % 16;
+	// limit irqs
+	irq = irq % 16;
 
-    trigger_interrupt(irq, cpuid, sync);
- }
+	trigger_interrupt(irq, cpuid, sync);
+}

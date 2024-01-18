@@ -19,8 +19,8 @@
 #if DEBUG
 
 // debugging: print kout+debug on UART
-#include "serial.h"
 #include "bufferedserial.h"
+#include "serial.h"
 extern BufferedSerial kout;
 extern BufferedSerial debug;
 extern BufferedSerial debug_core_arr[MAX_CPUS];

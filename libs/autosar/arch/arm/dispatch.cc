@@ -5,12 +5,13 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+#include "dispatch.h"
+
 #include "gic.h"
 #include "machine.h"
 #include "os/util/assert.h"
 #include "os/util/encoded.h"
 #include "os/util/inline.h"
-#include "dispatch.h"
 #include "tcb.h"
 
 namespace arch {
@@ -29,7 +30,7 @@ namespace arch {
 	 * This interrupt is called after the next task is determined by the scheduler in ring 3
 	 * and performs the actual dispatching in ring 0.
 	 */
-	//IRQ_HANDLER(IRQ_DISPATCH) {
+	// IRQ_HANDLER(IRQ_DISPATCH) {
 	void __attribute__((noreturn)) Dispatcher::do_dispatch() {
 		uint16_t id = dispatch_task[arch::get_cpuid()];
 
@@ -56,26 +57,26 @@ namespace arch {
 
 		if (tcb->is_running()) {
 			// resume from saved IP on stack
-			ip = * (sp - 1);
+			ip = *(sp - 1);
 
 			asm volatile("mov r1, %0 \n\t"
-					"mov r0, %1  \n\t"
-					"bx r1"
-					::"l"(ip), "l"(sp)
-					: "r0", "r1");
+			             "mov r0, %1  \n\t"
+			             "bx r1" ::"l"(ip),
+			             "l"(sp)
+			             : "r0", "r1");
 		} else {
 			// start function from beginning
-			ip = (uint32_t) tcb->fun;
+			ip = (uint32_t)tcb->fun;
 
 			// Set the user's stack pointer
 			// We leave to the user mode in system mode
 			asm volatile("mov r1, %0 \n\t"
-						"mov r0, %1  \n\t"
-						"cps #31  \n\t"
-						"mov sp, r0  \n\t"
-						"bx r1"
-						::"l"(ip), "l"(sp)
-						: "r0", "r1");
+			             "mov r0, %1  \n\t"
+			             "cps #31  \n\t"
+			             "mov sp, r0  \n\t"
+			             "bx r1" ::"l"(ip),
+			             "l"(sp)
+			             : "r0", "r1");
 		}
 
 		Machine::unreachable();

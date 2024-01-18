@@ -38,7 +38,7 @@ namespace arch {
 
 	/** \brief Return true if calling code is running as part of a syscall */
 	forceinline bool in_syscall() {
-		//return true;
+		// return true;
 		return !irq.in_interrupt(); // When we are in an interrupt, we are
 		                            // not coming from an systemcall
 	}

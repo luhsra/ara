@@ -14,7 +14,7 @@
 
 extern "C" uint8_t _estack_os;
 
-typedef void (*syscall_type)(uint32_t,uint32_t);
+typedef void (*syscall_type)(uint32_t, uint32_t);
 
 namespace arch {
 
@@ -40,21 +40,21 @@ namespace arch {
 		save_sp[arch::get_cpuid()] = 0; // to detect IRQ from userspace in idt.S
 
 		// exit system
-		//Machine::set_spsr(0x30);
+		// Machine::set_spsr(0x30);
 
 		// set user SP
-		//Machine::switch_mode(Machine::SYSTEM);
-		//asm volatile("mov sp, %0" ::"r"(&_estack_os - 2048 - 4096*arch::get_cpuid()));
-		//Machine::switch_mode(Machine::SUPERVISOR);
+		// Machine::switch_mode(Machine::SYSTEM);
+		// asm volatile("mov sp, %0" ::"r"(&_estack_os - 2048 - 4096*arch::get_cpuid()));
+		// Machine::switch_mode(Machine::SUPERVISOR);
 		// TODO: setup args r0, r1 within system mode or supervisor mode?!
 
-		syscall_type syscall_fun = (syscall_type) fun;
+		syscall_type syscall_fun = (syscall_type)fun;
 		syscall_fun(arg1, arg2);
 
-		//asm volatile("mov r0, %0" ::"l"(arg1) : "r0");       // prepare syscall arg1
-		//asm volatile("mov r1, %0" ::"l"(arg2) : "r0", "r1"); // prepare syscall arg2
-		//asm volatile("mov lr, %0" ::"r"(fun) : "r0", "r1");
-		//asm volatile("subs pc, lr, #0");
+		// asm volatile("mov r0, %0" ::"l"(arg1) : "r0");       // prepare syscall arg1
+		// asm volatile("mov r1, %0" ::"l"(arg2) : "r0", "r1"); // prepare syscall arg2
+		// asm volatile("mov lr, %0" ::"r"(fun) : "r0", "r1");
+		// asm volatile("subs pc, lr, #0");
 		Machine::unreachable();
 	}
 

@@ -8,10 +8,10 @@
 #ifndef __MACHINE_H__
 #define __MACHINE_H__
 
+#include "hardware_threads.h"
 #include "os/util/inline.h"
 #include "output.h"
 #include "stdint.h"
-#include "hardware_threads.h"
 
 /**
  *  @ingroup arch
@@ -67,9 +67,7 @@ struct Machine {
 		return r;
 	}
 
-	static forceinline uint32_t get_mode() {
-		return get_cpsr() & 0x1f;
-	}
+	static forceinline uint32_t get_mode() { return get_cpsr() & 0x1f; }
 
 	// TODO
 	static forceinline void set_cpsr(uint32_t r) { asm("msr cpsr, %[ps]" : : [ps] "r"(r)); }
@@ -234,7 +232,7 @@ struct Machine {
 	 * At the moment there is no real shutdown sequence.
 	 */
 	static forceinline void shutdown(void) {
-		//debug << ("Machine::shutdown!\n");
+		// debug << ("Machine::shutdown!\n");
 		Machine::reset();
 	}
 };

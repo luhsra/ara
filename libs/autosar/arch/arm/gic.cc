@@ -27,7 +27,7 @@ namespace arch {
 	void GIC::init() { enable(); }
 
 	extern "C" void* irq_handler_unhandled(void* task_sp, uint32_t id) {
-		debug_core << "unhandled IRQ "<< id << endl;
+		debug_core << "unhandled IRQ " << id << endl;
 		CALL_HOOK(FaultDetectedHook, IRQ_SPURdetected, id, (uint32_t)task_sp);
 		return task_sp;
 	}

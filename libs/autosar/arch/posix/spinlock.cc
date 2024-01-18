@@ -13,7 +13,7 @@
 using namespace os;
 
 Spinlock::Spinlock(int id) : id(id) { pthread_spin_init(&sl, PTHREAD_PROCESS_PRIVATE); }
-//Spinlock::~Spinlock() { pthread_spin_destroy(&sl); }
+// Spinlock::~Spinlock() { pthread_spin_destroy(&sl); }
 
 StatusType Spinlock::lock() {
 	int rc = pthread_spin_lock(&sl);

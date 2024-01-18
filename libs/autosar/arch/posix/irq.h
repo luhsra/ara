@@ -15,7 +15,6 @@
 
 #define SIGMAX 256
 
-
 extern _Atomic(bool) ipi_cleared[MAX_CPUS];
 
 namespace arch {

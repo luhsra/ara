@@ -28,11 +28,10 @@ namespace arch {
 
 	extern volatile void* startup_sp;
 
-// next task to dispatch (used by dispatch interrupt)
+	// next task to dispatch (used by dispatch interrupt)
 
-extern uint32_t save_sp[MAX_CPUS];
-extern volatile uint16_t dispatch_task[MAX_CPUS];
-
+	extern uint32_t save_sp[MAX_CPUS];
+	extern volatile uint16_t dispatch_task[MAX_CPUS];
 
 	class Dispatcher {
 
@@ -66,7 +65,7 @@ extern volatile uint16_t dispatch_task[MAX_CPUS];
 			// kout << "dispatch to " << (int) task.id << endl;
 
 			// request dispatcher AST
-			//GIC::trigger(IRQ_DISPATCH);
+			// GIC::trigger(IRQ_DISPATCH);
 
 			// Dispatch directly
 			do_dispatch();

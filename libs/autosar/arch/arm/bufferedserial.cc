@@ -3,13 +3,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "bufferedserial.h"
-#include "ticketlock.h"
+
 #include "gic.h"
+#include "ticketlock.h"
 
 os::Ticketlock BufferedSerial::serial_spinlock{};
 
-void BufferedSerial::putchar(char character)
-{
+void BufferedSerial::putchar(char character) {
 	if (printcpu) {
 		if (idx == 0) {
 			int cpuid = arch::get_cpuid();
@@ -30,10 +30,9 @@ void BufferedSerial::putchar(char character)
 		BufferedSerial::serial_spinlock.lock();
 		puts(buf);
 		BufferedSerial::serial_spinlock.unlock();
-		for (int i = 0; i<BUF_LEN; i++)
+		for (int i = 0; i < BUF_LEN; i++)
 			buf[i] = 0;
 		idx = 0;
 		arch::GIC::set_task_prio(current_prio);
 	}
 }
-

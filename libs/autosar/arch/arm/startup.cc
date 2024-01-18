@@ -14,21 +14,20 @@
 #include "gic.h"
 #include "machine.h"
 #include "mmu.h"
+#include "os.h"
 #include "output.h"
 #include "syscall.h"
 #include "timer.h"
-#include "os.h"
-#include "mmu.h"
-#include <stdint.h>
 
 #include <spinlock.h>
+#include <stdint.h>
 
 /** Initialisation stub for generic startup code */
 extern "C" void init_generic();
 extern "C" void run_constructors(void);
 
 extern "C" {
-__attribute__((section(".kernel_stack"))) char os_stack[4096*MAX_CPUS];
+__attribute__((section(".kernel_stack"))) char os_stack[4096 * MAX_CPUS];
 }
 
 using namespace arch;
@@ -50,7 +49,7 @@ extern "C" void arch_startup() {
 		kout << endl;
 	}
 
-	//Machine::setup_caches();
+	// Machine::setup_caches();
 
 	// wait_for_debugger();
 
@@ -64,13 +63,12 @@ extern "C" void arch_startup() {
 
 	*/
 
-
 #if defined(PMU_TRACE_A) || defined(PMU_TRACE_B) || defined(PMU_TRACE_C)
 
-	//arch::PMU::start(); // start on all cores
+	// arch::PMU::start(); // start on all cores
 #else
 	// setup Private Timer
-	//Timer::init();
+	// Timer::init();
 #endif
 
 	// switch to user mode preserving SP
@@ -79,12 +77,11 @@ extern "C" void arch_startup() {
 	Machine::switch_mode(Machine::USER);
 	asm volatile("mov sp, %0" ::"r"(sp));
 
-
 	// unblock ISR2s by lowering GIC task priority
 	GIC::set_task_prio(IRQ_PRIO_LOWEST);
 
-	//kout << "SSSSSS [[[[[[ Starting dOSEK ]]]]]]" << endl;
-	//kout << "APP_BOOT" << endl;
-	// Proceed to generic initialisation
+	// kout << "SSSSSS [[[[[[ Starting dOSEK ]]]]]]" << endl;
+	// kout << "APP_BOOT" << endl;
+	//  Proceed to generic initialisation
 	init_generic();
 }

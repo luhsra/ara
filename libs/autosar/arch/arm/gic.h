@@ -14,11 +14,11 @@
 #ifndef GIC_H_
 #define GIC_H_
 
-#include "util/inline.h"
 #include "machine.h"
 #include "platform.h"
-#include "stdint.h"
 #include "pmu.h"
+#include "stdint.h"
+#include "util/inline.h"
 
 namespace arch {
 
@@ -194,22 +194,21 @@ namespace arch {
 
 		/** \brief Trigger SGI (software-generated interrupt) */
 		static forceinline void trigger(uint8_t irq) {
-			debug_core << "trigger " << (int) irq << endl;
+			debug_core << "trigger " << (int)irq << endl;
 			// pseudo_static_assert(irq < 0xFF, "Software-generated interrupt numbers are only 0-15");
 
 			// write software generated irq register
 			// distribute only to requesting (this) CPU: 0b10 at bit 24
 			GICdist().SGIR = ((irq & 0xFF) | (2 << 24));
-
 		}
 		static forceinline void trigger(uint8_t irq, uint8_t cpuid) {
-			debug_core << "trigger " << (int) irq << " " << (int) cpuid << endl;
+			debug_core << "trigger " << (int)irq << " " << (int)cpuid << endl;
 			// CPUTargetList [23:16] bitmask
 			GICdist().SGIR = ((irq & 0xFF) | (1 << cpuid << 16));
 		}
 
 		static forceinline void trigger_others(uint8_t irq) {
-			debug_core << "trigger others " << (int) irq << endl;
+			debug_core << "trigger others " << (int)irq << endl;
 			// distribute only to all other CPUs: 0b01 at bit 24
 			GICdist().SGIR = ((irq & 0xFF) | (1 << 24));
 		}
@@ -231,8 +230,8 @@ namespace arch {
  * @name IRQ numbers
  * @{
  */
-#define IRQ_RESCHEDULE 1   //!< reschedule (AST) software interrupt
-#define IRQ_DISPATCH 0     //!< dispatcher (AST) software interrupt
+#define IRQ_RESCHEDULE 1 //!< reschedule (AST) software interrupt
+#define IRQ_DISPATCH 0   //!< dispatcher (AST) software interrupt
 #define IRQ_TERM 12
 #define IRQ_V_TIMER 27
 #define IRQ_LOCAL_TIMER 29 //!< local CPU timer interrupt
@@ -333,7 +332,7 @@ namespace arch {
  * 1 = Rescheduler
  * 29 = Timer
  */
-//extern "C" void* irq_handler_0(void* task_sp, uint32_t id);
+// extern "C" void* irq_handler_0(void* task_sp, uint32_t id);
 extern "C" void* irq_handler_1(void* task_sp, uint32_t id);
 extern "C" void* irq_handler_27(void* task_sp, uint32_t id);
 extern "C" void* irq_handler_29(void* task_sp, uint32_t id);

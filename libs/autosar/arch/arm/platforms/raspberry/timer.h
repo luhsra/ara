@@ -14,8 +14,8 @@
 #ifndef TIMER_H_
 #define TIMER_H_
 
-#include "platform.h"
 #include "gic.h"
+#include "platform.h"
 #include "stdint.h"
 
 namespace arch {
