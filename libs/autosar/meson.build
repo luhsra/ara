@@ -19,25 +19,13 @@ if arm_enabled
   ]
 
   autosar_pi4_clang_flags = [
-    autosar_pi4_gcc_flags,
-    '-g', # debug info
-    '--target=armv7a-none-elf',
-    '-ffixed-r9',
-    #'-no-integrated-as',
-    #'--prefix=/usr/arm-none-eabi/bin',
-    '-Wno-error=void-ptr-dereference',
-    '-fno-exceptions',
-    '-std=c++11',
-    '-ccc-gcc-name',
-    'arm-none-eabi-gcc',
+    libplatform_proj.get_variable('arm_clang_flags'),
+    libplatform_proj.get_variable('pi4_clang_flags'),
     '-O2', # required for GIC/machine assembly
+    '-ffixed-r9', # cpuid
   ]
   autosar_pi4_ld_flags = [
-    '-nostartfiles',
-    '-nostdlib'
-  ]
-  ir_flags += [
-    '-O0' # required for IR ABB analysis
+    libplatform_proj.get_variable('arm_ld_flags')
   ]
 endif
 
