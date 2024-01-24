@@ -38,7 +38,7 @@ if posix_enabled
     '--target=i386-pc-linux-gnu',
     '-m32',
     # '-O3', # for bcc1_complex1_d
-    '-DDEBUG', # for bcc_isr2_e
+    '-DDEBUG',
     '-DCONFIG_ARCH_POSIX', # for alarm3
   ]
   autosar_posix_ld_flags = [

@@ -29,13 +29,12 @@ TASK(T00) { // PRIO 1
 
 TASK(T01) { // PRIO 2
 	test_trace('1');
-	ActivateTask(T02);
-	TerminateTask();
+	ShutdownAllCores(E_OK);
 }
 
 TASK(T02) { // PRIO 3
 	test_trace('2');
-	ShutdownAllCores(E_OK);
+	TerminateTask();
 }
 
 TASK(T10) {
@@ -47,7 +46,7 @@ void ShutdownHook(StatusType status) {
 	(void)status;
 	/* The testcase has finished, check the output */
 	if (GetCoreID() == OS_CORE_ID_0) {
-		test_trace_assert("02");
+		test_trace_assert("021");
 		test_finish();
 	}
 }

@@ -19,7 +19,8 @@ if posix_enabled
                     posix_autosar_includes +
                     autosar_includes +
                     obj_flags +
-                    autosar_posix_clang_flags)
+                    autosar_posix_clang_flags +
+                    clang_flags)
         obj_targets += obj_target
     endforeach
 

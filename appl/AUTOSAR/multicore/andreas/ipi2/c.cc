@@ -24,7 +24,7 @@ TASK(T00) {
 	test_trace('0');
 	ActivateTask(T01);
 	ActivateTask(T02);
-	TerminateTask();
+	ShutdownAllCores(E_OK);
 }
 
 TASK(T01) {
@@ -36,7 +36,7 @@ TASK(T01) {
 TASK(T02) {
 	test_trace('2');
 	ActivateTask(T10);
-	ShutdownAllCores(E_OK);
+	TerminateTask();
 }
 
 TASK(T10) {
