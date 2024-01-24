@@ -69,7 +69,7 @@ noinline void test_trace_assert(const char* expected) {
 }
 
 void test_trace(char chr) {
-	debug_core << "test_trace: " << (int) chr << endl;
+	debug_core << "test_trace: " << chr << endl;
 	fail_trace = (uint32_t)chr;
 	if (trace_table_idx < 0xff)
 		trace_table[trace_table_idx++] = chr;
