@@ -25,7 +25,7 @@ if posix_enabled
 endif
 
 subdir('include')
-subdir('freertos')
+# subdir('freertos')
 # subdir('osek')
 subdir('autosar')
 
