@@ -217,6 +217,7 @@ foreach app : autosar_apps
                                     autosar_includes +
                                     clang_flags +
                                     autosar_posix_clang_flags +
+                                    '-O0' + # dont optimize before IR
                                     ir_flags)
     app += {'ll': app_ll_posix} # store in ll to not break dependencies
     app += {'ll_pi4': app_ll_posix}
@@ -232,6 +233,7 @@ foreach app : autosar_apps
                                     autosar_includes +
                                     clang_flags +
                                     autosar_pi4_clang_flags +
+                                    '-O0' + # dont optimize before IR
                                     ir_flags)
     app += {'ll_pi4': app_ll_pi4}
   endif

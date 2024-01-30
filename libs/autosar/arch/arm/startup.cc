@@ -63,13 +63,8 @@ extern "C" void arch_startup() {
 
 	*/
 
-#if defined(PMU_TRACE_A) || defined(PMU_TRACE_B) || defined(PMU_TRACE_C)
-
-	// arch::PMU::start(); // start on all cores
-#else
 	// setup Private Timer
-	// Timer::init();
-#endif
+	Timer::init();
 
 	// switch to user mode preserving SP
 	uint32_t sp;

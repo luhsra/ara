@@ -85,7 +85,7 @@ namespace arch {
 			counter0_nr = 0;
 		}
 
-		static void print_cycles() {
+		static forceinline void print_cycles() {
 			for (int i = 0; i < cycles_nr; i++) {
 				// print cycles
 				kout << "val[" << i << "]=" << cycles[i] << endl;
@@ -95,7 +95,7 @@ namespace arch {
 				kout << "d[" << i - 1 << ">" << i << "]=" << cycles[i] - cycles[i - 1] << endl;
 			}
 		}
-		static void print_counter0() {
+		static forceinline void print_counter0() {
 			for (int i = 0; i < counter0_nr; i++) {
 				// print cycles
 				kout << "val[" << i << "]=" << counter0[i] << endl;

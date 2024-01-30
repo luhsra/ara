@@ -24,7 +24,7 @@ TASK(T00) {
 	test_trace('0');
 	ActivateTask(T01);
 	ActivateTask(T02);
-	ShutdownAllCores(E_OK);
+	TerminateTask();
 }
 
 TASK(T01) {
@@ -36,7 +36,8 @@ TASK(T01) {
 TASK(T02) {
 	test_trace('2');
 	ActivateTask(T10);
-	TerminateTask();
+	test_trace('3');
+	ShutdownAllCores(E_OK);
 }
 
 TASK(T10) {
@@ -47,8 +48,8 @@ TASK(T10) {
 void ShutdownHook(StatusType status) {
 	(void)status;
 	/* The testcase has finished, check the output */
-	if (GetCoreID() == OS_CORE_ID_0) {
-		test_trace_assert("012");
+	if (GetCoreID() == OS_CORE_ID_1) {
+		test_trace_assert("0123");
 		test_finish();
 	}
 }

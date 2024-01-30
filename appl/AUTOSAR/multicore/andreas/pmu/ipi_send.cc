@@ -18,6 +18,7 @@ void start() {
 TEST_MAKE_OS_MAIN(start())
 
 TASK(T00) {
+	test_trace('0');
 	arch::PMU::start();
 	// checkpoint 0
 	arch::PMU::trace_cycles();
@@ -26,9 +27,13 @@ TASK(T00) {
 	arch::PMU::trace_cycles();
 	arch::PMU::stop();
 	arch::PMU::print_cycles();
+	test_trace_assert("01");
+	test_ne(arch::PMU::get_cycles(), 0);
+	test_finish();
 	ShutdownAllCores(E_OK);
 }
 
 TASK(T10) {
+	test_trace('1');
 	TerminateTask();
 }

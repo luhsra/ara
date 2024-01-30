@@ -1,14 +1,18 @@
 #include "autosar/os.h"
 #include "test/test.h"
 
-#include <sys/sysinfo.h>
+int expected_cores = 4;
+
 void start() {
 	StatusType rv;
 	switch (GetCoreID()) {
 	case OS_CORE_ID_MASTER:
 		StartCore(OS_CORE_ID_1, &rv);
+		if (rv != E_OK) expected_cores--;
 		StartCore(OS_CORE_ID_2, &rv);
+		if (rv != E_OK) expected_cores--;
 		StartCore(OS_CORE_ID_3, &rv);
+		if (rv != E_OK) expected_cores--;
 	default:
 		StartOS(0);
 	}
@@ -20,7 +24,6 @@ TASK(T0) {
 	int cores = GetNumberOfActivatedCores();
 	test_init();
 	test_start();
-	int expected_cores = 4;
 	test_eq(cores, expected_cores);
 	test_positive_tests_eq(1);
 	test_finish();

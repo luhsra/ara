@@ -39,6 +39,7 @@ void start() {
 TEST_MAKE_OS_MAIN(start())
 
 TASK(T00) { //high priority
+	test_trace('0');
 	arch::PMU::start();
 	arch::PMU::trace_cycles();
     ready = true;
@@ -56,7 +57,9 @@ TASK(T00) { //high priority
         Machine::nop();
     }
 	arch::PMU::print_cycles();
-
+	test_trace('2');
+	test_trace_assert("012");
+	test_finish();
     ShutdownMachine();
 
 }
@@ -70,6 +73,7 @@ TASK(T10) {
     while (!ready) {
 		Machine::nop();
 	}
+	test_trace('1');
 
     // IPI bombing
     int k = 0;
@@ -83,7 +87,6 @@ TASK(T10) {
     kout << endl;
     kout << "val[2]=" << k << endl;
     ready = true;
-
     TerminateTask();
 }
 

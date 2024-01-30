@@ -35,6 +35,7 @@ void cache_test() {
 }
 
 TASK(T00) {
+	test_trace('0');
 	arch::PMU::start();
 	arch::PMU::trace_counter0();
 	for ( int i = 0; i < 8; i++)
@@ -53,8 +54,9 @@ TASK(T01) {
 
 	arch::PMU::stop();
 	arch::PMU::print_counter0();
-
-	kout << "end" << endl;
+	test_trace('1');
+	test_trace_assert("01");
+	test_finish();
 	ShutdownAllCores(E_OK);
 }
 

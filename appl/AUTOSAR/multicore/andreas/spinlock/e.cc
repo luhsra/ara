@@ -28,7 +28,6 @@ TASK(T00) {
 	ara_timing_info(1,2);
 	test_trace('1');
 	ReleaseSpinlock(S1);
-	TerminateTask();
 	ShutdownOS(E_OK);
 }
 

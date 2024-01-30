@@ -24,8 +24,9 @@ TASK(T00) {
 
 TASK(T01) {
 	test_trace('1');
-	while (true)
-		; /* block cpu 0*/
+	while (true) { /* block cpu 0*/
+		Machine::halt();
+	}
 	TerminateTask();
 }
 

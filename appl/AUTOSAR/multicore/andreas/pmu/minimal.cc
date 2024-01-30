@@ -21,7 +21,7 @@ TASK(T00) {
 	arch::PMU::trace_counter0();
     arch::PMU::trace_cycles();
 
-	kout << "Test" << endl;
+	test_trace('a');
 
 	arch::PMU::trace_counter0();
 	arch::PMU::trace_cycles();
@@ -29,7 +29,8 @@ TASK(T00) {
 	arch::PMU::print_counter0();
 	arch::PMU::print_cycles();
 
+	int cycles = arch::PMU::get_cycles();
+	test_ne(cycles, 0);
+	test_finish();
 	ShutdownOS(E_OK);
 }
-
-

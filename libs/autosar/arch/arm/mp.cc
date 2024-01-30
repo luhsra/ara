@@ -68,7 +68,7 @@ namespace arch {
 	}
 
 	StatusType start_hardware_thread(unsigned int hardware_number, void* bottom_of_stack, unsigned int size_of_stack) {
-		if (hardware_number > 4)
+		if (hardware_number >= 4)
 			return E_NOT_OK;
 
 		// LOCAL address and Maibox offset per CPU

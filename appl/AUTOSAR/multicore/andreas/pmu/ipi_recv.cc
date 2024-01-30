@@ -42,6 +42,7 @@ TASK(T01) {
 	arch::PMU::stop();
 	arch::PMU::print_cycles();
 	test_trace_assert("012");
+	test_finish();
 	ShutdownAllCores(E_OK);
 }
 

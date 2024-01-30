@@ -13,17 +13,16 @@ if arm_enabled
     '-mcpu=cortex-a7',
     '-mfloat-abi=soft',
     '-mthumb',
-    #'-DPMU_TRACE_A', # PMU tracing (syscall)
-    #'-DPMU_TRACE_B', # PMU tracing (IRQ)
-    #'-DPMU_TRACE_C', # only user
-    #'-DDEBUG',
     '-DQEMU', #QEMU
   ]
 
   autosar_pi4_clang_flags = [
     libplatform_proj.get_variable('arm_clang_flags'),
     libplatform_proj.get_variable('pi4_clang_flags'),
-    '-O2', # required for GIC/machine assembly
+    #'-DDEBUG',
+    #'-DPMU_TRACE_A', # PMU tracing (syscall)
+    #'-DPMU_TRACE_B', # PMU tracing (IRQ)
+    '-O3',
     '-ffixed-r9', # cpuid
   ]
   autosar_pi4_ld_flags = [
@@ -37,7 +36,7 @@ if posix_enabled
   autosar_posix_clang_flags = [
     '--target=i386-pc-linux-gnu',
     '-m32',
-    # '-O3', # for bcc1_complex1_d
+    '-O3',
     '-DDEBUG',
     '-DCONFIG_ARCH_POSIX', # for alarm3
   ]

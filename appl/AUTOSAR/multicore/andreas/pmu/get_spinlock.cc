@@ -18,6 +18,7 @@ void start() {
 TEST_MAKE_OS_MAIN(start())
 
 TASK(T00) {
+	test_trace('0');
 	arch::PMU::start();
 	arch::PMU::trace_cycles();
 	GetSpinlock(S1);
@@ -27,6 +28,9 @@ TASK(T00) {
 
 	arch::PMU::stop();
 	arch::PMU::print_cycles();
+	test_trace('1');
+	test_trace_assert("01");
+	test_finish();
 
 	ShutdownOS(E_OK);
 }
