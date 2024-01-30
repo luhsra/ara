@@ -37,11 +37,16 @@ ara_gen_cmd = [
   '--dependency_file', '@DEPFILE@',
 ]
 
-ara_gen_freertos_targets = [
-  'passthrough',
-  'vanilla',
-  'instances_full_static',
-  'instances_full_initialized',
+# copy the files to make them available for other projects
+ara_freertos_generator_targets = [
+  {'name': 'passthrough',
+   'settings': fs.copyfile(ara_settings / f'freertos_passthrough.json', f'freertos_setting_passthrough.json')},
+  {'name': 'vanilla',
+   'settings': fs.copyfile(ara_settings / f'freertos_vanilla.json', f'freertos_setting_vanilla.json')},
+  {'name': 'instances_full_static',
+   'settings': fs.copyfile(ara_settings / f'freertos_instances_full_static.json', f'freertos_setting_instances_full_static.json')},
+  {'name': 'instances_full_initialized',
+   'settings': fs.copyfile(ara_settings / f'freertos_instances_full_initialized.json', f'freertos_setting_instances_full_initialized.json')},
   #'interactions',
 ]
 
@@ -138,7 +143,7 @@ foreach app : ir_apps + hw_apps
   named_elf_targets = []
   elf_targets = []
   profiles_list = []
-  foreach target : ara_gen_freertos_targets
+  foreach target : ara_freertos_generator_targets
     # build standard and specialized variants for freertos
     #
     # the whole process works roughly so:
@@ -163,7 +168,7 @@ foreach app : ir_apps + hw_apps
     #                            +----------------+  objcopy  +----------------+
     #                            | lto_app_os.bin |<----------| lto_app_os.elf |
     #                            +----------------+           +----------------+
-    name_prefix = 'freertos-' + app + '-' + target
+    name_prefix = 'freertos-' + app + '-' + target['name']
     if get_option('execute_ara')
       ara_target = custom_target(name_prefix + '-os',
                                  input: app_vanilla_ll,
@@ -174,7 +179,7 @@ foreach app : ir_apps + hw_apps
                                           name_prefix + '-os.cc.freertos_overrides.h',
                                          ],
                                  command: ara_gen_cmd + ['--os', 'FreeRTOS',
-                                                         '--step-settings', files(ara_settings / f'freertos_@target@.json')]
+                                                         '--step-settings', target['settings']]
                                 )
     else
       ara_target = disabler()
@@ -268,15 +273,15 @@ foreach app : ir_apps + hw_apps
     run_target('run_qemu_' + lto_prefix, command: [qemu_cmd, lto_elf])
     run_target('run_gdb_qemu_' + lto_prefix, command: [gdb_qemu_cmd, lto_elf])
     elf_targets += lto_elf
-    named_elf_targets += [target + '-' + lto_version, lto_elf]
-    profiles_list += ['--profiles', target + '-' + lto_version]
+    named_elf_targets += [target['name'] + '-' + lto_version, lto_elf]
+    profiles_list += ['--profiles', target['name'] + '-' + lto_version]
 
     if app not in ir_apps
       test('validate_generator_' + lto_prefix,
            py3_inst,
            args: [validate_generator_runner,
                   app,
-                  target,
+                  target['name'],
                   app_aramodified_ll,
                   os_target[0].full_path(),
                   lto_elf,
