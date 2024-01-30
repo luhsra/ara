@@ -642,12 +642,14 @@ class AlarmTemplate(CodeTemplate):
                                        callback=callback_name) + "\n"
 
         if alarm.impl.event != None:
+            ret += f"debug_core << \"SetEvent {alarm.impl.task.impl.task_id}\"\n << endl;"
             ret += "scheduler_[%d].tlist.set_events(%d, %d);\n" % (
                 alarm.impl.task.cpu_id,
                 alarm.impl.task.impl.task_id,
                 alarm.impl.event.index,
             )
         else:
+            ret += f"debug_core << \"ActivateTask {self.rules.task_desc(alarm.impl.task)}\"\n << endl;"
             ret += "scheduler_[%d].SetReady_impl(%s);\n" % (
                 alarm.impl.task.cpu_id, self.rules.task_desc(alarm.impl.task))
 

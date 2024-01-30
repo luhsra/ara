@@ -19,7 +19,7 @@ if arm_enabled
   autosar_pi4_clang_flags = [
     libplatform_proj.get_variable('arm_clang_flags'),
     libplatform_proj.get_variable('pi4_clang_flags'),
-    #'-DDEBUG',
+    '-DDEBUG',
     #'-DPMU_TRACE_A', # PMU tracing (syscall)
     #'-DPMU_TRACE_B', # PMU tracing (IRQ)
     '-O3',

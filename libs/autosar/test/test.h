@@ -90,7 +90,7 @@ extern expected_value_t expected_values[EXPECTED_VALUES_MAX];
 extern _Atomic(bool) interrupts_suspended;
 
 //! buffer for task activation records
-extern char trace_table[256];
+extern _Atomic(char) trace_table[256];
 
 //! index for trace_table
 extern _Atomic(unsigned char) trace_table_idx;

@@ -10,7 +10,7 @@
 os::Ticketlock BufferedSerial::serial_spinlock{};
 
 void BufferedSerial::putchar(char character) {
-	if (printcpu) {
+	if (this->printcpu) {
 		if (idx == 0) {
 			int cpuid = arch::get_cpuid();
 			buf[idx++] = cpuid + (cpuid > 9 ? 55 : '0');
@@ -28,7 +28,7 @@ void BufferedSerial::putchar(char character) {
 		int current_prio = arch::GIC::get_task_prio();
 		arch::GIC::set_task_prio(0); // pause interrupts
 		BufferedSerial::serial_spinlock.lock();
-		puts(buf);
+		Serial::puts(buf);
 		BufferedSerial::serial_spinlock.unlock();
 		for (int i = 0; i < BUF_LEN; i++)
 			buf[i] = 0;

@@ -35,12 +35,9 @@ typedef enum class Color {
 class Serial : public O_Stream<Serial> {
   public:
 	Serial();
-	virtual void putchar(char c);
+	static void putchar(char c);
 
-	void puts(const char* data);
-
-	template <typename T>
-	void setcolor(__attribute__((unused)) T fg, __attribute__((unused)) T bg){};
+	static void puts(const char* data);
 };
 
 #endif // __SERIAL_H__

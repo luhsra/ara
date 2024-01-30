@@ -20,17 +20,17 @@
 
 #define BUF_LEN 80
 
-class BufferedSerial : public Serial {
+class BufferedSerial : public O_Stream<BufferedSerial> {
   public:
 	char buf[BUF_LEN] = {0};
 	int idx = 0;
-	bool printcpu;
+	bool printcpu = false;
 
 	static os::Ticketlock serial_spinlock;
 
   public:
-	BufferedSerial(bool printcpu = true) : printcpu(printcpu){};
-	virtual void putchar(char character) override;
+	BufferedSerial(bool printcpu = false) : printcpu(printcpu){};
+	void putchar(char character);
 };
 
 #endif

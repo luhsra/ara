@@ -23,7 +23,7 @@ class ArmArch(GenericArch):
 
     def generate_functions(self):
         kickoff = Function("AUTOSAR_kickoff", "void", [], extern_c=True)
-        kickoff.add(Statement("debug_core << __FUNCTION__ << endl"))
+        #kickoff.add(Statement("debug_core << __FUNCTION__ << endl"))
 
         self.call(kickoff, "Machine::enable_interrupts")
         self.call(kickoff, "Machine::switch_mode", "void", ["Machine::USER"])

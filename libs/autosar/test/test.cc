@@ -13,7 +13,7 @@ _Atomic(int) positive_tests;
 _Atomic(int) experiment_number;
 expected_value_t expected_values[EXPECTED_VALUES_MAX];
 _Atomic(bool) interrupts_suspended = false;
-char trace_table[256];
+_Atomic(char) trace_table[256];
 _Atomic(unsigned char) trace_table_idx = 0;
 
 volatile uint32_t fail_trace = 0;
@@ -69,7 +69,7 @@ noinline void test_trace_assert(const char* expected) {
 }
 
 void test_trace(char chr) {
-	debug_core << "test_trace: " << chr << endl;
+	//debug_core << "test_trace: " << chr << endl;
 	fail_trace = (uint32_t)chr;
 	if (trace_table_idx < 0xff)
 		trace_table[trace_table_idx++] = chr;

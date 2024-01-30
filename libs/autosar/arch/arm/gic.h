@@ -194,7 +194,7 @@ namespace arch {
 
 		/** \brief Trigger SGI (software-generated interrupt) */
 		static forceinline void trigger(uint8_t irq) {
-			debug_core << "trigger " << (int)irq << endl;
+			//debug_core << "trigger " << (int)irq << endl;
 			// pseudo_static_assert(irq < 0xFF, "Software-generated interrupt numbers are only 0-15");
 
 			// write software generated irq register
@@ -202,7 +202,7 @@ namespace arch {
 			GICdist().SGIR = ((irq & 0xFF) | (2 << 24));
 		}
 		static forceinline void trigger(uint8_t irq, uint8_t cpuid) {
-			debug_core << "trigger " << (int)irq << " " << (int)cpuid << endl;
+			//debug_core << "trigger " << (int)irq << " " << (int)cpuid << endl;
 			// CPUTargetList [23:16] bitmask
 			GICdist().SGIR = ((irq & 0xFF) | (1 << cpuid << 16));
 		}

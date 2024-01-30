@@ -5,12 +5,12 @@ namespace os {
 
 {{{snippet:if_alarm:alarm,counter|
 	if (%(alarm)s.checkTrigger()) {
-        debug_core << "alarm triggered" << endl;
+        //debug_core << "alarm triggered" << endl;
 }}}
 
 {{{snippet:if_alarm_cpuid:alarm,counter,cpuid|
 	if (cpuid == %(cpuid)s && %(alarm)s.checkTrigger()) {
-        debug_core << "alarm triggered" << endl;
+        //debug_core << "alarm triggered" << endl;
 }}}
 
 {{{snippet:endif_alarm:alarm,counter|    }
