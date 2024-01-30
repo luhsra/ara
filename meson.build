@@ -93,12 +93,7 @@ sparsedata = subproject('sparsedata')
 sparse_rle2 = sparsedata.get_variable('libsparserle2')
 
 ## ara-link
-ara_link = find_program('ara-link', version: llvm_version, required: false)
-if not ara_link.found()
-    ara_link_proj = subproject('ara-link')
-    ara_link = ara_link_proj.get_variable('ara_link')
-    message('Using ara-link from subproject.')
-endif
+ara_link = toolchains.get_variable('ara_link')
 
 ## tools
 nop = find_program('true')
