@@ -1,3 +1,8 @@
+# experiment scripts
+GenericTimingExperiment = files('experiments' / 'GenericTimingExperiment.py')
+ShowGenericTimingExperiment = files('experiments' / 'make_figures.py')
+InstanceGraphExperiment = files('experiments' / 'instance_graph_experiment.py')
+
 if arm_enabled
   # TODO make it possible to run the analysis tests without ARM toolchain
   subdir('FreeRTOS')

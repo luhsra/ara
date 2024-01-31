@@ -1,8 +1,3 @@
-# experiment scripts
-GenericTimingExperiment = files('experiments' / 'GenericTimingExperiment.py')
-ShowGenericTimingExperiment = files('experiments' / 'make_figures.py')
-InstanceGraphExperiment = files('experiments' / 'instance_graph_experiment.py')
-
 libsra_proj = subproject('ara-libsra')
 
 ## FreeRTOS apps, we build them currently with an ARM toolchain
