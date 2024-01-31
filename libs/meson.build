@@ -24,7 +24,7 @@ if posix_enabled
   posix_ar = toolchains.get_variable('posix_ar')
 endif
 
-subdir('include')
+# subdir('include')
 # subdir('freertos')
 # subdir('osek')
 subdir('autosar')

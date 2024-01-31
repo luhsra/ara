@@ -17,10 +17,17 @@ foreach include_dir : libplatform_include_directories
   libplatform_includes += ['-I', include_dir]
 endforeach
 
+llc_cmd = libplatform_proj.get_variable('llc_cmd')
+
 libsra_link_with = libsra_proj.get_variable('libsra_link_with')
 libsra_include_directories = libsra_proj.get_variable('libsra_include_directories')
 
 freertos_proj = subproject('freertos')
+freertos_default_config = freertos_proj.get_variable('default_config')
+freertos_includes = []
+foreach dir : freertos_proj.get_variable('header_dirs') + freertos_proj.get_variable('arm_header_dirs')
+  freertos_includes += ['-I', dir]
+endforeach
 
 freertos_src_list = []
 foreach file_list : [freertos_proj.get_variable('sources'), freertos_proj.get_variable('arm_sources')]
@@ -118,8 +125,12 @@ hw_apps = [
 
 if meson.version().version_compare('>=1.4.0')
   error('Please remove the horrible hack below and use the "libplatform_linkerscript.full_path()" directly.')
+  error('The same holds for default_config')
 endif
 libplatform_linkerscript_fixed = fs.copyfile(libplatform_linkerscript, 'libplatform.ld')
+freertos_default_config_fixed = fs.copyfile(freertos_default_config, 'freertosconfig.h')
+
+freertos_config = ['-I', freertos_default_config_fixed.full_path()]
 
 arm_llc_flags = ['--frame-pointer=none']
 arm_ld_flags = libplatform_proj.get_variable('arm_ld_flags')
@@ -134,8 +145,8 @@ foreach app : ir_apps + hw_apps
                                       app_flags +
                                       libs_includes +
                                       libplatform_includes +
-                                      arm_freertos_includes +
-                                      arm_freertos_default_config +
+                                      freertos_includes +
+                                      freertos_config +
                                       ir_flags +
                                       arm_compiler_flags)
   set_variable('freertos_' + app.underscorify(), app_vanilla_ll)
@@ -200,8 +211,8 @@ foreach app : ir_apps + hw_apps
                                  command : clang_cpp +
                                            libs_includes +
                                            libplatform_includes +
-                                           arm_freertos_includes +
-                                           arm_freertos_default_config +
+                                           freertos_includes +
+                                           freertos_config +
                                            ir_flags +
                                            arm_compiler_flags)
 
@@ -221,8 +232,8 @@ foreach app : ir_apps + hw_apps
                                 command: clang_c +
                                          libs_includes +
                                          libplatform_includes +
-                                         arm_freertos_includes +
-                                         arm_freertos_default_config +
+                                         freertos_includes +
+                                         freertos_config +
                                          [f'-DFREERTOS_OVERRIDES="@0@"'.format(freertos_overrides.full_path())] +
                                          ir_flags +
                                          arm_compiler_flags)

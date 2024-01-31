@@ -1,12 +1,6 @@
 ara_settings = meson.current_source_dir()
 
-llc_flags = [
-  '--function-sections',
-  '--data-sections',
-]
-llc_cmd = [llc, '-filetype=obj', '-o', '@OUTPUT@', '@INPUT@', ] + llc_flags
-
-llvm_link_cmd = [ara_link, '-S', '-o', '@OUTPUT@', '@INPUT@',]
+llvm_link_cmd = toolchains.get_variable('llvm_link_cmd')
 
 llvm_opt_flags = [
   # '-time-passes',
