@@ -27,18 +27,11 @@ void Machine::trigger_interrupt(uint8_t irq, uint8_t cpuid, bool sync) {
 	ipi_cleared[cpuid] = false;
 
 	arch::GIC::trigger(irq, cpuid);
-#ifdef PMU_TRACE_A
-	// checkpoint 3
-	arch::PMU::trace_cycles();
-#endif
 
 	while (ipi_cleared[cpuid] == false) {
 		Machine::nop();
 	}
-#ifdef PMU_TRACE_A
-	// checkpoint 4
-	arch::PMU::trace_cycles();
-#endif
+
 	debug_core << __FUNCTION__ << " completed" << endl;
 }
 

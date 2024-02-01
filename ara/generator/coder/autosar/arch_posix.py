@@ -32,6 +32,8 @@ class PosixArch(GenericArch):
         self.generate_dataobjects_tcbs()
 
     def generate_functions(self):
+        super().generate_functions()
+
         self.generate_enable_irq_after_kernel()
 
         kickoff = Function("AUTOSAR_kickoff", "void", [], extern_c=True)

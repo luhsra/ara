@@ -30,6 +30,12 @@ namespace arch {
 		static int counter0_nr;
 
 	  public:
+		enum trace {
+			NONE = 0,
+			SYSCALL = 1,
+			IRQ = 2
+		};
+
 		static forceinline void start() {
 
 			// Performance Monitor Control Register (PMCR) : initialize

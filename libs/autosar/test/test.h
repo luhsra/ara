@@ -289,6 +289,4 @@ extern "C" void arch_startup();
 		body;                                                                                                          \
 	}\
 
-
-
 extern "C" void ara_timing_info(int a, int b);

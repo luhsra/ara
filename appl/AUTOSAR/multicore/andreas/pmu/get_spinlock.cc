@@ -5,6 +5,8 @@
 DeclareTask(T00);
 DeclareSpinlock(S1);
 
+extern "C" const int PMU_TRACE = arch::PMU::trace::SYSCALL;
+
 void start() {
 	StatusType rv;
 	switch (GetCoreID()) {

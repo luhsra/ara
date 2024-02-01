@@ -53,7 +53,7 @@ class GenericOS(BaseCoder):
         if ret_type != "void":
             check_error = If("result != E_OK")
             check_error.add(Statement("CALL_HOOK(ErrorHook, result)"))
-            kernelspace.post_hook.add(check_error)
+            kernelspace.post_hook.prepend(check_error)
 
             userspace.return_statement("result")
 

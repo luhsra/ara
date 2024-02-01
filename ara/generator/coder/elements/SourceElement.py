@@ -127,6 +127,14 @@ class If(Block):
     def block_guard(self):
         return "if(%s)" % self.condition
 
+class Else(Block):
+
+    def __init__(self):
+        Block.__init__(self)
+
+    def block_guard(self):
+        return "else"
+
 
 class ForRange(Block):
     count = 0

@@ -88,7 +88,9 @@ class GenericArch(BaseCoder):
             task.impl.entry_function = entry_function
 
     def generate_functions(self):
-        pass
+        timing_info = Function("ara_timing_info", "void", ["int", "int"], extern_c=True)
+        timing_info.add(Statement("debug_core << \" timing \" << arg0 << \" \" << arg1 << endl"))
+        self.generator.source_file.function_manager.add(timing_info)
 
     def asm_marker(self, block, label):
         self.call(block, "asm_label", "void", ['"%s"' % label])
@@ -119,21 +121,20 @@ class GenericArch(BaseCoder):
 
         if isinstance(call_inst, ISR):
             userspace.is_isr = True
+            userspace.add(
+                Comment("Called from ISR, no disable interrupts required!"))
         else:
             userspace.is_isr = False
+            self.disable_irq(userspace)
 
         userspace.add(Comment("Callsite: %s" % call_inst.name))
         userspace.calling_task = call_inst
 
-        if userspace.is_isr:
-            userspace.add(
-                Comment("Called from ISR, no disable interrupts required!"))
-        else:
-            self.disable_irq(userspace)
-
         pre_hook = Hook("SystemEnterHook", arguments=args)
         system = Block(arguments=args)
-        post_hook = Hook("SystemLeaveHook", userspace.arguments())
+        post_hook = Hook("SystemLeaveHook", arguments=args)
+
+        pre_hook.add(Statement("result = E_OK"))
 
         syscall_name = self.ara_graph.cfg.get_syscall_name(abb)[8:]
 
@@ -162,21 +163,18 @@ class GenericArch(BaseCoder):
 
         if isinstance(call_inst, ISR):
             userspace.is_isr = True
+            return self.generate_kernelspace__inline(userspace, abb, args)
         else:
             userspace.is_isr = False
+            userspace.calling_task = call_inst
+            userspace.add(Comment("Callsite: %s" % call_inst.name))
 
         pre_hook = Hook("SystemEnterHook", arguments=args)
         system = Block(arguments=args)
-        system.add(Statement("result = E_OK"))
-        post_hook = Hook("SystemLeaveHook", arguments=userspace.arguments())
+        post_hook = Hook("SystemLeaveHook", arguments=args)
 
+        pre_hook.add(Statement("result = E_OK"))
         userspace.attributes.append("inlinehint")
-
-        if userspace.is_isr:
-            return self.generate_kernelspace__inline(userspace, abb, args)
-        else:
-            userspace.calling_task = call_inst
-            userspace.add(Comment("Callsite: %s" % call_inst.name))
 
         # Generate a function, that will be executed in system mode,
         # but is specific for this systemcall
@@ -202,9 +200,9 @@ class GenericArch(BaseCoder):
         # be inlined into the application
         syscall.add(pre_hook)
         syscall.add(system)
+        syscall.add(post_hook)
 
         self.call(userspace, "syscall", "void", [syscall.function_name] + args)
-        userspace.add(post_hook)
 
         # Since we return to userspace with closed interrupts, we have
         # to enable them again.

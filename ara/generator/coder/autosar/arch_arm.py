@@ -9,6 +9,13 @@ import os
 
 from ara.graph import ABBType
 
+from ara.steps import get_native_component
+from enum import Enum
+ 
+class TracePMU(Enum):
+    NONE = 0
+    SYSCALL = 1
+    IRQ = 2
 
 class ArmArch(GenericArch):
 
@@ -22,6 +29,8 @@ class ArmArch(GenericArch):
         self.arch_rules.generate_functions()
 
     def generate_functions(self):
+        super().generate_functions()
+
         kickoff = Function("AUTOSAR_kickoff", "void", [], extern_c=True)
         #kickoff.add(Statement("debug_core << __FUNCTION__ << endl"))
 
@@ -30,6 +39,11 @@ class ArmArch(GenericArch):
         self.generator.source_file.function_manager.add(kickoff)
 
         self.generator.source_file.include("pmu.h")
+
+        if self.PMU_TRACE == TracePMU.IRQ:
+            ASTSchedule = self.generator.source_file.function_manager.get("__OS_ASTSchedule")
+            if ASTSchedule != None:
+                self.call(ASTSchedule, "arch::PMU::trace_cycles", prepend=True)
 
     # config-constraint-: (arch.self == posix) -> !arch.mpu
     def generate_linkerscript(self):
@@ -44,6 +58,15 @@ class ArmArch(GenericArch):
         self.generate_dataobjects_task_stacks()  # From GenericArch
         self.generate_dataobjects_task_entries()  # From GenericArch
         self.generate_dataobjects_tcbs()
+
+    def generate_system_code(self):
+        # tracing for PMU
+        self.PMU_TRACE = TracePMU.NONE
+        ValueAnalyzer = get_native_component("ValueAnalyzer")
+        va = ValueAnalyzer(self.ara_graph)
+        pmu_trace_global = va.find_global("PMU_TRACE")
+        if pmu_trace_global is not None:
+            self.PMU_TRACE = TracePMU(pmu_trace_global.get_initializer().get())
 
     def generate_dataobjects_task_stacks(self):
         """Generate the stacks for the tasks, including the task pointers"""
@@ -178,11 +201,6 @@ class ArmArch(GenericArch):
             else:
                 irq_handler_arr[irq] = f"/*{irq}*/ irq_handler_unhandled"
 
-        # add IPI handler
-        IPI_handler = Function("AUTOSAR_ISR_IPI", "void", [], extern_c=True)
-        self.generator.syscall_rules.Reschedule(IPI_handler, True)
-        self.generator.source_file.function_manager.add(IPI_handler)
-
         # add termination handler for shutdownAllCores
         TERM_handler = Function("AUTOSAR_ISR_TERM", "void", [], extern_c=True)
 
@@ -201,9 +219,18 @@ class ArmArch(GenericArch):
     def generate_kernelspace(self, userspace, abb, arguments):
         kernelspace = self.generate_kernelspace__syscall(
             userspace, abb, arguments)
-        if not userspace.is_isr:
-            self.call(userspace, "Machine::switch_mode", "void",
-                      ["Machine::USER"])
+
+        if self.PMU_TRACE == TracePMU.SYSCALL:
+            self.call(kernelspace.pre_hook, "arch::PMU::trace_cycles")
+            self.call(kernelspace.system, "arch::PMU::trace_cycles")
+            self.call(kernelspace.post_hook, "arch::PMU::trace_cycles")
+
+
+        if userspace.is_isr == False:
+            kernelspace.post_hook.add(Comment("Dispatch directly back to Userland"))
+            self.call(kernelspace.post_hook, "Dispatcher::ResumeToTask", "void",
+                    [self.generator.syscall_rules.task_desc(userspace.calling_task)])
+
         return kernelspace
 
 

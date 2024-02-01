@@ -223,19 +223,8 @@ void Scheduler::Reschedule() {
     // update current_task
     tlist.head(current_task, current_prio);
 
-#ifdef PMU_TRACE_B
-    // checkpoint 2
-    if (arch::get_cpuid() == 0)
-        arch::PMU::trace_cycles();
-#endif
     // reset other cores request to reschedule (IPIs)
     ipi_cleared[arch::get_cpuid()] = true;
-
-#ifdef PMU_TRACE_B
-    // checkpoint 3
-    if (arch::get_cpuid() == 0)
-        arch::PMU::trace_cycles();
-#endif
 
     // dispatch
     dispatchToCurrentTask();

@@ -19,9 +19,7 @@ if arm_enabled
   autosar_pi4_clang_flags = [
     libplatform_proj.get_variable('arm_clang_flags'),
     libplatform_proj.get_variable('pi4_clang_flags'),
-    '-DDEBUG',
-    #'-DPMU_TRACE_A', # PMU tracing (syscall)
-    #'-DPMU_TRACE_B', # PMU tracing (IRQ)
+    #'-DDEBUG',
     '-O3',
     '-ffixed-r9', # cpuid
   ]
@@ -37,7 +35,7 @@ if posix_enabled
     '--target=i386-pc-linux-gnu',
     '-m32',
     '-O3',
-    '-DDEBUG',
+    #'-DDEBUG',
     '-DCONFIG_ARCH_POSIX', # for alarm3
   ]
   autosar_posix_ld_flags = [

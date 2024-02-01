@@ -29,7 +29,7 @@ class BufferedSerial : public O_Stream<BufferedSerial> {
 	static os::Ticketlock serial_spinlock;
 
   public:
-	BufferedSerial(bool printcpu = false) : printcpu(printcpu){};
+	BufferedSerial(bool printcpu = true) : printcpu(printcpu){};
 	void putchar(char character);
 };
 

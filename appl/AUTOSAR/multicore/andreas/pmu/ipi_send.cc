@@ -5,6 +5,8 @@
 DeclareTask(T00);
 DeclareTask(T10);
 
+extern "C" const int PMU_TRACE = arch::PMU::trace::SYSCALL;
+
 void start() {
 	StatusType rv;
 	switch (GetCoreID()) {
@@ -20,20 +22,18 @@ TEST_MAKE_OS_MAIN(start())
 TASK(T00) {
 	test_trace('0');
 	arch::PMU::start();
-	// checkpoint 0
 	arch::PMU::trace_cycles();
 	ActivateTask(T10);
-	// checkpoint 5
 	arch::PMU::trace_cycles();
 	arch::PMU::stop();
 	arch::PMU::print_cycles();
 	test_trace_assert("01");
 	test_ne(arch::PMU::get_cycles(), 0);
 	test_finish();
-	ShutdownAllCores(E_OK);
+	ShutdownOS(E_OK);
 }
 
 TASK(T10) {
 	test_trace('1');
-	TerminateTask();
+	ShutdownOS(E_OK);
 }

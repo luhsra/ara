@@ -6,6 +6,8 @@ DeclareTask(T00);
 DeclareTask(T01);
 DeclareTask(T10);
 
+extern "C" const int PMU_TRACE = arch::PMU::trace::IRQ;
+
 bool ready = false;
 
 void start() {
@@ -26,7 +28,6 @@ TASK(T00) {
 	arch::PMU::start();
 	arch::PMU::reset_counters();
 	arch::PMU::reset();
-	// checkpoint 0
 	arch::PMU::trace_cycles();
 	ready = true;
 	while (1) {
@@ -36,7 +37,6 @@ TASK(T00) {
 }
 
 TASK(T01) {
-	// checkpoint 4
 	arch::PMU::trace_cycles();
 	test_trace('2');
 	arch::PMU::stop();

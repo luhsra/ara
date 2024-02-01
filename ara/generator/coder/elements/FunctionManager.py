@@ -172,6 +172,12 @@ class FunctionManager:
                     assert x.name != function.name, "Duplicate function name %s" % function.name
         current_scope.append(function)
 
+    def get(self, function_name):
+        for fn in self.functions:
+            if function_name == fn.name:
+                return fn
+        return None
+
     def source_element_declarations(self):
         ret = []
         # Sort by local and global includes

@@ -45,12 +45,6 @@ namespace arch {
 			return irq_handler_unhandled(task_sp, id);
 		}
 
-#ifdef PMU_TRACE_B
-		// checkpoint 1
-		if (arch::get_cpuid() == 0)
-			arch::PMU::trace_cycles();
-#endif
-
 		// void *lr;
 		// asm volatile("mov %0, lr" : "=r"(lr) ::);
 
