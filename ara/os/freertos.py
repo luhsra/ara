@@ -506,7 +506,7 @@ class FreeRTOS(OSBase):
                                          function=None,
                                          name='idle_task',
                                          vidx=v,
-                                         stack_size=int(FreeRTOS.config.get('configMINIMAL_STACK_SIZE', None)),
+                                         stack_size=int(FreeRTOS.config.get('configMINIMAL_STACK_SIZE', None) or 0),
                                          parameters=0,
                                          init_priority=0,
                                          handle_p=0,
