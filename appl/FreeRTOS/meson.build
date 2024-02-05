@@ -145,7 +145,9 @@ foreach app : ir_apps + hw_apps
                                       ir_flags +
                                       arm_compiler_flags)
   set_variable('freertos_' + app.underscorify(), app_vanilla_ll)
+endforeach
 
+foreach app : ir_apps
   named_elf_targets = []
   elf_targets = []
   profiles_list = []
