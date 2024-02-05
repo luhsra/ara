@@ -123,9 +123,9 @@ if meson.version().version_compare('>=1.4.0')
   error('The same holds for default_config')
 endif
 libplatform_linkerscript_fixed = fs.copyfile(libplatform_linkerscript, 'libplatform.ld')
-freertos_default_config_fixed = fs.copyfile(freertos_default_config, 'freertosconfig.h')
+freertos_default_config_fixed = fs.copyfile(freertos_default_config, 'FreeRTOSConfig.h')
 
-freertos_config = ['-I', freertos_default_config_fixed.full_path()]
+freertos_config = ['-I', fs.parent(freertos_default_config_fixed.full_path())]
 
 arm_llc_flags = ['--frame-pointer=none']
 arm_ld_flags = libplatform_proj.get_variable('arm_ld_flags')
