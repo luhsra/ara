@@ -389,7 +389,7 @@ class FreeRTOS(OSBase):
 
     @staticmethod
     def total_heap_size():
-        return int(FreeRTOS.config.get('configTOTAL_HEAP_SIZE', None))
+        return int(FreeRTOS.config.get('configTOTAL_HEAP_SIZE', None) or 0)
 
     def handle_soc(context, instances, v, cfg, abb,
                    branch=None, loop=None, recursive=None, scheduler_on=None,
