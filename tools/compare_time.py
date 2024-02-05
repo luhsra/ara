@@ -5,18 +5,16 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import argparse
-import subprocess
-import logging
-from pprint import pprint
-from collections import defaultdict
-import re
 import os
 
 RED = ("\033[1;31m", "\033[1;0m")
 BLUE = ("\033[1;34m", "\033[1;0m")
+
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('BUILD_DIR', help='directory containing the .ninja_log file')
+    parser.add_argument('BUILD_DIR',
+                        help='directory containing the .ninja_log file')
     parser.add_argument('NAME', help='name of the app for filtering')
     parser.add_argument('-C', '--force-color', action='store_true',
                         help='force colorized changes')
@@ -24,7 +22,7 @@ def main():
 
     if not (args.force_color or os.isatty(1)):
         global RED, BLUE
-        RED = ("","")
+        RED = ("", "")
         BLUE = RED
 
     data = {}
@@ -32,7 +30,7 @@ def main():
     for logline in logfile:
         if logline.startswith('#'):
             continue
-        if not args.NAME in logline:
+        if args.NAME not in logline:
             continue
         columns = logline.split()
 
@@ -49,6 +47,6 @@ def main():
         print(f"{entry['duration']:10} {entry['name']}")
     return
 
+
 if __name__ == '__main__':
-    import sys
     main()
