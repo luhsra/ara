@@ -207,7 +207,7 @@ foreach app : autosar_apps
   app += {'oil': oil}
 
   # compile the application
-  if posix_enabled
+  if posix_enabled and not (app.has_key('synthesis_disabled') and 'posix' in app['synthesis_disabled'])
     app_ll_posix = custom_target(full_name + '_ll_posix',
                           input : sys + '.cc',
                           output : full_name + '.posix.ll',
@@ -219,11 +219,12 @@ foreach app : autosar_apps
                                     autosar_posix_clang_flags +
                                     '-O0' + # dont optimize before IR
                                     ir_flags)
-    app += {'ll': app_ll_posix} # store in ll to not break dependencies
-    app += {'ll_pi4': app_ll_posix}
+  else
+    app_ll_posix = disabler()
   endif
+  app += {'ll': app_ll_posix} # store in ll to not break dependencies
 
-  if arm_enabled
+  if arm_enabled and not (app.has_key('synthesis_disabled') and 'pi4' in app['synthesis_disabled'])
     app_ll_pi4 = custom_target(full_name + '_ll_pi4',
                           input : sys + '.cc',
                           output : full_name + '.pi4.ll',
@@ -235,8 +236,10 @@ foreach app : autosar_apps
                                     autosar_pi4_clang_flags +
                                     '-O0' + # dont optimize before IR
                                     ir_flags)
-    app += {'ll_pi4': app_ll_pi4}
+  else
+    app_ll_pi4 = disabler()
   endif
+  app += {'ll_pi4': app_ll_pi4}
 
 
   # trace file for sse testing
@@ -354,7 +357,7 @@ foreach app: autosar_targets
           '--os', 'AUTOSAR',
           '--oilfile', app['oil'],
           '--ir_output', '@OUTPUT0@',
-          '--step-settings', '../settings/autosar_generator_posix.json',
+          '--step-settings', files('../../settings/autosar_generator_posix.json'),
           '--generator_output', '@OUTPUT1@',
         ]
       )
@@ -411,7 +414,7 @@ foreach app: autosar_targets
           '--os', 'AUTOSAR',
           '--oilfile', app['oil'],
           '--ir_output', '@OUTPUT0@',
-          '--step-settings', '../settings/autosar_generator_arm.json',
+          '--step-settings', files('../../settings/autosar_generator_arm.json'),
           '--generator_output', '@OUTPUT1@',
           #'--timings', app['sys_timings']
         ]
