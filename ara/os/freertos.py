@@ -187,9 +187,6 @@ class Queue(FreeRTOSInstance):
         except TypeError:
             self.heap_need = None
 
-    def __repr__(self):
-        return '<' + '|'.join([str((k, v)) for k, v in self.__dict__.items()]) + '>'
-
     def as_dot(self):
         wanted_attrs = ["name", "handler", "length", "size"]
         attrs = [(x, str(getattr(self, x))) for x in wanted_attrs]
@@ -234,9 +231,6 @@ class Mutex(FreeRTOSInstance):
             self.heap_need += int(FreeRTOS.config.get('QUEUE_HEAD_SIZE', None))
         except TypeError:
             self.heap_need = None
-
-    def __repr__(self):
-        return '<' + '|'.join([str((k, v)) for k, v in self.__dict__.items()]) + '>'
 
     def as_dot(self):
         wanted_attrs = ["name", "handler", "m_type"]
