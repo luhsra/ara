@@ -882,9 +882,21 @@ class FreeRTOS(OSBase):
                         Arg("higher_task_woken", hint=SigType.symbol)),
              isr_call=True)
     def vTaskNotifyGiveFromISR(graph, state, cpu_id, args, va):
-        task_node = find_instance_node(state.instances, args.task)
-        connect_from_here(state, cpu_id, task_node,
-                          "vTaskNotifyGiveFromISR()")
+        cpu = state.cpus[cpu_id]
+        abb = cpu.abb
+        cfg = state.cfg
+
+        task = args.task
+        if hasattr(task, 'value') and isinstance(task.value, pyllco.Value):
+            logger.debug(f"Callpath: {cpu.call_path}")
+            logger.error(f"vTaskNotifyGiveFromISR (files: {cfg.vp.files[abb]}, "
+                         f"lines: {cfg.vp.lines[abb]}, value: {task.value}): "
+                         "Task handler cannot be found. Ignoring syscall.")
+            MissingInteractions.add_imprecise(['Task'], abb)
+        else:
+            task_node = find_instance_node(state.instances, task)
+            connect_from_here(state, cpu_id, task_node,
+                              "vTaskNotifyGiveFromISR()")
         return state
 
     @syscall

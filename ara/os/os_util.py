@@ -551,4 +551,4 @@ def find_instance_node(instances, obj):
     for ins in instances.vertices():
         if instances.vp.obj[ins] is obj:
             return ins
-    raise RuntimeError("Instance could not be found.")
+    raise RuntimeError(f"Instance {obj} could not be found.")
