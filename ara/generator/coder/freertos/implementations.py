@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2020 Björn Fiedler <fiedler@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2024 Björn Fiedler <fiedler@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2024 Gerion Entrup <entrup@sra.uni-hannover.de>
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
@@ -46,6 +46,10 @@ class StreamBufferImpl(BaseImpl):
         self.head = None
 
 
+class ISRImpl(BaseImpl):
+    pass
+
+
 def add_impl(instance):
     if isinstance(instance, Task):
         instance.impl = TaskImpl(instance)
@@ -56,6 +60,6 @@ def add_impl(instance):
     elif isinstance(instance, StreamBuffer):
         instance.impl = StreamBufferImpl(instance)
     elif isinstance(instance, ISR):
-        pass  # TODO, we ignore ISRs for now
+        instance.impl = ISRImpl(instance)
     else:
         raise ValueError("Unknown Type:", type(instance))
