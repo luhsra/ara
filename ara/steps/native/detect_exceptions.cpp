@@ -25,11 +25,11 @@ namespace ara::step {
 		while (!bbs.empty()) {
 			auto cur = bbs.front();
 			assert(cur->getParent() == func && "BB do not have the same function as parent.");
-			logger.info() << "Current BB: " << *cur << std::endl;
 			bbs.pop();
 			if (graph_data.basic_blocks[cur].is_part_of_exception) {
 				continue;
 			}
+			logger.debug() << "Mark BB as exception: " << *cur << std::endl;
 			graph_data.basic_blocks[cur].is_part_of_exception = true;
 			for (auto succ : successors(cur)) {
 				bbs.push(succ);
