@@ -19,6 +19,13 @@ from ara.graph import SyscallCategory, CallPath, CFG, ABBType
 # logger = get_logger("OS_BASE")
 
 
+@dataclass
+class MultipleAssignedHandler:
+    """Mark a handler as assigned multiple times."""
+    handler: Any
+    instance: Any
+
+
 class CPUList:
     """Container for storing CPUs."""
 

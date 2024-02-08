@@ -9,7 +9,7 @@
 from .os_util import (syscall, assign_id, set_next_abb, find_return_value, Arg,
                       UnknownArgument, connect_from_here, find_instance_node)
 from .os_base import (OSBase, ControlInstance, CPUList, CPU, OSState,
-                      ExecState, NotOSHandledInterrupts)
+                      ExecState, NotOSHandledInterrupts, MultipleAssignedHandler)
 
 import pyllco
 import html
@@ -530,8 +530,14 @@ class FreeRTOS(OSBase):
         cfg = graph.cfg
 
         queue_handler = find_return_value(abb, cp, va)
-        assert isinstance(queue_handler.value, pyllco.Value)
-        handler_name = queue_handler.value.get_name()
+        if isinstance(queue_handler.value, Queue):
+            handler_name = queue_handler.value.name + f".{id(state)}"
+            queue_handler = MultipleAssignedHandler(handler=queue_handler, instance=queue_handler.value)
+            assign = False
+        else:
+            assert isinstance(queue_handler.value, pyllco.Value)
+            handler_name = queue_handler.value.get_name()
+            assign = True
 
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = f"Queue: {handler_name}"
@@ -550,10 +556,11 @@ class FreeRTOS(OSBase):
 
         assign_id(state.instances, v)
 
-        va.assign_system_object(queue_handler.value,
-                                state.instances.vp.obj[v],
-                                queue_handler.offset,
-                                queue_handler.callpath)
+        if assign:
+            va.assign_system_object(queue_handler.value,
+                                    state.instances.vp.obj[v],
+                                    queue_handler.offset,
+                                    queue_handler.callpath)
 
         return state
 
