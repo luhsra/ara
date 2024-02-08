@@ -207,7 +207,7 @@ foreach app : autosar_apps
   app += {'oil': oil}
 
   # compile the application
-  if posix_enabled and not (app.has_key('synthesis_disabled') and 'posix' in app['synthesis_disabled'])
+  if posix_enabled
     app_ll_posix = custom_target(full_name + '_ll_posix',
                           input : sys + '.cc',
                           output : full_name + '.posix.ll',
