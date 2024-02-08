@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2020 Gerion Entrup <entrup@sra.uni-hannover.de>
+// SPDX-FileCopyrightText: 2024 Gerion Entrup <entrup@sra.uni-hannover.de>
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -20,10 +20,6 @@ namespace ara::step {
 	std::string CFGOptimizeTest::get_description() { return "Step for testing the CFGOptimize step"; }
 
 	void CFGOptimizeTest::run() {
-		assert(input_file.get());
-		std::string file = *input_file.get();
-		assert(file == "appl/freertos-optimization.ll" || file == "subprojects/ara/appl/freertos-optimization.ll");
-
 		bool main_found = false, number_found = false;
 		llvm::Module& module = graph.get_module();
 		for (auto& f : module) {
@@ -45,11 +41,6 @@ namespace ara::step {
 			}
 		}
 		assert(main_found && number_found && "main or number not found");
-	}
-
-	void CFGOptimizeTest::init_options() {
-		input_file = input_file_template.instantiate(get_name());
-		opts.emplace_back(input_file);
 	}
 
 	std::vector<std::string> CFGOptimizeTest::get_single_dependencies() { return {"CFGOptimize"}; }

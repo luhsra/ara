@@ -51,16 +51,9 @@ namespace ara::step {
 	  private:
 		using ConfStep<CFGOptimizeTest>::ConfStep;
 
-	  private:
-		const static inline option::TOption<option::String> input_file_template{"input_file", "Input file."};
-		option::TOptEntity<option::String> input_file;
-		virtual void init_options() override;
-
 	  public:
 		static std::string get_name();
 		static std::string get_description();
-		static Step::OptionVec get_local_options() { return {input_file_template}; };
-
 		virtual std::vector<std::string> get_single_dependencies() override;
 		virtual void run() override;
 	};
