@@ -7,8 +7,7 @@
 #include "comp_insert.h"
 
 #include <common/llvm_common.h>
-#include <iostream>
-#include <list>
+#include <ostream>
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/Module.h>
@@ -26,6 +25,8 @@ namespace ara::step {
 
 	std::vector<std::string> CompInsert::get_single_dependencies() { return {"CFGOptimize", "SVFTransformation"}; }
 
+	bool is_call(const Instruction& i) { return isa<CallBase>(&i) && !is_call_to_intrinsic(i); }
+
 	void CompInsert::run() {
 		llvm::Module& module = graph.get_module();
 		unsigned nop_count = 0;
@@ -33,7 +34,7 @@ namespace ara::step {
 			for (BasicBlock& bb : function) {
 				bool found_call = false;
 				for (Instruction& i : bb) {
-					if (isa<CallBase>(&i) && !is_call_to_intrinsic(i)) {
+					if (is_call(i)) {
 						if (found_call) {
 							// second call found
 							// insert nop before it and leave found_call untouched (a third call can come)
@@ -47,8 +48,24 @@ namespace ara::step {
 					}
 				}
 				if (found_call) {
-					insertNop(&bb);
-					nop_count++;
+					// call at the end of the BasicBlock
+					// We have to cases then:
+					// 1. Standard call, just insert a nop
+					// 2. Invoke with branch (it can branch to two locations). Insert the nop at the beginning of the
+					// next BB
+					Instruction* call = bb.getTerminator();
+					if (isa<CallInst>(call)) {
+						insertNop(&bb);
+						nop_count++;
+					} else if (auto* invoke = dyn_cast<InvokeInst>(call)) {
+						for (BasicBlock* next_bb : {invoke->getNormalDest(), invoke->getUnwindDest()}) {
+							Instruction& front = next_bb->front();
+							if (is_call(front)) {
+								insertNop(&front);
+								nop_count++;
+							}
+						}
+					}
 				}
 			}
 		}

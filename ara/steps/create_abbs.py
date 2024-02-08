@@ -82,6 +82,7 @@ class CreateABBs(Step):
 
         cfg.vp.is_exit_loop_head[abb] = cfg.vp.is_exit_loop_head[entry]
         cfg.vp.part_of_loop[abb] = cfg.vp.part_of_loop[entry]
+        cfg.vp.exception_handler[abb] = cfg.vp.exception_handler[entry]
 
         if (cfg.vp.part_of_loop[entry] and
                 self._all_loops_in_set(entry, graph, all_bbs)):

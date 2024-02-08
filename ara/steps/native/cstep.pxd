@@ -51,6 +51,10 @@ cdef extern from "comp_insert.h" namespace "ara::step":
     cdef cppclass CompInsert:
         pass
 
+cdef extern from "detect_exceptions.h" namespace "ara::step":
+    cdef cppclass DetectExceptions:
+        pass
+
 cdef extern from "fake_entry_point.h" namespace "ara::step":
     cdef cppclass FakeEntryPoint:
         pass

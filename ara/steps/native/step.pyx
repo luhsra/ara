@@ -382,6 +382,7 @@ def provide_steps():
             _native_step_fac(make_step_fac[cstep.BBTimings]()),
             _native_step_fac(make_step_fac[cstep.CDummy]()),
             _native_step_fac(make_step_fac[cstep.CompInsert]()),
+            _native_step_fac(make_step_fac[cstep.DetectExceptions]()),
             _native_step_fac(make_step_fac[cstep.FakeEntryPoint]()),
             _native_step_fac(make_step_fac[cstep.FnSingleExit]()),
             _native_step_fac(make_step_fac[cstep.CallGraph]()),

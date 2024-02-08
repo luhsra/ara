@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 """Container for Syscall."""
-from ara.graph import ABBType, CFType, CFGView
+from ara.graph import ABBType, CFType, CFGView, single_check
 from .step import Step
 from .option import Option, String
 
@@ -19,9 +19,8 @@ class ICFG(Step):
 
     It maps only system relevant functions.
     """
-    entry_point = Option(name="entry_point",
-                         help="system entry point",
-                         ty=String())
+
+    entry_point = Option(name="entry_point", help="system entry point", ty=String())
 
     class _ET(IntEnum):
         IN = 0
@@ -29,8 +28,10 @@ class ICFG(Step):
         STD = 2
 
     def get_single_dependencies(self):
-        return [{"name": "CallGraph", "entry_point": self.entry_point.get()},
-                "SystemRelevantFunctions"]
+        return [
+            {"name": "CallGraph", "entry_point": self.entry_point.get()},
+            "SystemRelevantFunctions",
+        ]
 
     def run(self):
         entry_label = self.entry_point.get()
@@ -57,7 +58,7 @@ class ICFG(Step):
             skip_func = False
 
             for bb in cfg.get_function_bbs(cur_func):
-                if (icfg.vertex(bb).out_degree() + icfg.vertex(bb).in_degree() > 0):
+                if icfg.vertex(bb).out_degree() + icfg.vertex(bb).in_degree() > 0:
                     # function already handled in a previous ICFG run
                     skip_func = True
                     break
@@ -75,20 +76,27 @@ class ICFG(Step):
                         if sys_rel_cg.ep.callsite[callsite] == bb:
                             # for all callsites in the callgraph belonging to
                             # this BB
-                            callee = cfg.vertex(sys_rel_cg.vp.function[callsite.target()])
-                            self._log.debug("Found system relevant call "
-                                            f"to {cfg.vp.name[callee]}.")
+                            callee = cfg.vertex(
+                                sys_rel_cg.vp.function[callsite.target()]
+                            )
+                            self._log.debug(
+                                "Found system relevant call "
+                                f"to {cfg.vp.name[callee]}."
+                            )
                             entry = cfg.get_function_entry_bb(callee)
                             to_be_linked.append((ICFG._ET.IN, bb, entry))
                             link_counter += 1
                             linked = True
-                            assert lcfg.vertex(bb).out_degree() == 1
-                            n_bb = next(lcfg.vertex(bb).out_neighbors())
+                            # find back edge
+                            n_bb = single_check(
+                                filter(
+                                    lambda x: not cfg.vp.exception_handler[x],
+                                    lcfg.vertex(bb).out_neighbors(),
+                                )
+                            )
                             exit_bb = cfg.get_function_exit_bb(callee)
                             if exit_bb:
-                                to_be_linked.append(
-                                    (ICFG._ET.OUT, exit_bb, n_bb)
-                                )
+                                to_be_linked.append((ICFG._ET.OUT, exit_bb, n_bb))
                     if not linked:
                         cfg.vp.type[bb] = ABBType.computation
                 if not linked:
@@ -102,7 +110,10 @@ class ICFG(Step):
             # link abbs
             for ty, src, target in to_be_linked:
                 # some logging output
-                if self._log.getEffectiveLevel() <= logging.DEBUG and ty in [ICFG._ET.IN, ICFG._ET.OUT]:
+                if self._log.getEffectiveLevel() <= logging.DEBUG and ty in [
+                    ICFG._ET.IN,
+                    ICFG._ET.OUT,
+                ]:
                     s = cfg.vp.name[src]
                     t = cfg.vp.name[target]
                     self._log.debug(f"Add {to_s[ty]} edge from {s} to {t}.")
@@ -114,11 +125,15 @@ class ICFG(Step):
         )
 
         if self.dump.get():
-            dot_file = f'{self.dump_prefix.get()}{entry_label}.dot'
+            dot_file = f"{self.dump_prefix.get()}{entry_label}.dot"
             name = f"ICFG (Function: {entry_label})"
-            self._step_manager.chain_step({"name": "Printer",
-                                           "dot": dot_file,
-                                           "graph_name": name,
-                                           "entry_point": entry_label,
-                                           "from_entry_point": True,
-                                           "subgraph": 'bbs'})
+            self._step_manager.chain_step(
+                {
+                    "name": "Printer",
+                    "dot": dot_file,
+                    "graph_name": name,
+                    "entry_point": entry_label,
+                    "from_entry_point": True,
+                    "subgraph": "bbs",
+                }
+            )

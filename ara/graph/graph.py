@@ -136,6 +136,7 @@ class CFG(graph_tool.Graph):
         self.vertex_properties["is_exit_loop_head"] = self.new_vp("bool")  # BB/ABB
         self.vertex_properties["part_of_loop"] = self.new_vp("bool")  # BB/ABB
         self.vertex_properties["loop_head"] = self.new_vp("bool")  # ABB
+        self.vertex_properties["exception_handler"] = self.new_vp("bool")  # BB/ABB
         self.vertex_properties["files"] = self.new_vp("vector<string>")  # BB/call ABB
         self.vertex_properties["lines"] = self.new_vp("vector<int32_t>")  # BB/call ABB
         self.vertex_properties["implemented"] = self.new_vp("bool")  # Function
@@ -195,18 +196,26 @@ class CFG(graph_tool.Graph):
         """
         return _get_llvm_obj(self, vertex)
 
-    def get_function(self, abb):
+    def _get_function_generic(self, xbb, edge_type):
         """Get the function node for an ABB or BB."""
-        abb = self.vertex(abb)
+        xbb = self.vertex(xbb)
 
-        def is_func(abb):
-            return self.ep.type[abb] == CFType.f2a
+        def is_func(xbb):
+            return self.ep.type[xbb] == edge_type
 
-        entry = list(filter(is_func, abb.in_edges()))
+        entry = list(filter(is_func, xbb.in_edges()))
         if entry:
             assert len(entry) == 1
             return entry[0].source()
         return None
+
+    def get_function(self, abb):
+        """Get the function node for an ABB."""
+        return self._get_function_generic(abb, CFType.f2a)
+
+    def get_function_from_bb(self, bb):
+        """Get the function node for an BB."""
+        return self._get_function_generic(bb, CFType.f2b)
 
     def get_abbs(self, function):
         """Get the ABBs of the functions."""

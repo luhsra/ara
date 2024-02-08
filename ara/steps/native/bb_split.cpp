@@ -21,10 +21,11 @@ namespace ara::step {
 
 	std::string BBSplit::get_description() { return "Split basic blocks in function call and computation blocks."; }
 
-	std::vector<std::string> BBSplit::get_single_dependencies() { return {"CompInsert"}; }
+	std::vector<std::string> BBSplit::get_single_dependencies() { return {"DetectExceptions"}; }
 
 	void BBSplit::run() {
-		llvm::Module& module = graph.get_module();
+		graph::GraphData& graph_data = graph.get_graph_data();
+		llvm::Module& module = graph_data.get_module();
 		unsigned split_counter = 0;
 
 		for (auto& function : module) {
@@ -44,7 +45,9 @@ namespace ara::step {
 						// split before call instruction
 						std::stringstream ss;
 						ss << "BB" << split_counter++;
-						bb = bb->splitBasicBlock(it, ss.str());
+						BasicBlock* new_bb = bb->splitBasicBlock(it, ss.str());
+						graph_data.basic_blocks[new_bb].is_part_of_exception = graph_data.basic_blocks[bb].is_part_of_exception;
+						bb = new_bb;
 						it = bb->begin();
 
 						++it;
@@ -60,7 +63,9 @@ namespace ara::step {
 						// split after call instruction
 						ss.str("");
 						ss << "BB" << split_counter++;
-						bb = bb->splitBasicBlock(it, ss.str());
+						new_bb = bb->splitBasicBlock(it, ss.str());
+						graph_data.basic_blocks[new_bb].is_part_of_exception = graph_data.basic_blocks[bb].is_part_of_exception;
+						bb = new_bb;
 						it = bb->begin();
 					}
 					++it;

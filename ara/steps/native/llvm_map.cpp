@@ -67,6 +67,8 @@ namespace ara::step {
 				cfg.is_exit_loop_head[bb] =
 				    (map.find(llvm_bb) != map.end()) ? map.at(llvm_bb).is_exit_loop_head : false;
 				cfg.part_of_loop[bb] = (map.find(llvm_bb) != map.end()) ? map.at(llvm_bb).is_part_of_loop : false;
+				cfg.exception_handler[bb] =
+				    (map.find(llvm_bb) != map.end()) ? map.at(llvm_bb).is_part_of_exception : false;
 
 				return bb;
 			}
@@ -105,7 +107,9 @@ namespace ara::step {
 					unsigned bb_counter = 0;
 					for (BasicBlock& bb : func) {
 						graph::ABBType ty = graph::ABBType::computation;
-						if (isa<CallBase>(bb.front()) && !is_call_to_intrinsic(bb.front())) {
+						auto& map = graph_data.basic_blocks;
+						bool ipe = (map.find(&bb) != map.end()) ? map.at(&bb).is_part_of_exception : false;
+						if (isa<CallBase>(bb.front()) && !is_call_to_intrinsic(bb.front()) && !ipe) {
 							ty = graph::ABBType::call;
 						}
 						auto bb_node = add_bb(bb.getName().str(), ty, &bb, function, bb_counter == 0, source_loc);

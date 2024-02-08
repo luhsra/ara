@@ -76,8 +76,10 @@ namespace ara::step {
 							// This may break LLVM in some cases. The spec is unclear theryby.
 							// The other fix is to make ARA aware of ignoring unreachable instructions.
 							BranchInst::Create(exit, unreachable);
+						} else if (graph_data.basic_blocks[&_bb].is_part_of_exception) {
+							logger.warn() << "Function: " << function.getName().str()
+							              << " contains an exception exit block. We ignore this here." << std::endl;
 						} else {
-
 							logger.err() << "Function: " << function.getName().str() << " has multiple exit blocks."
 							             << std::endl;
 							logger.debug() << "Basicblock 1 with exit: " << *exit_block << std::endl;
@@ -86,7 +88,12 @@ namespace ara::step {
 							assert(false && "Something with the UnifyFunctionExitNodes went wrong.");
 						}
 					}
-					exit_block = &_bb;
+					if (graph_data.basic_blocks[&_bb].is_part_of_exception) {
+						logger.warn() << "Function: " << function.getName().str()
+						              << " contains an exception exit block. We ignore this here." << std::endl;
+					} else {
+						exit_block = &_bb;
+					}
 				}
 			}
 			graph_data.functions[&function].exit_block = exit_block;
