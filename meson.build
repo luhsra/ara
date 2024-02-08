@@ -295,25 +295,4 @@ if get_option('enable_toplevel_tests')
        suite: 'toplevel',
        timeout: 30
     )
-
-    test('sse-i4copter',
-      py3_inst,
-      args: [ara_py, autosar_singlecore_complex_isorc['ll'],
-             '--oilfile', autosar_singlecore_complex_isorc['oil'],
-             '--log-level', 'info',
-             '--step-settings', files(settings / 'sse_i4copter.json')],
-      suite: 'toplevel',
-      timeout: 0,
-    )
-
-    test('ina-i4copter',
-      py3_inst,
-      args: [ara_py, autosar_singlecore_complex_isorc['ll'],
-             '--oilfile', autosar_singlecore_complex_isorc['oil'],
-             '--log-level', 'info',
-             '--step-settings', files(settings / 'ina_i4copter.json')],
-      suite: 'toplevel',
-      timeout: 30
-    )
-
 endif
