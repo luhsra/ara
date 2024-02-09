@@ -128,27 +128,40 @@ class CFG(graph_tool.Graph):
         self.vertex_properties["type"] = self.new_vp("int")  # ABBType
         self.vertex_properties["level"] = self.new_vp("int")  # NodeLevel
         # Level dependent vertex properties
-        self.vertex_properties["llvm_link"] = self.new_vp("int64_t")  # BB/Function
+        # pointer to the LLVM object (BB/Function)
+        self.vertex_properties["llvm_link"] = self.new_vp("int64_t")
         self.vertex_properties["bcet"] = self.new_vp("int64_t")  # ABB
         self.vertex_properties["wcet"] = self.new_vp("int64_t")  # ABB
-        self.vertex_properties["loop_bound"] = self.new_vp("int64_t")  # ABB
-        self.vertex_properties["is_exit"] = self.new_vp("bool")  # BB/ABB
-        self.vertex_properties["is_exit_loop_head"] = self.new_vp("bool")  # BB/ABB
-        self.vertex_properties["part_of_loop"] = self.new_vp("bool")  # BB/ABB
-        self.vertex_properties["loop_head"] = self.new_vp("bool")  # ABB
-        self.vertex_properties["exception_handler"] = self.new_vp("bool")  # BB/ABB
-        self.vertex_properties["files"] = self.new_vp("vector<string>")  # BB/call ABB
-        self.vertex_properties["lines"] = self.new_vp("vector<int32_t>")  # BB/call ABB
-        self.vertex_properties["implemented"] = self.new_vp("bool")  # Function
-        self.vertex_properties["sysfunc"] = self.new_vp("bool")  # Function
-        self.vertex_properties["arguments"] = self.new_vp("object")  # Function
-        self.vertex_properties["call_graph_link"] = self.new_vp("long")  # Function
+        # How often the unterlying loop is executed (ABB)
+        self.vertex_properties["loop_bound"] = self.new_vp("int64_t")
+        # Unique exit of an ABB or of a function (BB/ABB)
+        self.vertex_properties["is_exit"] = self.new_vp("bool")
+        # "Exit" in an endless loop (BB/ABB)
+        self.vertex_properties["is_exit_loop_head"] = self.new_vp("bool")
+        # Node belongs to a loop (BB/ABB)
+        self.vertex_properties["part_of_loop"] = self.new_vp("bool")
+        # Loop is entered by this block (BB/ABB)
+        self.vertex_properties["loop_head"] = self.new_vp("bool")
+        # Block belongs to an exeception handler (ARA ignores them, BB/ABB)
+        self.vertex_properties["exception_handler"] = self.new_vp("bool")
+        # High level C/C++ files, in which this block is defined, (BB/call ABB)
+        self.vertex_properties["files"] = self.new_vp("vector<string>")
+        # Lines in those files, in which the block is defined, (BB/call ABB)
+        self.vertex_properties["lines"] = self.new_vp("vector<int32_t>")
+        # The function is declared but not defined (Function)
+        self.vertex_properties["implemented"] = self.new_vp("bool")
+        # The function belongs to the OS, calling it is a syscall (Function)
+        self.vertex_properties["sysfunc"] = self.new_vp("bool")
+        # holds a specific argument set for this syscall (syscall ABB)
+        self.vertex_properties["arguments"] = self.new_vp("object")
+        # id of the respective call graph function (Function)
+        self.vertex_properties["call_graph_link"] = self.new_vp("long")
 
         # edge properties
         self.edge_properties["type"] = self.new_ep("int")  # CFType
-        # f2a, a2b edges
+        # leads to entry block within a function or ABB (f2a, a2b edges)
         self.edge_properties["is_entry"] = self.new_ep("bool")
-        # icf, lcf edges
+        # edge making a lopp, coming back to loop head (icf, lcf edges)
         self.edge_properties["back_edge"] = self.new_ep("bool")
 
     def contains_function_by_name(self, name: str):
