@@ -3,26 +3,23 @@ arm_autosar_includes += ['-I', meson.current_source_dir() / 'platforms' / 'raspb
 
 
 src_files = [
-  'constructors',
-  'dispatch',
-  'gic',
-  'machine',
-  'memutil',
-  'output',
-  'reschedule-ast',
-  'startup',
-  'syscall',
-  'spinlock',
-  'bufferedserial',
-  'mp',
-  'platforms/raspberry/machine_impl',
-  'platforms/raspberry/timer',
-  'platforms/raspberry/mmu',
-  'platforms/raspberry/serial',
-  'platforms/raspberry/pmu'
-]
-
-as_files = [
+  'constructors.cc',
+  'dispatch.cc',
+  'gic.cc',
+  'machine.cc',
+  'memutil.cc',
+  'output.cc',
+  'reschedule-ast.cc',
+  'startup.cc',
+  'syscall.cc',
+  'spinlock.cc',
+  'bufferedserial.cc',
+  'mp.cc',
+  'platforms/raspberry/machine_impl.cc',
+  'platforms/raspberry/timer.cc',
+  'platforms/raspberry/mmu.cc',
+  'platforms/raspberry/serial.cc',
+  'platforms/raspberry/pmu.cc',
   'irq.S',
   'platforms/raspberry/startup.S'
 ]
@@ -32,8 +29,8 @@ obj_targets = []
 foreach src : src_files
   obj_target = custom_target(
     src.underscorify(),
-    input: src+'.cc',
-    output: src.underscorify()+'.cc.o',
+    input: src,
+    output: src.underscorify()+'.o',
     depfile: src.underscorify()+'.dep',
     command: clang_cpp +
       arm_autosar_includes +
@@ -41,20 +38,6 @@ foreach src : src_files
       obj_flags +
       clang_flags +
       autosar_pi4_clang_flags
-  )
-  obj_targets += obj_target
-endforeach
-
-arm_gcc = toolchains.get_variable('arm_gcc')
-clang_base = libplatform_proj.get_variable('clang_base')
-
-foreach src : as_files
-  obj_target = custom_target(
-    src.underscorify(),
-    input: src,
-    output: src.underscorify()+'.o',
-    depfile: src.underscorify()+'.dep',
-    command: [arm_gcc, clang_base, autosar_pi4_gcc_flags, obj_flags]
   )
   obj_targets += obj_target
 endforeach

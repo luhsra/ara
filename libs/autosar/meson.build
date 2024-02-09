@@ -9,16 +9,11 @@ autosar_includes += ['-I', meson.current_source_dir() / 'os' / 'util']
 libplatforms_proj = subproject('ara-libplatforms')
 
 if arm_enabled
-  autosar_pi4_gcc_flags = [
-    '-mcpu=cortex-a7',
-    '-mfloat-abi=soft',
-    '-mthumb',
-    '-DQEMU', #QEMU
-  ]
 
   autosar_pi4_clang_flags = [
     libplatform_proj.get_variable('arm_clang_flags'),
     libplatform_proj.get_variable('pi4_clang_flags'),
+    '-DQEMU', #QEMU
     #'-DDEBUG',
     '-O3',
     '-ffixed-r9', # cpuid
