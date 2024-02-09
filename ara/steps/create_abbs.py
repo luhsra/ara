@@ -1,8 +1,8 @@
 # SPDX-FileCopyrightText: 2021 Bastian Fuhlenriede
 # SPDX-FileCopyrightText: 2022 Björn Fiedler <fiedler@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2022 Domenik Kuhn
-# SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2022 Jan Neugebauer
+# SPDX-FileCopyrightText: 2024 Gerion Entrup <entrup@sra.uni-hannover.de>
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -204,7 +204,7 @@ class CreateABBs(Step):
                                     name[func], name[exit_abb])
                     abbs.append((exit_abb, cfg.get_exit_bb(exit_abb), True))
                 continue
-            self._log.warn(f"Handle {name[func]}")
+            self._log.info(f"Handle {name[func]}")
 
             reachable_bbs = cfg.new_vp("bool", val=False)
             bbs = set()
