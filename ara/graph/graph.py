@@ -465,20 +465,28 @@ class Callgraph(graph_tool.Graph):
         if not (graph is None):
             return
 
-        #vertex properties
+        # vertex properties
+        # link to the CFG function node
         self.vertex_properties["function"] = self.new_vp("long")
+        # name of the function
         self.vertex_properties["function_name"] = self.new_vp("string")
+        # link to the SVF function node
         self.vertex_properties["svf_vlink"] = self.new_vp("int64_t")
+        # is this function recursive?
         self.vertex_properties["recursive"] = self.new_vp("bool")
         self._map_syscall_categories()
-        #edge properties
+        # edge properties
+        # link to the callsite (ABB node in the CFG)
         self.edge_properties["callsite"] = self.new_ep("long")
+        # name of that callsite
         self.edge_properties["callsite_name"] = self.new_ep("string")
+        # link to the SVF edge
         self.edge_properties["svf_elink"] = self.new_ep("int64_t")
 
         self.graph_properties["cfg"] = self.new_gp("object", cfg)
 
     def _map_syscall_categories(self):
+        """Add a new boolean property for each syscall_category."""
         for syscat in SyscallCategory:
             property_name = "syscall_category_" + syscat.name
             self.vertex_properties[property_name] = self.new_vp("bool")
