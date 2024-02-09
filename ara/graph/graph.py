@@ -2,8 +2,8 @@
 # SPDX-FileCopyrightText: 2022 Bastian Fuhlenriede
 # SPDX-FileCopyrightText: 2022 Björn Fiedler <fiedler@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2022 Jan Neugebauer
-# SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2023 Andreas Kässens
+# SPDX-FileCopyrightText: 2024 Gerion Entrup <entrup@sra.uni-hannover.de>
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -156,6 +156,8 @@ class CFG(graph_tool.Graph):
         self.vertex_properties["arguments"] = self.new_vp("object")
         # id of the respective call graph function (Function)
         self.vertex_properties["call_graph_link"] = self.new_vp("long")
+        # node has no representation in the application code (ABB/Function)
+        self.vertex_properties["artificial"] = self.new_vp("bool", val=False)
 
         # edge properties
         self.edge_properties["type"] = self.new_ep("int")  # CFType
@@ -474,6 +476,8 @@ class Callgraph(graph_tool.Graph):
         self.vertex_properties["svf_vlink"] = self.new_vp("int64_t")
         # is this function recursive?
         self.vertex_properties["recursive"] = self.new_vp("bool")
+        # function has no representation in the application code
+        self.vertex_properties["artificial"] = self.new_vp("bool", val=False)
         self._map_syscall_categories()
         # edge properties
         # link to the callsite (ABB node in the CFG)

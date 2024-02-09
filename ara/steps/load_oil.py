@@ -4,8 +4,8 @@
 # SPDX-FileCopyrightText: 2021 Bastian Fuhlenriede
 # SPDX-FileCopyrightText: 2021 Jan Neugebauer
 # SPDX-FileCopyrightText: 2022 Björn Fiedler <fiedler@sra.uni-hannover.de>
-# SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2023 Andreas Kässens
+# SPDX-FileCopyrightText: 2024 Gerion Entrup <entrup@sra.uni-hannover.de>
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -54,6 +54,9 @@ class LoadOIL(Step):
 
     def run(self):
         cfg = self._graph.cfg
+        callgraph = self._graph.callgraph
+        os = self._graph.os
+        assert os == _autosar.AUTOSAR, "LoadOIL only meaningful with AUTOSAR"
 
         from ara.steps import get_native_component
 
@@ -334,7 +337,7 @@ class LoadOIL(Step):
         # artificial IRQ objects
         for v, obj in chain(instances.get(_autosar.Alarm),
                             instances.get(_autosar.ISR)):
-            func_v = fake_interrupt_function(cfg, obj.name)
+            func_v = fake_interrupt_function(cfg, callgraph, os, obj.name)
             active = True
             if isinstance(obj, _autosar.Alarm):
                 active = obj.autostart

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2020 Gerion Entrup <entrup@sra.uni-hannover.de>
+// SPDX-FileCopyrightText: 2024 Gerion Entrup <entrup@sra.uni-hannover.de>
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -11,3 +11,4 @@ ARA_SYS_ACTION(undefined)
 ARA_SYS_ACTION(every)
 ARA_SYS_ACTION(create)
 ARA_SYS_ACTION(comm)
+ARA_SYS_ACTION(intr)

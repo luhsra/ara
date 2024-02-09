@@ -202,7 +202,7 @@ foreach app : autosar_apps
                         capture: true,
                         command : [sed, '-n', '/if SYSTEM_JSON/,/SYSTEM_JSON/{/SYSTEM_JSON/d;p}', '@INPUT@'])
   else
-    oil = files(app['core'] / app['path'] / app['oil'])
+    oil = files(app['core'] / app['path'] / app['oil'])[0]
   endif
   app += {'oil': oil}
 

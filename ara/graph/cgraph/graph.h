@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: 2020 Björn Fiedler <fiedler@sra.uni-hannover.de>
 // SPDX-FileCopyrightText: 2020 Yannick Loeck
 // SPDX-FileCopyrightText: 2021 Bastian Fuhlenriede
-// SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
 // SPDX-FileCopyrightText: 2022 Jan Neugebauer
 // SPDX-FileCopyrightText: 2022 Tino Lorenz
+// SPDX-FileCopyrightText: 2024 Gerion Entrup <entrup@sra.uni-hannover.de>
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -53,6 +53,7 @@ namespace ara::graph {
 		typename graph_tool::vprop_map_t<unsigned char>::type sysfunc;
 		typename graph_tool::vprop_map_t<boost::python::object>::type arguments;
 		typename graph_tool::vprop_map_t<long>::type call_graph_link;
+		typename graph_tool::vprop_map_t<unsigned char>::type artificial;
 
 		typename graph_tool::eprop_map_t<int>::type etype;
 		typename graph_tool::eprop_map_t<unsigned char>::type is_entry;

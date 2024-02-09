@@ -8,12 +8,13 @@
 #define MIX 1 /*
 # SPDX-FileCopyrightText: 2021 Bastian Fuhlenriede
 # SPDX-FileCopyrightText: 2022 Jan Neugebauer
-# SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2024 Gerion Entrup <entrup@sra.uni-hannover.de>
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 # NOTE: This is a special file that can be read from Python and C++.
 # It is used to define common enums between the Python model and C++ model.
+# ATTENTION: Change also mix.cpp when changing values here.
 import enum
 class ABBType(enum.IntEnum): # */
     #undef pass
@@ -54,6 +55,7 @@ class NodeLevel(enum.IntEnum): # */
 # gcf = global control flow
 # f2a = function to ABB
 # a2b = ABB to BB
+# ATTENTION: Change also mix.cpp
 class CFType(enum.IntEnum): # */
     #undef pass
     #define pass namespace ara::graph { enum class CFType {
@@ -75,17 +77,20 @@ class CFType(enum.IntEnum): # */
 # undefined = as the name says
 # every = syscall belongs to every category
 # create = syscall creates an instance
-# comm = syscall is causes some kind of communication
+# comm = syscall causes some kind of communication
+# intr = fake syscall coming from an interrupt core (and causes an interrupt)
 # ATTENTION: This enum must kept in sync with syscall_category.inc
+# ATTENTION: Change also mix.cpp
 class SyscallCategory(enum.IntEnum): # */
     #undef pass
     #define pass namespace ara::graph { enum class SyscallCategory {
     pass
 
     undefined = 0,
-    every  = 0b11,
+    every  = 0b111,
     create = 0b10,
     comm   = 0b01,
+    intr   = 0b100,
 
     #undef pass
     #define pass }; STANDARD_OPERATORS(SyscallCategory)}
@@ -100,7 +105,7 @@ class SyscallCategory(enum.IntEnum): # */
 # value = syscall argument is a value (42, "hello world", nullptr, ...)
 # symbol = syscall argument is a symbol (Function, GlobalPointer, nullptr, ...)
 # instance = syscall argument is an instance handler
-# ATTENTION: This enum must kept in sync with syscall_category.inc
+# ATTENTION: Change also mix.cpp when changing values here.
 class SigType(enum.IntEnum): # */
     #undef pass
     #define pass namespace ara::graph { enum class SigType {
@@ -123,6 +128,7 @@ class SigType(enum.IntEnum): # */
 # metastate = The node links to a set of system states.
 # entry_sync = The node describes a synchronisation point entry.
 # exit_sync = The node describes a synchronisation point exit.
+# ATTENTION: Change also mix.cpp when changing values here.
 class StateType(enum.IntEnum): # */
     #undef pass
     #define pass namespace ara::graph { enum class StateType {
@@ -149,6 +155,7 @@ class StateType(enum.IntEnum): # */
 # en2ex = edge between an entry and exit sync state
 # m2sy = edge between a metastate and a sync state
 # sync_neighbor = mark two sync states that has an equal outcome
+# ATTENTION: Change also mix.cpp when changing values here.
 class MSTType(enum.IntEnum): # */
     #undef pass
     #define pass namespace ara::graph { enum class MSTType {

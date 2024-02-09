@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: 2021 Gerion Entrup <entrup@sra.uni-hannover.de>
 // SPDX-FileCopyrightText: 2022 Jan Neugebauer
+// SPDX-FileCopyrightText: 2024 Gerion Entrup <entrup@sra.uni-hannover.de>
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -86,6 +86,8 @@ namespace ara::graph {
 			return (str << "create");
 		case SyscallCategory::comm:
 			return (str << "comm");
+		case SyscallCategory::intr:
+			return (str << "intr");
 		};
 		assert(false);
 		return str;
