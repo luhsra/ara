@@ -115,12 +115,6 @@ namespace arch {
 			// assume(!next.tcb.is_running());
 			Dispatch(next, current);
 		}
-
-		static forceinline void setCurrentABB(uint32_t abb) {
-			if (m_current[get_cpuid()]) {
-				current_abb[m_current[get_cpuid()]->thread_id] = abb;
-			}
-		}
 	};
 
 } // namespace arch

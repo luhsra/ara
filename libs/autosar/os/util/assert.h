@@ -20,11 +20,6 @@
 #undef assert
 #endif
 
-// declared in helper.cc
-extern "C" uint32_t color_assert_port;
-#define COLOR_ASSERT_UNKOWN 0xb83829de
-#define COLOR_ASSERT_CFG_REGION 0xf4d9f7ca
-#define COLOR_ASSERT_SYSTEM_STATE 0x9451210d
 
 //! Runtime assert, print assertion if debugging, else causes trap
 #ifndef NDEBUG

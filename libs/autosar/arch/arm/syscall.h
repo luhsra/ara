@@ -45,9 +45,6 @@ namespace arch {
 		             "mov r1, sp;"     // save stackptr ...
 		             "add r0, pc, #7;" /*"adr r0, $1f;"orr r0, r0, #1;" // Add thumb mode bit */
 		             "push {r0};"      // save return address ...
-#ifdef CONFIG_DEPENDABILITY_ENCODED
-		             "push {r0};" // .. twice
-#endif
 		             "mov r0, %0;"
 		             "svc #0;" // start syscall
 		             "1:"

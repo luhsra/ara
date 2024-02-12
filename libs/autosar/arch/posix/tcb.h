@@ -24,11 +24,6 @@
 	"pop  %%esi\n"                                                                                                     \
 	"pop  %%ebx\n"
 
-#ifdef CONFIG_OS_BASIC_TASKS
-extern "C" void* OS_basic_task_stackptr;
-extern "C" uint8_t shared_basic_stack[];
-#endif
-
 namespace arch {
 	struct TCB;
 }
@@ -36,8 +31,6 @@ namespace arch {
 extern "C" void kickoff(arch::TCB*);
 
 namespace arch {
-
-	extern uint32_t current_abb[32];
 
 	struct TCB {
 		typedef void (*const fptr_t)(void);
@@ -69,7 +62,6 @@ namespace arch {
 		constexpr inline void*& basic_task_frame_pointer(void) const { return *(get_tos() - 2); }
 
 		inline void reset(void) const {
-			current_abb[thread_id] = 0;
 			void** tos = get_tos();
 			*(--tos) = (void*)0xaaaaffff; // is fresh
 
@@ -83,13 +75,6 @@ namespace arch {
 			}
 			assert(!is_running());
 		}
-
-#ifdef CONFIG_OS_SEMI_EXTENDED_TASKS
-		static forceinline bool runningOnSharedStack() {
-			void* sp = Machine::get_stackptr();
-			return (sp > shared_basic_stack && sp <= OS_basic_task_stackptr);
-		}
-#endif // CONFIG_OS_SEMI_EXTENDED_TASKS
 
 		// start the first task
 		void inlinehint startFirst() const {
@@ -131,12 +116,7 @@ namespace arch {
 					_returnTo(&(old->basic_task_frame_pointer()));
 					Machine::unreachable();
 				}
-#ifdef CONFIG_OS_SEMI_EXTENDED_TASKS
-				// SET -> BT
-			} else if (runningOnSharedStack()) {
-				// printf("SET spawns BT: next=%p, old=%p\n", this, old);
-				_switchFromSETtoBT(old, this);
-#endif               // CONFIG_OS_SEMI_EXTENDED_TASKS
+
 			} else { // ET -> BT i.e. !Shared Stack
 				// We have to switch to the shared stack
 				if (was_not_running) {
@@ -189,51 +169,8 @@ namespace arch {
 		// other == new
 		void noinline switchTo(const TCB* other) const {
 			other->set_running();
-#ifdef CONFIG_OS_SEMI_EXTENDED_TASKS
-			// if we are on the shared-stack but NOT a basic task
-			if (!basic_task && runningOnSharedStack()) {
-				_switchFromSETtoETandBack(this, other);
-			} else {
-				_switchTo(&(this->sp), &other->sp);
-			}
-#else  // !CONFIG_OS_SEMI_EXTENDED_TASKS
 			_switchTo(&sp, &other->sp);
-#endif // CONFIG_OS_SEMI_EXTENDED_TASKS
 		}
-
-#ifdef CONFIG_OS_SEMI_EXTENDED_TASKS
-		// semi extended switches (starts not needed as we can not terminate on the
-		// shared stack)
-		static noinline void _switchFromSETtoETandBack(const TCB* from, const TCB* to) {
-			void* tmp = OS_basic_task_stackptr;
-			asm __volatile__("push $1f\n" ASM_SAVE_REGISTERS "mov  %%esp, OS_basic_task_stackptr\n"
-			                 "mov  %%esp, (%0)\n"          // From
-			                 "mov  (%1), %%esp\n"          // To
-			                 ASM_RESTORE_REGISTERS "ret\n" // HERE the switch to the ET happens
-			                 "1:\n"
-			                 :
-			                 : "r"(&(from->sp)), "r"(&(to->sp))
-			                 : "memory", "eax", "ecx", "edx");
-			OS_basic_task_stackptr = tmp;
-		}
-
-		static noinline void _switchFromSETtoBT(const TCB* from, const TCB* to) {
-			// the basic-task HAS to be startet not resumed!
-			// old->is_running is true because we do not allow
-			// terminateTask() whilst on the shared stack
-			void* tmp = OS_basic_task_stackptr;
-
-			asm volatile("push $1f\n" // push return address
-			             ASM_SAVE_REGISTERS "mov %%esp, (%0)\n"
-			             "mov %%esp, (%1)\n"
-			             "jmp *%2\n"
-			             "1:\n"
-			             :
-			             : "r"(&(from->sp)), "r"(&(to->basic_task_frame_pointer())), "r"(to->fun)
-			             : "memory", "eax", "ecx", "edx");
-			OS_basic_task_stackptr = tmp;
-		}
-#endif // CONFIG_OS_SEMI_EXTENDED_TASKS
 
 		// basic task start/switches
 

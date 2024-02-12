@@ -31,7 +31,6 @@ if posix_enabled
     '-m32',
     '-O3',
     #'-DDEBUG',
-    '-DCONFIG_ARCH_POSIX', # for alarm3
   ]
   autosar_posix_ld_flags = [
     '-lpthread',

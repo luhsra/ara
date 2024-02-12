@@ -22,11 +22,7 @@ namespace arch {
 		void* const stack;
 
 		// reference to saved stack pointer
-#ifdef CONFIG_DEPENDABILITY_ENCODED
-		const os::redundant::HighParity<void*> sp;
-#else
 		const os::redundant::Plain<void*> sp;
-#endif
 
 		const int stacksize;
 

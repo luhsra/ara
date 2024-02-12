@@ -29,4 +29,4 @@ arch::TCB arch::Dispatcher::m_idle[MAX_CPUS] = {
     arch::TCB(Dispatcher::idleEntry, idlestack[15], arch::Dispatcher::idle_sp[15], 15, arch::IDLESTACKSIZE),
 };
 const arch::TCB* arch::Dispatcher::m_current[MAX_CPUS] = {0};
-uint32_t arch::current_abb[32];
+

@@ -2,9 +2,7 @@ autosar_includes += ['-I', meson.current_source_dir()]
 
 src_files = [
     'counter',
-    'helper',
     'isr',
-    'timing',
 ]
 
 if posix_enabled

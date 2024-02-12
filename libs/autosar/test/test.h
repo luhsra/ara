@@ -273,12 +273,6 @@ static forceinline void test_main(void) {
 
 extern "C" noinline void test_trace(char chr);
 
-#ifdef FAIL
-#define test_trace_assert(...)                                                                                         \
-	do {                                                                                                               \
-	} while (0)
-#endif
-
 extern "C" void arch_startup();
 
 #define TEST_MAKE_OS_MAIN(body)                                                                                        \

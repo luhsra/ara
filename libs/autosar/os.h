@@ -22,20 +22,8 @@
  ******************************************************************************/
 #define dosek_unused __attribute__((unused))
 
-#ifdef CONFIG_ARCH_PATMOS
-
-//#include "arch/patmos/irq.h"
-
-#define ISR2(taskname)                                                                                                 \
-	__attribute__((always_inline)) __attribute__((used))                                                               \
-	EXTERN_C_DECL void AUTOSAR_ISR_##taskname(const arch::IRQ::Context&)
-
-#else
-
 #define ISR2(taskname)                                                                                                 \
 	__attribute__((always_inline)) __attribute__((used)) EXTERN_C_DECL void AUTOSAR_ISR_##taskname(void)
-
-#endif
 
 #define DeclareTask(x)                                                                                                 \
 	extern const TaskType AUTOSAR_TASK_##x;                                                                            \
