@@ -4,8 +4,9 @@
 
 from .arch_generic import GenericArch
 from ..elements import *
-from ara.os.autosar import Task, ISR, Counter
+from ara.os.autosar import Task, ISR, Counter, Event
 
+from .implementations import *
 from ara.graph import ABBType
 
 
@@ -24,6 +25,65 @@ class PosixArch(GenericArch):
     def generate_linkerscript(self):
         """Posix does not require a linker script"""
         pass
+
+    def generate_dataobjects_task_stacks(self):
+        """Generate the stacks for the tasks, including the task pointers"""
+        # Ignore the Idle thread and ISR subtasks
+        for v, task in self.ara_graph.instances.get(Task):
+
+            task.impl.basic_task = True
+
+            for n in self.ara_graph.instances.get_out_neighbors(v):
+                if isinstance(self.ara_graph.instances.vp.obj[n], Event):
+                    task.impl.basic_task = False
+
+            if task.impl.basic_task:
+                # With a stacksize of 8, we indicate we're having a
+                # basic task here, that runs on the shared stack
+                stacksize = 8
+
+                stack = DataObjectArray("uint8_t",
+                                        task.name + "_dynamic_state",
+                                        str(stacksize),
+                                        extern_c=True)
+                self.generator.source_file.data_manager.add(stack)
+
+                # Get a common stack pointer for all basic tasks
+                if task.cpu_id not in TaskImpl.basic_task_stackptr.keys():
+                    basic_stack = DataObjectArray(
+                        "uint8_t __attribute__((aligned(4096)))",
+                        f"shared_basic_stack_{task.cpu_id}",
+                        "4096",
+                        extern_c=True)
+                    stackptr = DataObject(
+                        "void *",
+                        f"OS_basic_task_stackptr_{task.cpu_id}",
+                        static_initializer=(basic_stack.name + "+ 4096"),
+                        extern_c=True)
+                    self.generator.source_file.data_manager.add(
+                        basic_stack, namespace=("arch", ))
+                    self.generator.source_file.data_manager.add(
+                        stackptr, namespace=("arch", ))
+                    TaskImpl.basic_task_stackptr[task.cpu_id] = stackptr
+                else:
+                    stackptr = TaskImpl.basic_task_stackptr[task.cpu_id]
+            else:
+                stacksize = str(4096)
+
+                stack = DataObjectArray("uint8_t",
+                                        task.name + "_stack",
+                                        stacksize,
+                                        extern_c=True)
+                self.generator.source_file.data_manager.add(stack)
+
+                stackptr = DataObject("void *",
+                                        "OS_" + task.name + "_stackptr")
+                self.generator.source_file.data_manager.add(
+                    stackptr, namespace=("arch", ))
+
+            task.impl.stack = stack
+            task.impl.stackptr = stackptr
+            task.impl.stacksize = stacksize
 
     def generate_data_objects(self):
         """Generate all dataobjects for the system"""
