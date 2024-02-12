@@ -141,11 +141,11 @@ class Machine {
 #define asm_label(label)
 
 
-extern "C" void AUTOSAR_DisableAllInterrupts() {
+extern "C" void forceinline AUTOSAR_DisableAllInterrupts() {
 	Machine::disable_interrupts();
 }
 
-extern "C" void AUTOSAR_EnableAllInterrupts() {
+extern "C" void forceinline AUTOSAR_EnableAllInterrupts() {
 	Machine::enable_interrupts();
 }
 
