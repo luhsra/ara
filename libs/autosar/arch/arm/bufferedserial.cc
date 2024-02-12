@@ -3,11 +3,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "bufferedserial.h"
-
 #include "gic.h"
 #include "ticketlock.h"
 
 os::Ticketlock BufferedSerial::serial_spinlock{};
+
+extern "C" void memset(void* dest, int pat, size_t size);
 
 void BufferedSerial::putchar(char character) {
 	if (this->printcpu) {
@@ -30,8 +31,8 @@ void BufferedSerial::putchar(char character) {
 		BufferedSerial::serial_spinlock.lock();
 		Serial::puts(buf);
 		BufferedSerial::serial_spinlock.unlock();
-		for (int i = 0; i < BUF_LEN; i++)
-			buf[i] = 0;
+		memset(buf, 0x00, BUF_LEN);
+
 		idx = 0;
 		arch::GIC::set_task_prio(current_prio);
 	}
