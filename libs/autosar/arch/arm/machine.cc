@@ -41,3 +41,28 @@ void Machine::trigger_interrupt_from_user(uint8_t irq, uint8_t cpuid, bool sync)
 
 	trigger_interrupt(irq, cpuid, sync);
 }
+
+// Disable interrupts in ARM requires EL1 level
+// TODO: generate this syscall ?
+
+extern "C" void  __OS_ASTSchedule(int);
+extern "C" {
+void __di(int) {
+	Machine::disable_interrupts();
+	__OS_ASTSchedule(0);
+}
+
+void __ei(int) {
+	Machine::enable_interrupts();
+	__OS_ASTSchedule(0);
+}
+
+void AUTOSAR_DisableAllInterrupts() {
+	debug_core << "AUTOSAR_DisableAllInterrupts" << endl;
+	syscall(__di);
+}
+void AUTOSAR_EnableAllInterrupts() {
+	debug_core << "AUTOSAR_EnableAllInterrupts" << endl;
+	syscall(__ei);
+}
+}

@@ -140,4 +140,13 @@ class Machine {
 // #define asm_label(label) asm volatile (".asm_label." label "_%=:" :: "m" (*(void *)0))
 #define asm_label(label)
 
+
+extern "C" void AUTOSAR_DisableAllInterrupts() {
+	Machine::disable_interrupts();
+}
+
+extern "C" void AUTOSAR_EnableAllInterrupts() {
+	Machine::enable_interrupts();
+}
+
 #endif // __MACHINE_H__
