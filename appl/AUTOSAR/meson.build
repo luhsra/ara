@@ -454,6 +454,25 @@ foreach app: autosar_targets
     app += {'run_cmd_pi4': run_cmd}
     run_target('run_' + full_name + '_pi4', command: run_cmd)
 
+
+    pi4_bin = custom_target(full_name + '_pi4_bin',
+                        input: [
+                          app_image_pi4,
+                        ],
+                        output : full_name + '_pi4.bin',
+                        depfile : full_name + '.pi4.bin.dep',
+                        command : [ llvm_objcopy,
+                                  '-O', 'binary',
+                                  '@INPUT@',
+                                  '@OUTPUT@'])
+
+    pi4_bin_pxe = custom_target(full_name + '_pi4_bin_pxe',
+                        input: [pi4_bin],
+                        output : [full_name + '_pi4_bin_pxe'],
+                        command : [rpi4_tftp_deploy,
+                                  pi4_bin.full_path()])
+
+
     autosar_generated_targets_pi4 += app
   endif
 

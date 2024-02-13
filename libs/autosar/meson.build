@@ -23,6 +23,8 @@ if arm_enabled
   ]
 
   arm_ar_cmd = libplatforms_proj.get_variable('ar_cmd')
+  llvm_objcopy = toolchains.get_variable('llvm_objcopy')
+  rpi4_tftp_deploy = libplatforms_proj.get_variable('rpi4_tftp_deploy')
 endif
 
 if posix_enabled
