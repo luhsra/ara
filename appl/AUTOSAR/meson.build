@@ -450,7 +450,7 @@ foreach app: autosar_targets
                                       autosar_pi4_clang_flags)
 
     app += {'app_image_pi4': app_image_pi4}
-    run_cmd = [meson.current_source_dir() / 'qemu-system-aarch64', '-M', 'raspi4b1g', '-no-reboot', '-nographic', '-serial', 'null', '-serial','mon:stdio', '-kernel', app_image_pi4]
+    run_cmd = libplatforms_proj.get_variable('qemu_rpi4_32bit_cmd') + app_image_pi4
     app += {'run_cmd_pi4': run_cmd}
     run_target('run_' + full_name + '_pi4', command: run_cmd)
 
