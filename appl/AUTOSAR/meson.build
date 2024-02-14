@@ -466,9 +466,8 @@ foreach app: autosar_targets
                                   '@INPUT@',
                                   '@OUTPUT@'])
 
-    pi4_bin_pxe = custom_target(full_name + '_pi4_bin_pxe',
-                        input: [pi4_bin],
-                        output : [full_name + '_pi4_bin_pxe'],
+    pi4_bin_pxe = run_target('tftp_' + full_name + '_pi4',
+                        depends : [pi4_bin],
                         command : [rpi4_tftp_deploy,
                                   pi4_bin.full_path()])
 
