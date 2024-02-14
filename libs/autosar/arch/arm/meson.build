@@ -45,5 +45,5 @@ endforeach
 libautosar_arch_pi4 = custom_target('libautosar_arch_pi4',
   input: obj_targets,
   output: 'libautosar_arch_pi4.a',
-  command: arm_ar_cmd
+  command: ar_cmd
 )

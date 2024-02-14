@@ -26,7 +26,7 @@ if posix_enabled
     libautosar_os_posix = custom_target('libautosar_os_posix',
                                         input: obj_targets,
                                         output: 'libautosar_os_posix.a',
-                                        command: posix_ar_cmd)
+                                        command: ar_cmd)
 endif
 
 if arm_enabled
@@ -50,5 +50,5 @@ if arm_enabled
     libautosar_os_pi4 = custom_target('libautosar_os_pi4',
                                         input: obj_targets,
                                         output: 'libautosar_os_pi4.a',
-                                        command: arm_ar_cmd)
+                                        command: ar_cmd)
 endif

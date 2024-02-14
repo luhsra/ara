@@ -7,6 +7,7 @@ autosar_includes += ['-I', meson.current_source_dir() / 'os' / 'util']
 # Define AUTOSAR-specific build flags
 
 libplatforms_proj = subproject('ara-libplatforms')
+ar_cmd = [toolchains.get_variable('llvm_ar'), ['rcs', '@OUTPUT@', '@INPUT@']]
 
 if arm_enabled
 
@@ -28,7 +29,6 @@ autosar_pi4_clang_flags += [
     libplatform_proj.get_variable('arm_ld_flags')
   ]
 
-  arm_ar_cmd = libplatforms_proj.get_variable('ar_cmd')
   llvm_objcopy = toolchains.get_variable('llvm_objcopy')
   rpi4_tftp_deploy = libplatforms_proj.get_variable('rpi4_tftp_deploy')
 endif
@@ -44,7 +44,6 @@ if posix_enabled
     '-lpthread',
     '-lrt',
   ]
-  posix_ar_cmd = [toolchains.get_variable('llvm_ar'), ['rcs', '@OUTPUT@', '@INPUT@']]
 endif
 
 subdir('arch')

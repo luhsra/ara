@@ -33,4 +33,4 @@ endforeach
 libautosar_arch_posix = custom_target('libautosar_arch_posix',
                                       input: obj_targets,
                                       output: 'libautosar_arch_posix.a',
-                                      command: posix_ar_cmd)
+                                      command: ar_cmd)
