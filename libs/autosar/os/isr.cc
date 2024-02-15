@@ -19,6 +19,9 @@
 static int __all_isr_count;
 static int __os_isr_count;
 
+extern "C" void AUTOSAR_DisableAllInterrupts();
+extern "C" void AUTOSAR_EnableAllInterrupts();
+
 void AUTOSAR_SuspendAllInterrupts() {
 	debug_core << __FUNCTION__ << endl;
 	AUTOSAR_DisableAllInterrupts();

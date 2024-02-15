@@ -144,3 +144,11 @@ void IRQ::guardian(int signum) {
 }
 
 IRQ arch::irq;
+
+extern "C" void AUTOSAR_DisableAllInterrupts() {
+	Machine::disable_interrupts();
+}
+
+extern "C" void AUTOSAR_EnableAllInterrupts() {
+	Machine::enable_interrupts();
+}
