@@ -20,8 +20,15 @@ prepare:
     - echo "persistent dir = $PERSISTENT_DIR"
     - mkdir -p "$WRAP_SUBPROJECTS"
     - mkdir -p "$WRAP_BUILD"
-    - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/".insteadOf "git@${CI_SERVER_HOST}:"
-    - eval $BWRAP -- ./init
+    - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/".insteadOf "https://${CI_SERVER_HOST}/"
+    - eval $BWRAP -- git clone --depth 1 -b main      https://scm.sra.uni-hannover.de/research/parrot-projects/toolchains subprojects/toolchains
+    - eval $BWRAP -- git clone --depth 1 -b main      https://scm.sra.uni-hannover.de/research/ara-libsra subprojects/ara-libsra
+    - eval $BWRAP -- git clone --depth 1 -b ara       https://scm.sra.uni-hannover.de/research/freertos subprojects/freertos
+    - eval $BWRAP -- git clone --depth 1 -b main      https://scm.sra.uni-hannover.de/research/ara-libplatforms subprojects/ara-libplatforms
+    - eval $BWRAP -- git clone --depth 1 -b value2vfg https://github.com/luhsra/SVF subprojects/svf
+    - eval $BWRAP -- git clone --depth 1 -b main      https://github.com/luhsra/pyllco.git subprojects/pyllco
+    - eval $BWRAP -- git clone --depth 1 -b master    https://scm.sra.uni-hannover.de/published/ara-link.git subprojects/ara-link
+    - eval $BWRAP -- git clone --depth 1 -b master    https://scm.sra.uni-hannover.de/published/SparseData.git subprojects/sparsedata
     - sync
 
 build-gcc-no-pch:
