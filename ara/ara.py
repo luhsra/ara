@@ -78,7 +78,10 @@ class Main:
         parser.add_argument('--step', '-s', action='append',
                             help="choose steps that will be executed")
         parser.add_argument('input_file', help="the LLVM-IR input file", nargs='?')
-        parser.add_argument('--oilfile', help="name of oilfile")
+        parser.add_argument('--oilfile',
+                            help="Path to the JSON OIL file (AUTOSAR specific)")
+        parser.add_argument('--kconfigfile',
+                            help="Path to the Kconfig file (Zephyr specific)")
         parser.add_argument('--timings', help="file for ABB timings. "
                                             "See ApplyTimings for more info.")
         parser.add_argument('--generator_output', metavar="FILE",
