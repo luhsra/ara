@@ -11,7 +11,7 @@ from ara.steps.util import current_step
 import pyllco
 from .step import Step
 from pydoc import locate
-from ara.os.zephyr import Queue, QueueType, ZephyrInstance, Thread, ZephyrKernel, ZEPHYR, ZephyrOptions
+from ara.os.zephyr import Queue, QueueType, ZephyrInstance, Thread, ZephyrKernel, Zephyr, ZephyrOptions
 from ara.os.os_base import ControlInstance
 from .option import Bool, Option, String
 from ara.util import KConfigFile
@@ -66,7 +66,7 @@ class ZephyrStaticPost(Step):
         va = ValueAnalyzer(self._graph, current_step.tracer if hasattr(current_step, "tracer") else None)
 
         # Currently, we just look for a config with the same name as the app.ll
-        ZEPHYR.config = KConfigFile(self.input_file.get()[:-3] + '.config')
+        Zephyr.config = KConfigFile(self.input_file.get()[:-3] + '.config')
 
         cfg = self._graph.cfg
 
@@ -89,7 +89,7 @@ class ZephyrStaticPost(Step):
 
             # Mark the ids of all static instances as used. Since we use symbol names we know
             # them to be unique
-            ZEPHYR.id_count[self._graph.instances.vp.id[instance]] = 1
+            Zephyr.id_count[self._graph.instances.vp.id[instance]] = 1
             self._graph.instances.vp.obj[instance] = inst
 
         # If there is a main, also add a thread for that.
@@ -98,8 +98,8 @@ class ZephyrStaticPost(Step):
         # does not match
         main = graph_tool.util.find_vertex(cfg, cfg.vp['name'], 'main')
         if len(main) == 1:
-            prio = int(ZEPHYR.config['CONFIG_MAIN_THREAD_PRIORITY'])
-            stack_size = int(ZEPHYR.config['CONFIG_MAIN_STACK_SIZE'])
+            prio = int(Zephyr.config['CONFIG_MAIN_THREAD_PRIORITY'])
+            stack_size = int(Zephyr.config['CONFIG_MAIN_STACK_SIZE'])
             main_thread = Thread(
                 cpu_id=-1,
                 cfg=cfg,
@@ -117,8 +117,8 @@ class ZephyrStaticPost(Step):
             ZephyrStaticPost.create_static_instance(self._graph.instances, "Thread", main_thread, "__main", True)
 
         # Create a unique node for the Zephyr kernel.
-        kernel = ZephyrKernel(int(ZEPHYR.config['CONFIG_HEAP_MEM_POOL_SIZE']))
-        ZEPHYR.kernel = ZephyrStaticPost.create_static_instance(self._graph.instances, "Zephyr", kernel, "__kernel", False)
+        kernel = ZephyrKernel(int(Zephyr.config['CONFIG_HEAP_MEM_POOL_SIZE']))
+        Zephyr.kernel = ZephyrStaticPost.create_static_instance(self._graph.instances, "Zephyr", kernel, "__kernel", False)
 
         ZephyrOptions.enable_missing_interaction_count = self.enable_missing_interaction_count.get()
         if ZephyrOptions.enable_missing_interaction_count:

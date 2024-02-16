@@ -17,16 +17,18 @@ import pyllco
 import html
 import re
 
-logger = get_logger("ZEPHYR")
+logger = get_logger("Zephyr")
 ValueAnalyzer = get_native_component("ValueAnalyzer")
 ValueAnalyzerResult = get_native_component("ValueAnalyzerResult")
 
+
 class ZephyrOptions:
     """This static class contains the values of all OS Model options.
-    
+
     All options can be set as step options for ZephyrStaticPost.
     """
     enable_missing_interaction_count: bool = None
+
 
 @dataclass(eq=False)
 class ZephyrInstance(AutoDotInstance):
@@ -67,6 +69,7 @@ class ZephyrKernel(ZephyrInstance):
     def __hash__(self):
         return hash(("ZephyrKernel", self.heap_size, self.symbol))
 
+
 @dataclass
 class Thread(ZephyrInstance, ControlInstance):
     # Pointer to uninitialized struct k_thread.
@@ -99,9 +102,10 @@ class Thread(ZephyrInstance, ControlInstance):
         return hash(("Thread", self.function, self.artificial, self.symbol, self.stack, self.stack_size,
         self.entry_name, self.entry_params, self.priority, self.options, self.delay))
 
+
 # Interrupt service routine. Like every other kernel resource, these can be created
-# dynamically via irq_connect_dynamic() (which is not a syscall) or statically by 
-# using the IRQ_CONNECT macro. The latter might be harder to detect since the actual 
+# dynamically via irq_connect_dynamic() (which is not a syscall) or statically by
+# using the IRQ_CONNECT macro. The latter might be harder to detect since the actual
 # implementation is arch dependend.
 # Most of the embedded architectures like riscv and arm seem to use Z_ISR_DECLARE()
 # internally.
@@ -133,6 +137,7 @@ class ISR(ZephyrInstance, ControlInstance):
         return hash(("ISR", self.function, self.artificial, self.irq_number, self.priority,
                      self.entry_name, self.handler_param, self.flags, self.symbol))
 
+
 # There are actually two types of semaphores: k_sems are kernelobjects that are
 # managed via the k_sem_* syscalls while sys_sems live in user memory (provided
 # user mode is enabled). Right now, only k_sems can be detected.
@@ -156,15 +161,18 @@ class Semaphore(ZephyrInstance):
     def __hash__(self):
         return hash((self.__class__.__name__, self.symbol, self.count, self.limit))
 
+
 @dataclass
 class KernelSemaphore(Semaphore):
     def __hash__(self):
         return super().__hash__()
 
+
 @dataclass
 class UserSemaphore(Semaphore):
     def __hash__(self):
         return super().__hash__()
+
 
 @dataclass
 class Mutex(ZephyrInstance):
@@ -182,10 +190,12 @@ class Mutex(ZephyrInstance):
     def __hash__(self):
         return hash(("Mutex", self.symbol))
 
+
 class QueueType(IntEnum):
     normal = 0
     lifo = 1
     fifo = 2
+
 
 # The zephyr kernel offers two kinds of queues: FIFO and LIFO which both use queues internally
 # They are created via separate "functions" k_{lifo,fifo}_init
@@ -216,8 +226,9 @@ class Queue(ZephyrInstance):
     def __hash__(self):
         return hash(("Queue", self.symbol, self.queue_type, self.fake_gep))
 
+
 # Stacks are created via the k_stack_alloc_init syscall which allocates an internal buffer.
-# However, it is also possible to initialize a stack with a given buffer with k_stack_init 
+# However, it is also possible to initialize a stack with a given buffer with k_stack_init
 # which is NOT a syscall.
 # TODO: Find out if k_stack_init should be detected as well.
 @dataclass
@@ -240,7 +251,8 @@ class Stack(ZephyrInstance):
     def __hash__(self):
         return hash(("Stack", self.symbol, self.buf, self.max_entries))
 
-# Pipes can be created with two syscalls, k_pipe_init requries a user allocted buffer, 
+
+# Pipes can be created with two syscalls, k_pipe_init requries a user allocted buffer,
 # while k_pipe_alloc_init creates one from the internal memory pool.
 @dataclass
 class Pipe(ZephyrInstance):
@@ -259,6 +271,7 @@ class Pipe(ZephyrInstance):
 
     def __hash__(self):
         return hash(("Pipe", self.symbol, self.size))
+
 
 # Heaps are created by the user as neccessary and can be shared between threads.
 # However, using k_malloc and k_free, threads also have access to a system memory pool.
@@ -280,6 +293,7 @@ class Heap(ZephyrInstance):
     def __hash__(self):
         return hash(("Heap", self.symbol, self.limit))
 
+
 @dataclass
 class MSGQ(ZephyrInstance):
     # The k_msgq object
@@ -300,15 +314,16 @@ class MSGQ(ZephyrInstance):
     def __hash__(self):
         return hash(("MSGQ", self.symbol, self.msg_size, self.max_msgs))
 
+
 class ZephyrEdgeType(IntEnum):
     interaction = 0
     create = 1
-    
+
     """Special edge type to show that an instance has the same symbol than the instance this edge is pointing to."""
     same_symbol_than = 2
 
-class ZEPHYR(OSBase):
 
+class Zephyr(OSBase):
     '''
         Vertex and edge properties:
         vertex_properties = [('label', 'string', 'instance name'),
@@ -318,7 +333,7 @@ class ZEPHYR(OSBase):
     '''
 
     """type class of interactions.
-    
+
     This object is accessed by instance_graph.py test script to translate the integer value to a string.
     """
     EdgeType = ZephyrEdgeType
@@ -340,11 +355,11 @@ class ZEPHYR(OSBase):
     @staticmethod
     def get_unique_id(ident: str) -> str:
         """Generate a unique id by taking the actual one and appending a number to deduplicate"""
-        count = ZEPHYR.id_count.get(ident)
+        count = Zephyr.id_count.get(ident)
         if count is None:
-            ZEPHYR.id_count[ident] = 1
+            Zephyr.id_count[ident] = 1
         else:
-            ZEPHYR.id_count[ident] = count + 1
+            Zephyr.id_count[ident] = count + 1
             ident = f"{ident}.{count}"
 
         return ident
@@ -365,7 +380,7 @@ class ZEPHYR(OSBase):
         If you have an instance that has no symbol field (e.g. ISR), set symbol to None and provide an identifier string via ident instead."""
         if ident is None:
             if symbol is not None:
-                ident = ZEPHYR.get_symbol(symbol).get_name()
+                ident = Zephyr.get_symbol(symbol).get_name()
             else:
                 assert False, "ident and symbol are both None!"
 
@@ -373,7 +388,7 @@ class ZEPHYR(OSBase):
         v = instances.add_vertex()
         instances.vp.label[v] = label
         instances.vp.obj[v] = obj
-        instances.vp.id[v] = ZEPHYR.get_unique_id(ident)
+        instances.vp.id[v] = Zephyr.get_unique_id(ident)
 
         cpu = state.cpus[cpu_id]
         abb = cpu.abb
@@ -382,7 +397,7 @@ class ZEPHYR(OSBase):
         instances.vp.branch[v] = ana_context.branch
         instances.vp.loop[v] = ana_context.loop
         instances.vp.recursive[v] = ana_context.recursive
-        instances.vp.after_scheduler[v] = True # In ZEPHYR the scheduler is always on for dynamic instances
+        instances.vp.after_scheduler[v] = True # In Zephyr the scheduler is always on for dynamic instances
         instances.vp.usually_taken[v] = ana_context.usually_taken
         # Creating an instance from a thread that is not unique will result in a non unique instance
         instances.vp.unique[v] = (not (ana_context.branch or ana_context.loop or ana_context.recursive)) and instances.vp.unique[cpu.control_instance]
@@ -459,23 +474,23 @@ class ZEPHYR(OSBase):
         """Adds an interaction (edge) with the given callname to all instances with the given symbol"""
         if type(symbol) == UnknownArgument:
             logger.error(f"No matching instance for {call}() found. ValueAnalyzer Exception: \"{symbol.exception}\". Skipping.")
-            ZEPHYR._missing_interaction(state, cpu_id, expected_instance)
+            Zephyr._missing_interaction(state, cpu_id, expected_instance)
             return
         instance = symbol.value if type(symbol) == ValueAnalyzerResult else symbol
         if not isinstance(instance, ZephyrInstance):
             logger.error(f"No matching instance for {call}() found. Skipping.")
-            ZEPHYR._missing_interaction(state, cpu_id, expected_instance)
+            Zephyr._missing_interaction(state, cpu_id, expected_instance)
             return
         if not hasattr(instance, "symbol"):
             logger.error(f"Instance of type {type(instance)} from {call}() has no \"symbol\" field. "
             "add_instance_comm() can not work with this instance. Skipping.")
-            ZEPHYR._missing_interaction(state, cpu_id, expected_instance)
+            Zephyr._missing_interaction(state, cpu_id, expected_instance)
             return
 
-        matches = list(ZEPHYR.find_instance_by_symbol(state, instance.symbol))
+        matches = list(Zephyr.find_instance_by_symbol(state, instance.symbol))
         if len(matches) == 0:
             logger.error(f"No matching instance for {call}() found. Skipping.\n{type(instance.symbol)}\n{instance.symbol}")
-            ZEPHYR._missing_interaction(state, cpu_id, expected_instance)
+            Zephyr._missing_interaction(state, cpu_id, expected_instance)
         else:
             if len(matches) > 1:
                 logger.warning(f"Multiple matching instances found: {[state.instances.vp.id[v] for v in matches]}")
@@ -485,7 +500,7 @@ class ZEPHYR(OSBase):
     @staticmethod
     def add_kernel_comm(state: OSState, cpu_id: int, call: str):
         """Adds an interaction (edge) with the given callname to the ZephyrKernel instance"""
-        connect_from_here(state, cpu_id, ZEPHYR.kernel, call, ty=ZephyrEdgeType.interaction)
+        connect_from_here(state, cpu_id, Zephyr.kernel, call, ty=ZephyrEdgeType.interaction)
 
     @staticmethod
     def get_initial_state(cfg, instances):
@@ -517,9 +532,9 @@ class ZEPHYR(OSBase):
         logger.debug(f"Get syscall: {syscall_name}, ABB: {cfg.vp.name[abb]}"
                      f" (in {cfg.vp.name[cfg.get_function(abb)]})")
 
-        syscall = getattr(ZEPHYR, syscall_name)
+        syscall = getattr(Zephyr, syscall_name)
 
-        if ZEPHYR.syscall_in_category(syscall, categories):
+        if Zephyr.syscall_in_category(syscall, categories):
             logger.info(f"Interpreting syscall: {syscall_name}")
             return syscall(graph, state, cpu_id)
         else:
@@ -528,7 +543,7 @@ class ZEPHYR(OSBase):
             set_next_abb(state, cpu_id)
             return state
 
-    # k_tid_t k_thread_create(struct k_thread *new_thread, k_thread_stack_t *stack, size_t stack_size, 
+    # k_tid_t k_thread_create(struct k_thread *new_thread, k_thread_stack_t *stack, size_t stack_size,
     #   k_thread_entry_t entry, void *p1, void *p2, void *p3, int prio, uint32_t options,
     #   k_timeout_t delay)
     @syscall(categories={SyscallCategory.create},
@@ -554,7 +569,7 @@ class ZEPHYR(OSBase):
             cfg=cfg,
             artificial=False,
             function=cfg.get_function_by_name(entry_name),
-            symbol=ZEPHYR.get_symbol(args.symbol),
+            symbol=Zephyr.get_symbol(args.symbol),
             stack=args.stack,
             stack_size=args.stack_size,
             entry_name=entry_name,
@@ -564,10 +579,10 @@ class ZEPHYR(OSBase):
             delay=args.delay
         )
 
-        ZEPHYR.create_instance(cfg, state, cpu_id, va, "Thread", instance, args.symbol, "k_thread_create")
+        Zephyr.create_instance(cfg, state, cpu_id, va, "Thread", instance, args.symbol, "k_thread_create")
         return state
 
-    # int irq_connect_dynamic(unsigned int irq, unsigned int priority, 
+    # int irq_connect_dynamic(unsigned int irq, unsigned int priority,
     #   void (*routine)(const void *parameter), const void *parameter, uint32_t flags)
     @syscall(categories={SyscallCategory.create},
              signature=(Arg("irq_number", hint=SigType.value),
@@ -593,7 +608,7 @@ class ZEPHYR(OSBase):
             flags=args.flags
         )
 
-        ZEPHYR.create_instance(cfg, state, cpu_id, va, "ISR", instance, None, "irq_connect_dynamic", entry_name)
+        Zephyr.create_instance(cfg, state, cpu_id, va, "ISR", instance, None, "irq_connect_dynamic", entry_name)
         return state
 
     # int k_sem_init(struct k_sem *sem, unsigned int initial_count, unsigned int limit)
@@ -606,12 +621,12 @@ class ZEPHYR(OSBase):
         cfg = graph.cfg
 
         instance = KernelSemaphore(
-            ZEPHYR.get_symbol(args.symbol),
+            Zephyr.get_symbol(args.symbol),
             args.count,
             args.limit
         )
 
-        ZEPHYR.create_instance(cfg, state, cpu_id, va, "KernelSemaphore", instance, args.symbol, "k_sem_init")
+        Zephyr.create_instance(cfg, state, cpu_id, va, "KernelSemaphore", instance, args.symbol, "k_sem_init")
         return state
 
     # int sys_sem_init(struct sys_sem *sem, unsigned int initial_count, unsigned int limit)
@@ -624,12 +639,12 @@ class ZEPHYR(OSBase):
         cfg = graph.cfg
 
         instance = UserSemaphore(
-            ZEPHYR.get_symbol(args.symbol),
+            Zephyr.get_symbol(args.symbol),
             args.count,
             args.limit
         )
 
-        ZEPHYR.create_instance(cfg, state, cpu_id, va, "UserSemaphore", instance, args.symbol, "sys_sem_init")
+        Zephyr.create_instance(cfg, state, cpu_id, va, "UserSemaphore", instance, args.symbol, "sys_sem_init")
         return state
 
     # int k_mutex_init(struct k_mutex *mutex)
@@ -640,10 +655,10 @@ class ZEPHYR(OSBase):
         cfg = graph.cfg
 
         instance = Mutex(
-            ZEPHYR.get_symbol(args.symbol)
+            Zephyr.get_symbol(args.symbol)
         )
 
-        ZEPHYR.create_instance(cfg, state, cpu_id, va, "Mutex", instance, args.symbol, "k_mutex_init")
+        Zephyr.create_instance(cfg, state, cpu_id, va, "Mutex", instance, args.symbol, "k_mutex_init")
         return state
 
     # void k_queue_init(struct k_queue *queue)
@@ -656,12 +671,12 @@ class ZEPHYR(OSBase):
         cfg = graph.cfg
 
         instance = Queue(
-            ZEPHYR.get_symbol(args.symbol),
+            Zephyr.get_symbol(args.symbol),
             QueueType.normal.value,
             None
         )
 
-        ZEPHYR.create_instance(cfg, state, cpu_id, va, "Queue", instance, args.symbol, "k_queue_init")
+        Zephyr.create_instance(cfg, state, cpu_id, va, "Queue", instance, args.symbol, "k_queue_init")
         return state
 
     # void k_stack_init(struct k_stack *stack, stack_data_t *buffer, uint32_t num_entries)
@@ -674,12 +689,12 @@ class ZEPHYR(OSBase):
         cfg = graph.cfg
 
         instance = Stack(
-            ZEPHYR.get_symbol(args.symbol),
+            Zephyr.get_symbol(args.symbol),
             args.buf,
             args.max_entries
         )
 
-        ZEPHYR.create_instance(cfg, state, cpu_id, va, "Stack", instance, args.symbol, "k_stack_init")
+        Zephyr.create_instance(cfg, state, cpu_id, va, "Stack", instance, args.symbol, "k_stack_init")
         return state
 
     # int32_t k_stack_alloc_init(struct k_stack *stack, uint32_t num_entries)
@@ -691,14 +706,14 @@ class ZEPHYR(OSBase):
         cfg = graph.cfg
 
         instance = Stack(
-            ZEPHYR.get_symbol(args.symbol),
+            Zephyr.get_symbol(args.symbol),
             # When creating a stack with k_stack_alloc_init() the buffer is created in kernel
             # address space
             None,
             args.max_entries
         )
 
-        ZEPHYR.create_instance(cfg, state, cpu_id, va, "Stack", instance, args.symbol, "k_stack_alloc_init")
+        Zephyr.create_instance(cfg, state, cpu_id, va, "Stack", instance, args.symbol, "k_stack_alloc_init")
         return state
 
     # void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
@@ -711,44 +726,44 @@ class ZEPHYR(OSBase):
         cfg = graph.cfg
 
         instance = Pipe(
-            ZEPHYR.get_symbol(args.symbol),
+            Zephyr.get_symbol(args.symbol),
             args.size
         )
 
-        ZEPHYR.create_instance(cfg, state, cpu_id, va, "Pipe", instance, args.symbol, "k_pipe_init")
+        Zephyr.create_instance(cfg, state, cpu_id, va, "Pipe", instance, args.symbol, "k_pipe_init")
         return state
 
     # int k_pipe_alloc_init(struct k_pipe *pipe, size_t size)
     @syscall(categories={SyscallCategory.create},
-             signature=(Arg("symbol", hint=SigType.instance), 
+             signature=(Arg("symbol", hint=SigType.instance),
                         Arg("size", hint=SigType.value)))
     def k_pipe_alloc_init(graph, state, cpu_id, args, va):
         state = state.copy()
         cfg = graph.cfg
 
         instance = Pipe(
-            ZEPHYR.get_symbol(args.symbol),
+            Zephyr.get_symbol(args.symbol),
             args.size
         )
 
-        ZEPHYR.create_instance(cfg, state, cpu_id, va, "Pipe", instance, args.symbol, "k_pipe_alloc_init")
+        Zephyr.create_instance(cfg, state, cpu_id, va, "Pipe", instance, args.symbol, "k_pipe_alloc_init")
         return state
 
     # void k_heap_init(struct k_heap *h, void *mem, size_t bytes)
     @syscall(categories={SyscallCategory.create},
              signature=(Arg("symbol", hint=SigType.instance),
-                        Arg("buf", hint=SigType.symbol, ty=pyllco.Value), 
+                        Arg("buf", hint=SigType.symbol, ty=pyllco.Value),
                         Arg("limit", hint=SigType.value)))
     def k_heap_init(graph, state, cpu_id, args, va):
         state = state.copy()
         cfg = graph.cfg
 
         instance = Heap(
-            ZEPHYR.get_symbol(args.symbol),
+            Zephyr.get_symbol(args.symbol),
             args.limit
         )
 
-        ZEPHYR.create_instance(cfg, state, cpu_id, va, "Heap", instance, args.symbol, "k_heap_init")
+        Zephyr.create_instance(cfg, state, cpu_id, va, "Heap", instance, args.symbol, "k_heap_init")
         return state
 
     # void k_msgq_init(struct k_msgq *q, char *buffer, size_t msg_size, uint32_t max_msgs)
@@ -762,12 +777,12 @@ class ZEPHYR(OSBase):
         cfg = graph.cfg
 
         instance = MSGQ(
-            ZEPHYR.get_symbol(args.symbol),
+            Zephyr.get_symbol(args.symbol),
             args.msg_size,
             args.max_msgs
         )
 
-        ZEPHYR.create_instance(cfg, state, cpu_id, va, "MSGQ", instance, args.symbol, "k_msgq_init")
+        Zephyr.create_instance(cfg, state, cpu_id, va, "MSGQ", instance, args.symbol, "k_msgq_init")
         return state
 
     # int k_msgq_alloc_init(struct k_msgq *msgq, size_t msg_size, uint32_t max_msgs)
@@ -780,12 +795,12 @@ class ZEPHYR(OSBase):
         cfg = graph.cfg
 
         instance = MSGQ(
-            ZEPHYR.get_symbol(args.symbol),
+            Zephyr.get_symbol(args.symbol),
             args.msg_size,
             args.max_msgs
         )
 
-        ZEPHYR.create_instance(cfg, state, cpu_id, va, "MSGQ", instance, args.symbol, "k_msgq_alloc_init")
+        Zephyr.create_instance(cfg, state, cpu_id, va, "MSGQ", instance, args.symbol, "k_msgq_alloc_init")
         return state
 
     #
@@ -798,12 +813,12 @@ class ZEPHYR(OSBase):
 
     # int k_thread_join(struct k_thread *thread, k_timeout_t timeout)
     @syscall(categories={SyscallCategory.comm},
-             signature=(Arg("symbol", hint=SigType.instance, ty=Thread), 
+             signature=(Arg("symbol", hint=SigType.instance, ty=Thread),
                         Arg("timeout", hint=SigType.value)))
     def k_thread_join(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_thread_join", "Thread")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_thread_join", "Thread")
         return state
 
     # int32_t k_sleep(k_timeout_t timeout)
@@ -876,7 +891,7 @@ class ZEPHYR(OSBase):
     def k_thread_timeout_expires_ticks(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_thread_timeout_expires_ticks", "Thread")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_thread_timeout_expires_ticks", "Thread")
         return state
 
     # k_ticks_t k_thread_timeout_remaining_ticks(struct k_thread *t)
@@ -885,7 +900,7 @@ class ZEPHYR(OSBase):
     def k_thread_timeout_remaining_ticks(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_thread_timeout_remaining_ticks", "Thread")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_thread_timeout_remaining_ticks", "Thread")
         return state
 
     # void k_sched_time_slice_set(int32_t slice, int prio)
@@ -895,7 +910,7 @@ class ZEPHYR(OSBase):
     def k_sched_time_slice_set(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_kernel_comm(state, cpu_id, "k_sched_time_slice_set")
+        Zephyr.add_kernel_comm(state, cpu_id, "k_sched_time_slice_set")
         return state
 
     # void k_sched_lock(void)
@@ -903,7 +918,7 @@ class ZEPHYR(OSBase):
     def k_sched_lock(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_kernel_comm(state, cpu_id, "k_sched_lock")
+        Zephyr.add_kernel_comm(state, cpu_id, "k_sched_lock")
         return state
 
     # void k_sched_unlock(void)
@@ -911,7 +926,7 @@ class ZEPHYR(OSBase):
     def k_sched_unlock(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_kernel_comm(state, cpu_id, "k_sched_unlock")
+        Zephyr.add_kernel_comm(state, cpu_id, "k_sched_unlock")
         return state
 
     # void k_thread_custom_data_set(void *value)
@@ -970,7 +985,7 @@ class ZEPHYR(OSBase):
     def k_sem_take(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_sem_take", "KernelSemaphore")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_sem_take", "KernelSemaphore")
         return state
 
     # void k_sem_give(struct k_sem *sem)
@@ -979,7 +994,7 @@ class ZEPHYR(OSBase):
     def k_sem_give(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_sem_give", "KernelSemaphore")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_sem_give", "KernelSemaphore")
         return state
 
     # void k_sem_reset(struct k_sem *sem)
@@ -988,7 +1003,7 @@ class ZEPHYR(OSBase):
     def k_sem_reset(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_sem_reset", "KernelSemaphore")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_sem_reset", "KernelSemaphore")
         return state
 
     # unsigned int k_sem_count_get(struct k_sem *sem)
@@ -997,7 +1012,7 @@ class ZEPHYR(OSBase):
     def k_sem_count_get(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_sem_count_get", "KernelSemaphore")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_sem_count_get", "KernelSemaphore")
         return state
 
     # int sys_sem_take(struct sys_sem *sem, k_timeout_t timeout)
@@ -1007,7 +1022,7 @@ class ZEPHYR(OSBase):
     def sys_sem_take(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "sys_sem_take", "UserSemaphore")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "sys_sem_take", "UserSemaphore")
         return state
 
     # int sys_sem_give(struct sys_sem *sem)
@@ -1016,7 +1031,7 @@ class ZEPHYR(OSBase):
     def sys_sem_give(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "sys_sem_give", "UserSemaphore")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "sys_sem_give", "UserSemaphore")
         return state
 
     # unsigned int sys_sem_count_get(struct sys_sem *sem)
@@ -1025,7 +1040,7 @@ class ZEPHYR(OSBase):
     def sys_sem_count_get(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "sys_sem_count_get", "UserSemaphore")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "sys_sem_count_get", "UserSemaphore")
         return state
 
     #
@@ -1040,7 +1055,7 @@ class ZEPHYR(OSBase):
     def k_mutex_lock(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_mutex_lock", "Mutex")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_mutex_lock", "Mutex")
         return state
 
     # int k_mutex_unlock(struct k_mutex *mutex)
@@ -1050,7 +1065,7 @@ class ZEPHYR(OSBase):
     def k_mutex_unlock(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_mutex_unlock", "Mutex")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_mutex_unlock", "Mutex")
         return state
 
     #
@@ -1063,7 +1078,7 @@ class ZEPHYR(OSBase):
     def k_queue_cancel_wait(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_queue_cancel_wait", "Queue")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_queue_cancel_wait", "Queue")
         return state
 
     # void k_queue_append(struct k_queue *queue, void *data)
@@ -1073,7 +1088,7 @@ class ZEPHYR(OSBase):
     def k_queue_append(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_queue_append", "Queue")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_queue_append", "Queue")
         return state
 
     # int32_t k_queue_alloc_append(struct k_queue *queue, void *data)
@@ -1083,7 +1098,7 @@ class ZEPHYR(OSBase):
     def k_queue_alloc_append(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_queue_alloc_append", "Queue")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_queue_alloc_append", "Queue")
         return state
 
     # void k_queue_prepend(struct k_queue *queue, void *data)
@@ -1093,7 +1108,7 @@ class ZEPHYR(OSBase):
     def k_queue_prepend(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_queue_prepend", "Queue")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_queue_prepend", "Queue")
         return state
 
     # void k_queue_alloc_prepend(struct k_queue *queue, void *data)
@@ -1103,7 +1118,7 @@ class ZEPHYR(OSBase):
     def k_queue_alloc_prepend(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_queue_alloc_prepend", "Queue")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_queue_alloc_prepend", "Queue")
         return state
 
     # void k_queue_insert(struct k_queue *queue, void *prev, void *data)
@@ -1114,7 +1129,7 @@ class ZEPHYR(OSBase):
     def k_queue_insert(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_queue_insert", "Queue")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_queue_insert", "Queue")
         return state
 
     # int k_queue_append_list(struct k_queue *queue, void *head, void *tail)
@@ -1125,7 +1140,7 @@ class ZEPHYR(OSBase):
     def k_queue_append_list(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_queue_append_list", "Queue")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_queue_append_list", "Queue")
         return state
 
     # int k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list)
@@ -1135,7 +1150,7 @@ class ZEPHYR(OSBase):
     def k_queue_merge_slist(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_queue_merge_list", "Queue")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_queue_merge_list", "Queue")
         return state
 
     # void *k_queue_get(struct k_queue *queue, k_timeout_t timeout)
@@ -1145,7 +1160,7 @@ class ZEPHYR(OSBase):
     def k_queue_get(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_queue_get", "Queue")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_queue_get", "Queue")
         return state
 
     # bool k_queue_remove(struct k_queue *queue, void *data)
@@ -1155,7 +1170,7 @@ class ZEPHYR(OSBase):
     def k_queue_remove(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_queue_remove", "Queue")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_queue_remove", "Queue")
         return state
 
     # bool k_queue_unique_append(struct k_queue *queue, void *data)
@@ -1165,7 +1180,7 @@ class ZEPHYR(OSBase):
     def k_queue_unique_append(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_queue_unique_append", "Queue")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_queue_unique_append", "Queue")
         return state
 
     # int k_queue_is_empty(struct k_queue *queue)
@@ -1174,7 +1189,7 @@ class ZEPHYR(OSBase):
     def k_queue_is_empty(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_queue_is_empty", "Queue")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_queue_is_empty", "Queue")
         return state
 
     # void *k_queue_peek_head(struct k_queue *queue)
@@ -1183,7 +1198,7 @@ class ZEPHYR(OSBase):
     def k_queue_peek_head(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_queue_peek_head", "Queue")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_queue_peek_head", "Queue")
         return state
 
     # void *k_queue_peek_tail(struct k_queue *queue)
@@ -1192,7 +1207,7 @@ class ZEPHYR(OSBase):
     def k_queue_peek_tail(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_queue_peek_tail", "Queue")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_queue_peek_tail", "Queue")
         return state
 
     #
@@ -1206,7 +1221,7 @@ class ZEPHYR(OSBase):
     def k_stack_cleanup(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_stack_cleanup", "Stack")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_stack_cleanup", "Stack")
         return state
 
     # int k_stack_push(struct k_stack *stack, stack_data_t data)
@@ -1216,7 +1231,7 @@ class ZEPHYR(OSBase):
     def k_stack_push(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_stack_push", "Stack")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_stack_push", "Stack")
         return state
 
     # int k_stack_pop(struct k_stack *stack, stack_data_t *data, k_timeout_t timeout)
@@ -1227,7 +1242,7 @@ class ZEPHYR(OSBase):
     def k_stack_pop(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_stack_pop", "Stack")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_stack_pop", "Stack")
         return state
 
     #
@@ -1241,7 +1256,7 @@ class ZEPHYR(OSBase):
     def k_pipe_cleanup(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_pipe_cleanup", "Pipe")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_pipe_cleanup", "Pipe")
         return state
 
     # int k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write, size_t *bytes_written,
@@ -1256,7 +1271,7 @@ class ZEPHYR(OSBase):
     def k_pipe_put(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_pipe_put", "Pipe")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_pipe_put", "Pipe")
         return state
 
     # int k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read, size_t *bytes_read,
@@ -1271,13 +1286,13 @@ class ZEPHYR(OSBase):
     def k_pipe_get(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_pipe_get", "Pipe")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_pipe_get", "Pipe")
         return state
 
     # void k_pipe_block_put(struct k_pipe *pipe, struct k_mem_block *block, size_t size, struct
     # k_sem *sem)
     @syscall(categories={SyscallCategory.comm},
-             signature=(Arg("symbol", hint=SigType.instance, ty=Pipe), 
+             signature=(Arg("symbol", hint=SigType.instance, ty=Pipe),
                         Arg("item", hint=SigType.value),
                         Arg("item_size", hint=SigType.value),
                         Arg("sem", hint=SigType.instance, ty=KernelSemaphore))) # TODO: why was sem index 4 instead of the correct 3 ? (Check this)
@@ -1286,12 +1301,12 @@ class ZEPHYR(OSBase):
         # calls give() on sem (which is OPTIONAL).
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_pipe_block_put", "Pipe")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_pipe_block_put", "Pipe")
         # For now just add a k_sem_give from the thread to the given semaphore, if present.
         # This should work, because sem has to be created externally
-        
+
         if isinstance(args.sem, ZephyrInstance):
-            ZEPHYR.add_instance_comm(state, cpu_id, args.sem, "k_sem_give", "KernelSemaphore")
+            Zephyr.add_instance_comm(state, cpu_id, args.sem, "k_sem_give", "KernelSemaphore")
 
         return state
 
@@ -1301,7 +1316,7 @@ class ZEPHYR(OSBase):
     def k_pipe_read_avail(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_pipe_read_avail", "Pipe")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_pipe_read_avail", "Pipe")
         return state
 
     # size_t k_pipe_write_avail(struct k_pipe *pipe)
@@ -1310,7 +1325,7 @@ class ZEPHYR(OSBase):
     def k_pipe_write_avail(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_pipe_write_avail", "Pipe")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_pipe_write_avail", "Pipe")
         return state
 
     # void *k_heap_alloc(struct k_heap *h, size_t bytes, k_timeout_t timeout)
@@ -1321,7 +1336,7 @@ class ZEPHYR(OSBase):
     def k_heap_alloc(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_heap_alloc", "Heap")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_heap_alloc", "Heap")
         return state
 
     # void k_heap_free(struct k_heap *h, void *mem)
@@ -1331,7 +1346,7 @@ class ZEPHYR(OSBase):
     def k_heap_free(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_heap_free", "Heap")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_heap_free", "Heap")
         return state
 
     # void *k_malloc(size_t size)
@@ -1340,7 +1355,7 @@ class ZEPHYR(OSBase):
     def k_malloc(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_kernel_comm(state, cpu_id, "k_malloc")
+        Zephyr.add_kernel_comm(state, cpu_id, "k_malloc")
         return state
 
     # void k_free(void *ptr)
@@ -1349,7 +1364,7 @@ class ZEPHYR(OSBase):
     def k_free(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_kernel_comm(state, cpu_id, "k_free")
+        Zephyr.add_kernel_comm(state, cpu_id, "k_free")
         return state
 
     # void *k_calloc(size_t nmemb, size_t size)
@@ -1359,7 +1374,7 @@ class ZEPHYR(OSBase):
     def k_calloc(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_kernel_comm(state, cpu_id, "k_calloc")
+        Zephyr.add_kernel_comm(state, cpu_id, "k_calloc")
         return state
 
     # int k_msgq_cleanup(struct k_msgq *msgq)
@@ -1368,7 +1383,7 @@ class ZEPHYR(OSBase):
     def k_msgq_cleanup(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_msgq_cleanup", "MSGQ")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_msgq_cleanup", "MSGQ")
         return state
 
     # int k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t timeout)
@@ -1379,7 +1394,7 @@ class ZEPHYR(OSBase):
     def k_msgq_put(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_msgq_put", "MSGQ")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_msgq_put", "MSGQ")
         return state
 
     # int k_msgq_get(struct k_msgq *msgq, void *data, k_timeout_t timeout)
@@ -1390,7 +1405,7 @@ class ZEPHYR(OSBase):
     def k_msgq_get(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_msgq_get", "MSGQ")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_msgq_get", "MSGQ")
         return state
 
     # int k_msgq_peek(struct k_msgq *msgq, void *data)
@@ -1400,7 +1415,7 @@ class ZEPHYR(OSBase):
     def k_msgq_peek(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_msgq_peek", "MSGQ")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_msgq_peek", "MSGQ")
         return state
 
     # void k_msgq_purge(struct k_msgq *msgq)
@@ -1409,7 +1424,7 @@ class ZEPHYR(OSBase):
     def k_msgq_purge(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_msgq_purge", "MSGQ")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_msgq_purge", "MSGQ")
         return state
 
     # uint32_t k_msgq_num_free_get(struct k_msgq *msgq)
@@ -1418,7 +1433,7 @@ class ZEPHYR(OSBase):
     def k_msgq_num_free_get(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_msgq_num_free_get", "MSGQ")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_msgq_num_free_get", "MSGQ")
         return state
 
     # void k_msgq_get_attrs(struct k_msgq *msgq, struct k_msgq_attrs *attrs)
@@ -1428,7 +1443,7 @@ class ZEPHYR(OSBase):
     def k_msgq_get_attrs(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_msgq_get_attrs", "MSGQ")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_msgq_get_attrs", "MSGQ")
         return state
 
 
@@ -1438,7 +1453,7 @@ class ZEPHYR(OSBase):
     def k_msgq_num_used_get(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ZEPHYR.add_instance_comm(state, cpu_id, args.symbol, "k_msgq_num_used_get", "MSGQ")
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_msgq_num_used_get", "MSGQ")
         return state
 
     # ...

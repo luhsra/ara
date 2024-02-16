@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-# SPDX-FileCopyrightText: 2022 Jan Neugebauer
 # SPDX-FileCopyrightText: 2023 Jan Neugebauer
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
@@ -8,6 +7,7 @@
 from init_test import fail_if_json_not_equal, init_test
 from common_json_graphs import json_callgraph
 import sys
+
 
 def test_remove_sysfunc_step(drop_llvm_suffix: bool, os_name: str):
     """Test the RemoveSysfuncBody step."""
@@ -26,16 +26,18 @@ def test_remove_sysfunc_step(drop_llvm_suffix: bool, os_name: str):
 
     fail_if_json_not_equal(data, call_edges)
 
+
 def str_to_bool(string: str):
     return string.lower() in ["true", "1", "y", "yes"]
 
+
 def main():
     """Test the RemoveSysfuncBody step.
-    
+
     arguments: remove_sysfunc_body.py <expected json> testdata/remove_sysfunc_body_test.ll <drop_llvm_suffix> <OS>(optional)
 
     <drop_llvm_suffix> := Boolean (True/False). Sets the option drop_llvm_suffix for RemoveSysfuncBody.
-    <OS> := Set this argument to the name of the used os model (e.g. FreeRTOS, ZEPHYR, POSIX).
+    <OS> := Set this argument to the name of the used os model (e.g. FreeRTOS, Zephyr, POSIX).
             Do not provide this argument to use auto model detection.
     """
     test_remove_sysfunc_step(drop_llvm_suffix=str_to_bool(sys.argv[3]) if len(sys.argv) > 3 else False,

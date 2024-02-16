@@ -13,7 +13,7 @@ import sys
 
 def json_instance_graph(instances, edge_type_class: IntEnum):
     """Instance Graph -> JSON Instance Graph
-    
+
     Arguments:
     instances:          instance graph
     edge_type_class:    Enum that contains all edge types.
@@ -34,7 +34,7 @@ def json_instance_graph(instances, edge_type_class: IntEnum):
         for name, prop in instances.vp.items():
             val = prop[instance_v]
             if name == 'file':
-                if not val == 'N/A' and not val == '' and not val == ' ': 
+                if not val == 'N/A' and not val == '' and not val == ' ':
                     val = os.path.relpath(val, start=script_dir)
             if name == 'llvm_soc':
                 # wild pointer, skip this
@@ -64,7 +64,7 @@ def json_instance_graph(instances, edge_type_class: IntEnum):
             else:
                 i_dump[attr] = f"<Object: {val.__class__.__name__}>"
         dump.append(i_dump)
-    
+
     # Interactions
     for edge in instances.edges():
         i_dump = {
@@ -99,13 +99,13 @@ def path_next_to_self_file(file):
 
 def main():
     """Backend to test the Instance Graph of the implementation with a LLVM IR file.
-    
+
     arguments: instance_graph.py <expected json graph> <LLVM IR file> <OS>(optional) <step setting file>(optional)
 
-    <OS> := Set this argument to the name of the used os model (e.g. FreeRTOS, ZEPHYR, POSIX).
+    <OS> := Set this argument to the name of the used os model (e.g. FreeRTOS, Zephyr, POSIX).
     Write '-' if you do not want to set this argument.
 
-    This script accepts an extra shell argument to set the ARA step settings. 
+    This script accepts an extra shell argument to set the ARA step settings.
     If this argument is not set, it will default to the default of the used OS model.
 
     If the JSON file (sys.argv[1]) is not existing, this script will auto generate it with the provided LLVM IR.
@@ -124,18 +124,18 @@ def main():
     DEFAULT_SETTING_FILE = "default_instance_graph_config.json"
     DEFAULT_SETTING_FILE_OS = {
         "POSIX": "posix_default.json",
-        "ZEPHYR": "zephyr_default.json",
+        "Zephyr": "zephyr_default.json",
     }
     os_name = sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] != '-' else None
     setting_file = sys.argv[4] if len(sys.argv) > 4 else path_next_to_self_file(DEFAULT_SETTING_FILE_OS.get(os_name) if os_name in DEFAULT_SETTING_FILE_OS else DEFAULT_SETTING_FILE)
     with open(setting_file, "r") as f:
         config = json.load(f)
-    
+
     data = init_test(extra_config=config, extra_input=None, os_name=os_name)
     m_graph = data.graph
     data = data.data
     dump = json_instance_graph(m_graph.instances, m_graph.os.EdgeType if hasattr(m_graph.os, "EdgeType") else None)
-    
+
     if self_is_testcase:
         fail_if_json_not_equal(data, dump)
     else:
