@@ -136,6 +136,7 @@ foreach app : ir_apps + hw_apps
                             input : [app + '.cc'],
                             output : ['freertos-' + app + '.ll'],
                             depfile : 'freertos-' + app + '.ll.dep',
+                            depends: freertos_default_config_fixed,
                             command : clang_cpp +
                                       app_flags +
                                       libs_includes +
