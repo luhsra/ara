@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
+// SPDX-FileCopyrightText: 2024 Gerion Entrup <entrup@sra.uni-hannover.de>
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -60,12 +60,7 @@ namespace ara::step {
 			}
 			syscall_itself = false;
 		}
-		// we also need to trigger the SIA for every func_name, but only _after_ all ISRs are registered. However, step
-		// chaining works backwards
-		for (auto& func_name : isrs) {
-			llvm::json::Value sia_conf(llvm::json::Object{{"name", "SIA"}, {"entry_point", func_name}});
-			step_manager.chain_step(sia_conf);
-		}
+		// We need to register all ISRs. This is easier in Python
 		for (auto& func_name : isrs) {
 			llvm::json::Value create_isr_conf(llvm::json::Object{{"name", "CreateISR"}, {"entry_point", func_name}});
 			step_manager.chain_step(create_isr_conf);

@@ -304,15 +304,6 @@ class OSCreator(type):
         return x
 
 
-class NotOSHandledInterrupts(Exception):
-    """Interrupts are not handled by the OS.
-
-    Interrupts instead can be found with special syscalls that are called from
-    an ISR context (syscall.isr_call == True).
-    """
-    pass
-
-
 class OSBase(metaclass=OSCreator):
     # specify possible edge types for the InstanceGraph
     EdgeType = None

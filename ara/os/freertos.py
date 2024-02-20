@@ -9,7 +9,7 @@
 from .os_util import (syscall, assign_id, set_next_abb, find_return_value, Arg,
                       UnknownArgument, connect_from_here, find_instance_node)
 from .os_base import (OSBase, ControlInstance, CPUList, CPU, OSState,
-                      ExecState, NotOSHandledInterrupts, MultipleAssignedHandler)
+                      ExecState, MultipleAssignedHandler)
 
 import pyllco
 import html
@@ -292,7 +292,7 @@ class StreamBuffer(FreeRTOSInstance):
 class FreeRTOS(OSBase):
     @staticmethod
     def get_special_steps():
-        return OSBase.get_special_steps() + ["LoadFreeRTOSConfig"]
+        return OSBase.get_special_steps() + ["LoadFreeRTOSConfig", "ISRSearch"]
 
     @staticmethod
     def has_dynamic_instances():
@@ -333,14 +333,6 @@ class FreeRTOS(OSBase):
         assign_id(instances, v)
 
         logger.info("Create new ISR %s", isr_name)
-
-    @staticmethod
-    def get_interrupts(instances, cfg=None):
-        assert cfg is None, "Not implemented, yet."
-        isrs = [x[1].name for x in instances.get(ISR)]
-        if len(isrs) == 0:
-            raise NotOSHandledInterrupts()
-        return isrs
 
     @staticmethod
     def get_initial_state(cfg, instances):
