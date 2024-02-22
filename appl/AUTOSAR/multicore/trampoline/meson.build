@@ -1,6 +1,6 @@
 name_prefix_trampoline = 'autosar_multicore_trampoline_'
-clang_base = libplatform_proj.get_variable('clang_base')
-cxx_std = libplatform_proj.get_variable('cxx_std')
+clang_base = toolchains.get_variable('clang_base')
+cxx_std = toolchains.get_variable('cxx_std')
 tramp_clang = generator(clang,
                         output : '@BASENAME@.ll',
                         depfile : '@BASENAME@.ll.dep',

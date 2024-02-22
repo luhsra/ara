@@ -4,12 +4,12 @@ libs_targets = []
 
 libplatform_proj = subproject('ara-libplatforms')
 
-clang_c = libplatform_proj.get_variable('clang_c')
-clang_cpp = libplatform_proj.get_variable('clang_cpp')
+clang_c = toolchains.get_variable('clang_c_cmd')
+clang_cpp = toolchains.get_variable('clang_cpp_cmd')
 obj_flags = libplatform_proj.get_variable('obj_flags')
 clang_flags = libplatform_proj.get_variable('clang_flags')
 ld_flags = libplatform_proj.get_variable('ld_flags')
-ir_flags = libplatform_proj.get_variable('ir_flags')
+ir_flags = toolchains.get_variable('ir_flags')
 
 if arm_enabled
   # TODO: arm_clang_flags -> freertos_stm32_clang_flags
