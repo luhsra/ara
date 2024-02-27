@@ -1,140 +1,59 @@
-stages:
-  - prepare
-  - build
-  - test
-  - cleanup
-
-variables:
-  PERSISTENT_DIR: '/home/gitlab-runner/dont_backup/ara-build$CI_PIPELINE_ID'
-  WRAP_BUILD: '$PERSISTENT_DIR/build'
-  WRAP_SUBPROJECTS: '$PERSISTENT_DIR/subprojects'
-  C_SOURCE: '/tmp/ara'
-  C_BUILD: '/tmp/ara-build'
-  BWRAP: 'bwrap --bind / / --dev-bind /dev /dev --bind . $C_SOURCE --bind $WRAP_SUBPROJECTS $C_SOURCE/subprojects --chdir $C_SOURCE'
-
-prepare:
-  stage: prepare
-  tags: ["sra.labor"]
-  only: [soso, citest]
+.git_config:
   script:
-    - echo "persistent dir = $PERSISTENT_DIR"
-    - mkdir -p "$WRAP_SUBPROJECTS"
-    - mkdir -p "$WRAP_BUILD"
-    - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/".insteadOf "https://${CI_SERVER_HOST}/"
-    - eval $BWRAP -- git clone --depth 1 -b main      https://scm.sra.uni-hannover.de/research/parrot-projects/toolchains subprojects/toolchains
-    - eval $BWRAP -- git clone --depth 1 -b main      https://scm.sra.uni-hannover.de/research/ara-libsra subprojects/ara-libsra
-    - eval $BWRAP -- git clone --depth 1 -b ara       https://scm.sra.uni-hannover.de/research/freertos subprojects/freertos
-    - eval $BWRAP -- git clone --depth 1 -b main      https://scm.sra.uni-hannover.de/research/ara-libplatforms subprojects/ara-libplatforms
-    - eval $BWRAP -- git clone --depth 1 -b value2vfg https://github.com/luhsra/SVF subprojects/svf
-    - eval $BWRAP -- git clone --depth 1 -b main      https://github.com/luhsra/pyllco.git subprojects/pyllco
-    - eval $BWRAP -- git clone --depth 1 -b master    https://scm.sra.uni-hannover.de/published/ara-link.git subprojects/ara-link
-    - eval $BWRAP -- git clone --depth 1 -b master    https://scm.sra.uni-hannover.de/published/SparseData.git subprojects/sparsedata
-    - sync
+  - export GIT_CONFIG_GLOBAL=$PWD/ci_gitconfig
+  - git config --global --add url."https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/".insteadOf "ssh://git@scm.sra.uni-hannover.de"
+  - git config --global --add url."https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/".insteadOf "https://scm.sra.uni-hannover.de"
 
 build-gcc-no-pch:
-  stage: build
-  needs: ["prepare"]
-  tags: ["sra.labor"]
+  tags: ["sra.labor", "Debian-12"]
   only: [soso, citest]
   interruptible: true
   variables:
-    BUILD_DIR: '$PERSISTENT_DIR/build-gcc-no-pch'
+    BUILD_DIR: './build-gcc-no-pch'
   script:
-    - CC=gcc CXX=g++ eval $BWRAP -- meson setup --native-file $C_SOURCE/native-lab.txt -Db_pch=false $BUILD_DIR $C_SOURCE
-    - eval $BWRAP meson compile -C $BUILD_DIR ara-py
+    - !reference [.git_config, script]
+    - CC=gcc CXX=g++ meson setup --native-file native-lab.txt $BUILD_DIR -Db_pch=false
+    - meson compile -C $BUILD_DIR ara-py
 
 build-clang-no-pch:
-  stage: build
-  needs: ["prepare"]
-  tags: ["sra.labor"]
+  tags: ["sra.labor", "Debian-12"]
   only: [soso, citest]
   interruptible: true
   variables:
-    BUILD_DIR: '$PERSISTENT_DIR/build-clang-no-pch'
+    BUILD_DIR: './build-clang-no-pch'
   script:
-    - CC=clang CXX=clang++ eval $BWRAP -- meson setup --native-file $C_SOURCE/native-lab.txt -Db_pch=false $BUILD_DIR $C_SOURCE
-    - eval $BWRAP -- meson compile -C $BUILD_DIR ara-py
+    - !reference [.git_config, script]
+    - CC=clang CXX=clang++ meson setup --native-file native-lab.txt $BUILD_DIR -Db_pch=false
+    - meson compile -C $BUILD_DIR ara-py
 
 build-gcc:
-  stage: build
-  needs: ["prepare"]
-  tags: ["sra.labor"]
+  tags: ["sra.labor", "Debian-12"]
   only: [soso, citest]
   interruptible: true
+  variables:
+    BUILD_DIR: './build-gcc'
   script:
-    - echo "Building with gcc"
-    - CC=gcc CXX=g++ eval $BWRAP --bind $WRAP_BUILD $C_BUILD -- meson setup --native-file $C_SOURCE/native-lab.txt -Db_pch=true $C_BUILD $C_SOURCE
-    - eval $BWRAP --bind $WRAP_BUILD $C_BUILD -- meson compile -C $C_BUILD ara-py
-    - sync
+    - !reference [.git_config, script]
+    - CC=gcc CXX=g++ meson setup --native-file native-lab.txt $BUILD_DIR -Db_pch=true -D execute_ara=true -D enable_arm=enabled -D toolchains:arm_cxx_dir=$(ls -d1 /usr/include/newlib/c++/* | head -n1)
+    - meson compile -C $BUILD_DIR |& tee $BUILD_DIR/build.log
+
+    - meson test -C $BUILD_DIR --suite ara-link
+    - meson test -C $BUILD_DIR --suite preproc
+    - meson test -C $BUILD_DIR --suite sse
+    - meson test -C $BUILD_DIR --suite sia
+  artifacts:
+    when: always
+    paths:
+    - $BUILD_DIR/meson-logs/testlog.txt
+    - $BUILD_DIR/build.log
 
 build-clang:
-  stage: build
-  needs: ["prepare"]
-  tags: ["sra.labor"]
+  tags: ["sra.labor", "Debian-12"]
   only: [soso, citest]
   interruptible: true
   variables:
-    BUILD_DIR: '$PERSISTENT_DIR/build-clang'
+    BUILD_DIR: './build-clang'
   script:
-    - CC=clang CXX=clang++ eval $BWRAP -- meson setup --native-file $C_SOURCE/native-lab.txt -Db_pch=true $BUILD_DIR $C_SOURCE
-    - eval $BWRAP -- meson compile -C $BUILD_DIR ara-py
-
-test-preproc:
-  stage: test
-  needs: ["build-gcc"]
-  tags: ["sra.labor"]
-  only: [soso, citest]
-  interruptible: true
-  variables:
-    TEST_BUILD: '$PERSISTENT_DIR/build-preproc-tests'
-  script:
-    - echo "Make a copy of the build directory (from $WRAP_BUILD to $TEST_BUILD)"
-    - cp -rl $WRAP_BUILD/ara $TEST_BUILD/
-    - cp -rl $WRAP_BUILD/subprojects $TEST_BUILD/
-    - cp -an $WRAP_BUILD/. $TEST_BUILD
-    - echo "Run tests"
-    - eval $BWRAP --bind $TEST_BUILD $C_BUILD -- meson test -C $C_BUILD -v --suite ara-link
-    - eval $BWRAP --bind $TEST_BUILD $C_BUILD -- meson test -C $C_BUILD -v --suite preproc
-
-test-sia:
-  stage: test
-  needs: ["build-gcc"]
-  tags: ["sra.labor"]
-  only: [soso, citest]
-  interruptible: true
-  variables:
-    TEST_BUILD: '$PERSISTENT_DIR/build-sia-tests'
-  script:
-    - echo "Make a copy of the build directory (from $WRAP_BUILD to $TEST_BUILD)"
-    - cp -rl $WRAP_BUILD/ara $TEST_BUILD/
-    - cp -rl $WRAP_BUILD/subprojects $TEST_BUILD/
-    - cp -an $WRAP_BUILD/. $TEST_BUILD
-    - echo "Run tests"
-    - eval $BWRAP --bind $TEST_BUILD $C_BUILD -- meson test -C $C_BUILD --suite sia
-
-test-sse:
-  stage: test
-  needs: ["build-gcc"]
-  tags: ["sra.labor"]
-  only: [soso, citest]
-  interruptible: true
-  variables:
-    TEST_BUILD: '$PERSISTENT_DIR/build-sse-tests'
-  script:
-    - echo "Make a copy of the build directory (from $WRAP_BUILD to $TEST_BUILD)"
-    - cp -rl $WRAP_BUILD/ara $TEST_BUILD/
-    - cp -rl $WRAP_BUILD/subprojects $TEST_BUILD/
-    - cp -an $WRAP_BUILD/. $TEST_BUILD
-    - echo "Run tests"
-    - eval $BWRAP --bind $TEST_BUILD $C_BUILD -- meson test -C $C_BUILD --suite sse
-
-cleanup:
-  stage: cleanup
-  needs: ["prepare", "build-gcc", "build-clang", "build-clang-no-pch", "build-gcc-no-pch", "test-preproc", 'test-sia', 'test-sse']
-  tags: ["sra.labor"]
-  only: [soso, citest]
-  when: always
-  script:
-    - echo "Cleanup Files in $PERSISTENT_DIR"
-    - rm -rf "$PERSISTENT_DIR"
-    - sync
+    - !reference [.git_config, script]
+    - CC=clang CXX=clang++ meson setup --native-file native-lab.txt $BUILD_DIR -Db_pch=true
+    - meson compile -C $BUILD_DIR ara-py
