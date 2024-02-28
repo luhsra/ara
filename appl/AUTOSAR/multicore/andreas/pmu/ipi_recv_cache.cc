@@ -1,5 +1,5 @@
 #include "autosar/os.h"
-#include "pmu.h"
+#include "perf.h"
 #include "test/test.h"
 
 DeclareTask(T00);
@@ -31,13 +31,13 @@ void cache_test() {
 		load = * (unsigned char*) i;
 	}
 
-	arch::PMU::trace_counter0();
+	arch::Perf::trace_counter0();
 }
 
 TASK(T00) {
 	test_trace('0');
-	arch::PMU::start();
-	arch::PMU::trace_counter0();
+	arch::Perf::start();
+	arch::Perf::trace_counter0();
 	for ( int i = 0; i < 8; i++)
 		cache_test();
 
@@ -52,8 +52,8 @@ TASK(T01) {
 	for ( int i = 0; i < 8; i++)
 		cache_test();
 
-	arch::PMU::stop();
-	arch::PMU::print_counter0();
+	arch::Perf::stop();
+	arch::Perf::print_counter0();
 	test_trace('1');
 	test_trace_assert("01");
 	test_finish();

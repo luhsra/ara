@@ -12,8 +12,8 @@
 #include "test/test.h"
 #include "machine.h"
 
-#define PMU_TRACE_C
-#include "pmu.h"
+#include "perf.h"
+extern "C" const int PERF_TRACE = arch::Perf::trace::NONE;
 
 typedef struct {int a;} result;
 
@@ -53,8 +53,8 @@ TEST_MAKE_OS_MAIN( start() )
  * CPU0
  */
 TASK(T01) {
-	arch::PMU::start();
-	//arch::PMU::trace_cycles();
+	arch::Perf::start();
+	//arch::Perf::trace_cycles();
 	//test_trace('6');
 	ara_timing_info(20, 25);
 	GetSpinlock(S1);
@@ -65,18 +65,18 @@ TASK(T01) {
 
 	//test_trace_assert("123456");
 	//test_finish();
-	//arch::PMU::trace_cycles();
-	arch::PMU::print_cycles();
+	//arch::Perf::trace_cycles();
+	arch::Perf::print_cycles();
 
 	ShutdownMachine();
 }
 
 TASK(T02) {
-	arch::PMU::start();
+	arch::Perf::start();
 	//test_trace('3');
-	arch::PMU::trace_cycles();
+	arch::Perf::trace_cycles();
 	ara_timing_info(60, 80);
-	arch::PMU::trace_cycles();
+	arch::Perf::trace_cycles();
 	//test_trace('5');
 	/* ... some computation ... */
 	TerminateTask();
@@ -89,33 +89,33 @@ TASK(T02) {
 
 TASK(T11) {
 	//test_trace('1');
-	arch::PMU::start();
+	arch::Perf::start();
 	// heat up measurement caching
 	ara_timing_info(1, 1);
-	//arch::PMU::trace_cycles();
-	arch::PMU::reset_counters();
-	arch::PMU::reset();
+	//arch::Perf::trace_cycles();
+	arch::Perf::reset_counters();
+	arch::Perf::reset();
 
-	//arch::PMU::trace_cycles(); // T11 start
+	//arch::Perf::trace_cycles(); // T11 start
 	ara_timing_info(1, 2);		//
 	/* ... some computation ... */
 	GetSpinlock(S1);
-	//arch::PMU::trace_cycles(); // ABB9+10
+	//arch::Perf::trace_cycles(); // ABB9+10
 	ara_timing_info(8, 16);		//
 	/* ... */
 	ReleaseSpinlock(S1);
-	//arch::PMU::trace_cycles(); // ABB11+12
+	//arch::Perf::trace_cycles(); // ABB11+12
 	ara_timing_info(1, 3);
 	//test_trace('2');
 	ActivateTask(T02);
-	//arch::PMU::trace_cycles(); // ABB13+14
+	//arch::Perf::trace_cycles(); // ABB13+14
 	ara_timing_info(10, 20);	// 
 	//test_trace('4');
 	ActivateTask(T01);
-	//arch::PMU::trace_cycles(); // ABB15+16
+	//arch::Perf::trace_cycles(); // ABB15+16
 	ara_timing_info(20, 30);	// 
 	ActivateTask(T21);
-	//arch::PMU::trace_cycles(); // ABB17+18
+	//arch::Perf::trace_cycles(); // ABB17+18
 	ara_timing_info(3, 4);
 
 	TerminateTask();
@@ -125,7 +125,7 @@ TASK(T11) {
  * CPU 2
  */
 TASK(T21) {
-	arch::PMU::start();
+	arch::Perf::start();
 	ara_timing_info(5, 9);
 	/* ... some computation ... */
 	GetSpinlock(S1);

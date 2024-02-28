@@ -12,7 +12,7 @@ from ara.graph import ABBType
 from ara.steps import get_native_component
 from enum import Enum
  
-class TracePMU(Enum):
+class TracePerf(Enum):
     NONE = 0
     SYSCALL = 1
     IRQ = 2
@@ -38,12 +38,12 @@ class ArmArch(GenericArch):
         self.call(kickoff, "Machine::switch_mode", "void", ["Machine::USER"])
         self.generator.source_file.function_manager.add(kickoff)
 
-        self.generator.source_file.include("pmu.h")
+        self.generator.source_file.include("perf.h")
 
-        if self.PMU_TRACE == TracePMU.IRQ:
+        if self.PERF_TRACE == TracePerf.IRQ:
             ASTSchedule = self.generator.source_file.function_manager.get("__OS_ASTSchedule")
             if ASTSchedule != None:
-                self.call(ASTSchedule, "arch::PMU::trace_cycles", prepend=True)
+                self.call(ASTSchedule, "arch::Perf::trace_cycles", prepend=True)
 
     # config-constraint-: (arch.self == posix) -> !arch.mpu
     def generate_linkerscript(self):
@@ -61,12 +61,12 @@ class ArmArch(GenericArch):
 
     def generate_system_code(self):
         # tracing for PMU
-        self.PMU_TRACE = TracePMU.NONE
+        self.PERF_TRACE = TracePerf.NONE
         ValueAnalyzer = get_native_component("ValueAnalyzer")
         va = ValueAnalyzer(self.ara_graph)
-        pmu_trace_global = va.find_global("PMU_TRACE")
-        if pmu_trace_global is not None:
-            self.PMU_TRACE = TracePMU(pmu_trace_global.get_initializer().get())
+        PERF_TRACE_global = va.find_global("PERF_TRACE")
+        if PERF_TRACE_global is not None:
+            self.PERF_TRACE = TracePerf(PERF_TRACE_global.get_initializer().get())
 
     def generate_dataobjects_task_stacks(self):
         """Generate the stacks for the tasks, including the task pointers"""
@@ -220,10 +220,10 @@ class ArmArch(GenericArch):
         kernelspace = self.generate_kernelspace__syscall(
             userspace, abb, arguments)
 
-        if self.PMU_TRACE == TracePMU.SYSCALL:
-            self.call(kernelspace.pre_hook, "arch::PMU::trace_cycles")
-            self.call(kernelspace.system, "arch::PMU::trace_cycles")
-            self.call(kernelspace.post_hook, "arch::PMU::trace_cycles")
+        if self.PERF_TRACE == TracePerf.SYSCALL:
+            self.call(kernelspace.pre_hook, "arch::Perf::trace_cycles")
+            self.call(kernelspace.system, "arch::Perf::trace_cycles")
+            self.call(kernelspace.post_hook, "arch::Perf::trace_cycles")
 
 
         if userspace.is_isr == False:

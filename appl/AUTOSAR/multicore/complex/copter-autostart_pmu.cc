@@ -11,7 +11,7 @@
 #include "autosar/os.h"
 #include "test/test.h"
 #include "machine.h"
-#include "pmu.h"
+#include "perf.h"
 
 void ara_timing_info(int, int);
 
@@ -61,7 +61,7 @@ TASK(ControlTask) {
 TASK(SignalGatherInitiateTask) {
 
 	kout << "SGT" << endl;
-	arch::PMU::trace_cycles();
+	arch::Perf::trace_cycles();
 
 	ara_timing_info(1, 2);
 	if (round == 9) {
@@ -122,7 +122,7 @@ TASK(SignalGatherTimeoutTask) {
 	test_trace(0x22);
 	ReleaseSpinlock(SPIBusLock);
 
-	arch::PMU::trace_cycles();
+	arch::Perf::trace_cycles();
 	kout << "SGT" << endl;
 	ara_timing_info(1, 2);
 	ReleaseResource(SPIBus);
@@ -178,7 +178,7 @@ TASK(FlightControlActuateTask) {
 
 TASK(MavlinkSendTask) {
 	kout << "MLS" << endl;
-	arch::PMU::trace_cycles();
+	arch::Perf::trace_cycles();
 	ara_timing_info(15, 27);
 	test_trace(0x81);
 	GetResource(SPIBus1);
@@ -192,9 +192,9 @@ TASK(MavlinkSendTask) {
 	ReleaseResource(SPIBus1);
 	ara_timing_info(2, 3);
 	test_trace(0x83);
-	arch::PMU::trace_cycles();
+	arch::Perf::trace_cycles();
 	kout << "MLS" << endl;
-	arch::PMU::print_cycles();
+	arch::Perf::print_cycles();
 
 	ShutdownAllCores(E_OK);
 

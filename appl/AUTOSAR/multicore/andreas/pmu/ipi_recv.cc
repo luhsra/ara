@@ -1,12 +1,12 @@
 #include "autosar/os.h"
-#include "pmu.h"
+#include "perf.h"
 #include "test/test.h"
 
 DeclareTask(T00);
 DeclareTask(T01);
 DeclareTask(T10);
 
-extern "C" const int PMU_TRACE = arch::PMU::trace::IRQ;
+extern "C" const int PERF_TRACE = arch::Perf::trace::IRQ;
 
 bool ready = false;
 
@@ -25,22 +25,22 @@ TEST_MAKE_OS_MAIN(start())
 TASK(T00) {
 	test_trace('0');
 
-	arch::PMU::start();
-	arch::PMU::reset_counters();
-	arch::PMU::reset();
-	arch::PMU::trace_cycles();
+	arch::Perf::start();
+	arch::Perf::reset_counters();
+	arch::Perf::reset();
+	arch::Perf::trace_cycles();
 	ready = true;
 	while (1) {
-		arch::PMU::reset();
+		arch::Perf::reset();
 	}
 	TerminateTask();
 }
 
 TASK(T01) {
-	arch::PMU::trace_cycles();
+	arch::Perf::trace_cycles();
 	test_trace('2');
-	arch::PMU::stop();
-	arch::PMU::print_cycles();
+	arch::Perf::stop();
+	arch::Perf::print_cycles();
 	test_trace_assert("012");
 	test_finish();
 	ShutdownAllCores(E_OK);

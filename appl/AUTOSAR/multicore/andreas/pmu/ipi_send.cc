@@ -1,11 +1,11 @@
 #include "autosar/os.h"
-#include "pmu.h"
+#include "perf.h"
 #include "test/test.h"
 
 DeclareTask(T00);
 DeclareTask(T10);
 
-extern "C" const int PMU_TRACE = arch::PMU::trace::SYSCALL;
+extern "C" const int PERF_TRACE = arch::Perf::trace::SYSCALL;
 
 void start() {
 	StatusType rv;
@@ -21,14 +21,14 @@ TEST_MAKE_OS_MAIN(start())
 
 TASK(T00) {
 	test_trace('0');
-	arch::PMU::start();
-	arch::PMU::trace_cycles();
+	arch::Perf::start();
+	arch::Perf::trace_cycles();
 	ActivateTask(T10);
-	arch::PMU::trace_cycles();
-	arch::PMU::stop();
-	arch::PMU::print_cycles();
+	arch::Perf::trace_cycles();
+	arch::Perf::stop();
+	arch::Perf::print_cycles();
 	test_trace_assert("01");
-	test_ne(arch::PMU::get_cycles(), 0);
+	test_ne(arch::Perf::get_cycles(), 0);
 	test_finish();
 	ShutdownOS(E_OK);
 }

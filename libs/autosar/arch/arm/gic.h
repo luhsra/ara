@@ -16,7 +16,7 @@
 
 #include "machine.h"
 #include "platform.h"
-#include "pmu.h"
+#include "perf.h"
 #include "stdint.h"
 #include "util/inline.h"
 

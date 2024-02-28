@@ -1,7 +1,7 @@
 #include "autosar/os.h"
 
-#define PMU_TRACE_C
-#include "pmu.h"
+#include "perf.h"
+extern "C" const int PERF_TRACE = arch::Perf::trace::NONE;
 #include "test/test.h"
 
 
@@ -40,23 +40,23 @@ TEST_MAKE_OS_MAIN(start())
 
 TASK(T00) { //high priority
 	test_trace('0');
-	arch::PMU::start();
-	arch::PMU::trace_cycles();
+	arch::Perf::start();
+	arch::Perf::trace_cycles();
     ready = true;
     
     // do sth long running
     for (int i = 0; i < 1000; i++) {
         result = is_prime(i);
     }
-	arch::PMU::trace_cycles();
-    arch::PMU::stop();
+	arch::Perf::trace_cycles();
+    arch::Perf::stop();
 
     ready = false;
     // wait for core 1 to stop sending IPIs
     while(!ready){
         Machine::nop();
     }
-	arch::PMU::print_cycles();
+	arch::Perf::print_cycles();
 	test_trace('2');
 	test_trace_assert("012");
 	test_finish();

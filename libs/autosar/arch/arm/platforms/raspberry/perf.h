@@ -22,7 +22,7 @@
 #define MAX_TRACES 64
 
 namespace arch {
-	class PMU {
+	class Perf {
 		static int cycles[MAX_TRACES];
 		static int cycles_nr;
 

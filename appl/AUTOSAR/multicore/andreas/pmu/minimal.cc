@@ -1,5 +1,5 @@
 #include "autosar/os.h"
-#include "pmu.h"
+#include "perf.h"
 #include "test/test.h"
 
 DeclareTask(T00);
@@ -17,19 +17,19 @@ void start() {
 TEST_MAKE_OS_MAIN(start())
 
 TASK(T00) {
-	arch::PMU::start();
-	arch::PMU::trace_counter0();
-    arch::PMU::trace_cycles();
+	arch::Perf::start();
+	arch::Perf::trace_counter0();
+    arch::Perf::trace_cycles();
 
 	test_trace('a');
 
-	arch::PMU::trace_counter0();
-	arch::PMU::trace_cycles();
-	arch::PMU::stop();
-	arch::PMU::print_counter0();
-	arch::PMU::print_cycles();
+	arch::Perf::trace_counter0();
+	arch::Perf::trace_cycles();
+	arch::Perf::stop();
+	arch::Perf::print_counter0();
+	arch::Perf::print_cycles();
 
-	int cycles = arch::PMU::get_cycles();
+	int cycles = arch::Perf::get_cycles();
 	test_ne(cycles, 0);
 	test_finish();
 	ShutdownOS(E_OK);

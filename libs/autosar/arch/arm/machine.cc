@@ -8,7 +8,7 @@
 #include "machine.h"
 
 #include "hardware_threads.h"
-#include "pmu.h"
+#include "perf.h"
 #include "syscall.h"
 
 using namespace arch;

@@ -19,7 +19,7 @@ src_files = [
   'platforms/raspberry/timer.cc',
   'platforms/raspberry/mmu.cc',
   'platforms/raspberry/serial.cc',
-  'platforms/raspberry/pmu.cc',
+  'platforms/raspberry/perf.cc',
   'irq.S',
   'platforms/raspberry/startup.S'
 ]

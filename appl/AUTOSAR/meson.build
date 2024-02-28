@@ -224,7 +224,7 @@ foreach app : autosar_apps
   endif
   app += {'ll': app_ll_posix} # store in ll to not break dependencies
 
-  if arm_enabled and not (app.has_key('synthesis_disabled') and 'pi4' in app['synthesis_disabled'])
+  if arm_enabled
     app_ll_pi4 = custom_target(full_name + '_ll_pi4',
                           input : sys + '.cc',
                           output : full_name + '.pi4.ll',
