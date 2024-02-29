@@ -9,7 +9,7 @@ ENV TZ=Europe/Berlin
 # z3 bringt kein pkg-config mit, aber cmake von svf benötigt es.
 COPY z3.pc /usr/share/pkgconfig/z3.pc
 RUN apt update\
-	&& apt-get install -y pkg-config clang-12 llvm-12-dev clang-14 clang-format-14 llvm-14-dev python3 python3-pip tmux build-essential ninja-build git binutils-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib bash-completion gdb-multiarch z3
+	&& apt-get install -y pkg-config clang-12 llvm-12-dev clang-14 clang-format-14 llvm-14-dev lld-14 python3 python3-pip tmux build-essential ninja-build git binutils-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib bash-completion gdb-multiarch z3
 RUN echo "deb http://downloads.skewed.de/apt jammy main" > /etc/apt/sources.list.d/graph_tool.list\
 	&& apt-key adv --keyserver keys.openpgp.org --recv-key 612DEFB798507F25\
 	&& apt-get update \
