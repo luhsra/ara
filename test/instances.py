@@ -36,6 +36,8 @@ def main():
         for name, prop in instances.vp.items():
             val = prop[instance]
             if name == 'file':
+                if not val:
+                    continue
                 val = os.path.relpath(os.path.realpath(val), start=script_dir)
             if name == 'llvm_soc' and not isinstance(obj, ISR):
                 # wild pointer, skip this

@@ -2,7 +2,6 @@
   {
     "after_scheduler": 0,
     "branch": 0,
-    "file": "../build",
     "is_control": 1,
     "label": "ISR: isr1",
     "line": 0,
@@ -16,7 +15,6 @@
   {
     "after_scheduler": 0,
     "branch": 0,
-    "file": "../build",
     "is_control": 1,
     "label": "ISR: isr2",
     "line": 0,
@@ -30,7 +28,6 @@
   {
     "after_scheduler": 0,
     "branch": 0,
-    "file": "../build",
     "is_control": 1,
     "label": "ISR: isr3",
     "line": 0,
