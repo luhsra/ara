@@ -34,7 +34,7 @@ build-gcc:
     BUILD_DIR: './build-gcc'
   script:
     - !reference [.git_config, script]
-    - CC=gcc CXX=g++ meson setup --native-file native-lab.txt $BUILD_DIR -Db_pch=true -D execute_ara=true -D enable_arm=enabled -D toolchains:arm_cxx_dir=$(ls -d1 /usr/include/newlib/c++/* | head -n1)
+    - CC=gcc CXX=g++ meson setup --native-file native-lab.txt $BUILD_DIR -Db_pch=true -D execute_ara=true -D toolchains:enable_arm=enabled -D toolchains:enable_riscv=disabled
     - meson compile -C $BUILD_DIR |& tee $BUILD_DIR/build.log
 
     - meson test -C $BUILD_DIR --suite ara-link
