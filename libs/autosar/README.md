@@ -19,8 +19,8 @@ MACAW supports the POSIX "platform" on x86-Linux and the Raspberry Pi 4B.
 ## Usage
 
 ```bash
-# configure meson for posix architecture
-meson build --native-file native-lab.txt --reconfigure -D execute_ara=true -D enable_arm=enabled -D toolchains:arm_libs=/usr/arm-none-eabi
+# configure meson (for POSIX and ARM)
+meson build --native-file native-lab.txt -D execute_ara=true -D toolchains:enable_arm=enabled -D toolchains:enable_riscv=disabled
 cd build
 
 # build and run single application
