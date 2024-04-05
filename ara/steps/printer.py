@@ -510,9 +510,10 @@ class Printer(Step):
                         ty=String())
     subgraph = Option(name="subgraph",
                       help="Choose, what subgraph should be printed.",
-                      ty=Choice("bbs", "abbs", "instances", "callgraph",
-                                "multistates", "sstg", "reduced_sstg", "mstg",
-                                "reduced_mstg", "sp_mstg"))
+                      ty=Choice("bbs", "abbs", "instances", "sysrel_callgraph",
+                                "callgraph", "multistates", "sstg",
+                                "reduced_sstg", "mstg", "reduced_mstg",
+                                "sp_mstg"))
     entry_point = Option(name="entry_point",
                          help="system entry point",
                          ty=String())
@@ -753,7 +754,7 @@ class Printer(Step):
 
 
 
-    def print_callgraph(self):
+    def print_callgraph(self, only_systemrelevant=False):
         name = self._print_init()
 
         shapes = {
@@ -765,6 +766,8 @@ class Printer(Step):
         callgraph = self._graph.callgraph
 
         cfg = callgraph.gp.cfg
+        if only_systemrelevant:
+            callgraph = callgraph.get_syscalls()
         for node in callgraph.vertices():
             dot_node = pydot.Node(
                 str(hash(node)),
@@ -961,3 +964,5 @@ class Printer(Step):
             self.print_multistates()
         if subgraph == 'callgraph':
             self.print_callgraph()
+        if subgraph == 'sysrel_callgraph':
+            self.print_callgraph(only_systemrelevant=True)

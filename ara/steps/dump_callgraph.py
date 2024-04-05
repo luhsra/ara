@@ -13,8 +13,13 @@ class DumpCallgraph(Step):
         return ['ICFG']
 
     def run(self):
-        cg_file = f'{self.dump_prefix.get()}.dot'
+        cg_file = f'{self.dump_prefix.get()}.complete.dot'
         self._step_manager.chain_step({"name": "Printer",
                                        "dot": cg_file,
                                        "graph_name": "Callgraph",
                                        "subgraph": 'callgraph'})
+        cg_file = f'{self.dump_prefix.get()}.syscalls.dot'
+        self._step_manager.chain_step({"name": "Printer",
+                                       "dot": cg_file,
+                                       "graph_name": "Callgraph (only syscalls)",
+                                       "subgraph": 'sysrel_callgraph'})
