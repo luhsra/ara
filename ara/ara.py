@@ -177,7 +177,7 @@ class Main:
                 self.extra_settings["steps"] = ["ValueAnalyzerCorrections", self.args.step]
                 self.args.step = None
             else:
-                self.extra_settings["steps"].push_front("va_corrections")
+                self.extra_settings["steps"].insert(0, "ValueAnalyzerCorrections")
 
         self.graph.os = get_os(self.args.os)
 
