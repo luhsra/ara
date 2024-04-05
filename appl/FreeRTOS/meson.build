@@ -118,14 +118,7 @@ hw_apps = [
   'timing_xQueueCreate',
 ]
 
-if meson.version().version_compare('>=1.4.0')
-  error('Please remove the horrible hack below and use the "libplatform_linkerscript.full_path()" directly.')
-  error('The same holds for default_config')
-endif
-libplatform_linkerscript_fixed = fs.copyfile(libplatform_linkerscript, 'libplatform.ld')
-freertos_default_config_fixed = fs.copyfile(freertos_default_config, 'FreeRTOSConfig.h')
-
-freertos_config = ['-I', fs.parent(freertos_default_config_fixed.full_path())]
+freertos_config = ['-I', fs.parent(freertos_default_config.full_path())]
 
 arm_llc_flags = ['--frame-pointer=none']
 arm_ld_flags = libplatform_proj.get_variable('arm_ld_flags')
@@ -136,7 +129,6 @@ foreach app : ir_apps + hw_apps
                             input : [app + '.cc'],
                             output : ['freertos-' + app + '.ll'],
                             depfile : 'freertos-' + app + '.ll.dep',
-                            depends: freertos_default_config_fixed,
                             command : clang_cpp +
                                       app_flags +
                                       libs_includes +
@@ -218,10 +210,7 @@ foreach app : ir_apps
     # compile freertos
     freertos_ll_targets = []
     foreach src: freertos_src_list
-      if meson.version().version_compare('>=1.4.0')
-        error('Please remove the horrible hack below and use the "src.full_path()" directly.')
-      endif
-      src_id = fs.name('@0@'.format(src)).underscorify()
+      src_id = fs.name(src.full_path()).underscorify()
       ll_target = custom_target(name_prefix + '-freertos_' + src_id,
                                 input: src,
                                 output: name_prefix + '-freertos_' + src_id + '.c.ll',
@@ -263,13 +252,13 @@ foreach app : ir_apps
                                      ],
                               output: lto_prefix + '.elf',
                               depfile: lto_prefix + '.elf.dep',
-                              depends: [libplatform_linkerscript_fixed, libsra_link_with, libplatform_link_with],
+                              depends: [libsra_link_with, libplatform_link_with],
                               command: clang_cpp +
                                        libs_includes +
                                        ld_flags +
                                        ['-L' + fs.parent(libsra_link_with.full_path()), '-lsra'] +
                                        ['-L' + fs.parent(libplatform_link_with.full_path()), '-lplatform'] +
-                                       ['-T' + libplatform_linkerscript_fixed.full_path() ] +
+                                       ['-T' + libplatform_linkerscript.full_path() ] +
                                        arm_compiler_flags)
 
       bin_target = custom_target(lto_prefix + '.bin',
