@@ -7,12 +7,12 @@
 #include "comp_insert.h"
 
 #include <common/llvm_common.h>
-#include <ostream>
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/Module.h>
 #include <llvm/Support/Casting.h>
 #include <llvm/Support/raw_os_ostream.h>
+#include <ostream>
 
 namespace ara::step {
 	using namespace llvm;

@@ -91,6 +91,14 @@ cdef extern from "load_freertos_config.h" namespace "ara::step":
     cdef cppclass LoadFreeRTOSConfig:
         pass
 
+cdef extern from "posix_static.h" namespace "ara::step":
+    cdef cppclass POSIXStatic:
+        pass
+
+cdef extern from "remove_sysfunc_body.h" namespace "ara::step":
+    cdef cppclass RemoveSysfuncBody:
+        pass
+
 cdef extern from "replace_syscalls_create.h" namespace "ara::step":
     cdef cppclass ReplaceSyscallsCreate:
         pass
@@ -107,14 +115,10 @@ cdef extern from "svf_transformation.h" namespace "ara::step":
     cdef cppclass SVFTransformation:
         pass
 
+cdef extern from "value_analyzer_corrections.h" namespace "ara::step":
+    cdef cppclass ValueAnalyzerCorrections:
+        pass
+
 cdef extern from "zephyr_static.h" namespace "ara::step":
     cdef cppclass ZephyrStatic:
-        pass
-
-cdef extern from "remove_sysfunc_body.h" namespace "ara::step":
-    cdef cppclass RemoveSysfuncBody:
-        pass
-
-cdef extern from "posix_static.h" namespace "ara::step":
-    cdef cppclass POSIXStatic:
         pass

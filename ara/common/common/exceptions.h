@@ -59,6 +59,10 @@ namespace ara {
 		virtual const char* what() const throw() { return "Something in Python went wrong"; }
 	};
 
+	class JSONError : public std::exception {
+		virtual const char* what() const throw() { return "JSON value not as expected"; }
+	};
+
 	class StopDFSException : public std::exception {
 		virtual const char* what() const throw() { return "The DFS needs a premature abort."; }
 	};

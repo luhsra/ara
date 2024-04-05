@@ -83,7 +83,10 @@ class Main:
         parser.add_argument('--kconfigfile',
                             help="Path to the Kconfig file (Zephyr specific)")
         parser.add_argument('--timings', help="file for ABB timings. "
-                                            "See ApplyTimings for more info.")
+                                              "See ApplyTimings for more info.")
+        parser.add_argument('--va-corrections', help='Give manual hints to the'
+                                                     ' Value Analyzer, see '
+                                                     'ValueAnalyzerCorrections step')
         parser.add_argument('--generator_output', metavar="FILE",
                             help="file to store generated OS code")
         parser.add_argument('--step-settings', metavar="FILE", action='append',
@@ -168,6 +171,13 @@ class Main:
                 self.args.step = None
             else:
                 self.extra_settings["steps"].append("ManualCorrections")
+
+        if self.args.va_corrections:
+            if self.args.step:
+                self.extra_settings["steps"] = ["ValueAnalyzerCorrections", self.args.step]
+                self.args.step = None
+            else:
+                self.extra_settings["steps"].push_front("va_corrections")
 
         self.graph.os = get_os(self.args.os)
 

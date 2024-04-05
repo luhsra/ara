@@ -46,7 +46,7 @@ namespace ara::option {
 		std::string step_name;
 
 	  public:
-		virtual void from_pointer(PyObject*, std::string){};
+		virtual void from_pointer(PyObject*, std::string) {};
 
 		void check(PyObject* obj, const std::string& key) {
 			PyObject* scoped_obj = get_value(obj, key);

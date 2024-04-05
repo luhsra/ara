@@ -106,6 +106,7 @@ step_mod = py3_inst.extension_module('step',
         'resolve_function_pointer.cpp',
         'svf_analyses.cpp',
         'svf_transformation.cpp',
+        'value_analyzer_corrections.cpp',
         'zephyr_static.cpp',
         # additional C++ entities
         'value_analyzer.cpp',

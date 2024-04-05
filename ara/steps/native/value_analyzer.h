@@ -379,8 +379,7 @@ namespace ara::step {
 		std::shared_ptr<graph::CallGraph> callgraph;
 		std::shared_ptr<graph::SVFG> svfg;
 
-		/* Map between: Key = Node, Value = Python system object */
-		graph::GraphData::ObjMap& obj_map;
+		value_analyzer::ValueAnalyzerState& state;
 
 		/* SVF datastructures */
 		SVFObjects& svf_objects;
@@ -470,6 +469,8 @@ namespace ara::step {
 		 */
 		const llvm::Value* get_return_value(const llvm::CallBase& callsite, graph::CallPath callpath);
 
+		std::optional<Result> lookup(llvm::CallBase& callsite, graph::CallPath& callpath, unsigned argument_nr);
+
 		/**
 		 * Retrieve the argument value of the nth argument of a call.
 		 *
@@ -493,7 +494,7 @@ namespace ara::step {
 		ValueAnalyzerImpl(SVFG& g, graph::Graph& graph, tracer::Tracer& tracer, Logger& logger,
 		                  std::shared_ptr<graph::SVFG> svfg, SVFObjects& svf_objects)
 		    : g(g), graph(graph), cfg(graph.get_cfg()), tracer(tracer), logger(logger),
-		      callgraph(graph.get_callgraph_ptr()), svfg(svfg), obj_map(graph.get_graph_data().obj_map),
+		      callgraph(graph.get_callgraph_ptr()), svfg(svfg), state(graph.get_graph_data().va_state),
 		      svf_objects(svf_objects) {}
 	};
 

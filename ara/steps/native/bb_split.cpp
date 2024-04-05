@@ -46,7 +46,8 @@ namespace ara::step {
 						std::stringstream ss;
 						ss << "BB" << split_counter++;
 						BasicBlock* new_bb = bb->splitBasicBlock(it, ss.str());
-						graph_data.basic_blocks[new_bb].is_part_of_exception = graph_data.basic_blocks[bb].is_part_of_exception;
+						graph_data.basic_blocks[new_bb].is_part_of_exception =
+						    graph_data.basic_blocks[bb].is_part_of_exception;
 						bb = new_bb;
 						it = bb->begin();
 
@@ -64,7 +65,8 @@ namespace ara::step {
 						ss.str("");
 						ss << "BB" << split_counter++;
 						new_bb = bb->splitBasicBlock(it, ss.str());
-						graph_data.basic_blocks[new_bb].is_part_of_exception = graph_data.basic_blocks[bb].is_part_of_exception;
+						graph_data.basic_blocks[new_bb].is_part_of_exception =
+						    graph_data.basic_blocks[bb].is_part_of_exception;
 						bb = new_bb;
 						it = bb->begin();
 					}

@@ -5,9 +5,9 @@
 # SPDX-FileCopyrightText: 2020 Yannick Loeck
 # SPDX-FileCopyrightText: 2022 Bastian Fuhlenriede
 # SPDX-FileCopyrightText: 2022 Björn Fiedler <fiedler@sra.uni-hannover.de>
-# SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2022 Jan Neugebauer
 # SPDX-FileCopyrightText: 2023 Andreas Kässens
+# SPDX-FileCopyrightText: 2024 Gerion Entrup <entrup@sra.uni-hannover.de>
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -392,13 +392,14 @@ def provide_steps():
             _native_step_fac(make_step_fac[cstep.LLVMMap]()),
             _native_step_fac(make_step_fac[cstep.LLVMOptimization]()),
             _native_step_fac(make_step_fac[cstep.LoadFreeRTOSConfig]()),
+            _native_step_fac(make_step_fac[cstep.POSIXStatic]()),
+            _native_step_fac(make_step_fac[cstep.RemoveSysfuncBody]()),
             _native_step_fac(make_step_fac[cstep.ReplaceSyscallsCreate]()),
             _native_step_fac(make_step_fac[cstep.ResolveFunctionPointer]()),
             _native_step_fac(make_step_fac[cstep.SVFAnalyses]()),
             _native_step_fac(make_step_fac[cstep.SVFTransformation]()),
-            _native_step_fac(make_step_fac[cstep.ZephyrStatic]()),
-            _native_step_fac(make_step_fac[cstep.RemoveSysfuncBody]()),
-            _native_step_fac(make_step_fac[cstep.POSIXStatic]())]
+            _native_step_fac(make_step_fac[cstep.ValueAnalyzerCorrections]()),
+            _native_step_fac(make_step_fac[cstep.ZephyrStatic]())]
 
 
 def provide_test_steps():

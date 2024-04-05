@@ -6,9 +6,9 @@
 #pragma once
 
 #include "common/util.h"
+#include "value_analyzer_state.h"
 
 #include <Graphs/SVFG.h>
-#include <boost/bimap.hpp>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Module.h>
 #include <memory>
@@ -55,15 +55,7 @@ namespace ara::graph {
 		 */
 		std::map<const SVF::SVFGNode*, uint64_t> svfg_to_graphtool_node;
 
-		/**
-		 * Workaround for SVF classes where we need additional attributes.
-		 * The tuple conists of the
-		 * 1. the SVFG Node (typename boost::graph_traits<SVFGGraphtool>::vertex_descriptor as uint64_t)
-		 * 2. a list of offset into a compound type (std::vector<int64_t>)
-		 * 3. a context/CallPath (represented as hash due to include loops, std::size_t)
-		 */
-		using ObjMap = boost::bimap<std::tuple<uint64_t, std::vector<int64_t>, std::size_t>, uint64_t>;
-		ObjMap obj_map;
+		value_analyzer::ValueAnalyzerState va_state;
 
 		GraphData() : module(nullptr), svfg(nullptr) {}
 

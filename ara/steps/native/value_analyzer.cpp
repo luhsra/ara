@@ -12,6 +12,7 @@
 
 #include "common/llvm_common.h"
 #include "common/util.h"
+#include "graph_data.h"
 
 #include <boost/range/adaptor/indexed.hpp>
 #include <boost/range/adaptor/map.hpp>
@@ -778,8 +779,8 @@ namespace ara::step {
 		if (!num_offsets) {
 			return std::nullopt;
 		}
-		auto it = va.obj_map.left.find(std::make_tuple(node, *num_offsets, callpath.hash()));
-		if (it != va.obj_map.left.end()) {
+		auto it = va.state.obj_map.left.find(std::make_tuple(node, *num_offsets, callpath.hash()));
+		if (it != va.state.obj_map.left.end()) {
 			return it->second;
 		}
 		return std::nullopt;
@@ -913,8 +914,42 @@ namespace ara::step {
 	}
 
 	template <class SVFG>
+	std::optional<Result> ValueAnalyzerImpl<SVFG>::lookup(llvm::CallBase& callsite, graph::CallPath& callpath,
+	                                                      unsigned argument_nr) {
+		value_analyzer::ValueLocation key(callsite, callpath, argument_nr);
+
+		logger.debug() << "looking up: " << key.as_json() << std::endl;
+
+		std::optional<Result> ret = std::nullopt;
+
+		const auto& corr = state.corrections;
+		if (corr.find(key) != corr.end()) {
+			auto hint = corr.at(key);
+			std::visit(
+			    overloaded{
+			        [&](value_analyzer::FunctionPointerHint f) {
+				        const llvm::Function* func = graph.get_module().getFunction(f.name);
+				        if (func == nullptr) {
+					        logger.error() << "Function " << f.name << "could not be found" << std::endl;
+					        return;
+				        }
+								logger.debug() << "Set function " << func->getName().str() << " as result." << std::endl;
+				        ret = Result{func, {}, std::nullopt, std::nullopt};
+			        },
+			    },
+			    hint);
+		}
+
+		return ret;
+	}
+
+	template <class SVFG>
 	Result ValueAnalyzerImpl<SVFG>::get_argument_value(llvm::CallBase& callsite, graph::CallPath callpath,
 	                                                   unsigned argument_nr, graph::SigType hint, PyObject*) {
+		std::optional<Result> result = lookup(callsite, callpath, argument_nr);
+		if (result) {
+			return *result;
+		}
 		if (is_call_to_intrinsic(callsite)) {
 			throw ValuesUnknown("Called function is an intrinsic.");
 		}
@@ -990,8 +1025,8 @@ namespace ara::step {
 		logger.debug() << " and callpath " << callpath << "." << std::endl;
 		auto num_offsets = convert_to_number_offsets(offsets, graph.get_module());
 		if (num_offsets) {
-			obj_map.insert(graph::GraphData::ObjMap::value_type(std::make_tuple(v_node, *num_offsets, callpath.hash()),
-			                                                    obj_index));
+			state.obj_map.insert(value_analyzer::ValueAnalyzerState::ObjMap::value_type(
+			    std::make_tuple(v_node, *num_offsets, callpath.hash()), obj_index));
 		} else {
 			logger.error() << "Cannot calculate get_element_ptr offsets. Do not assign anything." << std::endl;
 		}
@@ -1012,8 +1047,8 @@ namespace ara::step {
 		}
 
 		/* check whether we have a node stored for the system object */
-		auto it = obj_map.right.find(obj_index);
-		if (it == obj_map.right.end()) {
+		auto it = state.obj_map.right.find(obj_index);
+		if (it == state.obj_map.right.end()) {
 			/* we cannot rule out a connection */
 			throw ConnectionStatusUnknown("Object has no corresponding node in SVFG.");
 		}
