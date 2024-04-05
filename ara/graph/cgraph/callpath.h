@@ -143,3 +143,16 @@ namespace ara::graph {
 
 	std::ostream& operator<<(std::ostream& os, const CallPath& cp);
 } // namespace ara::graph
+
+namespace boost::detail {
+	// This only works since graph_tool::GraphInterface::edge_t is a typedef to boost::detail::adj_edge_descriptor. If
+	// graph_tool changes this, this hash function needs to be changed, too.
+	std::size_t hash_value(const boost::detail::adj_edge_descriptor<long unsigned int>& edge);
+} // namespace boost::detail
+
+namespace std {
+	template <>
+	struct hash<ara::graph::CallPath> {
+		std::size_t operator()(const ara::graph::CallPath& cp) const { return cp.hash(); }
+	};
+} // namespace std
