@@ -557,6 +557,60 @@ class FreeRTOS(OSBase):
         return state
 
     @syscall(categories={SyscallCategory.create},
+             signature=(Arg("queue_len"),
+                        Arg("queue_item_size"),
+                        Arg("queue_storage", hint=SigType.symbol),
+                        Arg("queue_handle_p", hint=SigType.instance),
+                        Arg("q_type")))
+    def xQueueGenericCreateStatic(graph, state, cpu_id, args, va):
+        state = state.copy()
+        cpu = state.cpus[cpu_id]
+        abb = cpu.abb
+        cp = cpu.call_path
+
+        # instance properties
+        cp = cpu.call_path
+        cfg = graph.cfg
+
+        queue_handler = find_return_value(abb, cp, va)
+        if isinstance(queue_handler.value, Queue):
+            handler_name = queue_handler.value.name + f".{id(state)}"
+            queue_handler = MultipleAssignedHandler(handler=queue_handler, instance=queue_handler.value)
+            assign = False
+        else:
+            assert isinstance(queue_handler.value, pyllco.Value)
+            handler_name = queue_handler.value.get_name()
+            assign = True
+
+        v = state.instances.add_vertex()
+        state.instances.vp.label[v] = f"Queue: {handler_name}"
+        FreeRTOS.handle_soc(cpu.analysis_context, state.instances, v, cfg, abb)
+
+        # TODO: when do we know that this is an unique instance?
+        state.instances.vp.obj[v] = Queue(cfg=cfg,
+                                          vidx=v,
+                                          name=handler_name,
+                                          handler=queue_handler,
+                                          length=args.queue_len,
+                                          size=args.queue_item_size,
+                                          abb=abb,
+                                          q_type=args.q_type,
+                                          call_path=cp)
+
+        assign_id(state.instances, v)
+
+        if args.queue_handle_p:
+            va.assign_system_object(args.queue_handle_p.value,
+                                    state.instances.vp.obj[v],
+                                    args.queue_handle_p.offset,
+                                    args.queue_handle_p.callpath)
+        else:
+            logger.warn(f"Queue for ABB {graph.cfg.vp.name[abb]} not assigned,"
+                        f" since the queue handle cannot be retrieved.")
+
+        return state
+
+    @syscall(categories={SyscallCategory.create},
              signature=(Arg("mutex_type"),))
     def xQueueCreateMutex(graph, state, cpu_id, args, va):
         state = state.copy()
@@ -988,10 +1042,6 @@ class FreeRTOS(OSBase):
 
     @syscall
     def xQueueCreateSet(graph, state, cpu_id, args, va):
-        pass
-
-    @syscall
-    def xQueueCreateStatic(graph, state, cpu_id, args, va):
         pass
 
     @syscall(categories={SyscallCategory.comm},
