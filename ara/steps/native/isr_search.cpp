@@ -40,16 +40,23 @@ namespace ara::step {
 
 	void ISRSearch::find_entry_points(const SVF::PTACallGraphNode* syscall) {
 		std::stack<const SVF::PTACallGraphNode*> node_stack;
+		std::set<const SVF::PTACallGraphNode*> handled;
 		std::vector<std::string> isrs;
 		node_stack.emplace(syscall);
 		// the syscall itself obviously it not an ISR so handle the first loop run differently
 		bool syscall_itself = true;
 		while (!node_stack.empty()) {
 			auto current = node_stack.top();
+			handled.insert(current);
 			node_stack.pop();
 			bool has_in_edges = false;
 			for (SVF::PTACallGraphNode::iterator it = current->InEdgeBegin(); it != current->InEdgeEnd(); ++it) {
-				node_stack.emplace((*it)->getSrcNode());
+				auto next = (*it)->getSrcNode();
+				if (handled.find(next) == handled.end()) {
+					// TODO: also in a recursion situation a valid start point can be found. Currently the node is
+					// simply ignored.
+					node_stack.emplace((*it)->getSrcNode());
+				}
 				has_in_edges = true;
 			}
 			if (!has_in_edges && !syscall_itself) {
