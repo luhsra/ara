@@ -6,6 +6,7 @@
 
 #include "value_analyzer_corrections.h"
 
+#include <fstream>
 #include <llvm/Support/JSON.h>
 
 namespace ara::step {
