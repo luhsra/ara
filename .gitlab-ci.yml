@@ -1,8 +1,11 @@
-.git_config:
-  script:
+.scripts:
+  git:
   - export GIT_CONFIG_GLOBAL=$PWD/ci_gitconfig
   - git config --global --add url."https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/".insteadOf "ssh://git@scm.sra.uni-hannover.de"
   - git config --global --add url."https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/".insteadOf "https://scm.sra.uni-hannover.de"
+  venv:
+  - virtualenv --system-site-packages venv && source venv/bin/activate
+  - pip install meson==1.4.0
 
 build-gcc-no-pch:
   tags: ["sra.labor", "Debian-12"]
@@ -11,7 +14,8 @@ build-gcc-no-pch:
   variables:
     BUILD_DIR: './build-gcc-no-pch'
   script:
-    - !reference [.git_config, script]
+    - !reference [.scripts, git]
+    - !reference [.scripts, venv]
     - CC=gcc CXX=g++ meson setup --native-file native-lab.txt $BUILD_DIR -Db_pch=false
     - meson compile -C $BUILD_DIR ara-py
 
@@ -22,7 +26,8 @@ build-clang-no-pch:
   variables:
     BUILD_DIR: './build-clang-no-pch'
   script:
-    - !reference [.git_config, script]
+    - !reference [.scripts, git]
+    - !reference [.scripts, venv]
     - CC=clang CXX=clang++ meson setup --native-file native-lab.txt $BUILD_DIR -Db_pch=false
     - meson compile -C $BUILD_DIR ara-py
 
@@ -33,7 +38,8 @@ build-gcc:
   variables:
     BUILD_DIR: './build-gcc'
   script:
-    - !reference [.git_config, script]
+    - !reference [.scripts, git]
+    - !reference [.scripts, venv]
     - CC=gcc CXX=g++ meson setup --native-file native-lab.txt $BUILD_DIR -Db_pch=true -D execute_ara=true -D toolchains:enable_arm=enabled -D toolchains:enable_riscv=disabled
     - meson compile -C $BUILD_DIR |& tee $BUILD_DIR/build.log
 
@@ -54,6 +60,7 @@ build-clang:
   variables:
     BUILD_DIR: './build-clang'
   script:
-    - !reference [.git_config, script]
+    - !reference [.scripts, git]
+    - !reference [.scripts, venv]
     - CC=clang CXX=clang++ meson setup --native-file native-lab.txt $BUILD_DIR -Db_pch=true
     - meson compile -C $BUILD_DIR ara-py
