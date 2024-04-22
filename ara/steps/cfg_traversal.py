@@ -230,7 +230,7 @@ class _SSERunner:
             self._log.debug(f"Handle syscall: {name} ({syscall_name})")
             self._assign_context(state)
             try:
-                new_states = self._os.interpret(
+                new_state = self._os.interpret(
                     self._graph, state, cpu.id,
                     categories=self._visitor.SYSCALL_CATEGORIES
                 )
