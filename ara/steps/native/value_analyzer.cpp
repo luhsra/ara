@@ -933,7 +933,7 @@ namespace ara::step {
 					        logger.error() << "Function " << f.name << "could not be found" << std::endl;
 					        return;
 				        }
-								logger.debug() << "Set function " << func->getName().str() << " as result." << std::endl;
+				        logger.debug() << "Set function " << func->getName().str() << " as result." << std::endl;
 				        ret = Result{func, {}, std::nullopt, std::nullopt};
 			        },
 			    },
