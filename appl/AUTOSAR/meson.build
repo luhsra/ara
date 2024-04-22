@@ -170,6 +170,8 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'andreas'/ 'pmu',    'name': 'ipi_recv_cache',         'oil': 'system_ipi_recv.json', 'synthesis_disabled': ['posix']},
   {'core': 'multicore',  'path': 'andreas'/ 'pmu',    'name': 'ipi_max',                'oil': 'system_ipi_max.json', 'synthesis_disabled': ['posix']},
   {'core': 'multicore',  'path': 'andreas'/ 'pmu',    'name': 'get_spinlock',           'oil': 'system_spinlock.json', 'synthesis_disabled': ['posix']},
+  {'core': 'multicore',  'path': 'andreas'/ 'arved',   'name': 'a',                     'oil': 'system_a.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'arved',   'name': 'b',                     'oil': 'system_b.json'},
 ]
 # conformance tests for trampoline
 subdir('multicore' / 'trampoline')
