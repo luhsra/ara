@@ -1,7 +1,7 @@
 [wrap-git]
 url = https://github.com/luhsra/SVF
 push-url = git@github.com:luhsra/SVF.git
-revision = value2vfg
+revision = ara
 depth = 1
 method = cmake
 
