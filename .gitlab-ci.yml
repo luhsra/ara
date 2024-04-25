@@ -17,7 +17,7 @@ build-gcc-no-pch:
     - !reference [.scripts, git]
     - !reference [.scripts, venv]
     - CC=gcc CXX=g++ meson setup --native-file native-lab.txt $BUILD_DIR -Db_pch=false
-    - meson compile -C $BUILD_DIR ara-py
+    - meson compile -j $(( $(nproc) * 8 / 10 )) -C $BUILD_DIR ara-py
 
 build-clang-no-pch:
   tags: ["sra.labor", "Debian-12"]
@@ -29,7 +29,7 @@ build-clang-no-pch:
     - !reference [.scripts, git]
     - !reference [.scripts, venv]
     - CC=clang CXX=clang++ meson setup --native-file native-lab.txt $BUILD_DIR -Db_pch=false
-    - meson compile -C $BUILD_DIR ara-py
+    - meson compile -j $(( $(nproc) * 8 / 10 )) -C $BUILD_DIR ara-py
 
 build-gcc:
   tags: ["sra.labor", "Debian-12"]
@@ -41,7 +41,7 @@ build-gcc:
     - !reference [.scripts, git]
     - !reference [.scripts, venv]
     - CC=gcc CXX=g++ meson setup --native-file native-lab.txt $BUILD_DIR -Db_pch=true -D execute_ara=true -D toolchains:enable_arm=enabled -D toolchains:enable_riscv=disabled
-    - meson compile -C $BUILD_DIR |& tee $BUILD_DIR/build.log
+    - meson compile -j $(( $(nproc) * 8 / 10 )) -C $BUILD_DIR |& tee $BUILD_DIR/build.log
 
     - meson test -C $BUILD_DIR --suite ara-link
     - meson test -C $BUILD_DIR --suite preproc
@@ -63,4 +63,4 @@ build-clang:
     - !reference [.scripts, git]
     - !reference [.scripts, venv]
     - CC=clang CXX=clang++ meson setup --native-file native-lab.txt $BUILD_DIR -Db_pch=true
-    - meson compile -C $BUILD_DIR ara-py
+    - meson compile -j $(( $(nproc) * 8 / 10 )) -C $BUILD_DIR ara-py
