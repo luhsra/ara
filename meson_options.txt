@@ -1,8 +1,3 @@
-option('enable_arm', type: 'feature', value: 'auto', yield: true,
-  description: 'Build test application that need the ARM architecture (requires an ARM toolchain).')
-option('enable_posix', type: 'feature', value: 'auto', yield: true,
-  description: 'Build test application that build as POSIX applications (requires a Linux system).')
-
 option('gui_required', type: 'boolean', value: false, yield: true,
   description: 'Set all dependencies of ara gui to required if this option is true')
 option('python_optimization_level', type : 'integer', min : 0, max : 2, value : 0, yield: true,
