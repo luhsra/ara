@@ -19,11 +19,11 @@ if arm_enabled
     '-ffixed-r9', # cpuid
   ]
 
-# For QEMU: pi4 is cortex-a72, but this makes it work in QEMU
-autosar_pi4_clang_flags += [
-    '-mcpu=cortex-a7',
-    '-DQEMU', #QEMU
-]
+  # For QEMU: pi4 is cortex-a72, but this makes it work in QEMU
+  autosar_pi4_clang_flags += [
+      '-mcpu=cortex-a7',
+      '-DQEMU', #QEMU
+  ]
 
   autosar_pi4_ld_flags = [
     libplatform_proj.get_variable('arm_ld_flags')
@@ -43,6 +43,21 @@ if posix_enabled
   autosar_posix_ld_flags = [
     '-lpthread',
     '-lrt',
+  ]
+endif
+
+
+# RISC-V
+if true
+  autosar_riscv_clang_flags = [
+    '--target=riscv32-unknown-elf', # 32 bit Architektur
+    '-march=rv32i',                 # Spezifikation der genauen Architektur
+    '-O3',                          # Optimierungsstufe
+    #'-DDEBUG',                     # Debugging
+  ]
+  autosar_riscv_ld_flags = [        # Linken der Bibliotheken
+    '-lpthread',                    # pthread
+    '-lrt',                         # real-time library
   ]
 endif
 

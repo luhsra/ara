@@ -1,0 +1,27 @@
+{
+	"steps": [
+		"ApplyTimings",
+		"IPIAvoidance",
+		"LockElision",
+		"AutosarGeneratorIR",
+		"IRWriter",
+		"Generator"
+	],
+	"AutosarGeneratorIR": {
+		"log_level": "debug",
+		"rename_syscalls": true
+	},
+	"Generator": {
+		"log_level": "debug",
+		"arch": "riscv",
+		"os": "autosar",
+		"lock_elision": false,
+		"ipi_avoidance": false
+	},
+	"LockElision": {
+		"fail_on_deadlock": true
+	},
+	"MultiSSE": {
+		"with_times": false
+	}
+}

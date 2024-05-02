@@ -8,4 +8,8 @@ if posix_enabled
   subdir('posix')
 endif
 
+if true
+  subdir('riscv')
+endif
+
 subdir('generic')

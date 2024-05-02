@@ -243,6 +243,22 @@ foreach app : autosar_apps
   endif
   app += {'ll_pi4': app_ll_pi4}
 
+  if true
+    app_ll_riscv = custom_target(full_name + '_ll_riscv',
+                          input : sys + '.cc',
+                          output : full_name + '.riscv.ll',
+                          depfile : full_name + '.riscv.ll.dep',
+                          command : clang_cpp +
+                                    riscv_autosar_includes +
+                                    autosar_includes +
+                                    clang_flags +
+                                    autosar_riscv_clang_flags +
+                                    '-O0' + # dont optimize before IR
+                                    ir_flags)
+  else
+    app_ll_riscv = disabler()
+  endif
+
 
   # trace file for sse testing
   if not app.has_key('mtrace')
@@ -282,6 +298,7 @@ foreach app : autosar_apps
   app += {'sys_timings': sys_timings}
 
 
+
   # lock elision test data
   if app.has_key('locks')
     if app['locks'] == 'EXTRACT'
@@ -303,6 +320,7 @@ endforeach
 
 autosar_generated_targets_posix = []
 autosar_generated_targets_pi4 = []
+autosar_generated_targets_riscv = []
 
 foreach app: autosar_targets
   full_name = app['full_name']
@@ -475,6 +493,85 @@ foreach app: autosar_targets
 
 
     autosar_generated_targets_pi4 += app
+  endif
+
+  
+  if true and not (app.has_key('synthesis_disabled') and 'riscv' in app['synthesis_disabled'])
+    if get_option('execute_ara')
+      out = custom_target(
+        full_name + '_mod_riscv',
+        input : app['ll'],
+        output : [
+          full_name + '_mod.riscv.ll',
+          full_name +'_autosar.riscv.cc',
+          full_name +'_autosar.riscv.ld'
+        ],
+        depfile : full_name + '_mod.riscv.ll.dep',
+        command : [
+          py3_inst, ara_py, app['ll'],
+          '--os', 'AUTOSAR',
+          '--oilfile', app['oil'],
+          '--ir_output', '@OUTPUT0@',
+          '--step-settings', files('../../settings/autosar_generator_riscv.json'),
+          '--generator_output', '@OUTPUT1@',
+          #'--timings', app['sys_timings']
+        ]
+      )
+    else
+      out = disabler()
+    endif
+    app_ll_mod = out[0]
+    autosar = out[1]
+    linker_script = out[2]
+    app += {'ll_riscv_mod': app_ll_mod}
+    app += {'autosar_riscv': autosar}
+    app += {'linker_script_riscv': linker_script}
+
+    app_image_riscv = custom_target(full_name + '_image_riscv',
+                            input: [
+                              app_ll_mod,
+                              autosar,
+                              libautosar_test_riscv,
+                              libautosar_os_riscv,
+                              libautosar_arch_riscv,
+                              libautosar_generic_riscv
+                            ],
+                            output : full_name + '_riscv',
+                            depfile : full_name + '.riscv.dep',
+                            command : clang_cpp +
+                                      ['-T', linker_script] +
+                                      riscv_autosar_includes +
+                                      autosar_includes +
+                                      ld_flags +
+                                      autosar_riscv_ld_flags +
+                                      clang_flags +
+                                      autosar_riscv_clang_flags)
+
+    app += {'app_image_riscv': app_image_riscv}
+
+    #run_cmd = libplatforms_proj.get_variable('qemu_riscv_cmd') + app_image_riscv
+    run_cmd = [app_image_riscv]
+    app += {'run_cmd_riscv': run_cmd}
+    run_target('run_' + full_name + '_riscv', command: run_cmd)
+
+    #riscv_bin = custom_target(full_name + '_riscv_bin',
+    #                    input: [
+    #                      app_image_riscv,
+    #                    ],
+    #                    output : full_name + '_riscv.bin',
+    #                    depfile : full_name + '.riscv.bin.dep',
+    #                    command : [ llvm_objcopy,
+    #                              '-O', 'binary',
+    #                              '@INPUT@',
+    #                              '@OUTPUT@'])
+
+    #pi4_bin_pxe = run_target('tftp_' + full_name + '_riscv',
+    #                    depends : [riscv_bin],
+    #                    command : [riscv_tftp_deploy,
+    #                              riscv_bin.full_path()])
+
+
+    autosar_generated_targets_riscv += app
   endif
 
 endforeach

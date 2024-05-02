@@ -51,3 +51,27 @@ if arm_enabled
                                         output: 'libautosar_generic_pi4.a',
                                         command: ar_cmd)
 endif
+
+if true
+    obj_targets = []
+
+    foreach src : src_files
+        obj_target = custom_target(
+            src+'_riscv',
+            input: src+'.cc',
+            output: src+'.cc.riscv.o',
+            depfile: src+'.riscv.dep',
+            command: clang_cpp +
+                    riscv_autosar_includes +
+                    autosar_includes +
+                    obj_flags +
+                    autosar_riscv_clang_flags +
+                    clang_flags)
+        obj_targets += obj_target
+    endforeach
+
+    libautosar_generic_riscv = custom_target('libautosar_generic_riscv',
+                                        input: obj_targets,
+                                        output: 'libautosar_generic_riscv.a',
+                                        command: ar_cmd)
+endif

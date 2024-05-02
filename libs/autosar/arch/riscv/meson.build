@@ -1,15 +1,16 @@
-posix_autosar_includes = ['-I', meson.current_source_dir()]
+riscv_autosar_includes = ['-I', meson.current_source_dir()]
+# riscv_autosar_includes += ['-I', meson.current_source_dir() / 'platforms' / 'r5']
+# Wenn maschinenabhängige Dateien hinzugefügt werden, müssen sie hier eingebunden werden
 
 src_files = [
+  'constructors',
   'dispatch',
-  'irq',
-  'itimer',
-  'mp',
+  'htif',
+  'interrupt',
   'output',
-  'signalinfo',
   'startup',
-  'terminal',
-  'spinlock'
+
+  'timer'
 ]
 
 obj_targets = []
@@ -17,20 +18,19 @@ obj_targets = []
 foreach src : src_files
     obj_target = custom_target(
         src,
-        input: src+'.cc',
-        output: src+'.cc.o',
-        depfile: src+'.dep',
+        input: src +'.cc',
+        output: src +'.cc.o',
+        depfile: src +'.dep',
         command: clang_cpp +
-                posix_autosar_includes +
+                riscv_autosar_includes +
                 autosar_includes +
-                autosar_posix_ld_flags +
                 obj_flags +
-                autosar_posix_clang_flags +
+                autosar_riscv_clang_flags +
                 clang_flags)
     obj_targets += obj_target
 endforeach
 
-libautosar_arch_posix = custom_target('libautosar_arch_posix',
+libautosar_arch_riscv = custom_target('libautosar_arch_riscv',
                                       input: obj_targets,
-                                      output: 'libautosar_arch_posix.a',
+                                      output: 'libautosar_arch_riscv.a',
                                       command: ar_cmd)

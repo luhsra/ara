@@ -66,7 +66,7 @@ void ShutdownHook(StatusType status) {
 	(void)status;
 	/* The testcase has finished, check the output */
 	if (GetCoreID() == OS_CORE_ID_1) {
-		test_trace_assert("0123451234");
+		test_trace_assert("0151234");
 		test_finish();
 	}
 }

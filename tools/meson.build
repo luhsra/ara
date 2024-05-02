@@ -29,6 +29,17 @@ if arm_enabled
   endif
 endif
 
+#riscv
+if true
+  qemu = find_program('qemu-system-riscv32', required: false)
+  if qemu.found()
+    # TODO qemu_stm32.sh uses qemu-system-stm32 internally. Use always the binary provided by Meson
+    # TODO port qemu_stm32 to Python
+    qemu_cmd = files('qemu_stm32.sh')
+    gdb_qemu_cmd = files('gdb_qemu_stm32.sh')
+  endif
+endif
+
 meson.add_install_script('post_meson_install.sh', py3_inst.path(),
                          py3_inst.get_install_dir() / 'ara',
                          get_option('datadir'))
