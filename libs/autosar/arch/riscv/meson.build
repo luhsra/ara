@@ -5,11 +5,11 @@ riscv_autosar_includes = ['-I', meson.current_source_dir()]
 src_files = [
   'constructors',
   'dispatch',
+  'fdt',
   'htif',
   'interrupt',
   'output',
   'startup',
-
   'timer'
 ]
 
