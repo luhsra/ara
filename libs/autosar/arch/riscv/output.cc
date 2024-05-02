@@ -2,15 +2,19 @@
 #include "frontend.h"
 #include "output.h"
 #include "htif.h"
+#include "os.h"
 
 
+#if DEBUG
 
-HTIFOutputStream kout;
-HTIFOutputStream debug;
+BufferedSerial kout{false};
+BufferedSerial debug{false};
+BufferedSerial debug_core_arr[MAX_CPUS];
 
-void HTIFOutputStream::putchar(char ch) {
-	// bool enabled = Machine::disable_interrupts();
-    htif_console_putchar(ch);
-	// if (enabled)
-	//	Machine::enable_
-}
+#else // DEBUG
+
+Serial kout;
+Null_Stream debug;
+Null_Stream debug_core;
+
+#endif // DEBUG

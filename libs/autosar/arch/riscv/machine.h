@@ -6,7 +6,8 @@
 
 #include "htif.h"
 #include "csr.h"
-#include "fdt.h"
+//#include "fdt.h"
+
 
 #include "output.h"
 
@@ -127,7 +128,7 @@ public:
 		bool interrupts = disable_interrupts();
         // Set the soft interrupt
 		soft_irq_cause |= (((uint64_t)1) << (irq_ % 64));
-        *HLS()->ipi = 1;
+        //*HLS()->ipi = 1;
 		if (interrupts) { enable_interrupts(); }
 	}
 	static forceinline void trigger_interrupt_from_user(uint8_t irq_) {
@@ -148,6 +149,8 @@ public:
 #define _asm_label(a) __asm_label(a)
 #define asm_label(label) asm volatile (".asm_label." label "_%=:" :: "m" (*(uint32_t *)0))
 // #define asm_label(label)
+
+
 
 
 #endif // __MACHINE_H__

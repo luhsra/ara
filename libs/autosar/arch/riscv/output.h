@@ -1,6 +1,6 @@
 /**
  * @file
- * @ingroup osek-v
+ * @ingroup i386
  * @brief Default output streams
  */
 #ifndef __OUTPUT_H__
@@ -8,29 +8,37 @@
 
 #include "arch/generic/ostream.h"
 
-typedef enum class  Color {
-	BLACK    = 0,
-	RED      = 1,
-	GREEN    = 2,
-	YELLOW   = 3,
-	BLUE     = 4,
-	MAGENTA  = 5,
-	CYAN     = 6,
-	WHITE    = 7,
-} Color;
+#ifndef FAIL
+#if DEBUG
 
-class HTIFOutputStream : public O_Stream<HTIFOutputStream> {
-public:
-	HTIFOutputStream() {};
+// debugging: print kout+debug on UART
+#include "bufferedserial.h"
+#include "serial.h"
+extern BufferedSerial kout;
+extern BufferedSerial debug;
+extern BufferedSerial debug_core_arr[MAX_CPUS];
 
-	void putchar(char c);
+#define debug_core (debug_core_arr[arch::get_cpuid()])
 
-	template<typename T>
-		void setcolor(__attribute__((unused)) T fg, __attribute__((unused)) T bg) {};
-};
+#else // DEBUG
 
-extern HTIFOutputStream kout;
-extern HTIFOutputStream debug;
+// not debugging: print kout on UART, ignore debug
+#include "serial.h"
+extern Serial kout;
+extern Null_Stream debug;
+extern Null_Stream debug_core;
 
+#endif // DEBUG
+
+#else // FAIL
+
+// FAIL* testing: no output
+extern Null_Stream kout;
+extern Null_Stream debug;
+
+// define dummy colors here as Null_Stream doesn't
+typedef enum class Color { BLACK, BLUE, GREEN, CYAN, RED, MAGENTA, YELLOW, WHITE } Color;
+
+#endif // FAIL
 
 #endif // __OUTPUT_H__

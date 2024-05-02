@@ -52,7 +52,7 @@ extern "C" void interrupt_handler(long long mcause, unsigned long long * irq_con
 			// if (fromhost == 0) {
 			// 	goto out;
 			// }
-			kout << "htif interrupt" << endl;
+			//kout << "htif interrupt" << endl;
 			bad_trap();
 		} else if (device == IRQ_M_TIMER) {
 			arch::Timer::tick();
@@ -68,14 +68,15 @@ extern "C" void interrupt_handler(long long mcause, unsigned long long * irq_con
                 // Clear that interrupt
                 Machine::soft_irq_cause &= ~(((uint64_t)1) << IRQ);
             }
-            *HLS()->ipi = 0;
+
+            //*HLS()->ipi = 0;
 
 			goto out;
 		}
-		kout << "device " << device << endl;
+		//kout << "device " << device << endl;
 		bad_trap();
 	} else {
-		kout << "trap " << (int) mcause << endl;
+		//kout << "trap " << (int) mcause << endl;
 		bad_trap();
 	}
 out:

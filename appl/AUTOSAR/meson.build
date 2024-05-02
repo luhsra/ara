@@ -258,7 +258,7 @@ foreach app : autosar_apps
   else
     app_ll_riscv = disabler()
   endif
-
+    app += {'ll_riscv': app_ll_riscv}
 
   # trace file for sse testing
   if not app.has_key('mtrace')
@@ -500,7 +500,7 @@ foreach app: autosar_targets
     if get_option('execute_ara')
       out = custom_target(
         full_name + '_mod_riscv',
-        input : app['ll'],
+        input : app['ll_riscv'],
         output : [
           full_name + '_mod.riscv.ll',
           full_name +'_autosar.riscv.cc',
