@@ -3,64 +3,50 @@
   - export GIT_CONFIG_GLOBAL=$PWD/ci_gitconfig
   - git config --global --add url."https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/".insteadOf "ssh://git@scm.sra.uni-hannover.de"
   - git config --global --add url."https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/".insteadOf "https://scm.sra.uni-hannover.de"
-  venv:
-  - virtualenv --system-site-packages venv && source venv/bin/activate
-  - pip install meson==1.4.0
+  clang:
+  - export CC=clang CXX=clang++
+  build-no-pch:
+  - meson setup --native-file native-lab.txt $CI_JOB_NAME -Db_pch=false
+  - meson compile -C $CI_JOB_NAME ara-py
+  build-pch:
+  - meson setup --native-file native-lab.txt $CI_JOB_NAME -Db_pch=true
+  - meson compile -C $CI_JOB_NAME ara-py
+  tests:
+  - meson test -C $CI_JOB_NAME --suite ara-link --suite preproc --suite sse --suite sia
 
-build-gcc-no-pch:
-  tags: ["sra.labor", "Debian-12"]
-  only: [soso, citest]
+default:
+  tags: ["test"]
+  image: scm.sra.uni-hannover.de:5050/research/ara
   interruptible: true
-  variables:
-    BUILD_DIR: './build-gcc-no-pch'
-  script:
-    - !reference [.scripts, git]
-    - !reference [.scripts, venv]
-    - CC=gcc CXX=g++ meson setup --native-file native-lab.txt $BUILD_DIR -Db_pch=false
-    - meson compile -j $(( $(nproc) * 8 / 10 )) -C $BUILD_DIR ara-py
-
-build-clang-no-pch:
-  tags: ["sra.labor", "Debian-12"]
-  only: [soso, citest]
-  interruptible: true
-  variables:
-    BUILD_DIR: './build-clang-no-pch'
-  script:
-    - !reference [.scripts, git]
-    - !reference [.scripts, venv]
-    - CC=clang CXX=clang++ meson setup --native-file native-lab.txt $BUILD_DIR -Db_pch=false
-    - meson compile -j $(( $(nproc) * 8 / 10 )) -C $BUILD_DIR ara-py
 
 build-gcc:
-  tags: ["sra.labor", "Debian-12"]
   only: [soso, citest]
-  interruptible: true
-  variables:
-    BUILD_DIR: './build-gcc'
   script:
     - !reference [.scripts, git]
-    - !reference [.scripts, venv]
-    - CC=gcc CXX=g++ meson setup --native-file native-lab.txt $BUILD_DIR -Db_pch=true -D execute_ara=true -D toolchains:enable_arm=enabled -D toolchains:enable_riscv=disabled
-    - meson compile -j $(( $(nproc) * 8 / 10 )) -C $BUILD_DIR |& tee $BUILD_DIR/build.log
-
-    - meson test -C $BUILD_DIR --suite ara-link
-    - meson test -C $BUILD_DIR --suite preproc
-    - meson test -C $BUILD_DIR --suite sse
-    - meson test -C $BUILD_DIR --suite sia
+    - !reference [.scripts, build-pch]
+  # run tests and upload results
+    - !reference [.scripts, tests]
   artifacts:
     when: always
     paths:
-    - $BUILD_DIR/meson-logs/testlog.txt
-    - $BUILD_DIR/build.log
+    - $CI_JOB_NAME/meson-logs/testlog.txt
 
 build-clang:
-  tags: ["sra.labor", "Debian-12"]
   only: [soso, citest]
-  interruptible: true
-  variables:
-    BUILD_DIR: './build-clang'
   script:
     - !reference [.scripts, git]
-    - !reference [.scripts, venv]
-    - CC=clang CXX=clang++ meson setup --native-file native-lab.txt $BUILD_DIR -Db_pch=true
-    - meson compile -j $(( $(nproc) * 8 / 10 )) -C $BUILD_DIR ara-py
+    - !reference [.scripts, clang]
+    - !reference [.scripts, build-pch]
+
+build-gcc-no-pch:
+  only: [soso, citest]
+  script:
+    - !reference [.scripts, git]
+    - !reference [.scripts, build-no-pch]
+
+build-clang-no-pch:
+  only: [soso, citest]
+  script:
+    - !reference [.scripts, git]
+    - !reference [.scripts, clang]
+    - !reference [.scripts, build-no-pch]

@@ -26,10 +26,11 @@ RUN apt-get install -y stlink-tools
 
 # get newer versions since the currently available ones dont fulfill or requirements
 # we need 0.53.0 or >= 0.55.0
-RUN pip3 install meson>=0.54.2 cython
+RUN pip3 install meson>=1.4.0 cython
 
 RUN apt-get install -y python3-serial python3-future python3-matplotlib
 RUN pip3 install -U versuchung matplotlib
 
+RUN apt-get install -y clang
 
 CMD ["bash"]
