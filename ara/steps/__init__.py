@@ -31,6 +31,7 @@ def provide_steps():
     from .dump_instances import DumpInstances
     from .dump_sstg import DumpSSTG
     from .fake_timings import FakeTimings
+    from .find_pointer_loops import FindPointerLoops
     from .generator import Generator
     from .icfg import ICFG
     from .instance_graph_stats import InstanceGraphStats
@@ -71,6 +72,7 @@ def provide_steps():
     yield DumpInstances
     yield DumpSSTG
     yield FakeTimings
+    yield FindPointerLoops
     yield Generator
     yield ICFG
     yield IPIAvoidance
