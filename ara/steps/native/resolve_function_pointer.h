@@ -141,8 +141,6 @@ namespace ara::step {
 		 */
 		void init_compatible_types();
 
-		void clear_svf_callgraph(const SVF::CallICFGNode& cbn, SVF::PTACallGraph& callgraph);
-
 		void link_indirect_pointer(const SVF::CallICFGNode& cbn, SVF::PTACallGraph& callgraph,
 		                           const llvm::Function& target, const SVF::LLVMModuleSet& svfModule);
 

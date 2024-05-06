@@ -8,7 +8,6 @@
 
 #include "resolve_function_pointer.h"
 
-#include "Graphs/PTACallGraph.h"
 #include "common/llvm_common.h"
 
 #include <Util/SVFUtil.h>
@@ -121,13 +120,6 @@ namespace ara::step {
 
 	Step::OptionVec ResolveFunctionPointer::get_local_options() {
 		return {accept_list_template, block_list_template, translation_map_template, use_only_translation_map_template};
-	}
-
-	void ResolveFunctionPointer::clear_svf_callgraph(const CallICFGNode& cbn, PTACallGraph& callgraph) {
-		std::vector<PTACallGraphEdge*> call_edges(callgraph.getCallEdgeBegin(&cbn), callgraph.getCallEdgeEnd(&cbn));
-		for (auto edge : call_edges) {
-			callgraph.removeInDirectCallGraphEdge(edge);
-		}
 	}
 
 	void ResolveFunctionPointer::link_indirect_pointer(const CallICFGNode& cbn, PTACallGraph& callgraph,
@@ -244,6 +236,32 @@ namespace ara::step {
 
 		logger.info() << "Resolve call to function pointer. Callsite: " << *call_inst << std::endl;
 
+		// handle user defined translation map
+		try {
+			const auto& [source, line] = get_source_location(*call_inst);
+			auto c_source = std::filesystem::canonical(source);
+			logger.debug() << "Callsite is in " << c_source << " line: " << line << std::endl;
+			const auto& entry = pointer_targets.find(std::make_pair(c_source, line));
+			if (entry != pointer_targets.end()) {
+				logger.info() << "Link with predefined functions from translation map." << std::endl;
+				for (const auto& func_name : entry->second) {
+					const llvm::Function* func = graph.get_module().getFunction(func_name);
+					option_fail_if(!func, "translation_map", std::string("missing function ") + func_name);
+					link_indirect_pointer(cbn, callgraph, *func, module);
+					ret.emplace_back(func);
+				}
+				return ret;
+			}
+		} catch (const LLVMError& e) {
+			logger.warn() << "Cannot find source code location of callsite " << call_inst << std::endl;
+		}
+
+		if (*use_only_translation_map.get()) {
+			logger.debug() << "Callsite not found in translation map, skipping..." << std::endl;
+			ignored_calls++;
+			return ret;
+		}
+
 		// automatic resolving
 
 		// create a map between FunctionType and the list of corresponding functions
@@ -335,37 +353,6 @@ namespace ara::step {
 					const auto* svf_inst = module.getSVFInstruction(&i);
 					if (SVFUtil::isCallSite(&i) && SVFUtil::isNonInstricCallSite(svf_inst)) {
 						CallICFGNode* cbn = icfg.getCallICFGNode(svf_inst);
-						const llvm::CallBase* call_inst =
-						    llvm::cast<llvm::CallBase>(cbn->getCallSite()->getLLVMInstruction());
-
-						// handle user defined translation map
-						try {
-							const auto& [source, line] = get_source_location(*call_inst);
-							auto c_source = std::filesystem::canonical(source);
-							logger.debug() << "Try to resolve " << *call_inst << std::endl;
-							logger.debug() << "Callsite is in " << c_source << " line: " << line << std::endl;
-							const auto& entry = pointer_targets.find(std::make_pair(c_source, line));
-							if (entry != pointer_targets.end()) {
-								logger.info() << "Link with predefined functions from translation map: " << *call_inst
-								              << std::endl;
-								logger.info() << "File: " << c_source << " line: " << line << std::endl;
-								if (callgraph.hasCallGraphEdge(cbn)) {
-									logger.info() << "Override SVF found values." << std::endl;
-									clear_svf_callgraph(*cbn, callgraph);
-								}
-								for (const auto& func_name : entry->second) {
-									const llvm::Function* func = graph.get_module().getFunction(func_name);
-									option_fail_if(!func, "translation_map",
-									              std::string("missing function ") + func_name);
-									link_indirect_pointer(*cbn, callgraph, *func, module);
-									unhandled_functions.push(func);
-								}
-								continue;
-							}
-						} catch (const LLVMError& e) {
-							logger.warn() << "Cannot find source code location of callsite " << call_inst << std::endl;
-						}
-
 						if (callgraph.hasCallGraphEdge(cbn)) {
 							// add all following functions to unhandled_functions
 							for (auto it = callgraph.getCallEdgeBegin(cbn); it != callgraph.getCallEdgeEnd(cbn); ++it) {
@@ -374,11 +361,6 @@ namespace ara::step {
 							}
 						} else {
 							// callblock with unresolved function pointer
-							if (*use_only_translation_map.get()) {
-								logger.debug() << "Callsite not found in translation map, skipping..." << std::endl;
-								ignored_calls++;
-								continue;
-							}
 							for (auto func : resolve_function_pointer(safe_deref(cbn), callgraph, module)) {
 								unhandled_functions.push(func);
 							}
