@@ -122,6 +122,10 @@ class InterruptMissing(Exception):
         self.irq_vertex = irq_vertex
 
 
+class OSModelError(Exception):
+    """The application behaves in a way that does not fit to the model."""
+
+
 @dataclass()
 class ControlContext:
     """Changing context for a ControlInstance"""

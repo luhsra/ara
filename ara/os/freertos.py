@@ -9,7 +9,7 @@
 from .os_util import (syscall, assign_id, set_next_abb, find_return_value, Arg,
                       UnknownArgument, connect_from_here, find_instance_node)
 from .os_base import (OSBase, ControlInstance, CPUList, CPU, OSState,
-                      ExecState, MultipleAssignedHandler)
+                      ExecState, MultipleAssignedHandler, OSModelError)
 
 import pyllco
 import html
@@ -369,6 +369,15 @@ class FreeRTOS(OSBase):
                 state.next_abbs = []
                 set_next_abb(state, 0)
                 return [state]
+        inst_vp = state.instances.vp
+        cur_inst = state.cpus[cpu_id].control_instance
+        if (cur_inst is not None and
+                isinstance(inst_vp.obj[cur_inst], ISR) and not
+                syscall_function.isr_call):
+            logger.error("Try to call a syscall not ready for ISRs from an ISR.")
+            logger.error("Instance: %s, Syscall: %s", inst_vp.label[cur_inst], syscall)
+            logger.error("Callpath: %s", state.cpus[cpu_id].call_path)
+            raise OSModelError("Syscall from ISR")
         # TODO: place MissingInteractions.activate() in working initializer function
         MissingInteractions.activate()
         return syscall_function(graph, state, cpu_id)
