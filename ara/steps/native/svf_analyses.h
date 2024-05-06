@@ -11,12 +11,13 @@
 
 #include <Graphs/ICFG.h>
 #include <Graphs/PTACallGraph.h>
+#include <filesystem>
 #include <graph.h>
 
 namespace ara::step {
 	class SVFAnalyses : public ConfStep<SVFAnalyses> {
 	  private:
-	  friend class helper::TranslationMapParser<SVFAnalyses>;
+		friend class helper::TranslationMapParser<SVFAnalyses>;
 		std::map<std::pair<std::filesystem::path, unsigned>, std::set<std::string>> pointer_targets;
 
 		using ConfStep<SVFAnalyses>::ConfStep;

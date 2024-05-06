@@ -8,6 +8,7 @@
 
 #include "step.h"
 
+#include <filesystem>
 #include <sstream>
 
 namespace ara::step::helper {
