@@ -144,8 +144,6 @@ namespace ara::step {
 			callgraph.getIndCallMap()[&cbn].insert(callee);
 			callgraph.addIndirectCallGraphEdge(&cbn, cbn.getCaller(), callee);
 		}
-		// update stack
-		unhandled_functions.push(&target);
 
 		logger.debug() << "Link " << *call_inst << " with " << target.getName().str() << std::endl;
 	}
@@ -235,11 +233,13 @@ namespace ara::step {
 		return ret;
 	}
 
-	void ResolveFunctionPointer::resolve_function_pointer(const CallICFGNode& cbn, PTACallGraph& callgraph,
-	                                                      const LLVMModuleSet& module) {
+	std::vector<const llvm::Function*> ResolveFunctionPointer::resolve_function_pointer(const CallICFGNode& cbn,
+	                                                                                    PTACallGraph& callgraph,
+	                                                                                    const LLVMModuleSet& module) {
+		std::vector<const llvm::Function*> ret;
 		const llvm::CallBase* call_inst = llvm::cast<llvm::CallBase>(cbn.getCallSite()->getLLVMInstruction());
 		if (is_call_to_intrinsic(*call_inst)) {
-			return;
+			return ret;
 		}
 
 		logger.info() << "Resolve call to function pointer. Callsite: " << *call_inst << std::endl;
@@ -290,6 +290,7 @@ namespace ara::step {
 				found_candidate = true;
 				for (const llvm::Function& func : match->second) {
 					link_indirect_pointer(cbn, callgraph, func, module);
+					ret.emplace_back(&func);
 					++i;
 				}
 			}
@@ -305,6 +306,7 @@ namespace ara::step {
 			logger.warn() << "At Callsite: " << *call_inst << std::endl;
 			logger.warn() << "Unresolved function pointer!" << std::endl;
 		}
+		return ret;
 	}
 
 	void ResolveFunctionPointer::resolve_indirect_function_pointers(ICFG& icfg, PTACallGraph& callgraph,
@@ -319,6 +321,7 @@ namespace ara::step {
 		}
 
 		std::set<const llvm::Function*> handled_functions;
+		std::queue<const llvm::Function*> unhandled_functions;
 		unhandled_functions.push(entry);
 
 		while (!unhandled_functions.empty()) {
@@ -358,6 +361,7 @@ namespace ara::step {
 									fail_if_empty(func, "translation_map",
 									              std::string("missing function ") + func_name);
 									link_indirect_pointer(*cbn, callgraph, *func, module);
+									unhandled_functions.push(func);
 								}
 								return;
 							}
@@ -378,7 +382,9 @@ namespace ara::step {
 								ignored_calls++;
 								continue;
 							}
-							resolve_function_pointer(safe_deref(cbn), callgraph, module);
+							for (auto func : resolve_function_pointer(safe_deref(cbn), callgraph, module)) {
+								unhandled_functions.push(func);
+							}
 							handled_blocks++;
 						}
 					}

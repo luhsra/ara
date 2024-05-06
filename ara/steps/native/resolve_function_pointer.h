@@ -129,7 +129,6 @@ namespace ara::step {
 		std::set<std::string> accept_names;
 		std::map<std::pair<std::filesystem::path, unsigned>, std::set<std::string>> pointer_targets;
 		unsigned ignored_calls = 0;
-		std::queue<const llvm::Function*> unhandled_functions;
 
 		/**
 		 * Initialize a map of compatible types.
@@ -151,8 +150,9 @@ namespace ara::step {
 		                       std::vector<std::reference_wrapper<const llvm::Function>>& functions);
 		std::vector<std::reference_wrapper<const llvm::Function>> get_address_taken_functions();
 
-		void resolve_function_pointer(const SVF::CallICFGNode& cbn, SVF::PTACallGraph& callgraph,
-		                              const SVF::LLVMModuleSet& svfModule);
+		std::vector<const llvm::Function*> resolve_function_pointer(const SVF::CallICFGNode& cbn,
+		                                                            SVF::PTACallGraph& callgraph,
+		                                                            const SVF::LLVMModuleSet& svfModule);
 		void resolve_indirect_function_pointers(SVF::ICFG& icfg, SVF::PTACallGraph& callgraph,
 		                                        const SVF::LLVMModuleSet& module, std::string entry_point);
 
