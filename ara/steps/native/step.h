@@ -167,6 +167,18 @@ namespace ara::step {
 			std::string step_name = SubStep::get_name();
 			throw StepError(step_name, message);
 		}
+		/**
+		 * Fail, if a certain condition is not meant, meaning that an option was falsely used.
+		 * This is to get the user proper feedback about the correct usage of options.
+		 */
+		template <class String>
+		void option_fail_if(bool condition, const char* opt_name, String additional_message) {
+			if (condition) {
+				std::stringstream ss;
+				ss << opt_name << ": " << additional_message;
+				this->fail(ss.str());
+			}
+		}
 
 		ConfStep(PyObject* py_logger, graph::Graph graph, PyObject* py_step_manager)
 		    : Step(py_logger, std::move(graph), py_step_manager) {

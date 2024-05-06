@@ -314,11 +314,7 @@ namespace ara::step {
 	                                                                std::string entry_point) {
 		int handled_blocks = 0;
 		llvm::Function* entry = graph.get_module().getFunction(entry_point);
-
-		if (entry == nullptr) {
-			logger.error() << "Empty entry point: " << entry_point << std::endl;
-			fail("entry_point is not a valid LLVM function.");
-		}
+		option_fail_if(entry == nullptr, "entry_point", "Not a valid LLVM function.");
 
 		std::set<const llvm::Function*> handled_functions;
 		std::queue<const llvm::Function*> unhandled_functions;
@@ -359,7 +355,7 @@ namespace ara::step {
 								}
 								for (const auto& func_name : entry->second) {
 									const llvm::Function* func = graph.get_module().getFunction(func_name);
-									fail_if_empty(func, "translation_map",
+									option_fail_if(!func, "translation_map",
 									              std::string("missing function ") + func_name);
 									link_indirect_pointer(*cbn, callgraph, *func, module);
 									unhandled_functions.push(func);
@@ -396,82 +392,15 @@ namespace ara::step {
 		logger.info() << "Handled " << handled_blocks << " blocks with unresolved function pointers\n" << std::endl;
 	}
 
-	void ResolveFunctionPointer::parse_json(const char* opt_name, option::TOptEntity<option::String>& option,
-	                                        std::function<void(const llvm::json::Array&)> do_with_array) {
-		const auto& opt = option.get();
-		if (opt) {
-			std::string source;
-			// check if list is a file or directy a json list
-			// TODO replace this with startswith, once we have C++20
-			if (opt->find("[") != 0) {
-				std::ifstream ifs(*opt);
-				source = std::string((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
-			} else {
-				source = *opt;
-			}
-
-			// actual JSON parsing
-			auto val = llvm::json::parse(source);
-			fail_if_empty(val, opt_name, "LLVM JSON parsing failed");
-			llvm::json::Array* arr = val->getAsArray();
-			fail_if_empty(arr, opt_name, "Invalid JSON. Expecting a list.");
-
-			do_with_array(*arr);
-		}
-	}
-
-	void ResolveFunctionPointer::parse_list(const char* opt_name, option::TOptEntity<option::String>& option,
-	                                        std::set<std::string>& target) {
-		target.clear();
-
-		std::function<void(const llvm::json::Array&)> do_with_array = [&](const llvm::json::Array& arr) {
-			for (const llvm::json::Value& func_val : arr) {
-				auto func = func_val.getAsString();
-				fail_if_empty(func, opt_name, "Invalid JSON. Expecting a list of strings.");
-				target.insert(func->str());
-			}
-		};
-		parse_json(opt_name, option, do_with_array);
-	}
-
-	void ResolveFunctionPointer::parse_translation_map(const char* opt_name,
-	                                                   option::TOptEntity<option::String>& option) {
-		pointer_targets.clear();
-		std::function<void(const llvm::json::Array&)> do_with_array = [&](const llvm::json::Array& arr) {
-			const auto& opt = option.get();
-			for (const llvm::json::Value& entry : arr) {
-				auto entry_d = entry.getAsObject();
-				fail_if_empty(entry_d, opt_name, "Invalid JSON. Expecting a list of dicts.");
-				auto source_file = entry_d->getString("source_file");
-				fail_if_empty(source_file, opt_name, "Invalid JSON. Expecting a source_file entry.");
-				std::filesystem::path source_path = std::filesystem::canonical(
-				    std::filesystem::path(*opt).parent_path() / std::filesystem::path(source_file->str()));
-				auto line_number = entry_d->getInteger("line_number");
-				fail_if_empty(line_number, opt_name, "Invalid JSON. Expecting a line_number entry.");
-				auto call_targets = entry_d->getArray("call_targets");
-				fail_if_empty(call_targets, opt_name, "Invalid JSON. Expecting a call_targets entry.");
-
-				std::set<std::string> call_t;
-				for (const llvm::json::Value& func_val : *call_targets) {
-					auto func = func_val.getAsString();
-					fail_if_empty(func, opt_name, "Invalid JSON. Expecting a list of strings as call_targets.");
-					call_t.insert(func->str());
-				}
-				pointer_targets[std::make_pair<std::filesystem::path, unsigned>(std::move(source_path), *line_number)] =
-				    std::move(call_t);
-			}
-		};
-		parse_json(opt_name, option, do_with_array);
-	}
-
 	void ResolveFunctionPointer::run() {
 		dl = DataLayout(&graph.get_module());
 		SVF::PAG* pag = SVF::PAG::getPAG();
 		SVF::ICFG* icfg = safe_deref(pag).getICFG();
 
-		parse_list("accept_list", accept_list, accept_names);
-		parse_list("block_list", block_list, block_names);
-		parse_translation_map("translation_map", translation_map);
+		helper::TranslationMapParser tmp(*this);
+		tmp.parse_list("accept_list", accept_list, accept_names);
+		tmp.parse_list("block_list", block_list, block_names);
+		tmp.parse_translation_map("translation_map", translation_map, pointer_targets);
 
 		// this is actually a singleton, so the creation was done in SVFAnalyses
 		SVF::Andersen* ander = SVF::AndersenWaveDiff::createAndersenWaveDiff(pag);

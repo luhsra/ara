@@ -7,6 +7,7 @@
 #pragma once
 
 #include "step.h"
+#include "translation_map_utils.h"
 
 #include <boost/functional/hash.hpp>
 #include <boost/iterator/iterator_facade.hpp>
@@ -51,6 +52,7 @@ namespace ara::step {
 	 */
 	class ResolveFunctionPointer : public EntryPointStep<ResolveFunctionPointer> {
 	  private:
+		friend class helper::TranslationMapParser<ResolveFunctionPointer>;
 		using TypeMap = std::map<llvm::Type*, std::set<llvm::Type*>>;
 
 		class FuzzyFuncType;
@@ -155,22 +157,6 @@ namespace ara::step {
 		                                                            const SVF::LLVMModuleSet& svfModule);
 		void resolve_indirect_function_pointers(SVF::ICFG& icfg, SVF::PTACallGraph& callgraph,
 		                                        const SVF::LLVMModuleSet& module, std::string entry_point);
-
-		// const T& obj not possible since operator bool for llvm::Expected is not const
-		template <class T, class String>
-		void fail_if_empty(T& obj, const char* opt_name, String additional_message) {
-			if (!obj) {
-				std::stringstream ss;
-				ss << opt_name << ": " << additional_message;
-				fail(ss.str());
-			}
-		}
-
-		void parse_json(const char* opt_name, option::TOptEntity<option::String>& option,
-		                std::function<void(const llvm::json::Array&)> do_with_array);
-		void parse_list(const char* opt_name, option::TOptEntity<option::String>& option,
-		                std::set<std::string>& target);
-		void parse_translation_map(const char* opt_name, option::TOptEntity<option::String>& option);
 
 	  public:
 		ResolveFunctionPointer(PyObject* py_logger, graph::Graph graph, PyObject* py_step_manager)
