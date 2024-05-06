@@ -62,6 +62,14 @@ llvm_opt = toolchains.get_variable('llvm_opt')
 boost_dep = dependency('boost', modules: ['graph', 'python' + py3_inst.language_version().replace('.', '')])
 graph_tool_dep = dependency('graph-tool-py' + py3_inst.language_version(), include_type: 'system')
 
+# TODO: why is graph_tool_dep not having this?
+missing_includes = declare_dependency(
+    include_directories: '/usr/lib/python3/dist-packages/graph_tool/include'
+)
+graph_tool_dep = declare_dependency (
+    dependencies: [graph_tool_dep, missing_includes]
+)
+
 ## pyllco
 pyllco_dep = dependency('pyllco-py' + py3_inst.language_version(), required : false)
 if pyllco_dep.found()
