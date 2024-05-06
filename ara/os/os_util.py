@@ -467,7 +467,7 @@ def assign_id(instances, instance):
     must_be_longer = None
     for other_id, inst in other_ids:
         prefix = os.path.commonprefix([target_id, other_id])
-        assert prefix != target_id, "Cannot find a unique id."
+        assert prefix != target_id, f"Cannot find a unique id: {prefix}"
         longest = max(longest, len(prefix))
         if len(prefix) == len(other_id):
             assert must_be_longer is None, "Something went wrong."
@@ -476,7 +476,7 @@ def assign_id(instances, instance):
     if must_be_longer:
         other_id = instances.vp.obj[must_be_longer].get_maximal_id().split('.')
         prefix = os.path.commonprefix([target_id, other_id])
-        assert prefix != target_id and prefix != other_id, "Cannot find a unique id."
+        assert prefix != target_id and prefix != other_id, f"Cannot find a unique id: {prefix}"
         longest = len(prefix)
         instances.vp.id[must_be_longer] = '.'.join(other_id[:longest + 1])
 

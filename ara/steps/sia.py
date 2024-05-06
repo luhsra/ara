@@ -256,8 +256,10 @@ class FlatAnalysis(Step):
             rev_cg = GraphView(callg, reversed=True)
             init_state = os.get_initial_state(cfg, instances)
             for entry_point, inst in entry_points:
+                inst_lbl = instances.vp.label[inst] if inst else "none"
                 self._log.debug(f"Handle {sys_name} with entry_point "
-                                f"{callg.vp.function_name[entry_point]}")
+                                f"{callg.vp.function_name[entry_point]}"
+                                f" (instance: {inst_lbl})")
 
                 non_atomic_call = mixed_mode and not syscall_info.is_atomic
                 if not non_atomic_call:
