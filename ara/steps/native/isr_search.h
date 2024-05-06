@@ -6,6 +6,7 @@
 
 #include "option.h"
 #include "step.h"
+#include "translation_map_utils.h"
 
 #define VERSION_BKP VERSION
 #undef VERSION
@@ -20,13 +21,23 @@
 namespace ara::step {
 	class ISRSearch : public ConfStep<ISRSearch> {
 	  private:
+		friend class helper::TranslationMapParser<ISRSearch>;
 		using ConfStep<ISRSearch>::ConfStep;
+
+		const static inline option::TOption<option::String> block_list_template{
+		    "block_list", "Filepath or JSON list with invalid call targets for function pointer."};
+		option::TOptEntity<option::String> block_list;
+		virtual void init_options() override;
+
 		static SVF::PTACallGraph& get_svf_callgraph();
 		void find_entry_points(const SVF::PTACallGraphNode* syscall);
+
+		std::set<std::string> block_names;
 
 	  public:
 		static std::string get_name() { return "ISRSearch"; }
 		static std::string get_description();
+		static Step::OptionVec get_local_options();
 		virtual std::vector<std::string> get_single_dependencies() override {
 			return {"LLVMMap", "ResolveFunctionPointer"};
 		}

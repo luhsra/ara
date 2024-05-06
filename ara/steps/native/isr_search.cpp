@@ -24,6 +24,14 @@ namespace ara::step {
 		return "Find entry points for potential ISRs based on ISR only syscalls in the SVF callgraph.";
 	}
 
+	void ISRSearch::init_options() {
+		ConfStep<ISRSearch>::init_options();
+		block_list = block_list_template.instantiate(get_name());
+		opts.emplace_back(block_list);
+	}
+
+	Step::OptionVec ISRSearch::get_local_options() { return {block_list_template}; }
+
 	namespace {
 		const std::string get_func_name(const SVF::PTACallGraphNode& node) {
 			return node.getFunction()->getLLVMFun()->getName().str();
@@ -62,8 +70,12 @@ namespace ara::step {
 			if (!has_in_edges && !syscall_itself) {
 				// we found a root node
 				auto func_name = get_func_name(*current);
-				logger.info() << "Found new ISR node: " << func_name << std::endl;
-				isrs.emplace_back(func_name);
+				if (block_names.find(func_name) != block_names.end()) {
+					logger.debug() << "ISR node ignored due to block list: " << func_name << std::endl;
+				} else {
+					logger.info() << "Found new ISR node: " << func_name << std::endl;
+					isrs.emplace_back(func_name);
+				}
 			}
 			syscall_itself = false;
 		}
@@ -79,6 +91,11 @@ namespace ara::step {
 		SVF::PTACallGraph& svf_callgraph = get_svf_callgraph();
 		os::OS os = this->graph.get_os();
 		auto all_syscalls = os.get_syscall_names();
+
+		helper::TranslationMapParser tmp(*this);
+		tmp.parse_list("block_list", block_list, block_names);
+		// this is inherently ignored
+		block_names.insert(constants::ARA_ENTRY_POINT);
 
 		for (const auto& [index, node] : svf_callgraph) {
 			auto func_name = get_func_name(*node);
