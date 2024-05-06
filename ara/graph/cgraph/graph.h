@@ -466,6 +466,7 @@ namespace ara::graph {
 		/* edge properties */
 		typename graph_tool::eprop_map_t<long>::type callsite;
 		typename graph_tool::eprop_map_t<std::string>::type callsite_name;
+		typename graph_tool::eprop_map_t<unsigned char>::type indirect;
 		typename graph_tool::eprop_map_t<int64_t>::type svf_elink;
 
 		typename graph_tool::gprop_map_t<PyObject*>::type cfg;

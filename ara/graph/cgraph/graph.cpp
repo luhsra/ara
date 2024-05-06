@@ -190,6 +190,7 @@ namespace ara::graph {
 
 		ARA_EMAP(callsite)
 		ARA_EMAP(callsite_name)
+		ARA_EMAP(indirect)
 		ARA_EMAP(svf_elink)
 
 #undef ARA_VMAP

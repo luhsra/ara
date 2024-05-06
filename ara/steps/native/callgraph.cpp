@@ -126,6 +126,7 @@ namespace ara::step {
 
 				callgraph.callsite[edge.first] = bb;
 				callgraph.callsite_name[edge.first] = cfg.name[bb];
+				callgraph.indirect[edge.first] = svf_edge.isIndirectCallEdge();
 				callgraph.svf_elink[edge.first] = reinterpret_cast<uintptr_t>(&svf_edge);
 
 				logger.debug() << "Add a new edge: " << callgraph.function_name[s_vert] << " -> "

@@ -467,6 +467,8 @@ class Callgraph(graph_tool.Graph):
         if not (graph is None):
             return
 
+        # properties: also update graph.{h, cpp} when changing something
+        # here
         # vertex properties
         # link to the CFG function node
         self.vertex_properties["function"] = self.new_vp("long")
@@ -484,6 +486,8 @@ class Callgraph(graph_tool.Graph):
         self.edge_properties["callsite"] = self.new_ep("long")
         # name of that callsite
         self.edge_properties["callsite_name"] = self.new_ep("string")
+        # is it a call via function pointer
+        self.edge_properties["indirect"] = self.new_ep("bool")
         # link to the SVF edge
         self.edge_properties["svf_elink"] = self.new_ep("int64_t")
 
