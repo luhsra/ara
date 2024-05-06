@@ -352,6 +352,7 @@ namespace ara::step {
 							if (entry != pointer_targets.end()) {
 								logger.info() << "Link with predefined functions from translation map: " << *call_inst
 								              << std::endl;
+								logger.info() << "File: " << c_source << " line: " << line << std::endl;
 								if (callgraph.hasCallGraphEdge(cbn)) {
 									logger.info() << "Override SVF found values." << std::endl;
 									clear_svf_callgraph(*cbn, callgraph);
@@ -363,7 +364,7 @@ namespace ara::step {
 									link_indirect_pointer(*cbn, callgraph, *func, module);
 									unhandled_functions.push(func);
 								}
-								return;
+								continue;
 							}
 						} catch (const LLVMError& e) {
 							logger.warn() << "Cannot find source code location of callsite " << call_inst << std::endl;
