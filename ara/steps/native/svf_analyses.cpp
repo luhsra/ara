@@ -8,8 +8,10 @@
 
 #include "svf_analyses.h"
 
+#include "common/llvm_common.h"
 #include "common/util.h"
 
+#include <Graphs/PTACallGraph.h>
 #include <Graphs/VFGNode.h>
 #include <SVF-FE/SVFIRBuilder.h>
 #include <Util/BasicTypes.h>
@@ -100,6 +102,46 @@ namespace ara::step {
 		logger.info() << "Conversion finished" << std::endl;
 	}
 
+	void SVFAnalyses::apply_translation_map(SVF::PTACallGraph& callgraph) {
+		std::set<PTACallGraphEdge*> edges_to_remove;
+		for (const auto [_, node] : callgraph) {
+			for (auto it = node->OutEdgeBegin(); it != node->OutEdgeEnd(); ++it) {
+				PTACallGraphEdge* edge = *it;
+				for (const CallICFGNode* i_node : edge->getIndirectCalls()) {
+					const llvm::CallBase* call_inst =
+					    llvm::cast<llvm::CallBase>(i_node->getCallSite()->getLLVMInstruction());
+					try {
+						const auto& [source, line] = get_source_location(*call_inst);
+						auto c_source = std::filesystem::canonical(source);
+						logger.debug() << "Try to resolve " << *call_inst << std::endl;
+						logger.debug() << "Callsite is in " << c_source << " line: " << line << std::endl;
+						const auto& entry = pointer_targets.find(std::make_pair(c_source, line));
+						if (entry != pointer_targets.end()) {
+							logger.info()
+							    << "Override SVF value with predefined functions from translation map: " << *call_inst
+							    << std::endl;
+							edges_to_remove.emplace(edge);
+							break;
+						}
+					} catch (const LLVMError& e) {
+						logger.warn() << "Cannot find source code location of callsite " << *call_inst << std::endl;
+					}
+				}
+			}
+		}
+		for (PTACallGraphEdge* edge : edges_to_remove) {
+			callgraph.removeInDirectCallGraphEdge(edge);
+		}
+	}
+
+	void SVFAnalyses::init_options() {
+		ConfStep<SVFAnalyses>::init_options();
+		translation_map = translation_map_template.instantiate(get_name());
+		opts.emplace_back(translation_map);
+	}
+
+	Step::OptionVec SVFAnalyses::get_local_options() { return {translation_map_template}; }
+
 	void SVFAnalyses::run() {
 		// Disable SVF ThreadCallGraph because this option will not work with POSIX os model.
 		const char* command_line[] = {"ara", "-enable-tcg=false"};
@@ -124,11 +166,14 @@ namespace ara::step {
 		ICFG* icfg = svfir->getICFG();
 		PTACallGraph* callgraph = ander->getPTACallGraph();
 
+		helper::TranslationMapParser tmp(*this);
+		tmp.parse_translation_map("translation_map", translation_map, pointer_targets);
+		apply_translation_map(safe_deref(callgraph));
+
 		// resolve indirect pointer in the icfg
 		icfg->updateCallGraph(callgraph);
 
 		// we don't need to store anything here, since all SVF datastructures are stored in singletons
-
 		graph::SVFG svfg_graphtool = graph.get_svfg_graphtool();
 		graph::GraphData& graph_data = graph.get_graph_data();
 		graph_tool::gt_dispatch<>()([&](auto& g) { map_svfg(g, svfg_graphtool, graph.get_svfg(), logger, graph_data); },
