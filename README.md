@@ -6,6 +6,7 @@ SPDX-FileCopyrightText: 2021 Björn Fiedler <fiedler@sra.uni-hannover.de>
 SPDX-FileCopyrightText: 2021 Kenny Albes
 SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
 SPDX-FileCopyrightText: 2022 Jan Neugebauer
+SPDX-FileCopyrightText: 2024 Andreas Kässens
 
 SPDX-License-Identifier: GPL-3.0-or-later
 -->
@@ -13,49 +14,26 @@ SPDX-License-Identifier: GPL-3.0-or-later
 ARA - Automatic Real-time System Analyzer
 =========================================
 
-Tool to automatically analyse real-time systems.
-Currently capable of systems written with FreeRTOS and OSEK.
+Tool to automatically analyze real-time systems.
+Currently capable of systems written with FreeRTOS, OSEK/AUTOSAR, Zephyr and POSIX.
+ARA is a subproject of the PARROT meta-repository containing related applications and toolchains.
+
+Dependencies
+------------
+
+The PARROT Docker container has the required software installed.
 
 Building
 --------
 
-The following dependencies are needed:
+ARA can also be used without PARROT.
 
-- [meson](https://mesonbuild.com/) (>=0.60.0)
-- [llvm](http://llvm.org/) (==14)
-- [cython](https://cython.org/) (>=0.29.14)
-- [python](https://www.python.org/) (>=3.10)
-- [pydot](https://pypi.org/project/pydot/)
-- [graph-tool](https://graph-tool.skewed.de/)
-
-Optional dependencies:
-
-- [pygments](https://pygments.org/) (Runtime depedency to get dot files linked to the source code)
-
-Dependencies that are built as subproject:
-
-- [SVF](http://svf-tools.github.io/SVF/)
-  - SVF needs [Z3](https://github.com/Z3Prover/z3) additionally
-
-Getting packages in SRA lab:
-```
-pip3 install --user meson
-. ~/.profile
-```
-
-Outside of the SRA lab some extra dependencies might be needed:
-```
-sudo apt install cmake pkgconf libboost-all-dev libsparsehash-dev gcc-arm-none-eabi libcairo3-dev python3-dev clang-format
-pip3 install -U pycairo matplotlib
-```
-
-To build the program type:
-```
-meson setup build
+```bash
+meson build --native-file native-lab.ini
 cd build
 ninja
 ```
-(Note: `build` is actually a placeholder for an arbitrary path.)
+(Note: `build` is a placeholder for an arbitrary path.)
 
 To build only ARA itself use:
 ```
@@ -63,33 +41,6 @@ ninja ara.py
 ```
 
 There are some build options to deactivate parts of the project. Take a look at `meson configure` for that.
-
-Zephyr
-------
-In order to build and analyze Zephyr-RTOS apps some additional steps are required: (you can use the init_zephyr.sh script to automate this process)
-To obtain Zephyr and its dependencies follow steps 1 to 3 (inclusive) from their [starter guide](https://docs.zephyrproject.org/2.4.0/getting_started/index.html).
-
-Delete the zephyrproject/zephyr repo and replace it with our [internal one](https://scm.sra.uni-hannover.de/diffusion/412/repository/ara/). 
-Switch to branch `ara` and update the dependencies with west.
-```
-rm -rf ./zephyr
-git clone -b ara git@scm.sra.uni-hannover.de:research/zephyrproject-rtos.git zephyr
-west update
-```
-Configure meson so that it finds the zephyr install.
-```
-meson configure -D zephyr_dir=<...>/zephyrproject/
-```
-To test zephyr apps without a test case use this target:
-```
-ninja zephyr_examples
-ninja z_clean
-```
-
-To analyze them with ARA:
-```
-./ara.py --os Zephyr --step-settings ../settings/zephyr.json --entry-point="" ./appl/Zephyr/static_threads.ll
-```
 
 Usage
 -----
@@ -100,7 +51,7 @@ Therefore meson generates a replacement script `ara.py` in the build directory t
 build/ara.py -h
 ```
 
-Note: The input of the program is an LLVM IR file. To compile a C/C++ applications into IR files, invoke clang with the flags described in `settings/meson.build`.
+Note: The input of the program is an LLVM IR file. To compile a C/C++ application into IR, invoke clang with the flags described in `settings/meson.build`.
 
 Test Cases
 ----------
@@ -130,7 +81,7 @@ ARA can be configured in multiple ways:
 2. Per-step options: See the following text.
 
 Steps can define their own options. See `build/ara.py -l` for a list of steps and their options.
-Step wise configuration can be configured with the `--step-settings` command line switch.
+Step-wise configuration can be configured with the `--step-settings` command line switch.
 
 Input must be a JSON file with this syntax:
 ```
@@ -240,20 +191,17 @@ And then manually invoke `git clang-format`.
 Troubleshooting
 ---------------
 
-### LLVM is not found
-Sometime Meson is unable to find the correct LLVM libraries because detection of the `llvm-config` file fails.
-In this case, add a file `native.txt` with this content:
-```
-[binaries]
-llvm-config = '/path/to/llvm-config'
-```
-Then configure your build directory with:
-```
-meson build --native-file native.txt
+### Dependencies not found
+When building with your own environment, Meson might be unable to find some dependencies.
+Then, a native-file for your environment is required. See the PARROT native-files for details.
+
+```bash
+meson build --native-file native-lab.ini
 ```
 
 ### meson directory is really/too big
 This is because of precompiled headers. They fasten the build a little bit but need a lot of disk space. You can deactivate precompiled headers with:
-```
+
+```bash
 meson configure -Db_pch=false
 ```
