@@ -504,7 +504,6 @@ foreach app: autosar_targets
         output : [
           full_name + '_mod.riscv.ll',
           full_name +'_autosar.riscv.cc',
-          full_name +'_autosar.riscv.ld'
         ],
         depfile : full_name + '_mod.riscv.ll.dep',
         command : [
@@ -522,10 +521,8 @@ foreach app: autosar_targets
     endif
     app_ll_mod = out[0]
     autosar = out[1]
-    linker_script = out[2]
     app += {'ll_riscv_mod': app_ll_mod}
     app += {'autosar_riscv': autosar}
-    app += {'linker_script_riscv': linker_script}
 
     app_image_riscv = custom_target(full_name + '_image_riscv',
                             input: [
@@ -539,7 +536,7 @@ foreach app: autosar_targets
                             output : full_name + '_riscv',
                             depfile : full_name + '.riscv.dep',
                             command : clang_cpp +
-                                      ['-T', linker_script] +
+                                      ['-T', 'libs/autosar/arch/riscv/linker.ld'] +
                                       riscv_autosar_includes +
                                       autosar_includes +
                                       ld_flags +

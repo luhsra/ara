@@ -11,6 +11,8 @@ from ara.graph import ABBType
 
 from ara.steps import get_native_component
 from enum import Enum
+
+#TODO Importe Anpassen
  
 class TracePerf(Enum):
     NONE = 0
@@ -21,13 +23,16 @@ class RiscVArch(GenericArch):
 
     def __init__(self):
         super(RiscVArch, self).__init__()
-        self.IPI_SIG = 1  # IPI is just a resehdule interrupt on remote core
-        self.TERM_SIG = 12
+        #SIGUSR1 on RISCV
+        self.IPI_SIG = 1    #Interprocessor Interrupt Signal
+        self.TERM_SIG = 12  #Termination Signal
 
     def generate_startup_code(self):
         # generate other functions
         self.arch_rules.generate_functions()
 
+    # Gibt es nicht in Posix
+    # ???
     def generate_functions(self):
         super().generate_functions()
 
@@ -46,19 +51,19 @@ class RiscVArch(GenericArch):
                 self.call(ASTSchedule, "arch::Perf::trace_cycles", prepend=True)
 
     # config-constraint-: (arch.self == posix) -> !arch.mpu
+    # Posix braucht kein Linkerscript
+    # RV schon
     def generate_linkerscript(self):
-        linker_script = LinkerScriptTemplate(self)
-        filename = os.path.splitext(self.generator.file_prefix)[0] + ".ld"
-        with open(filename, 'w+') as fd:
-            content = linker_script.expand()
-            fd.write(content)
+        pass
 
+    # Bleibt gleich
     def generate_data_objects(self):
         """Generate all dataobjects for the system"""
         self.generate_dataobjects_task_stacks()  # From GenericArch
         self.generate_dataobjects_task_entries()  # From GenericArch
         self.generate_dataobjects_tcbs()
 
+    # Gibt es nicht in Posix
     def generate_system_code(self):
         # tracing for PMU
         self.PERF_TRACE = TracePerf.NONE
@@ -68,6 +73,7 @@ class RiscVArch(GenericArch):
         if PERF_TRACE_global is not None:
             self.PERF_TRACE = TracePerf(PERF_TRACE_global.get_initializer().get())
 
+    # Gibt es nicht in Posix
     def generate_dataobjects_task_stacks(self):
         """Generate the stacks for the tasks, including the task pointers"""
         super(RiscVArch, self).generate_dataobjects_task_stacks()
@@ -86,7 +92,7 @@ class RiscVArch(GenericArch):
 
     #def generate_functions(self):
     #    self.generate_enable_irq_after_kernel()
-
+    # Bleibt gleich
     def generate_dataobjects_tcbs(self):
         for v, task in self.ara_graph.instances.get(Task):
             initializer = "(&%s, %s, %s, %d, %s)" % (
@@ -104,6 +110,8 @@ class RiscVArch(GenericArch):
                                                         namespace=("arch", ))
             task.impl.tcb_descriptor = tcb
 
+    # Gibt es nicht in Posix
+    # Gleicher Name wir darüber
     def generate_dataobjects_tcbs(self):
         self.generator.source_file.include("tcb.h")
 
@@ -131,6 +139,7 @@ class RiscVArch(GenericArch):
         self.generator.source_file.data_manager.add(tcb_arr,
                                                     namespace=("arch", ))
 
+    # Hier muss vermutlich viel angepasst werden
     def generate_isr(self, isr):
         self.generator.source_file.include("machine.h")
         self.generator.source_file.include("gic.h")
@@ -174,6 +183,8 @@ class RiscVArch(GenericArch):
         return irq_number
         pass
 
+    # Sehr anders in POSIX
+    # Der Interrupt Service Routine Table enthält Pointer auf die ISR Funktionen
     def generate_isr_table(self, isrs):
         self.generator.source_file.include("machine.h")
         self.generator.source_file.include("gic.h")
@@ -216,6 +227,7 @@ class RiscVArch(GenericArch):
         irq_handler_term.add(Statement("return arg0"))
         self.generator.source_file.function_manager.add(irq_handler_term)
 
+    # Gibt es nicht/kaum in Posix
     def generate_kernelspace(self, userspace, abb, arguments):
         kernelspace = self.generate_kernelspace__syscall(
             userspace, abb, arguments)
@@ -232,65 +244,3 @@ class RiscVArch(GenericArch):
                     [self.generator.syscall_rules.task_desc(userspace.calling_task)])
 
         return kernelspace
-
-
-class LinkerScriptTemplate(CodeTemplate):
-
-    def __init__(self, ARM):
-        CodeTemplate.__init__(self, ARM.generator, "arch/arm/linker.ld.in")
-        self.ARM = ARM
-        self.ara_graph = self.ARM.ara_graph
-
-        # Link the foreach_subtask method from the rules
-        self.foreach_subtask = self.ARM.generator.syscall_rules.foreach_subtask
-
-    def __select_statement(self, symbol, sections, library="*"):
-        """Returns a newline seperated string of linker selectiors, for the
-        corresponding sections"""
-        ret = ""
-        for sec in sections:
-            ret += 'KEEP(%s(".%s.%s"));\n' % (library, sec, symbol)
-        return ret
-
-    def task_code_regions(self, snippet, args):
-
-        def do(subtask):
-            ret = ". = ALIGN(4096);\n"
-            ret += "_stext_task%s = .;\n" % subtask.impl.task_id
-            # Find all functions that belong to the function
-            #TODO adapt
-            #for function in self.system_graph.functions:
-            #    if subtask == function.subtask:
-            #        ret += self.__select_statement(function.function_name, ["text", "rodata"])
-            #for function in subtask.impl.generated_functions:
-            #    ret += self.__select_statement(function.function_name, ["text", "rodata"])
-
-            ret += "_etext_task%s = .;\n" % subtask.impl.task_id
-            ret += "\n"
-            return ret
-
-        return self.foreach_subtask(do)
-
-    def task_stacks(self, snippet, args):
-
-        def do(subtask):
-            ret = ". = ALIGN(4096);\n"
-            ret += "_sstack_task%s = .;\n" % subtask.impl.task_id
-            ret += self.__select_statement(subtask.impl.stack.name, ["bss"])
-            ret += "_estack_task%s = .;\n" % subtask.impl.task_id
-            ret += "\n"
-            return ret
-
-        return self.foreach_subtask(do)
-
-    def task_data(self, snippet, args):
-
-        def do(subtask):
-            ret = ". = ALIGN(4096);\n"
-            ret += "_sdata_task%s = .;\n" % subtask.impl.task_id
-            ret += self.__select_statement(subtask.name + "*", ["data"])
-            ret += "_edata_task%s = .;\n" % subtask.impl.task_id
-            ret += "\n"
-            return ret
-
-        return self.foreach_subtask(do)
