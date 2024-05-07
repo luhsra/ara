@@ -73,6 +73,17 @@ if fs.is_dir(graph_tool_inc)
     )
 endif
 
+# Workaround for https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1070676
+graph_tool_inc = '/usr/lib/python3/dist-packages/graph_tool/include'
+if fs.is_dir(graph_tool_inc)
+    missing_includes = declare_dependency(
+        include_directories: graph_tool_inc
+    )
+    graph_tool_dep = declare_dependency (
+        dependencies: [graph_tool_dep, missing_includes]
+    )
+endif
+
 ## pyllco
 pyllco_dep = dependency('pyllco-py' + py3_inst.language_version(), required : false)
 if pyllco_dep.found()
