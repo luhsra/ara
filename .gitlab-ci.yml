@@ -15,7 +15,7 @@
   - meson test -C $CI_JOB_NAME --suite ara-link --suite preproc --suite sse --suite sia
 
 default:
-  tags: ["test"]
+  tags: ["sra.labor"]
   image: scm.sra.uni-hannover.de:5050/research/parrot
   interruptible: true
 
