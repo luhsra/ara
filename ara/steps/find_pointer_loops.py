@@ -115,5 +115,3 @@ class FindPointerLoops(Step):
                             src_lbl += '    Other callsites\n' + ''.join([f'        {unwrap(x)}\n' for x in others])
                 warning += src_lbl
             self._log.warn(warning)
-
-        self._log.info(f"Number of function: {num_functions}")
