@@ -6,7 +6,7 @@
 
 from ara.steps.instance_graph_stats import MissingInteractions
 from .os_util import UnknownArgument, syscall, Arg, set_next_abb, connect_from_here, connect_instances, add_self_edge, find_instance_node, AutoDotInstance
-from .os_base import OSBase, ControlInstance, CPUList, CPU, OSState, ExecState
+from .os_base import OSBase, ControlInstance, CPUList, CPU, OSState, ExecState, TaskStatus, ControlContext, IRQ
 from ara.util import get_logger
 from ara.graph import SyscallCategory, SigType, CallPath, CFG, Graph
 from ara.steps import get_native_component
@@ -19,6 +19,8 @@ from collections.abc import Iterable
 import pyllco
 import html
 import re
+
+from collections import defaultdict
 
 logger = get_logger("Zephyr")
 ValueAnalyzer = get_native_component("ValueAnalyzer")
@@ -507,14 +509,58 @@ class Zephyr(OSBase):
 
     @staticmethod
     def get_initial_state(cfg, instances):
-        return OSState(cpus=CPUList([CPU(id=0,
-                                         irq_on=True,
-                                         control_instance=None,
-                                         abb=None,
-                                         call_path=CallPath(),
-                                         exec_state=ExecState.idle,
-                                         analysis_context=None)]),
-                       instances=instances, cfg=cfg)
+        running_tasks = []
+        cpu_id = 0
+        threads = [(v, obj) for v, obj in instances.get(Thread)]
+        prio_vert, prio_thread = max(threads, key=lambda t: t[1].priority)
+        entry_abb = cfg.get_entry_abb(prio_thread.function)
+        
+        cpus = [
+            CPU(
+                id=cpu_id,
+                irq_on=True,
+                control_instance=prio_vert,
+                abb=entry_abb,
+                call_path=CallPath(),
+                exec_state=ExecState.from_abbtype(cfg.vp.type[entry_abb]),
+                analysis_context=None,
+            )
+        ]
+        
+        running_tasks.append(prio_thread)
+            
+        # logger.debug(
+        #     f"Initial: Choose {instances.vp.obj[instances.vertex(prio_vert)]} for CPU {cpu_id}."
+        # )
+        
+        logger.debug(f"CFG: {cfg}")
+        
+        state = OSState(cpus=CPUList(cpus), instances=instances, cfg=cfg)
+        
+        max_prio = 0
+        for i, obj in threads:
+            logger.debug(f"instances: cpu_id:{i} obj:{obj}")
+            logger.debug(f"instances: function:{obj.function}")
+            prio = 2 * obj.priority
+            max_prio = max(max_prio, prio)
+
+            status = TaskStatus.suspended
+            status = TaskStatus.ready
+
+            state.context[obj] = ControlContext(
+                status=status,
+                abb=cfg.get_entry_abb(obj.function),
+                call_path=CallPath(),
+                dyn_prio=[prio],
+            )
+        
+        for task in running_tasks:
+            ctx = state.context[task]
+            ctx.status = TaskStatus.running
+            ctx.abb = None
+            ctx.call_path = CallPath()
+        
+        return state
 
     @staticmethod
     def is_interaction(ty) -> bool:
@@ -555,6 +601,117 @@ class Zephyr(OSBase):
             set_next_abb(state, cpu_id)
             return [state]
 
+
+
+    @staticmethod
+    def schedule(state, cpus=None):
+        if cpus is None:
+            cpus = [cpu.id for cpu in state.cpus]
+
+        logger.debug(f"Scheduling state {state} on CPUs: {cpus}")
+        
+        # get cpu mapping
+        cpu_map = defaultdict(list)
+        for v in state.instances.get_controls().vertices():
+            obj = state.instances.vp.obj[v]
+            logger.warn(f"vp: {obj}")
+            # we do not handle IRQs here
+            if isinstance(obj, IRQ):
+                continue
+            # if obj.cpu_id in cpus:
+            logger.warn(f"state: {state}")
+            logger.warn(f"context: {state.context}")
+            status = state.context[obj].status
+            if status in [TaskStatus.running, TaskStatus.ready]:
+                cpu_map[0].append((v, state.context[obj]))
+                # cpu_map[obj.cpu_id].append((v, state.context[obj]))
+            logger.warn(f"obj.cpu_id: {obj.cpu_id}")
+            logger.warn("Object %s is in status %s", obj, TaskStatus(status).name)
+        
+        
+        for cpu in filter(lambda cpu: cpu.id in cpus, state.cpus):
+            logger.warn(f"cpu.id: {cpu.id}")
+            logger.warn(f"cpu.id: {cpu_map[cpu.id]}")
+            new_vertex, new_ctx = max(
+                cpu_map[cpu.id], key=lambda t: t[1].dyn_prio[-1]
+            )
+            new_vertex = state.instances.vertex(new_vertex)
+            new_label = state.instances.vp.label[new_vertex]
+            
+
+            # not coming from idle
+            if cpu.control_instance:
+                old_vertex = state.instances.vertex(cpu.control_instance)
+                old_task = state.instances.vp.obj[old_vertex]
+                old_label = state.instances.vp.label[old_vertex]
+            else:
+                old_vertex = None
+                old_task = None
+                old_label = "Idle state"
+
+            logger.debug(
+                f"Schedule on CPU {cpu.id}: " f"From {old_label} " f"to {new_label}"
+            )
+
+            # handle non preemptible tasks
+            if (
+                (not isinstance(new_ctx, ISR))
+                and isinstance(old_task, Thread)
+                # and (not old_task.schedule)
+                and state.context[old_task].status == TaskStatus.running
+            ):
+                # do not schedule on this CPU
+                logger.debug("CPU %s: Do not schedule: Non preemptible task", cpu.id)
+                continue
+
+            # shortcut for same task
+            if new_vertex == old_vertex:
+                old_abb = cpu.abb
+                new_abb = None if new_ctx is None else new_ctx.abb
+                if old_abb == new_abb:
+                    logger.debug(
+                        "CPU %s: Skip schedule, since the task is the same.", cpu.id
+                    )
+                    continue
+
+            # write old values back to instance only if running or blocked
+            if old_vertex:
+                old_ctx = state.context[old_task]
+                if old_ctx.status in [TaskStatus.running, TaskStatus.blocked]:
+                    old_ctx.abb = state.cfg.vertex(cpu.abb)
+                    old_ctx.call_path = cpu.call_path
+                if old_ctx.status == TaskStatus.running:
+                    old_ctx.status = TaskStatus.ready
+
+
+            if new_vertex:
+                cpu.abb = state.cfg.vertex(new_ctx.abb)
+                cpu.call_path = new_ctx.call_path
+                new_ctx.status = TaskStatus.running
+                # "reset" context values, they are irrelevant now
+                new_ctx.abb = None
+                new_ctx.call_path = CallPath()
+
+                cpu.control_instance = state.instances.vertex(new_vertex)
+                cpu.exec_state = ExecState.from_abbtype(state.cfg.vp.type[cpu.abb])
+            else:
+                cpu.abb = None
+                cpu.call_path = CallPath()
+                cpu.control_instance = None
+                cpu.exec_state = ExecState.idle
+
+
+    @staticmethod
+    def handle_exit(graph, state, cpu_id):
+        # handle only IRQs
+        # isr = state.cur_control_inst(cpu_id)
+        # if isinstance(isr, ISR):
+        #     # an ISR exit is like a TerminateTask
+        #     new_state = state.copy()
+        #     new_state.context[isr] = # TODO
+        #     return [new_state]
+        return []
+    
     # k_tid_t k_thread_create(struct k_thread *new_thread, k_thread_stack_t *stack, size_t stack_size,
     #   k_thread_entry_t entry, void *p1, void *p2, void *p3, int prio, uint32_t options,
     #   k_timeout_t delay)
@@ -590,7 +747,9 @@ class Zephyr(OSBase):
             options=args.options,
             delay=args.delay
         )
-
+        
+        logger.debug(f"k_thread_create: {instance}")
+        
         Zephyr.create_instance(cfg, state, cpu_id, va, "Thread", instance, args.symbol, "k_thread_create")
         return state
 

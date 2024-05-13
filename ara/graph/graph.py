@@ -299,6 +299,10 @@ class CFG(graph_tool.Graph):
             return self.ep.is_entry[block] and self.ep.type[block] == edge_type
 
         block = self.vertex(block)
+        
+        # print(f"block: {block}")
+        # for i in block.out_edges():
+        #     print(f"out_edges: {i} {self.ep.is_entry[i]} {self.ep.type[i]} {CFType.f2a} {CFType.f2b} {CFType.a2b}")
 
         entry = list(filter(is_entry, block.out_edges()))
         assert len(entry) == 1
@@ -306,6 +310,7 @@ class CFG(graph_tool.Graph):
 
     def get_entry_abb(self, function):
         """Return the entry abb of the given function."""
+        # breakpoint()
         return self._get_entry(function, edge_type=CFType.f2a)
 
     def get_function_entry_bb(self, function):
