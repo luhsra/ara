@@ -87,22 +87,6 @@ class ArmArch(GenericArch):
     #def generate_functions(self):
     #    self.generate_enable_irq_after_kernel()
 
-    def generate_dataobjects_tcbs(self):
-        for v, task in self.ara_graph.instances.get(Task):
-            initializer = "(&%s, %s, %s, %d, %s)" % (
-                task.impl.entry_function.name,
-                task.impl.stack.name,
-                task.impl.stackptr.name,
-                task.impl.task_id,
-                task.impl.stacksize,
-            )
-
-            tcb = DataObject("const arch::TCB", "OS_" + task.name + "_tcb",
-                             initializer)
-            tcb.allocation_prefix = "constexpr "
-            self.generator.source_file.data_manager.add(tcb,
-                                                        namespace=("arch", ))
-            task.impl.tcb_descriptor = tcb
 
     def generate_dataobjects_tcbs(self):
         self.generator.source_file.include("tcb.h")

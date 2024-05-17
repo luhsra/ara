@@ -24,15 +24,17 @@ class RiscVArch(GenericArch):
     def __init__(self):
         super(RiscVArch, self).__init__()
         #SIGUSR1 on RISCV
-        self.IPI_SIG = 1    #Interprocessor Interrupt Signal
-        self.TERM_SIG = 12  #Termination Signal
+        self.IPI_SIG = 1    #Interprocessor Interrupt Signal    Multicore
+        self.TERM_SIG = 12  #Termination Signal                 Multicore
 
+    # Nicht in dOSEK
     def generate_startup_code(self):
         # generate other functions
         self.arch_rules.generate_functions()
 
     # Gibt es nicht in Posix
-    # ???
+    # Gibt es nicht in dOSEK
+    
     def generate_functions(self):
         super().generate_functions()
 
@@ -43,22 +45,59 @@ class RiscVArch(GenericArch):
         self.call(kickoff, "Machine::switch_mode", "void", ["Machine::USER"])
         self.generator.source_file.function_manager.add(kickoff)
 
-        self.generator.source_file.include("perf.h")
+        #self.generator.source_file.include("perf.h")
 
         if self.PERF_TRACE == TracePerf.IRQ:
             ASTSchedule = self.generator.source_file.function_manager.get("__OS_ASTSchedule")
             if ASTSchedule != None:
                 self.call(ASTSchedule, "arch::Perf::trace_cycles", prepend=True)
-
+                
     # config-constraint-: (arch.self == posix) -> !arch.mpu
     # Posix braucht kein Linkerscript
-    # RV schon
+    # RISCV braucht kein Linkerscript
     def generate_linkerscript(self):
         pass
-
-    # Bleibt gleich
+    """
+    # So steht es in dOSEK
     def generate_data_objects(self):
-        """Generate all dataobjects for the system"""
+        # Generate all dataobjects for the system
+        conf_wired = self.system_graph.conf.os.systemcalls == "wired"
+        if conf_wired:
+            self.logic = self.system_graph.get_pass("LogicMinimizer")
+
+        # Generate Stacks
+        self.generate_dataobjects_task_stacks()
+        for subtask in self.system_graph.real_subtasks:
+            subtask.impl.stack.allocation_prefix +=" __attribute__((aligned(16))) "
+
+        self.generate_dataobjects_task_entries()
+        if conf_wired:
+            self.generate_wired_task_descriptors()
+            self.generate_rocket_config()
+        else:
+            self.generate_dataobjects_tcbs()
+            # Generate dummy rocket config
+            with self.generator.open_file("rocket.config") as fd:
+                config = {
+                    "coreHartCount":   1,
+                    "coreOSEKSyscallWidth": 1,
+                    "coreOSEKStateWidth":   1,
+                    "coreOSEKInitialState": 0,
+                    "coreHartCombinatorics": None,
+                    "alarms": {},
+                }
+                fd.write(json.dumps(config,indent=2, sort_keys=True))
+
+
+        self.generator.source_file.include("dispatch.h")
+    """
+
+    """
+    # So steht es in ARM
+    # Bleibt gleich
+    """
+    def generate_data_objects(self):
+        # Generate all dataobjects for the system
         self.generate_dataobjects_task_stacks()  # From GenericArch
         self.generate_dataobjects_task_entries()  # From GenericArch
         self.generate_dataobjects_tcbs()
@@ -74,43 +113,6 @@ class RiscVArch(GenericArch):
             self.PERF_TRACE = TracePerf(PERF_TRACE_global.get_initializer().get())
 
     # Gibt es nicht in Posix
-    def generate_dataobjects_task_stacks(self):
-        """Generate the stacks for the tasks, including the task pointers"""
-        super(RiscVArch, self).generate_dataobjects_task_stacks()
-
-        # Additional to the general stacks, we also need an array of
-        # stack array pointers.
-        stackptr_arr = DataObjectArray("void * const", "OS_stackptrs", "")
-        stackptr_arr[0] = "&startup_sp"
-
-        arr_idx = 0
-        for v, task in self.ara_graph.instances.get(Task):
-            arr_idx += 1
-            stackptr_arr[arr_idx] = "&" + task.impl.stackptr.name
-        self.generator.source_file.data_manager.add(stackptr_arr,
-                                                    namespace=("arch", ))
-
-    #def generate_functions(self):
-    #    self.generate_enable_irq_after_kernel()
-    # Bleibt gleich
-    def generate_dataobjects_tcbs(self):
-        for v, task in self.ara_graph.instances.get(Task):
-            initializer = "(&%s, %s, %s, %d, %s)" % (
-                task.impl.entry_function.name,
-                task.impl.stack.name,
-                task.impl.stackptr.name,
-                task.impl.task_id,
-                task.impl.stacksize,
-            )
-
-            tcb = DataObject("const arch::TCB", "OS_" + task.name + "_tcb",
-                             initializer)
-            tcb.allocation_prefix = "constexpr "
-            self.generator.source_file.data_manager.add(tcb,
-                                                        namespace=("arch", ))
-            task.impl.tcb_descriptor = tcb
-
-    # Gibt es nicht in Posix
     # Gleicher Name wir darüber
     def generate_dataobjects_tcbs(self):
         self.generator.source_file.include("tcb.h")
@@ -120,17 +122,27 @@ class RiscVArch(GenericArch):
         arr_idx = 0
 
         for v, task in self.ara_graph.instances.get(Task):
+            # Dynamic state area
+            dynamic_state = DataObject("arch::TCB::dynamic_state",
+                                        "OS_" + task.name + "_tcb_dynamic")
+            dynamic_state.allocation_prefix += " __attribute__((aligned(4)))"
+
+            self.generator.source_file.data_manager.add(dynamic_state, namespace = ("arch",))
+
+            task.impl.dynamic_state = dynamic_state
+
             arr_idx += 1
             # Ignore the Idle thread
             #if not subtask.is_real_thread():
             #    continue
             initializer = "(&%s, %s, %s, %s)" % (
-                task.impl.entry_function.name, task.impl.stack.name,
-                task.impl.stackptr.name, task.impl.stacksize)
+                task.impl.entry_function.name,
+                task.impl.stackptr.name, task.impl.dynamic_state.name, task.impl.stacksize)
 
             desc = DataObject("const arch::TCB", "OS_" + task.name + "_tcb",
                               initializer)
-            desc.allocation_prefix = "constexpr "
+            # FIXME constexpr sollte an sein
+            #desc.allocation_prefix = "constexpr "
             self.generator.source_file.data_manager.add(desc,
                                                         namespace=("arch", ))
             task.impl.tcb_descriptor = desc
@@ -140,9 +152,10 @@ class RiscVArch(GenericArch):
                                                     namespace=("arch", ))
 
     # Hier muss vermutlich viel angepasst werden
+    # Interrupt Service Routine
     def generate_isr(self, isr):
+
         self.generator.source_file.include("machine.h")
-        self.generator.source_file.include("gic.h")
 
         isr.function_name = "AUTOSAR_ISR_" + isr.name
         irq_number = isr.device
@@ -181,13 +194,12 @@ class RiscVArch(GenericArch):
                   prepend=True)
 
         return irq_number
-        pass
 
     # Sehr anders in POSIX
     # Der Interrupt Service Routine Table enthält Pointer auf die ISR Funktionen
     def generate_isr_table(self, isrs):
+        return
         self.generator.source_file.include("machine.h")
-        self.generator.source_file.include("gic.h")
 
         installed_irq_handlers = {  #0,      # Dispatch
             1,  # Reschedule
@@ -226,6 +238,7 @@ class RiscVArch(GenericArch):
         self.call(irq_handler_term, "AUTOSAR_ISR_TERM", "void", [])
         irq_handler_term.add(Statement("return arg0"))
         self.generator.source_file.function_manager.add(irq_handler_term)
+        
 
     # Gibt es nicht/kaum in Posix
     def generate_kernelspace(self, userspace, abb, arguments):

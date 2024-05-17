@@ -10,7 +10,6 @@ extern "C" {
 
 namespace arch {
 	struct TCB {
-#ifndef CONFIG_OS_SYSTEMCALLS_WIRED
 		/* CPU-specific state of a task */
 		struct dynamic_state {
 			/* Callee-saved registers */
@@ -69,9 +68,6 @@ namespace arch {
 		constexpr TCB(fptr_t f, void *stack_ptr, dynamic_state &state, int stacksize)
 	    : fun(f), stack(stack_ptr), stacksize(stacksize), state(state)  {}
 
-#else
-		TCB(){}
-#endif
 	};
 }
 
