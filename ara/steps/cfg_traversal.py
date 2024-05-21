@@ -230,11 +230,16 @@ class _SSERunner:
             self._log.debug(f"Handle syscall: {name} ({syscall_name})")
             self._assign_context(state)
             try:
-                new_state = self._os.interpret(
+                new_states = self._os.interpret(
                     self._graph, state, cpu.id,
                     categories=self._visitor.SYSCALL_CATEGORIES
                 )
-                assert isinstance(new_states, Iterable)
+
+                # do the same as in os_util.py
+                # some syscalls may return multiple states in a list other don't
+                if not isinstance(new_states, Iterable):
+                    new_states = [new_states]
+                
                 return new_states
             except CrossCoreAction as cca:
                 self._log.debug(f"Got cross core action (CPUs: {cca.cpu_ids}).")
