@@ -507,7 +507,7 @@ foreach app: autosar_targets
         ],
         depfile : full_name + '_mod.riscv.ll.dep',
         command : [
-          py3_inst, ara_py, app['ll'],
+          py3_inst, ara_py, '@INPUT@',
           '--os', 'AUTOSAR',
           '--oilfile', app['oil'],
           '--ir_output', '@OUTPUT0@',

@@ -6,6 +6,7 @@ src_files = [
   'constructors',
   'dispatch',
   'interrupt',
+  'mp',
   'output',
   'startup',
   'timer'

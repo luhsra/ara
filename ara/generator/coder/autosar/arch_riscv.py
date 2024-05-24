@@ -240,20 +240,6 @@ class RiscVArch(GenericArch):
         self.generator.source_file.function_manager.add(irq_handler_term)
         
 
-    # Gibt es nicht/kaum in Posix
     def generate_kernelspace(self, userspace, abb, arguments):
-        kernelspace = self.generate_kernelspace__syscall(
-            userspace, abb, arguments)
-
-        if self.PERF_TRACE == TracePerf.SYSCALL:
-            self.call(kernelspace.pre_hook, "arch::Perf::trace_cycles")
-            self.call(kernelspace.system, "arch::Perf::trace_cycles")
-            self.call(kernelspace.post_hook, "arch::Perf::trace_cycles")
-
-
-        if userspace.is_isr == False:
-            kernelspace.post_hook.add(Comment("Dispatch directly back to Userland"))
-            self.call(kernelspace.post_hook, "Dispatcher::ResumeToTask", "void",
-                    [self.generator.syscall_rules.task_desc(userspace.calling_task)])
-
-        return kernelspace
+        # Use the inline kernelspace variant
+        return self.generate_kernelspace__inline(userspace, abb, arguments)
