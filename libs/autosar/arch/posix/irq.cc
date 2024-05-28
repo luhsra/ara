@@ -55,7 +55,6 @@ void IRQ::disable(int signum) {
 	sigaction(signum, &sig, NULL);
 }
 
-_Atomic(bool) ipi_cleared[MAX_CPUS];
 
 void IRQ::trigger_interrupt(int irq, int cpuid, bool sync) {
 	/* Send an signal to a specified thread */

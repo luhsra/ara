@@ -11,6 +11,7 @@ extern "C" int main(void);
 
 _Atomic(int) cores = 1;
 _Atomic(int) syncing_cores[arch::SYNC_MAX] = {0};
+_Atomic(bool) ipi_cleared[MAX_CPUS];
 
 namespace arch {
 
@@ -30,7 +31,7 @@ namespace arch {
 		asm("mov %0, r9" : "=r"(reg_value));
 		return reg_value;
 		*/
-		return 1;
+		return 0;
 	}
 
 	unsigned int get_num_cores() { 

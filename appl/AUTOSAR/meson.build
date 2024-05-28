@@ -536,7 +536,7 @@ foreach app: autosar_targets
                             output : full_name + '_riscv',
                             depfile : full_name + '.riscv.dep',
                             command : clang_cpp +
-                                      ['-T', 'libs/autosar/arch/riscv/linker.ld'] +
+                                      ['-T', autosar_riscv_linkerscript] +
                                       riscv_autosar_includes +
                                       autosar_includes +
                                       ld_flags +
@@ -546,8 +546,8 @@ foreach app: autosar_targets
 
     app += {'app_image_riscv': app_image_riscv}
 
-    #run_cmd = libplatforms_proj.get_variable('qemu_riscv_cmd') + app_image_riscv
-    run_cmd = [app_image_riscv]
+    run_cmd = ['qemu-system-riscv64', '-M', 'virt', '-no-reboot', '-nographic', '-serial','mon:stdio', '-bios'] + app_image_riscv
+
     app += {'run_cmd_riscv': run_cmd}
     run_target('run_' + full_name + '_riscv', command: run_cmd)
 

@@ -13,11 +13,13 @@ ENTRY( _start )
 
 SECTIONS
 {
-    . = 0x2000;
+    . = 0x80000000;
 
     .text : {
          KEEP(*(.text.init))
+         KEEP(*(.text.main))
          /* constructors */
+         . = ALIGN(4096);
          PROVIDE(__CTORS_START = .);
          KEEP (*(.ctors*))
          KEEP (*(.init_array*))
@@ -43,14 +45,14 @@ SECTIONS
   /*--------------------------------------------------------------------*/
   /* HTIF, isolated onto separate page                                  */
   /*--------------------------------------------------------------------*/
-  . = ALIGN(0x1000);
+  /*. = ALIGN(0x1000);
   .htif :
   {
     PROVIDE( __htif_base = . );
     *(.htif)
   }
   . = ALIGN(0x1000);
-
+  */
 
   /*--------------------------------------------------------------------*/
   /* Initialized data segment                                           */

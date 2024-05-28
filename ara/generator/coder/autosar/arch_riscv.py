@@ -42,7 +42,6 @@ class RiscVArch(GenericArch):
         #kickoff.add(Statement("debug_core << __FUNCTION__ << endl"))
 
         self.call(kickoff, "Machine::enable_interrupts")
-        self.call(kickoff, "Machine::switch_mode", "void", ["Machine::USER"])
         self.generator.source_file.function_manager.add(kickoff)
 
         #self.generator.source_file.include("perf.h")

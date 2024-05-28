@@ -3,13 +3,15 @@ riscv_autosar_includes = ['-I', meson.current_source_dir()]
 # Wenn maschinenabhängige Dateien hinzugefügt werden, müssen sie hier eingebunden werden
 
 src_files = [
-  'constructors',
-  'dispatch',
-  'interrupt',
-  'mp',
-  'output',
-  'startup',
-  'timer'
+  'constructors.cc',
+  'dispatch.cc',
+  'interrupt.cc',
+  'mp.cc',
+  'output.cc',
+  'serial.cc',
+  'startup.cc',
+  'startup.S',
+  #'timer.cc'
 ]
 
 obj_targets = []
@@ -17,8 +19,8 @@ obj_targets = []
 foreach src : src_files
     obj_target = custom_target(
         src,
-        input: src +'.cc',
-        output: src +'.cc.o',
+        input: src,
+        output: src +'.o',
         depfile: src +'.dep',
         command: clang_cpp +
                 riscv_autosar_includes +
@@ -33,3 +35,5 @@ libautosar_arch_riscv = custom_target('libautosar_arch_riscv',
                                       input: obj_targets,
                                       output: 'libautosar_arch_riscv.a',
                                       command: ar_cmd)
+
+autosar_riscv_linkerscript = meson.current_source_dir() / 'linker.ld'

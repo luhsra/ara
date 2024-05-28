@@ -55,7 +55,7 @@ extern "C" void interrupt_handler(long long mcause, unsigned long long * irq_con
 			//kout << "htif interrupt" << endl;
 			bad_trap();
 		} else if (device == IRQ_M_TIMER) {
-			arch::Timer::tick();
+			//TODO add timer arch::Timer::tick();
 			goto out;
 		} else if (device == IRQ_M_SOFT) { // IPI
 			// ack the interrupt;
@@ -64,7 +64,7 @@ extern "C" void interrupt_handler(long long mcause, unsigned long long * irq_con
                 // least significant 1-bit of x, or if x is zero,
                 // returns zero.
                 uint8_t IRQ = __builtin_ffsll(Machine::soft_irq_cause) - 1;
-                arch::isr_table[IRQ](IRQ);
+                //TODO call ISR arch::isr_table[IRQ](IRQ);
                 // Clear that interrupt
                 Machine::soft_irq_cause &= ~(((uint64_t)1) << IRQ);
             }

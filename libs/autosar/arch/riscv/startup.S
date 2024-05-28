@@ -1,5 +1,6 @@
 .option norvc
 .section .text.init,"ax",@progbits
+.globl _start
 .globl reset_vector
 reset_vector:
    j do_reset
@@ -48,7 +49,7 @@ do_reset:
 
         // Jump into arch_startup. Currently all harts go there
         la sp, os_stack + 4096 - 16
-        jal arch_startup
+        jal main
 
 .size do_reset, . - do_reset
 

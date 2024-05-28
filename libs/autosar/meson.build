@@ -50,14 +50,19 @@ endif
 # RISC-V
 if true
   autosar_riscv_clang_flags = [
-    '--target=riscv32-unknown-elf', # 32 bit Architektur
-    '-march=rv32i',                 # Spezifikation der genauen Architektur
+    '--target=riscv64-unknown-elf', # 64 bit Architektur
+    '-march=rv64imac',              # Spezifikation der genauen Architektur
     '-O3',                          # Optimierungsstufe
-    #'-DDEBUG',                     # Debugging
+    '-mcmodel=medany',
+    '-Wall',
+    '-Wextra',
+    '-DDEBUG',                     # Debugging
   ]
   autosar_riscv_ld_flags = [        # Linken der Bibliotheken
-    '-lpthread',                    # pthread
-    '-lrt',                         # real-time library
+    '-Wl,-Map,@OUTPUT0@.map',
+    '-Wl,--cref',
+    '-nostdlib',
+    '-nodefaultlibs',
   ]
 endif
 

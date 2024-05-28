@@ -19,6 +19,7 @@ pthread_t cpuid[MAX_CPUS];
 _Atomic(int) cores = 1;
 
 _Atomic(int) syncing_cores[arch::SYNC_MAX] = {0};
+_Atomic(bool) ipi_cleared[MAX_CPUS];
 
 namespace arch {
 	extern "C" void* start_hardware_thread_stage2(void* arg) {

@@ -10,6 +10,7 @@
 
 
 #include "output.h"
+#include "hardware_threads.h"
 
 
 /**
@@ -97,11 +98,13 @@ public:
 
 
 	static noinline void shutdown(void) {
-	        htif_poweroff();
+		// QEMU shutdown
+		(*(volatile uint32_t *) 0x100000) = 0x5555;
+		//htif_poweroff();
 	}
 
 	static noinline void halt(void) {
-        	htif_poweroff();
+		shutdown();
 	}
 
 	static forceinline void * exchange_saved_ip(unsigned id, void *pc) {

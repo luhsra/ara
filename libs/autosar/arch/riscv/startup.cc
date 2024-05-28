@@ -1,4 +1,5 @@
 #include "constructors.h"
+#include "serial.h"
 #include "timer.h"
 #include "machine.h"
 #include "dispatch.h"
@@ -17,6 +18,7 @@ extern "C" {
 	void init_generic();
 
 	void arch_startup(uintptr_t hartid, uintptr_t dtb) {
+		debug_core << __FUNCTION__ << endl;
 		// run constructors of global objects
 		run_constructors();
 
@@ -27,16 +29,18 @@ extern "C" {
 
         // kout << "Hart ID: " << hartid << " DTB: " << dtb << endl;
 
+		// TODO statically define addresses
         // arch::fdt_print(dtb);
-        arch::query_mem(dtb);
-        arch::query_harts(dtb);
-        arch::query_clint(dtb);
+        //arch::query_mem(dtb);
+        //arch::query_harts(dtb);
+        //arch::query_clint(dtb);
 
 #ifdef CONFIG_OS_SYSTEMCALLS_WIRED
 		// arch::Timer::init is called in StartOS
 #else
 		arch::Dispatcher::init();
-		arch::Timer::init();
+		// TODO enable timer
+		//arch::Timer::init();
 #endif
 
 		init_generic();
