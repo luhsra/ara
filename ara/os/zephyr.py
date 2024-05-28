@@ -19,12 +19,14 @@ from collections.abc import Iterable
 import pyllco
 import html
 import re
+from ara.steps.cfg_traversal import AnalysisContext
 
 from collections import defaultdict
 
 logger = get_logger("Zephyr")
 ValueAnalyzer = get_native_component("ValueAnalyzer")
 ValueAnalyzerResult = get_native_component("ValueAnalyzerResult")
+
 
 
 class ZephyrOptions:
@@ -399,13 +401,14 @@ class Zephyr(OSBase):
         abb = cpu.abb
         ana_context = cpu.analysis_context
 
-        instances.vp.branch[v] = ana_context.branch
-        instances.vp.loop[v] = ana_context.loop
-        instances.vp.recursive[v] = ana_context.recursive
+        if isinstance(ana_context, AnalysisContext):
+            instances.vp.branch[v] = ana_context.branch
+            instances.vp.loop[v] = ana_context.loop
+            instances.vp.recursive[v] = ana_context.recursive
+            instances.vp.usually_taken[v] = ana_context.usually_taken
+            # Creating an instance from a thread that is not unique will result in a non unique instance
+            instances.vp.unique[v] = (not (ana_context.branch or ana_context.loop or ana_context.recursive)) and instances.vp.unique[cpu.control_instance]
         instances.vp.after_scheduler[v] = True # In Zephyr the scheduler is always on for dynamic instances
-        instances.vp.usually_taken[v] = ana_context.usually_taken
-        # Creating an instance from a thread that is not unique will result in a non unique instance
-        instances.vp.unique[v] = (not (ana_context.branch or ana_context.loop or ana_context.recursive)) and instances.vp.unique[cpu.control_instance]
         instances.vp.soc[v] = abb
         instances.vp.llvm_soc[v] = cfg.vp.llvm_link[cfg.get_single_bb(abb)]
         instances.vp.file[v] = cfg.vp.files[abb][0]
@@ -508,6 +511,14 @@ class Zephyr(OSBase):
         connect_from_here(state, cpu_id, Zephyr.kernel, call, ty=ZephyrEdgeType.interaction)
 
     @staticmethod
+    def debug_print_threads(state):
+        for v, obj in state.instances.get(Thread):
+            if obj in state.context:
+                status = state.context[obj].status
+                status_name = TaskStatus(status).name
+                print(status_name)
+
+    @staticmethod
     def get_initial_state(cfg, instances):
         running_tasks = []
         cpu_id = 0
@@ -544,21 +555,33 @@ class Zephyr(OSBase):
             prio = 2 * obj.priority
             max_prio = max(max_prio, prio)
 
-            status = TaskStatus.suspended
             status = TaskStatus.ready
 
+            # FIXME: Actual the thread entry is wrapped by z_thread_entry
+            # something like: abb=cfg.get_entry_abb(z_thread_entry(obj.function, p1, p2, p3))
             state.context[obj] = ControlContext(
                 status=status,
                 abb=cfg.get_entry_abb(obj.function),
                 call_path=CallPath(),
                 dyn_prio=[prio],
             )
+
+            obj.cpu_id = 0 # put everything on the first cpu
         
         for task in running_tasks:
             ctx = state.context[task]
             ctx.status = TaskStatus.running
             ctx.abb = None
             ctx.call_path = CallPath()
+        
+        # task_to_shed = running_tasks
+        # for cpu in cpus:
+        #     task = task_to_shed.pop()
+        #     if task is None:
+        #         break
+        #     task.cpu_id = cpu.id
+
+        Zephyr.debug_print_threads(state)
         
         return state
 
@@ -575,7 +598,22 @@ class Zephyr(OSBase):
     def syscall_in_category(syscall, categories):
         """Checks wether a syscall interpreter belongs to the given category"""
         syscall_category = syscall.categories
+        if isinstance(categories, SyscallCategory):
+            categories = set((categories,))
         return SyscallCategory.every in categories or (syscall_category | categories) == syscall_category
+        #eval = SyscallCategory.every in categories or (syscall_category | categories) == syscall_category
+        #print(eval)
+        #ret = SyscallCategory.every in categories
+        #ret1 = SyscallCategory.every not in categories
+        ## ret2 = (syscall_category | categories) == syscall_category
+        ## ret3 = syscall_category | categories != syscall_category
+        ## print(ret, ret2, ret3)
+        #print(ret, ret1)
+        #
+        #if SyscallCategory.every not in categories:
+        #    if syscall_category | categories != syscall_category:
+        #        return False
+        #return True
 
     @staticmethod
     def interpret(graph, state, cpu_id, categories=None):
@@ -610,59 +648,95 @@ class Zephyr(OSBase):
 
         logger.debug(f"Scheduling state {state} on CPUs: {cpus}")
         
+        # logger.warn(f"state: {state}")
+        # logger.warn(f"context: {state.context}")
+
+        Zephyr.debug_print_threads(state)
+
         # get cpu mapping
         cpu_map = defaultdict(list)
         for v in state.instances.get_controls().vertices():
             obj = state.instances.vp.obj[v]
-            logger.warn(f"vp: {obj}")
+            logger.warn(f"vp: {obj.cpu_id}")
+            logger.warn(f"vp: {obj.entry_name}")
             # we do not handle IRQs here
             if isinstance(obj, IRQ):
                 continue
-            # if obj.cpu_id in cpus:
-            logger.warn(f"state: {state}")
-            logger.warn(f"context: {state.context}")
-            status = state.context[obj].status
-            if status in [TaskStatus.running, TaskStatus.ready]:
-                cpu_map[0].append((v, state.context[obj]))
-                # cpu_map[obj.cpu_id].append((v, state.context[obj]))
             logger.warn(f"obj.cpu_id: {obj.cpu_id}")
-            logger.warn("Object %s is in status %s", obj, TaskStatus(status).name)
+            # if obj.cpu_id in cpus + [-1]:
+            if obj.cpu_id in cpus:
+                if obj not in state.context:
+                    logger.warning("Tried to access non available context")
+                    continue
+                thread_context = state.context[obj]
+                status = thread_context.status
+                if status in [TaskStatus.running, TaskStatus.ready]:
+                    cpu_map[0].append((v, state.context[obj]))
+                    # cpu_map[obj.cpu_id].append((v, state.context[obj]))
+                logger.warn("Object %s is in status %s", obj, TaskStatus(status).name)
         
+
+        # HACK: pick a thread that has been terminated
+        # todo maybe check if the next abb is exit node
+        # alternative: dont re reschedule, but what if we are in a different context then a thread (ISR)
+        if len(cpu_map[0]) <= 0:
+            for v in state.instances.get_controls().vertices():
+                obj = state.instances.vp.obj[v]
+                if obj.cpu_id in cpus:
+                    if obj not in state.context:
+                        logger.warning("Tried to access non available context")
+                        continue
+                    thread_context = state.context[obj]
+                    status = thread_context.status
+                    if status in [TaskStatus.terminated]:
+                        cpu_map[0].append((v, state.context[obj]))
+                        # break
+
+        assert len(cpu_map) > 0, "No threads are ready or no thread found at all"
         
         for cpu in filter(lambda cpu: cpu.id in cpus, state.cpus):
             logger.warn(f"cpu.id: {cpu.id}")
-            logger.warn(f"cpu.id: {cpu_map[cpu.id]}")
+            logger.warn(f"cpu_map[cpu.id]: {cpu_map[cpu.id]}")
             new_vertex, new_ctx = max(
                 cpu_map[cpu.id], key=lambda t: t[1].dyn_prio[-1]
             )
             new_vertex = state.instances.vertex(new_vertex)
             new_label = state.instances.vp.label[new_vertex]
-            
+            new_task = state.instances.vp.obj[new_vertex]
+            new_entry_name = new_task.entry_name
 
             # not coming from idle
             if cpu.control_instance:
                 old_vertex = state.instances.vertex(cpu.control_instance)
                 old_task = state.instances.vp.obj[old_vertex]
                 old_label = state.instances.vp.label[old_vertex]
+                old_entry_name = old_task.entry_name
             else:
                 old_vertex = None
                 old_task = None
                 old_label = "Idle state"
+                old_entry_name = None
 
             logger.debug(
-                f"Schedule on CPU {cpu.id}: " f"From {old_label} " f"to {new_label}"
+                f"Schedule on CPU {cpu.id}: " f"From {old_label}({old_entry_name}) " f"to {new_label}({new_entry_name})"
             )
 
             # handle non preemptible tasks
-            if (
-                (not isinstance(new_ctx, ISR))
-                and isinstance(old_task, Thread)
-                # and (not old_task.schedule)
-                and state.context[old_task].status == TaskStatus.running
-            ):
-                # do not schedule on this CPU
-                logger.debug("CPU %s: Do not schedule: Non preemptible task", cpu.id)
-                continue
+            # if (
+            #     (not isinstance(new_ctx, ISR))
+            #     and isinstance(old_task, Thread)
+            #     # and (not old_task.schedule)
+            #     and state.context[old_task].status == TaskStatus.running
+            # ):
+            #     # do not schedule on this CPU
+            #     logger.debug("CPU %s: Do not schedule: Non preemptible task", cpu.id)
+            #     continue
+
+        # TEMP HACK: save old task, if it is scheduled away from it
+        # old_ctx = state.context[old_task]
+        # if state.context[old_task].status == TaskStatus.ready:
+        #     old_ctx.abb = state.cfg.vertex(cpu.abb)
+        #     old_ctx.call_path = cpu.call_path
 
             # shortcut for same task
             if new_vertex == old_vertex:
@@ -677,7 +751,7 @@ class Zephyr(OSBase):
             # write old values back to instance only if running or blocked
             if old_vertex:
                 old_ctx = state.context[old_task]
-                if old_ctx.status in [TaskStatus.running, TaskStatus.blocked]:
+                if old_ctx.status in [TaskStatus.running, TaskStatus.blocked, TaskStatus.terminated]:
                     old_ctx.abb = state.cfg.vertex(cpu.abb)
                     old_ctx.call_path = cpu.call_path
                 if old_ctx.status == TaskStatus.running:
@@ -699,6 +773,8 @@ class Zephyr(OSBase):
                 cpu.call_path = CallPath()
                 cpu.control_instance = None
                 cpu.exec_state = ExecState.idle
+        
+        Zephyr.debug_print_threads(state)
 
 
     @staticmethod
@@ -734,10 +810,11 @@ class Zephyr(OSBase):
         entry_params = (args.p1, args.p2, args.p3)
 
         instance = Thread(
-            cpu_id=-1,
+            # cpu_id=-1,
+            cpu_id=0,
             cfg=cfg,
             artificial=False,
-            function=cfg.get_function_by_name(entry_name),
+            function=cfg.get_function_by_name(entry_name), # fixme: z_thread_entry
             symbol=Zephyr.get_symbol(args.symbol),
             stack=args.stack,
             stack_size=args.stack_size,
@@ -747,6 +824,22 @@ class Zephyr(OSBase):
             options=args.options,
             delay=args.delay
         )
+
+        # z_impl_k_thread_create
+        #  z_setup_new_thread
+        #   setup_thread_stack
+        #  schedule_new_thread
+
+        # status = TaskStatus.ready
+
+        # prio = 100
+
+        # state.context[obj] = ControlContext(
+        #     status=status,
+        #     abb=cfg.get_entry_abb(cfg.get_function_by_name(entry_name)),
+        #     call_path=CallPath(),
+        #     dyn_prio=[prio],
+        # )
         
         logger.debug(f"k_thread_create: {instance}")
         
@@ -798,6 +891,9 @@ class Zephyr(OSBase):
         )
 
         Zephyr.create_instance(cfg, state, cpu_id, va, "KernelSemaphore", instance, args.symbol, "k_sem_init")
+
+        # set_next_abb(state, cpu_id)
+        
         return state
 
     # int sys_sem_init(struct sys_sem *sem, unsigned int initial_count, unsigned int limit)
@@ -1006,6 +1102,35 @@ class Zephyr(OSBase):
              signature=(Arg("ms", hint=SigType.value),))
     def k_msleep(graph, state, cpu_id, args, va):
         state = state.copy()
+
+        # sched.c:z_impl_k_sleep: calls k_thread_suspend: remove from queue, z_mark_thread_as_suspended, z_reschedule_unlocked
+        # .... include/kswap.h:do_swap(...)
+        # - z_get_next_ready_thread
+        # - wait_for_switch(new_thread);
+		# - arch_switch();
+
+        # threads = [(v, obj) for v, obj in state.instances.get(Thread)]
+        threads = state.instances.get_controls().vertices()
+        for v in threads:
+           obj = state.instances.vp.obj[v]
+           if obj not in state.context:
+               logger.warning("Tried to access non available context")
+               continue
+           state.context[obj].status = TaskStatus.ready
+
+        cpu = state.cpus[cpu_id]
+
+        old_vertex = state.instances.vertex(cpu.control_instance)
+        old_task = state.instances.vp.obj[old_vertex]
+        # old_ctx = state.context[old_task]
+        
+        # state.context[old_task].status = TaskStatus.ready
+        state.context[old_task].status = TaskStatus.blocked
+        # old_ctx.abb = state.cfg.vertex(cpu.abb)
+        # old_ctx.call_path = cpu.call_path
+
+        Zephyr.debug_print_threads(state)
+
 
         add_self_edge(state, cpu_id, "k_msleep", ty=ZephyrEdgeType.interaction)
         return state
@@ -1631,3 +1756,68 @@ class Zephyr(OSBase):
     # TODO: Add more syscalls
 
     # TODO: create handling  k_thread_name_set
+
+
+    # copy from AUTOSAR
+    @staticmethod
+    def thread_terminate(state, cpu_id):
+        cur_task = state.cur_control_inst(cpu_id)
+        assert isinstance(cur_task, Thread), "thread_terminate must be called in a thread"
+
+        # state.context[cur_task] = ControlContext(
+        #     status=TaskStatus.suspended,
+        #     abb=state.cfg.get_entry_abb(cur_task.function),
+        #     call_path=CallPath(),
+        #     dyn_prio=[2 * cur_task.priority],
+        # )
+
+        state.context[cur_task].status = TaskStatus.terminated
+        # state.context[cur_task].status = TaskStatus.suspended
+
+        # set_next_abb(state, cpu_id) # keep the exit node
+
+        logger.debug(f"Terminate Thread {cur_task}.")
+
+        Zephyr.debug_print_threads(state)
+
+        return state
+    
+
+    class InstanceEdge(IntEnum):
+        have = 1 << 1
+        trigger = 1 << 2
+        activate = 1 << 3
+        chain = 1 << 4
+        nestable = 1 << 5
+        terminate = 1 << 6
+        get = 1 << 7
+        release = 1 << 8
+        sete = 1 << 9
+        wait = 1 << 10
+        interrupts = 1 << 11
+
+    # void k_thread_abort(k_tid_t thread)
+    @syscall(categories={SyscallCategory.comm},
+             signature=(Arg("thread", hint=SigType.instance, ty=Thread),))
+    def k_thread_abort(graph, state, cpu_id, args, va):
+        state = state.copy()
+
+        # Zephyr.create_instance(cfg, state, cpu_id, va, "Thread", instance, args.thread, k_thread_abort.__name__)
+
+        # Zephyr.add_instance_comm(state, cpu_id, args.thread, k_thread_abort.__name__, "Thread")
+        # return state
+
+        cur_task = state.cur_control_inst(cpu_id)
+        assert isinstance(cur_task, Thread), "TerminateTask must be called in a task"
+        # if state.context[cur_task].in_critical_section:
+        #     logger.debug(f"TerminateTask {cur_task.name} holding a spinlock")
+        #     set_next_abb(state, cpu_id)
+        #     return state
+
+        Zephyr.thread_terminate(state, cpu_id)
+        cur = state.cpus[cpu_id].control_instance
+        connect_from_here(
+            state, cpu_id, cur, "k_thread_abort", ty=Zephyr.InstanceEdge.terminate
+        )
+        return state
+

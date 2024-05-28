@@ -74,6 +74,7 @@ class TaskStatus(enum.IntEnum):
     blocked = 2
     ready = 3
     suspended = 4
+    terminated = 5
 
 
 class ExecState(enum.IntEnum):
