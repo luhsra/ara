@@ -122,3 +122,7 @@ cdef extern from "value_analyzer_corrections.h" namespace "ara::step":
 cdef extern from "zephyr_static.h" namespace "ara::step":
     cdef cppclass ZephyrStatic:
         pass
+
+cdef extern from "thread_wrapper.h" namespace "ara::step":
+    cdef cppclass ThreadWrapper:
+        pass
