@@ -10,13 +10,13 @@
 #include <graph.h>
 
 namespace ara::step {
-	class ThreadWrapper : public ConfStep<ThreadWrapper> {
+	class ZephyrThreadEntry : public ConfStep<ZephyrThreadEntry> {
 	  private:
-		using ConfStep<ThreadWrapper>::ConfStep;
+		using ConfStep<ZephyrThreadEntry>::ConfStep;
 	  public:
-		static std::string get_name() { return "ThreadWrapper"; }
+		static std::string get_name() { return "ZephyrThreadEntry"; }
 		static std::string get_description();
-		virtual std::vector<std::string> get_single_dependencies() override { return {"ZephyrStaticPost"}; }
+		virtual std::vector<std::string> get_single_dependencies() override { return {"RemoveSysfuncBody"}; }
 
 		virtual void run() override;
 	};

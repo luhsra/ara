@@ -5,7 +5,18 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from ara.steps.instance_graph_stats import MissingInteractions
-from .os_util import UnknownArgument, syscall, Arg, set_next_abb, connect_from_here, connect_instances, add_self_edge, find_instance_node, AutoDotInstance
+from .os_util import (
+    UnknownArgument,
+    AutoDotInstance,
+    Arg,
+    syscall,
+    set_next_abb,
+    connect_from_here,
+    connect_instances,
+    add_self_edge,
+    find_instance_node,
+    find_return_value
+)
 from .os_base import OSBase, ControlInstance, CPUList, CPU, OSState, ExecState, TaskStatus, ControlContext, IRQ
 from ara.util import get_logger
 from ara.graph import SyscallCategory, SigType, CallPath, CFG, Graph
@@ -96,6 +107,8 @@ class Thread(ZephyrInstance, ControlInstance):
     options: int
     # Scheduling delay, or K_NO_WAIT (for no delay).
     delay: int
+    # Name of the thread
+    name: str
 
     wanted_attrs = ["entry_name", "stack_size", "priority", "options", "delay"]
     dot_appearance = {
@@ -1175,7 +1188,13 @@ class Zephyr(OSBase):
     def k_current_get(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        #tid = find_return_value(cfg, abb, state.call_path)
+        cpu = state.cpus[cpu_id]
+
+        k_thread_t = find_return_value(cpu.abb, cpu.call_path, va)
+
+        logger.debug("k_current_get: %s", k_thread_t.value.get_name())
+        logger.debug("k_current_get: %s", k_thread_t.value)
+        logger.debug("k_current_get: %s", k_thread_t)
 
         add_self_edge(state, cpu_id, "k_current_get", ty=ZephyrEdgeType.interaction)
         return state

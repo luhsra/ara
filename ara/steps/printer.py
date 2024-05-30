@@ -25,6 +25,7 @@ import os.path
 
 from itertools import chain
 
+from ..os.zephyr import Thread as ZephyrThread # TODO remove this...
 
 _sysshort = {
     "AUTOSAR_GetSpinlock": "GL",
@@ -50,6 +51,13 @@ def _abb_name(cfg, abb):
         return 'None'
     return cfg.vp.name[abb]
 
+def remap(x, in_min=0.0, in_max=1.0, out_min=0.0, out_max=1.0):
+    '''remap taken from https://stackoverflow.com/a/43567380'''
+    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+
+def with_color(value, color, min=0.0, max=1.0):
+    '''Picks a color and wraps the value in a XML tag with the color attribute'''
+    return f'<font color="{remap(color, float(min), float(max))} 0.700 0.800">{value}</font>'
 
 def _sstg_state_as_dot(sstg, state_vert):
     attrs = {"fontsize": 14}
@@ -59,8 +67,26 @@ def _sstg_state_as_dot(sstg, state_vert):
     cfg = obj.cfg
     label = f"State {obj.id}"
     cpu = obj.cpus.one()
+    thread_info = []
     if cpu.control_instance:
         instance = obj.instances.vp.label[obj.instances.vertex(cpu.control_instance)]
+
+        thread = obj.cur_control_inst(cpu.id)
+        # ctx = obj.cur_context(cpu.id)
+        # print("_sstg_state_as_dot CPU ", cpu)
+        # print("_sstg_state_as_dot thread ", thread)
+        # print("_sstg_state_as_dot ctx", ctx)
+
+        # TODO add more useful attr
+
+        # FIXME this is zephyr specific code: move it into printer_zephyr
+        if hasattr(thread, 'name'):
+            thread_list = [(obj.name) for v, obj in obj.instances.get(ZephyrThread)]
+            thread_count = len(thread_list)
+            thread_idx = -1
+            if thread.name in thread_list:
+                thread_idx = thread_list.index(thread.name)
+            thread_info.append(("thread", with_color(thread.name, thread_idx, -1, thread_count)))
     else:
         instance = "Idle"
     if cpu.abb:
@@ -78,14 +104,16 @@ def _sstg_state_as_dot(sstg, state_vert):
             f"<i>{k}</i>: {html.escape(str(v))}"
             for k, v in [
                 ("irq_on", cpu.irq_on),
-                (
-                    "instance",
-                    instance,
-                ),
+                ("instance", instance),
                 ("call_path", cpu.call_path),
-                ("type", str(cpu.exec_state)),
+                ("type", ExecState(cpu.exec_state).name),
                 ("abb", abb),
             ] + xcet
+        ] + [
+            f"<i>{k}</i>: {str(v)}"
+            for k, v in [
+                # attr that should not be escaped
+            ] + thread_info
         ]
     )
     graph_attrs = f"<font point-size='{size}'>{graph_attrs}</font>"

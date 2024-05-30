@@ -123,6 +123,6 @@ cdef extern from "zephyr_static.h" namespace "ara::step":
     cdef cppclass ZephyrStatic:
         pass
 
-cdef extern from "thread_wrapper.h" namespace "ara::step":
-    cdef cppclass ThreadWrapper:
+cdef extern from "zephyr_thread_entry.h" namespace "ara::step":
+    cdef cppclass ZephyrThreadEntry:
         pass

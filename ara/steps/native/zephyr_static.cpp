@@ -168,6 +168,7 @@ namespace ara::step {
 					    {"priority", py_int(safe_deref(priority).getValue())},
 					    {"options", py_int(safe_deref(options).getValue())},
 					    {"delay", py_int(0)}, //safe_deref(delay).getValue())},
+						{"name", py_str(thread_name.str())},
 					});
 					Py_INCREF(Py_False);
 				}

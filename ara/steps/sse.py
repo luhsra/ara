@@ -52,6 +52,7 @@ class SSE(Step):
         sstg.edge_properties["syscall"] = sstg.new_ep("object")
         sstg.edge_properties["bcet"] = sstg.new_ep("int64_t", val=-1)
         sstg.edge_properties["wcet"] = sstg.new_ep("int64_t", val=-1)
+        sstg.edge_properties["thread"] = sstg.new_ep("string", val='thread_?')
 
         os_state = self._graph.os.get_initial_state(
             self._graph.cfg, self._graph.instances
