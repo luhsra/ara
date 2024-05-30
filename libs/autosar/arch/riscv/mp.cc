@@ -61,6 +61,7 @@ namespace arch {
 			Machine::reset();
 		}
 		*/
+		Machine::shutdown();
 	}
 
 	void stop_other_hardware_threads() {
@@ -92,9 +93,8 @@ namespace arch {
 		             "sev;" ::"r"(addr),
 		             [label] "X"(start_hardware_thread_stage2)
 		             : "r0");
-
-		return E_OK;
 		*/
+		return E_NOT_OK;
 	}
 
 } // namespace arch

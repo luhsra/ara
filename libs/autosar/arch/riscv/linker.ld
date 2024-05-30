@@ -17,7 +17,6 @@ SECTIONS
 
     .text : {
          KEEP(*(.text.init))
-         KEEP(*(.text.main))
          /* constructors */
          . = ALIGN(4096);
          PROVIDE(__CTORS_START = .);

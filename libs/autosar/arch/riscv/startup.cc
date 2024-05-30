@@ -4,14 +4,13 @@
 #include "machine.h"
 #include "dispatch.h"
 
-#include "fdt.h"
+#include "hardware_threads.h"
 
 #include "output.h"
 
 extern "C" {
     /* The initial stack should be placed in .data */
-	char __attribute__(( aligned (16) )) os_stack[4096] = {0xde, 0xad, 0xbe, 0xef};
-
+	char __attribute__(( aligned (16) )) os_stack[4096][MAX_CPUS] = {0xde, 0xad, 0xbe, 0xef};
 
 
 	/** Initialisation stub for generic startup code */
