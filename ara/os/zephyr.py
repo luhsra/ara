@@ -924,6 +924,8 @@ class Zephyr(OSBase):
             args.limit
         )
 
+        # TODO if needed sem has a wait queue kernel/sem.c:58
+
         Zephyr.create_instance(cfg, state, cpu_id, va, "UserSemaphore", instance, args.symbol, "sys_sem_init")
         return state
 
@@ -1098,6 +1100,23 @@ class Zephyr(OSBase):
     def k_thread_join(graph, state, cpu_id, args, va):
         state = state.copy()
 
+		#add_to_waitq_locked(_current, &thread->join_queue);
+        # - unready_thread(thread)
+        #  - dequeue_thread(&_kernel.ready_q.runq, thread);
+        #   - sys_dlist_remove(&thread->base.qnode_dlist);
+        # - z_mark_thread_as_pending(thread)
+		#add_thread_timeout(_current, timeout);
+		#ret = z_swap(&sched_spinlock, key);
+        # - arch_swap # CONFIG_USE_SWITCH: arch_switch => z_x86_switch
+        # z_swap does not return, and switches to an other thread....
+        #     ..... update_cache(): next_up()
+        # swap in thread from z_kernel.ready_q.cache /* always contains next thread to run: cannot be NULL */
+        # - sys_dlist_t OR struct _priq_rb OR struct _priq_mq
+
+        # - next_up()
+        #  - thread = _priq_run_best(&_kernel.ready_q.runq); --> _priq_dumb_best OR z_priq_rb_best OR ...q
+        #  - 
+
         Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_thread_join", "Thread")
         return state
 
@@ -1107,6 +1126,8 @@ class Zephyr(OSBase):
     def k_sleep(graph, state, cpu_id, args, va):
         state = state.copy()
 
+
+
         add_self_edge(state, cpu_id, "k_sleep", ty=ZephyrEdgeType.interaction)
         return state
 
@@ -1115,6 +1136,10 @@ class Zephyr(OSBase):
              signature=(Arg("ms", hint=SigType.value),))
     def k_msleep(graph, state, cpu_id, args, va):
         state = state.copy()
+
+        # handle: K_FOREVER: Thread suspends, calls: k_thread_suspend(_current);
+
+        # calls: ticks = z_tick_sleep(ticks);
 
         # sched.c:z_impl_k_sleep: calls k_thread_suspend: remove from queue, z_mark_thread_as_suspended, z_reschedule_unlocked
         # .... include/kswap.h:do_swap(...)
@@ -1794,6 +1819,8 @@ class Zephyr(OSBase):
         # state.context[cur_task].status = TaskStatus.suspended
 
         # set_next_abb(state, cpu_id) # keep the exit node
+
+        # TODO: remove from queues
 
         logger.debug(f"Terminate Thread {cur_task}.")
 
