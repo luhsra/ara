@@ -373,7 +373,6 @@ namespace ara::step {
 		friend class Bookkeeping;
 		SVFG& g;
 		graph::Graph& graph;
-		graph::CFG cfg;
 		tracer::Tracer& tracer;
 		Logger& logger;
 		std::shared_ptr<graph::CallGraph> callgraph;
@@ -493,7 +492,7 @@ namespace ara::step {
 
 		ValueAnalyzerImpl(SVFG& g, graph::Graph& graph, tracer::Tracer& tracer, Logger& logger,
 		                  std::shared_ptr<graph::SVFG> svfg, SVFObjects& svf_objects)
-		    : g(g), graph(graph), cfg(graph.get_cfg()), tracer(tracer), logger(logger),
+		    : g(g), graph(graph), tracer(tracer), logger(logger),
 		      callgraph(graph.get_callgraph_ptr()), svfg(svfg), state(graph.get_graph_data().va_state),
 		      svf_objects(svf_objects) {}
 	};
