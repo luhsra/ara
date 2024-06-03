@@ -14,6 +14,7 @@
 #include <Graphs/PTACallGraph.h>
 #include <WPA/Andersen.h>
 #include <boost/graph/filtered_graph.hpp>
+#include <graph_filtering.hh>
 #include <llvm/ADT/GraphTraits.h>
 #include <llvm/ADT/SCCIterator.h>
 #include <llvm/IR/CFG.h>
@@ -189,17 +190,6 @@ namespace ara::step {
 				}
 			}
 		};
-
-		template <typename CFGraph>
-		void map_callgraph(CFGraph& cfg_obj, graph::CFG& cfg, graph::CallGraph& callgraph,
-		                   SVF::PTACallGraph& svf_callgraph, llvm::Module& mod, Logger& logger,
-		                   StepManager& step_manager, const std::string& entry_point) {
-			graph_tool::gt_dispatch<>()(
-			    [&](auto& g) {
-				    CallGraphImpl(cfg_obj, cfg, g, callgraph, svf_callgraph, mod, logger, step_manager, entry_point);
-			    },
-			    graph_tool::always_directed())(callgraph.graph.get_graph_view());
-		}
 	} // namespace
 
 	SVF::PTACallGraph& CallGraph::get_svf_callgraph() {
@@ -229,10 +219,12 @@ namespace ara::step {
 		logger.info() << "Analyzing entry point: '" << *entry_point_name << "'" << std::endl;
 
 		graph_tool::gt_dispatch<>()(
-		    [&](auto& g) {
-			    map_callgraph(g, cfg, callgraph, svf_callgraph, mod, logger, step_manager, *entry_point_name);
+		    [&](auto& cfg_obj, auto& cg_obj) {
+			    CallGraphImpl(cfg_obj, cfg, cg_obj, callgraph, svf_callgraph, mod, logger, step_manager,
+			                  *entry_point_name);
 		    },
-		    graph_tool::always_directed())(cfg.graph.get_graph_view());
+		    graph_tool::always_directed(),
+		    graph_tool::always_directed())(cfg.graph.get_graph_view(), callgraph.graph.get_graph_view());
 
 		if (*dump.get()) {
 			std::string dot_file = *dump_prefix.get() + *entry_point_name;
