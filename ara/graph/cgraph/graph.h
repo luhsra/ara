@@ -643,6 +643,18 @@ namespace ara::graph {
 		PyObject* graph;
 		GraphData* graph_data;
 
+		PyObject* get_py_subgraph(const char* what);
+
+		template <class SubGraph>
+		SubGraph get_graph(const char* what) {
+			return SubGraph::get(get_py_subgraph(what));
+		}
+
+		template <class SubGraph>
+		std::unique_ptr<SubGraph> get_graph_ptr(const char* what) {
+			return SubGraph::get_ptr(get_py_subgraph(what));
+		}
+
 	  public:
 		Graph() : graph(nullptr), graph_data(nullptr) {}
 		Graph(PyObject* g, GraphData& graph_data) : graph(g), graph_data(&graph_data) {}
@@ -663,14 +675,14 @@ namespace ara::graph {
 
 		os::OS get_os();
 
-		CFG get_cfg();
-		std::unique_ptr<CFG> get_cfg_ptr();
+		CFG get_cfg() { return get_graph<CFG>("cfg"); };
+		std::unique_ptr<CFG> get_cfg_ptr() { return get_graph_ptr<CFG>("cfg"); };
 
-		CallGraph get_callgraph();
-		std::unique_ptr<CallGraph> get_callgraph_ptr();
+		CallGraph get_callgraph() { return get_graph<CallGraph>("callgraph"); };
+		std::unique_ptr<CallGraph> get_callgraph_ptr() { return get_graph_ptr<CallGraph>("callgraph"); };
 
-		InstanceGraph get_instances();
-		std::unique_ptr<InstanceGraph> get_instances_ptr();
+		InstanceGraph get_instances() { return get_graph<InstanceGraph>("instances"); };
+		std::unique_ptr<InstanceGraph> get_instances_ptr() { return get_graph_ptr<InstanceGraph>("instances"); };
 
 		SVFG get_svfg_graphtool();
 		std::unique_ptr<SVFG> get_svfg_graphtool_ptr();

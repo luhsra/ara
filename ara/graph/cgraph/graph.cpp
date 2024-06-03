@@ -148,20 +148,11 @@ namespace ara::graph {
 		return cfg;
 	}
 
-	CFG Graph::get_cfg() {
+	PyObject* Graph::get_py_subgraph(const char* what) {
 		// extract self.cfg from Python
-		PyObject* pycfg = PyObject_GetAttrString(graph, "cfg");
-		assert(pycfg != nullptr);
-
-		return CFG::get(pycfg);
-	}
-
-	std::unique_ptr<CFG> Graph::get_cfg_ptr() {
-		// extract self.cfg from Python
-		PyObject* pycfg = PyObject_GetAttrString(graph, "cfg");
-		assert(pycfg != nullptr);
-
-		return CFG::get_ptr(pycfg);
+		PyObject* py_graph = PyObject_GetAttrString(graph, what);
+		assert(py_graph != nullptr);
+		return py_graph;
 	}
 
 	os::OS Graph::get_os() {
@@ -218,22 +209,6 @@ namespace ara::graph {
 		return callgraph;
 	}
 
-	CallGraph Graph::get_callgraph() {
-		// extract self.callgraph from Python
-		PyObject* pycallgraph = PyObject_GetAttrString(graph, "callgraph");
-		assert(pycallgraph != nullptr);
-
-		return CallGraph::get(pycallgraph);
-	}
-
-	std::unique_ptr<CallGraph> Graph::get_callgraph_ptr() {
-		// extract self.callgraph from Python
-		PyObject* pycallgraph = PyObject_GetAttrString(graph, "callgraph");
-		assert(pycallgraph != nullptr);
-
-		return CallGraph::get_ptr(pycallgraph);
-	}
-
 	inline void create_properties(InstanceGraph& instancegraph, PyObject* py_instancegraph) {
 		PyObject* vprops = get_vprops(py_instancegraph);
 
@@ -284,22 +259,6 @@ namespace ara::graph {
 		    std::make_unique<InstanceGraphUniqueEnabler>(get_graph(py_instancegraph));
 		create_properties(*instancegraph, py_instancegraph);
 		return instancegraph;
-	}
-
-	InstanceGraph Graph::get_instances() {
-		// extract self.instances from Python
-		PyObject* pyinstancegraph = PyObject_GetAttrString(graph, "instances");
-		assert(pyinstancegraph != nullptr);
-
-		return InstanceGraph::get(pyinstancegraph);
-	}
-
-	std::unique_ptr<InstanceGraph> Graph::get_instances_ptr() {
-		// extract self.instances from Python
-		PyObject* pyinstancegraph = PyObject_GetAttrString(graph, "instances");
-		assert(pyinstancegraph != nullptr);
-
-		return InstanceGraph::get_ptr(pyinstancegraph);
 	}
 
 	inline void create_properties(SVFG& svfg, PyObject* py_svfg) {
