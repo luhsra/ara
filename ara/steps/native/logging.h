@@ -7,12 +7,13 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
-/* Python.h must be included before py_logging.h, see
- * https://github.com/cython/cython/issues/3133
- * TODO, fixed in Cython 3.0
+/* We are doing nesting of Cython modules. Therefore, Cython throws a lot of "Please do not define the '__PYX_EXTERN_C'
+ * macro externally" errors. If we define it manually here, it silences these warnings.
  */
-#include "Python.h"
+// clang-format off
+#define CYTHON_EXTERN_C extern "C++"
 #include "py_logging.h"
+// clang-format on
 
 #include <boost/python.hpp>
 #include <boost/type_traits.hpp>

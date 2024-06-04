@@ -87,7 +87,6 @@ namespace ara::step {
 	}
 
 	void ISRSearch::run() {
-		llvm::Module& mod = graph.get_module();
 		SVF::PTACallGraph& svf_callgraph = get_svf_callgraph();
 		os::OS os = this->graph.get_os();
 		auto all_syscalls = os.get_syscall_names();
