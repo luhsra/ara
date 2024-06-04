@@ -60,7 +60,7 @@ llvm_dis = toolchains.get_variable('llvm_dis')
 llvm_opt = toolchains.get_variable('llvm_opt')
 
 boost_dep = dependency('boost', modules: ['graph', 'python' + py3_inst.language_version().replace('.', '')])
-graph_tool_dep = dependency('graph-tool-py' + py3_inst.language_version(), include_type: 'system')
+graph_tool_dep = dependency('graph-tool-py' + py3_inst.language_version(), include_type: 'system', version: '>=2.68')
 
 # Workaround for https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1070676
 graph_tool_inc = '/usr/lib/python3/dist-packages/graph_tool/include'
