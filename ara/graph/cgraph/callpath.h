@@ -1,10 +1,11 @@
-// SPDX-FileCopyrightText: 2021 Gerion Entrup <entrup@sra.uni-hannover.de>
+// SPDX-FileCopyrightText: 2024 Gerion Entrup <entrup@sra.uni-hannover.de>
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #pragma once
 
 #include "graph.h"
+#include "common/util.h"
 
 #include <boost/range/adaptor/reversed.hpp>
 #include <graph_python_interface.hh>
@@ -31,7 +32,10 @@ namespace ara::graph {
 		void get_call_site_dispatched(Graph& g, graph_tool::GraphInterface& gi, size_t index,
 		                              boost::python::object& new_e) {
 			auto gp = graph_tool::retrieve_graph_view<Graph>(gi, g);
-			new_e = boost::python::object(graph_tool::PythonEdge<Graph>(gp, edges.at(index)));
+			{
+				TakeGIL gil;
+				new_e = boost::python::object(graph_tool::PythonEdge<Graph>(gp, edges.at(index)));
+			}
 		}
 
 		template <typename Graph>
@@ -88,8 +92,9 @@ namespace ara::graph {
 
 		void add_call_site(std::shared_ptr<CallGraph> call_graph, const SVF::PTACallGraphEdge& call_site) {
 			check_and_assign(call_graph);
-			graph_tool::gt_dispatch<>()([&](auto& g) { add_call_site_dispatched(g, *call_graph, call_site); },
-			                            graph_tool::always_directed())(call_graph->graph.get_graph_view());
+			// nested GIL may fail
+			graph_tool::gt_dispatch<>(false)([&](auto& g) { add_call_site_dispatched(g, *call_graph, call_site); },
+			                                 graph_tool::always_directed())(call_graph->graph.get_graph_view());
 		}
 
 		void add_call_site(PyObject* call_graph, PyObject* edge);

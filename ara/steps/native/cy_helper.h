@@ -8,6 +8,11 @@
 
 #pragma once
 
+// see https://github.com/cython/cython/issues/5812
+#ifndef WITH_THREAD
+#define WITH_THREAD
+#endif
+
 #include "graph.h"
 #include "option.h"
 #include "step.h"

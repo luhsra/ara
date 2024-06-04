@@ -3,8 +3,8 @@
 // SPDX-FileCopyrightText: 2021 Björn Fiedler <fiedler@sra.uni-hannover.de>
 // SPDX-FileCopyrightText: 2021 Christoph Möller
 // SPDX-FileCopyrightText: 2021 Lukas Berg
-// SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
 // SPDX-FileCopyrightText: 2022 Jan Neugebauer
+// SPDX-FileCopyrightText: 2024 Gerion Entrup <entrup@sra.uni-hannover.de>
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -1127,6 +1127,7 @@ namespace ara::step {
 	}
 
 	PyObject* ValueAnalyzer::py_repack_raw_value(const RawValue& value) const {
+		TakeGIL gil;
 		if (std::holds_alternative<OSObject>(value)) {
 			static_assert(std::is_same<uint64_t, OSObject>::value);
 			uint64_t raw_index = std::get<OSObject>(value);
@@ -1140,6 +1141,7 @@ namespace ara::step {
 	}
 
 	PyObject* ValueAnalyzer::py_repack_offsets(const std::vector<const llvm::GetElementPtrInst*>& offsets) const {
+		TakeGIL gil;
 		PyObject* py_offsets = PyTuple_New(offsets.size());
 		for (const auto& indexed_gep : offsets | boost::adaptors::indexed()) {
 			// it would be nice to return a const gep here, however const correctness and Python are not compatible
@@ -1263,6 +1265,7 @@ namespace ara::step {
 	}
 
 	PyObject* ValueAnalyzer::py_repack(Result&& result) const {
+		TakeGIL gil;
 		PyObject* py_callpath = (result.callpath) ? result.callpath->get_python_obj() : Py_None;
 		PyObject* py_attrs = (result.attrs) ? get_obj_from_attr_set(*result.attrs) : Py_None;
 		return PyTuple_Pack(4, py_repack_raw_value(result.value), py_repack_offsets(result.offset), py_attrs,
@@ -1294,14 +1297,15 @@ namespace ara::step {
 		graph_tool::gt_dispatch<>()([&](auto& g) { get_llvm_callsite(g, &ll_callsite, callsite); },
 		                            graph_tool::always_directed())(cfg.graph.get_graph_view());
 
-		PyObject* res;
+		llvm::Value* val;
 		graph_tool::gt_dispatch<>()(
 		    [&](auto& g) {
 			    ValueAnalyzerImpl impl{g, *this};
-			    res = get_obj_from_value(
-			        safe_deref(const_cast<llvm::Value*>(impl.get_return_value(safe_deref(ll_callsite), callpath))));
+			    val = const_cast<llvm::Value*>(impl.get_return_value(safe_deref(ll_callsite), callpath));
 		    },
 		    graph_tool::always_directed())(svfg->graph.get_graph_view());
+		assert(val != nullptr);
+		PyObject* res = get_obj_from_value(safe_deref(val));
 		tracer.clear();
 		return res;
 	}

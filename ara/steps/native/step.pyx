@@ -417,15 +417,15 @@ def provide_test_steps():
         return []
 
 # make this name extra long, since we have no namespaces here
-cdef public void step_manager_chain_step(object step_manager, const char* config):
+cdef public void step_manager_chain_step(object step_manager, const char* config) with gil:
     py_config = json.loads(config)
     step_manager.chain_step(py_config)
 
-cdef public void step_manager_change_global_config(object step_manager, const char* config):
+cdef public void step_manager_change_global_config(object step_manager, const char* config) with gil:
     py_config = json.loads(config)
     step_manager.change_global_config(py_config)
 
-cdef public const char* step_manager_get_execution_id(object step_manager):
+cdef public const char* step_manager_get_execution_id(object step_manager) with gil:
     return str(step_manager.get_execution_id()).encode('UTF-8')
 
 include "tracer_api.pxi"

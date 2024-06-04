@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2021 Gerion Entrup <entrup@sra.uni-hannover.de>
+// SPDX-FileCopyrightText: 2024 Gerion Entrup <entrup@sra.uni-hannover.de>
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -7,6 +7,7 @@
  */
 #pragma once
 
+#include <Python.h>
 #include <cassert>
 #include <type_traits>
 
@@ -60,4 +61,15 @@ namespace ara {
 			othersFun(*it);
 		};
 	}
+
+	/**
+	 * call certain code with a taken GIL
+	 */
+	class TakeGIL {
+		PyGILState_STATE state;
+
+	  public:
+		TakeGIL() { state = PyGILState_Ensure(); }
+		~TakeGIL() { PyGILState_Release(state); }
+	};
 } // namespace ara

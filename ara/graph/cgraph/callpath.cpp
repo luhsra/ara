@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
+// SPDX-FileCopyrightText: 2024 Gerion Entrup <entrup@sra.uni-hannover.de>
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -49,7 +49,8 @@ namespace ara::graph {
 	const SVF::PTACallGraphEdge* CallPath::svf_at(size_t index) const {
 		assert(call_graph != nullptr && "CallGraph must not be null");
 		SVF::PTACallGraphEdge* edge = nullptr;
-		graph_tool::gt_dispatch<>()(
+		// no need to change the GIL state (actively releasing) it here
+		graph_tool::gt_dispatch<>(false)(
 		    [&](auto& g) {
 			    edge = const_cast<SVF::PTACallGraphEdge*>(
 			        call_graph->get_svf_elink<typename std::remove_reference<decltype(g)>::type>(this->at(index)));
@@ -77,7 +78,8 @@ namespace ara::graph {
 		}
 		assert(call_graph != nullptr && "call graph is not initialized");
 		std::stringstream ss;
-		graph_tool::gt_dispatch<>()(
+		// do not release the GIL here, more save and performance not relevant
+		graph_tool::gt_dispatch<>(false)(
 		    [&](auto& g) { print_dispatched(g, *call_graph, call_site, instruction, functions, ss); },
 		    graph_tool::always_directed())(call_graph->graph.get_graph_view());
 		return ss.str();
@@ -115,8 +117,9 @@ namespace ara::graph {
 		}
 		assert(call_graph != nullptr && "call graph is not initialized");
 		bool ret_value = false;
-		graph_tool::gt_dispatch<>()([&](auto& g) { is_recursive_dispatched(g, ret_value); },
-		                            graph_tool::always_directed())(call_graph->graph.get_graph_view());
+		// do not change the GIL here, short function but nested GIL may fail
+		graph_tool::gt_dispatch<>(false)([&](auto& g) { is_recursive_dispatched(g, ret_value); },
+		                                 graph_tool::always_directed())(call_graph->graph.get_graph_view());
 		return ret_value;
 	}
 

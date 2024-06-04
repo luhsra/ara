@@ -149,6 +149,8 @@ namespace ara::graph {
 	}
 
 	PyObject* Graph::get_py_subgraph(const char* what) {
+		// we need the GIL, throw error otherwise
+		PyThreadState_Get();
 		// extract self.cfg from Python
 		PyObject* py_graph = PyObject_GetAttrString(graph, what);
 		assert(py_graph != nullptr);
