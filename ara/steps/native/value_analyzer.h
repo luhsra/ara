@@ -11,6 +11,7 @@
 #include "graph.h"
 #include "logging.h"
 #include "tracer_api.h"
+#include "value_analyzer_state.h"
 
 #include <WPA/Andersen.h>
 #include <boost/bimap.hpp>
@@ -245,7 +246,7 @@ namespace ara::step {
 			}
 		}
 
-		virtual ~Traverser(){};
+		virtual ~Traverser() {};
 
 		/**
 		 * Send a report to the boss.
@@ -277,7 +278,9 @@ namespace ara::step {
 	 */
 	template <typename SVFG>
 	class Bookkeeping {
-		ValueAnalyzerImpl<SVFG>& va;
+		Logger& logger;
+		llvm::Module& module;
+		value_analyzer::ValueAnalyzerState& state;
 		std::list<std::shared_ptr<Traverser<SVFG>>> traversers;
 		std::set<Node<SVFG>> visited;
 		std::shared_ptr<graph::CallGraph> call_graph;
@@ -289,11 +292,11 @@ namespace ara::step {
 		bool should_stop = false;
 		size_t next_id = 0;
 
-		Bookkeeping(ValueAnalyzerImpl<SVFG>& va, std::shared_ptr<graph::CallGraph> call_graph,
-		            std::shared_ptr<graph::SVFG> svfg, SVFG& g, tracer::Tracer& tracer,
-		            const SVF::PTACallGraph* s_call_graph, graph::SigType hint)
-		    : va(va), call_graph(call_graph), svfg(svfg), g(g), tracer(tracer), s_call_graph(s_call_graph), hint(hint) {
-		}
+		Bookkeeping(Logger& logger, llvm::Module& module, value_analyzer::ValueAnalyzerState& state,
+		            std::shared_ptr<graph::CallGraph> call_graph, std::shared_ptr<graph::SVFG> svfg, SVFG& g,
+		            tracer::Tracer& tracer, const SVF::PTACallGraph* s_call_graph, graph::SigType hint)
+		    : logger(logger), module(module), state(state), call_graph(call_graph), svfg(svfg), g(g), tracer(tracer),
+		      s_call_graph(s_call_graph), hint(hint) {}
 		template <typename T>
 		friend class ValueAnalyzerImpl;
 
@@ -354,6 +357,7 @@ namespace ara::step {
 		SVF::PTACallGraph* s_callgraph = ander->getPTACallGraph();
 	};
 
+	class ValueAnalyzer;
 	/**
 	 * Get constant values for function call arguments.
 	 *
@@ -372,16 +376,7 @@ namespace ara::step {
 		template <typename T>
 		friend class Bookkeeping;
 		SVFG& g;
-		graph::Graph& graph;
-		tracer::Tracer& tracer;
-		Logger& logger;
-		std::shared_ptr<graph::CallGraph> callgraph;
-		std::shared_ptr<graph::SVFG> svfg;
-
-		value_analyzer::ValueAnalyzerState& state;
-
-		/* SVF datastructures */
-		SVFObjects& svf_objects;
+		ValueAnalyzer& va;
 
 		/**
 		 * Output an error to the log and raise an ValuesUnknown exception.
@@ -490,19 +485,21 @@ namespace ara::step {
 
 		Result get_memory_value(const llvm::Value* intermediate_value, graph::CallPath callpath);
 
-		ValueAnalyzerImpl(SVFG& g, graph::Graph& graph, tracer::Tracer& tracer, Logger& logger,
-		                  std::shared_ptr<graph::SVFG> svfg, SVFObjects& svf_objects)
-		    : g(g), graph(graph), tracer(tracer), logger(logger),
-		      callgraph(graph.get_callgraph_ptr()), svfg(svfg), state(graph.get_graph_data().va_state),
-		      svf_objects(svf_objects) {}
+		ValueAnalyzerImpl(SVFG& g, ValueAnalyzer& va) : g(g), va(va) {}
 	};
 
 	class ValueAnalyzer {
+		template <class SVFG>
+		friend class ValueAnalyzerImpl;
+
 		graph::Graph graph;
 		Logger logger;
 		tracer::Tracer tracer;
 		graph::CFG cfg;
 		std::shared_ptr<graph::SVFG> svfg;
+		std::shared_ptr<graph::CallGraph> callgraph;
+		value_analyzer::ValueAnalyzerState& state;
+		/* SVF datastructures */
 		SVFObjects svf_objects;
 
 		/**
@@ -510,7 +507,7 @@ namespace ara::step {
 		 */
 		template <class Graph>
 		inline void get_llvm_callsite(Graph, llvm::CallBase** ll_callsite, PyObject* callsite) {
-			const typename graph_tool::PythonVertex<Graph>& gt_cs =
+			const typename graph_tool::PythonVertex<Graph> gt_cs =
 			    boost::python::extract<typename graph_tool::PythonVertex<Graph>>(callsite);
 			typename boost::graph_traits<Graph>::vertex_descriptor v_cs = gt_cs.get_descriptor();
 			auto bb = cfg.get_llvm_bb<Graph>(v_cs);
@@ -535,7 +532,8 @@ namespace ara::step {
 		// If Cython would support this, this constructor would be private.
 		ValueAnalyzer(graph::Graph&& graph, PyObject* tracer, PyObject* logger)
 		    : graph(std::move(graph)), logger(Logger(logger)), tracer(tracer::Tracer(tracer, this->logger)),
-		      cfg(graph.get_cfg()), svfg(graph.get_svfg_graphtool_ptr()) {}
+		      cfg(graph.get_cfg()), svfg(graph.get_svfg_graphtool_ptr()), callgraph(graph.get_callgraph_ptr()),
+		      state(graph.get_graph_data().va_state) {}
 
 		static std::unique_ptr<ValueAnalyzer> get(graph::Graph&& graph, PyObject* tracer, PyObject* logger) {
 			return std::make_unique<ValueAnalyzer>(std::move(graph), tracer, logger);

@@ -742,7 +742,7 @@ namespace ara::step {
 			for (auto it = traversers.begin(); it != traversers.end();) {
 				auto traverser = *it;
 				if (should_stop) {
-					va.logger.debug() << "Stopping..." << std::endl;
+					get_logger().debug() << "Stopping..." << std::endl;
 					return;
 				}
 				switch (traverser->get_status()) {
@@ -758,17 +758,17 @@ namespace ara::step {
 				}
 			}
 		}
-		va.logger.debug() << "Stopping after 100 iterations." << std::endl;
+		get_logger().debug() << "Stopping after 100 iterations." << std::endl;
 	}
 
 	template <class SVFG>
 	llvm::Module& Bookkeeping<SVFG>::get_module() const {
-		return va.graph.get_module();
+		return module;
 	}
 
 	template <class SVFG>
 	Logger& Bookkeeping<SVFG>::get_logger() const {
-		return va.logger;
+		return logger;
 	}
 
 	template <class SVFG>
@@ -779,8 +779,8 @@ namespace ara::step {
 		if (!num_offsets) {
 			return std::nullopt;
 		}
-		auto it = va.state.obj_map.left.find(std::make_tuple(node, *num_offsets, callpath.hash()));
-		if (it != va.state.obj_map.left.end()) {
+		auto it = state.obj_map.left.find(std::make_tuple(node, *num_offsets, callpath.hash()));
+		if (it != state.obj_map.left.end()) {
 			return it->second;
 		}
 		return std::nullopt;
@@ -788,15 +788,16 @@ namespace ara::step {
 
 	template <class SVFG>
 	void ValueAnalyzerImpl<SVFG>::fail(const char* msg) {
-		logger.error() << "ERROR: " << msg << std::endl;
+		va.logger.error() << "ERROR: " << msg << std::endl;
 		throw ValuesUnknown(msg);
 	}
 
 	template <class SVFG>
 	const Node<SVFG> ValueAnalyzerImpl<SVFG>::get_vfg_node(const llvm::Value& start, int argument_nr) {
-		auto nodes = this->svfg->template from_llvm_value<SVFG>(start);
+		auto nodes = this->va.svfg->template from_llvm_value<SVFG>(start);
 		if (nodes.size() == 0) {
-			logger.error() << "Call get_vfg_node with: " << start << " and argument_nr: " << argument_nr << std::endl;
+			va.logger.error() << "Call get_vfg_node with: " << start << " and argument_nr: " << argument_nr
+			                  << std::endl;
 			throw ValuesUnknown("Cannot go back from llvm::Value to an SVF node");
 		}
 		if (nodes.size() == 1) {
@@ -810,7 +811,7 @@ namespace ara::step {
 		bool addr_set = false;
 		bool addr_pattern_valid = true;
 		auto fail_with_msg = [&](const char* msg) {
-			logger.debug() << msg << std::endl;
+			va.logger.debug() << msg << std::endl;
 			addr_pattern_valid = false;
 		};
 		auto assign_addr = [&](const Node<SVFG> n) {
@@ -828,7 +829,7 @@ namespace ara::step {
 		for (auto node : nodes) {
 			// Pattern 1: We have only one AddrVFGNode and multiple pointer (GepVFGNodes) to this node
 			if (addr_pattern_valid) {
-				SVF::VFGNode* vfg_node = this->svfg->template get_node_obj<SVFG>(node);
+				SVF::VFGNode* vfg_node = this->va.svfg->template get_node_obj<SVFG>(node);
 				if (llvm::dyn_cast<SVF::AddrVFGNode>(vfg_node)) {
 					assign_addr(node);
 				} else if (llvm::isa<SVF::GepVFGNode>(vfg_node)) {
@@ -839,7 +840,7 @@ namespace ara::step {
 							break;
 						}
 						auto cand = source(edge, g);
-						if (llvm::dyn_cast<SVF::AddrVFGNode>(this->svfg->template get_node_obj<SVFG>(cand))) {
+						if (llvm::dyn_cast<SVF::AddrVFGNode>(this->va.svfg->template get_node_obj<SVFG>(cand))) {
 							assign_addr(cand);
 						} else {
 							fail_with_msg("Addr pattern failed. Found a pointer to a non AddrVFGNode");
@@ -850,34 +851,34 @@ namespace ara::step {
 			}
 
 			// Pattern 2: Any element in the list is a nullptr
-			if (llvm::isa<SVF::NullPtrVFGNode>(this->svfg->template get_node_obj<SVFG>(node))) {
-				logger.debug() << "Pattern 2, found nullptr: " << node << std::endl;
+			if (llvm::isa<SVF::NullPtrVFGNode>(this->va.svfg->template get_node_obj<SVFG>(node))) {
+				va.logger.debug() << "Pattern 2, found nullptr: " << node << std::endl;
 				return node;
 			}
 		}
 
 		if (addr_pattern_valid && addr_set) {
-			logger.debug() << "Pattern 1, found one address with multiple pointers: " << addr << std::endl;
+			va.logger.debug() << "Pattern 1, found one address with multiple pointers: " << addr << std::endl;
 			return addr;
 		}
 
 		// ATTENTION: Pattern 3 is under development
 		if (argument_nr >= 0) {
-			logger.warning() << "get_vfg_node(): try to check for Pattern 3 which is under development" << std::endl;
+			va.logger.warning() << "get_vfg_node(): try to check for Pattern 3 which is under development" << std::endl;
 			for (auto node : nodes) {
 				// Pattern 3: We are searching an argument, the next node has to be a FormalParmPHI
 				for (auto edge : graph_tool::out_edges_range(node, g)) {
 					auto cand = target(edge, g);
-					logger.debug() << "cand: " << cand << std::endl;
+					va.logger.debug() << "cand: " << cand << std::endl;
 					if (auto phi =
-					        llvm::dyn_cast<SVF::InterPHIVFGNode>(this->svfg->template get_node_obj<SVFG>(cand))) {
-						logger.debug() << "PHINode: " << *phi << std::endl;
+					        llvm::dyn_cast<SVF::InterPHIVFGNode>(this->va.svfg->template get_node_obj<SVFG>(cand))) {
+						va.logger.debug() << "PHINode: " << *phi << std::endl;
 						if (phi->isFormalParmPHI()) {
 							if (auto arg = llvm::dyn_cast<llvm::Argument>(phi->getValue())) {
-								logger.debug()
+								va.logger.debug()
 								    << "arg: " << *arg << " " << arg->getArgNo() << " " << argument_nr << std::endl;
 								if (arg->getArgNo() == static_cast<unsigned>(argument_nr)) {
-									logger.error() << "Found correct node" << std::endl;
+									va.logger.error() << "Found correct node" << std::endl;
 									assert(false && "Pattern 3 (under development) found correct node.");
 								}
 							}
@@ -893,16 +894,17 @@ namespace ara::step {
 	template <class SVFG>
 	FoundValue<SVFG> ValueAnalyzerImpl<SVFG>::do_backward_value_search(const Node<SVFG> start, graph::CallPath callpath,
 	                                                                   graph::SigType hint) {
-		Bookkeeping caretaker(*this, this->callgraph, this->svfg, g, tracer, svf_objects.s_callgraph, hint);
+		Bookkeeping caretaker(va.logger, va.graph.get_module(), va.state, this->va.callgraph, this->va.svfg, g,
+		                      va.tracer, va.svf_objects.s_callgraph, hint);
 		std::shared_ptr<Manager<SVFG>> root = std::make_shared<Manager<SVFG>>(start, callpath, caretaker);
 		caretaker.add_traverser(root);
 
-		tracer.entity_on_node(root->get_entity(),
-		                      tracer::GraphNode(static_cast<uint64_t>(start), graph::GraphType::SVFG));
+		va.tracer.entity_on_node(root->get_entity(),
+		                         tracer::GraphNode(static_cast<uint64_t>(start), graph::GraphType::SVFG));
 
 		caretaker.run();
 		auto& result = root->get_value();
-		logger.debug() << "FoundValue with offset " << offset_print(result.offset) << std::endl;
+		va.logger.debug() << "FoundValue with offset " << offset_print(result.offset) << std::endl;
 		return result;
 	}
 
@@ -918,22 +920,22 @@ namespace ara::step {
 	                                                      unsigned argument_nr) {
 		value_analyzer::ValueLocation key(callsite, callpath, argument_nr);
 
-		logger.debug() << "looking up: " << key.as_json() << std::endl;
+		va.logger.debug() << "looking up: " << key.as_json() << std::endl;
 
 		std::optional<Result> ret = std::nullopt;
 
-		const auto& corr = state.corrections;
+		const auto& corr = va.state.corrections;
 		if (corr.find(key) != corr.end()) {
 			auto hint = corr.at(key);
 			std::visit(
 			    overloaded{
 			        [&](value_analyzer::FunctionPointerHint f) {
-				        const llvm::Function* func = graph.get_module().getFunction(f.name);
+				        const llvm::Function* func = va.graph.get_module().getFunction(f.name);
 				        if (func == nullptr) {
-					        logger.error() << "Function " << f.name << "could not be found" << std::endl;
+					        va.logger.error() << "Function " << f.name << "could not be found" << std::endl;
 					        return;
 				        }
-				        logger.debug() << "Set function " << func->getName().str() << " as result." << std::endl;
+				        va.logger.debug() << "Set function " << func->getName().str() << " as result." << std::endl;
 				        ret = Result{func, {}, std::nullopt, std::nullopt};
 			        },
 			    },
@@ -966,12 +968,12 @@ namespace ara::step {
 		llvm::AttributeSet attrs = attrl.getAttributes(argument_nr + 1);
 		const llvm::Value& val = get_nth_arg(callsite, argument_nr);
 
-		logger.debug() << "Analyzing argument " << argument_nr << ": " << pretty_print(val) << std::endl;
+		va.logger.debug() << "Analyzing argument " << argument_nr << ": " << pretty_print(val) << std::endl;
 
 		// fast lane, if val is a constant, take it
 		FoundValue<SVFG> value;
 		if (const llvm::ConstantData* c = llvm::dyn_cast<llvm::ConstantData>(&val)) {
-			logger.debug() << "Found constant data: " << pretty_print(*c) << std::endl;
+			va.logger.debug() << "Found constant data: " << pretty_print(*c) << std::endl;
 			value = FoundValue<SVFG>{c, std::nullopt, {}, std::nullopt};
 		} else {
 			const Node<SVFG> v_node = get_vfg_node(val, argument_nr);
@@ -980,9 +982,10 @@ namespace ara::step {
 
 		// printing
 		if (std::holds_alternative<OSObject>(value.value)) {
-			logger.debug() << "Found previous object. ID: " << std::get<OSObject>(value.value) << std::endl;
+			va.logger.debug() << "Found previous object. ID: " << std::get<OSObject>(value.value) << std::endl;
 		} else {
-			logger.debug() << "Found value: " << pretty_print(*std::get<const llvm::Value*>(value.value)) << std::endl;
+			va.logger.debug() << "Found value: " << pretty_print(*std::get<const llvm::Value*>(value.value))
+			                  << std::endl;
 		}
 
 		return Result{std::move(value.value), std::move(value.offset), std::move(attrs), std::move(value.callpath)};
@@ -995,16 +998,16 @@ namespace ara::step {
 		Node<SVFG> current = start;
 		// random constant, prevent endless loops, this amount of copies is unlikely
 		for (unsigned i = 0; i < 20; ++i) {
-			logger.debug() << "Downward search: " << current << std::endl;
+			va.logger.debug() << "Downward search: " << current << std::endl;
 			for (auto edge : graph_tool::out_edges_range(current, g)) {
 				Node<SVFG> cand = target(edge, g);
-				SVF::VFGNode* svf_cand = this->svfg->template get_node_obj<SVFG>(cand);
+				SVF::VFGNode* svf_cand = this->va.svfg->template get_node_obj<SVFG>(cand);
 				if (llvm::isa<SVF::CopyVFGNode>(svf_cand)) {
 					current = cand;
 					break; // only inner for loop
 				}
 				if (auto store = llvm::dyn_cast<SVF::StoreVFGNode>(svf_cand)) {
-					logger.debug() << "Found store node: " << *store << std::endl;
+					va.logger.debug() << "Found store node: " << *store << std::endl;
 					return store;
 				}
 			}
@@ -1018,17 +1021,17 @@ namespace ara::step {
 	                                                   const graph::CallPath& callpath) {
 		const Node<SVFG> v_node = get_vfg_node(safe_deref(value));
 
-		logger.debug() << "Assign object ID " << obj_index << " to SVFG node: " << v_node;
+		va.logger.debug() << "Assign object ID " << obj_index << " to SVFG node: " << v_node;
 		if (offsets.size() != 0) {
-			logger.debug() << " with offset " << offset_print(offsets);
+			va.logger.debug() << " with offset " << offset_print(offsets);
 		}
-		logger.debug() << " and callpath " << callpath << "." << std::endl;
-		auto num_offsets = convert_to_number_offsets(offsets, graph.get_module());
+		va.logger.debug() << " and callpath " << callpath << "." << std::endl;
+		auto num_offsets = convert_to_number_offsets(offsets, va.graph.get_module());
 		if (num_offsets) {
-			state.obj_map.insert(value_analyzer::ValueAnalyzerState::ObjMap::value_type(
+			va.state.obj_map.insert(value_analyzer::ValueAnalyzerState::ObjMap::value_type(
 			    std::make_tuple(v_node, *num_offsets, callpath.hash()), obj_index));
 		} else {
-			logger.error() << "Cannot calculate get_element_ptr offsets. Do not assign anything." << std::endl;
+			va.logger.error() << "Cannot calculate get_element_ptr offsets. Do not assign anything." << std::endl;
 		}
 	}
 
@@ -1047,8 +1050,8 @@ namespace ara::step {
 		}
 
 		/* check whether we have a node stored for the system object */
-		auto it = state.obj_map.right.find(obj_index);
-		if (it == state.obj_map.right.end()) {
+		auto it = va.state.obj_map.right.find(obj_index);
+		if (it == va.state.obj_map.right.end()) {
 			/* we cannot rule out a connection */
 			throw ConnectionStatusUnknown("Object has no corresponding node in SVFG.");
 		}
@@ -1062,7 +1065,7 @@ namespace ara::step {
 		const llvm::Value& val = get_nth_arg(callsite, argument_nr);
 		const Node<SVFG> input_node = get_vfg_node(val);
 
-		logger.debug() << "Find connection between " << input_node << " and " << obj_node << std::endl;
+		va.logger.debug() << "Find connection between " << input_node << " and " << obj_node << std::endl;
 
 		std::set<Node<SVFG>> visited;
 		std::stack<Node<SVFG>> node_stack;
@@ -1074,7 +1077,7 @@ namespace ara::step {
 		node_stack.push(starting_node);
 		if (starting_node == target_node) {
 			// This should not happen?!
-			logger.warn() << "Asked for connection between identical nodes." << std::endl;
+			va.logger.warn() << "Asked for connection between identical nodes." << std::endl;
 			return true;
 		}
 
@@ -1085,15 +1088,15 @@ namespace ara::step {
 
 			for (auto edge : graph_tool::out_edges_range(current_node, g)) {
 				auto node = target(edge, g);
-				SVF::VFGNode* svf_node = this->svfg->template get_node_obj<SVFG>(node);
+				SVF::VFGNode* svf_node = this->va.svfg->template get_node_obj<SVFG>(node);
 				if (visited.find(node) == visited.end()) {
 					if (llvm::isa<SVF::MRSVFGNode>(svf_node))
 						continue; // helps constructed example
 					if (llvm::isa<SVF::NullPtrVFGNode>(svf_node))
 						continue; // helps gpslogger
 					if (node == target_node) {
-						logger.debug() << "Found connection after visiting " << visited.size() << " nodes."
-						               << std::endl;
+						va.logger.debug()
+						    << "Found connection after visiting " << visited.size() << " nodes." << std::endl;
 						return true;
 					}
 					visited.emplace(node);
@@ -1102,15 +1105,15 @@ namespace ara::step {
 			}
 			for (auto edge : graph_tool::in_edges_range(current_node, g)) {
 				auto node = source(edge, g);
-				SVF::VFGNode* svf_node = this->svfg->template get_node_obj<SVFG>(node);
+				SVF::VFGNode* svf_node = this->va.svfg->template get_node_obj<SVFG>(node);
 				if (visited.find(node) == visited.end()) {
 					if (llvm::isa<SVF::MRSVFGNode>(svf_node))
 						continue;
 					if (llvm::isa<SVF::NullPtrVFGNode>(svf_node))
 						continue;
 					if (node == target_node) {
-						logger.debug() << "Found connection after visiting " << visited.size() << " nodes."
-						               << std::endl;
+						va.logger.debug()
+						    << "Found connection after visiting " << visited.size() << " nodes." << std::endl;
 						return true;
 					}
 					visited.emplace(node);
@@ -1118,7 +1121,7 @@ namespace ara::step {
 				}
 			}
 		}
-		logger.debug() << "No connection after visiting " << visited.size() << " nodes." << std::endl;
+		va.logger.debug() << "No connection after visiting " << visited.size() << " nodes." << std::endl;
 
 		return false;
 	}
@@ -1163,16 +1166,16 @@ namespace ara::step {
 		if (callsite.getFunctionType()->getReturnType()->isVoidTy()) {
 			fail("Cannot get return value of void function.");
 		}
-		logger.debug() << "Get return value of " << callsite << std::endl;
+		va.logger.debug() << "Get return value of " << callsite << std::endl;
 		const Node<SVFG> node = get_vfg_node(callsite);
 
 		auto store = find_next_store(node);
 		if (store != nullptr) {
-			logger.debug() << "GRV " << *store->getPAGEdge() << std::endl;
+			va.logger.debug() << "GRV " << *store->getPAGEdge() << std::endl;
 			return store->getInst()->getLLVMInstruction();
 		}
 		// fallback
-		logger.warn() << "Did not find a storage node in the SVFG. Falling back to plain LLVM search." << std::endl;
+		va.logger.warn() << "Did not find a storage node in the SVFG. Falling back to plain LLVM search." << std::endl;
 		return get_llvm_return(callsite);
 	}
 
@@ -1187,7 +1190,7 @@ namespace ara::step {
 		PyObject* res;
 		graph_tool::gt_dispatch<>()(
 		    [&](auto& g) {
-			    ValueAnalyzerImpl impl{g, graph, tracer, logger, svfg, svf_objects};
+			    ValueAnalyzerImpl impl{g, *this};
 			    res = py_repack(impl.get_memory_value(intermediate_value, callgraph));
 		    },
 		    graph_tool::always_directed())(svfg->graph.get_graph_view());
@@ -1207,13 +1210,13 @@ namespace ara::step {
 			auto [node, path] = nodes.top();
 			nodes.pop();
 
-			SVF::VFGNode* svf_node = this->svfg->template get_node_obj<SVFG>(node);
+			SVF::VFGNode* svf_node = this->va.svfg->template get_node_obj<SVFG>(node);
 
 			// termination condition
 			if (auto gep_node = llvm::dyn_cast<SVF::GepVFGNode>(svf_node)) {
 				const llvm::GetElementPtrInst* gep_inst =
 				    llvm::cast<llvm::GetElementPtrInst>(gep_node->getPAGEdge()->getValue());
-				if (get_offset(gep_inst, graph.get_module()) != get_offset(*(gep_iter++), graph.get_module())) {
+				if (get_offset(gep_inst, va.graph.get_module()) != get_offset(*(gep_iter++), va.graph.get_module())) {
 					// not fitting, quit this path
 					continue;
 				}
@@ -1225,9 +1228,9 @@ namespace ara::step {
 
 			// next step
 			for (auto edge : graph_tool::out_edges_range(node, g)) {
-				SVF::VFGEdge* svf_edge = this->svfg->template get_edge_obj<SVFG>(edge);
+				SVF::VFGEdge* svf_edge = this->va.svfg->template get_edge_obj<SVFG>(edge);
 				if (llvm::isa<SVF::CallDirSVFGEdge>(svf_edge) || llvm::isa<SVF::CallIndSVFGEdge>(svf_edge)) {
-					path.add_call_site(callgraph, safe_deref(get_callsite(svf_edge, svf_objects.s_callgraph)));
+					path.add_call_site(va.callgraph, safe_deref(get_callsite(svf_edge, va.svf_objects.s_callgraph)));
 				}
 				nodes.emplace(std::make_pair(target(edge, g), path));
 			}
@@ -1242,7 +1245,7 @@ namespace ara::step {
 		std::vector<std::pair<const llvm::Value*, graph::CallPath>> values;
 		graph_tool::gt_dispatch<>()(
 		    [&](auto& g) {
-			    ValueAnalyzerImpl impl{g, graph, tracer, logger, svfg, svf_objects};
+			    ValueAnalyzerImpl impl{g, *this};
 			    values = impl.get_assignments(value, gep, callpath);
 		    },
 		    graph_tool::always_directed())(svfg->graph.get_graph_view());
@@ -1276,7 +1279,7 @@ namespace ara::step {
 		PyObject* res;
 		graph_tool::gt_dispatch<>()(
 		    [&](auto& g) {
-			    ValueAnalyzerImpl impl{g, graph, tracer, logger, svfg, svf_objects};
+			    ValueAnalyzerImpl impl{g, *this};
 			    res = py_repack(impl.get_argument_value(safe_deref(ll_callsite), callpath, argument_nr,
 			                                            static_cast<graph::SigType>(hint), type));
 		    },
@@ -1294,7 +1297,7 @@ namespace ara::step {
 		PyObject* res;
 		graph_tool::gt_dispatch<>()(
 		    [&](auto& g) {
-			    ValueAnalyzerImpl impl{g, graph, tracer, logger, svfg, svf_objects};
+			    ValueAnalyzerImpl impl{g, *this};
 			    res = get_obj_from_value(
 			        safe_deref(const_cast<llvm::Value*>(impl.get_return_value(safe_deref(ll_callsite), callpath))));
 		    },
@@ -1308,7 +1311,7 @@ namespace ara::step {
 	                                            const graph::CallPath& callpath) {
 		graph_tool::gt_dispatch<>()(
 		    [&](auto& g) {
-			    ValueAnalyzerImpl impl{g, graph, tracer, logger, svfg, svf_objects};
+			    ValueAnalyzerImpl impl{g, *this};
 			    impl.assign_system_object(value, obj_index, offsets, callpath);
 		    },
 		    graph_tool::always_directed())(svfg->graph.get_graph_view());
@@ -1324,7 +1327,7 @@ namespace ara::step {
 		bool ret;
 		graph_tool::gt_dispatch<>()(
 		    [&](auto& g) {
-			    ValueAnalyzerImpl impl{g, graph, tracer, logger, svfg, svf_objects};
+			    ValueAnalyzerImpl impl{g, *this};
 			    ret = impl.has_connection(safe_deref(ll_callsite), callpath, argument_nr, obj_index);
 		    },
 		    graph_tool::always_directed())(svfg->graph.get_graph_view());
