@@ -59,7 +59,7 @@ llc = toolchains.get_variable('llc')
 llvm_dis = toolchains.get_variable('llvm_dis')
 llvm_opt = toolchains.get_variable('llvm_opt')
 
-boost_dep = dependency('boost', modules: ['graph', 'python' + py3_inst.language_version().replace('.', '')])
+boost_dep = dependency('boost', include_type: 'system', modules: ['graph', 'python' + py3_inst.language_version().replace('.', '')])
 graph_tool_dep = dependency('graph-tool-py' + py3_inst.language_version(), include_type: 'system', version: '>=2.68')
 
 # Workaround for https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1070676
@@ -97,7 +97,7 @@ svf_opts.append_compile_args('cpp', '-Wno-maybe-uninitialized')
 svf_opts.add_cmake_defines({'LLVM_DIR': llvm_dep.get_variable(configtool: 'prefix'),
                             'BUILD_SHARED_LIBS': 'on'})
 svf_proj = cmake.subproject('svf', options: svf_opts)
-svf_dep = svf_proj.dependency('Svf')
+svf_dep = svf_proj.dependency('Svf', include_type: 'system')
 
 ## sparsedata
 sparsedata = subproject('sparsedata')
