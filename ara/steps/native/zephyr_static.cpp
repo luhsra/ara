@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2021 Kenny Albes
-// SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
 // SPDX-FileCopyrightText: 2022 Jan Neugebauer
+// SPDX-FileCopyrightText: 2024 Gerion Entrup <entrup@sra.uni-hannover.de>
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -8,15 +8,15 @@
 
 #include "zephyr_static.h"
 
+#include "common/util.h"
 #include "python_util.h"
-
-#include "llvm/IR/Module.h"
 
 #include <dictobject.h>
 #include <filesystem>
 #include <functional>
 #include <graph_filtering.hh>
 #include <graph_selectors.hh>
+#include <llvm/IR/Module.h>
 #include <object.h>
 #include <pyllco.h>
 #include <string>
@@ -82,7 +82,11 @@ namespace ara::step {
 			                           std::string id, bool is_control = false) {
 				Vertex v = boost::add_vertex(context.g);
 				context.instances.label[v] = label;
-				context.instances.obj[v] = boost::python::object(boost::python::handle<>(boost::python::borrowed(obj)));
+				{
+					TakeGIL gil;
+					context.instances.obj[v] =
+					    boost::python::object(boost::python::handle<>(boost::python::borrowed(obj)));
+				}
 				context.instances.id[v] = id;
 				context.instances.branch[v] = false;
 				context.instances.loop[v] = false;
@@ -110,7 +114,11 @@ namespace ara::step {
 			static inline Parser default_parser(const std::string name) {
 				return [&name](const ZephyrStaticImpl& context) {
 					// context.instances.label[context.v] = name;
-					PyObject* obj = py_dict({{"symbol", get_obj_from_value(safe_deref(context.global))}});
+					PyObject* obj;
+					{
+						TakeGIL gil;
+						obj = py_dict({{"symbol", get_obj_from_value(safe_deref(context.global))}});
+					}
 					return add_instance(context, name, obj, context.global->getName().str());
 				};
 			}
@@ -143,21 +151,25 @@ namespace ara::step {
 				const llvm::ConstantInt* delay = llvm::dyn_cast<llvm::ConstantInt>(
 				    get_element_checked(*context.initializer, 9, context.info_node, "init_delay"));
 
-				PyObject* obj = py_dict({
-				    {"cpu_id", py_int_signed(-1)},
-				    {"cfg", py_none()}, // Create in Python side
-				    {"artificial", Py_False},
-				    {"function", py_none()}, // Create in Python side
-				    {"symbol", symbol ? get_obj_from_value(*symbol) : py_none()},
-				    {"stack", py_none()},
-				    {"stack_size", py_int(safe_deref(stack_size).getValue())},
-				    {"entry_name", py_str(entry.getName())},
-				    {"entry_params", py_none()},
-				    {"priority", py_int(safe_deref(priority).getValue())},
-				    {"options", py_int(safe_deref(options).getValue())},
-				    {"delay", py_int(safe_deref(delay).getValue())},
-				});
-				Py_INCREF(Py_False);
+				PyObject* obj;
+				{
+					TakeGIL gil;
+					obj = py_dict({
+					    {"cpu_id", py_int_signed(-1)},
+					    {"cfg", py_none()}, // Create in Python side
+					    {"artificial", Py_False},
+					    {"function", py_none()}, // Create in Python side
+					    {"symbol", symbol ? get_obj_from_value(*symbol) : py_none()},
+					    {"stack", py_none()},
+					    {"stack_size", py_int(safe_deref(stack_size).getValue())},
+					    {"entry_name", py_str(entry.getName())},
+					    {"entry_params", py_none()},
+					    {"priority", py_int(safe_deref(priority).getValue())},
+					    {"options", py_int(safe_deref(options).getValue())},
+					    {"delay", py_int(safe_deref(delay).getValue())},
+					});
+					Py_INCREF(Py_False);
+				}
 
 				return add_instance(context, "Thread", obj, thread_name.str(), true);
 			}
@@ -178,17 +190,21 @@ namespace ara::step {
 				llvm::Constant* param = llvm::dyn_cast<llvm::Constant>(
 				    get_element_checked(*context.initializer, 3, context.info_node, "param"));
 
-				PyObject* obj = py_dict({{"cpu_id", py_int_signed(-1)},
-				                         {"cfg", py_none()}, // Create in Python side
-				                         {"artificial", Py_False},
-				                         {"function", py_none()}, // Create in Python side
-				                         {"symbol", py_none()},
-				                         {"irq_number", py_int(safe_deref(irq_number).getValue())},
-				                         {"priority", py_none()},
-				                         {"entry_name", py_str(entry->getName())},
-				                         {"handler_param", get_obj_from_value(safe_deref(param))},
-				                         {"flags", py_int(safe_deref(flags).getValue())}});
-				Py_INCREF(Py_False);
+				PyObject* obj;
+				{
+					TakeGIL gil;
+					obj = py_dict({{"cpu_id", py_int_signed(-1)},
+					               {"cfg", py_none()}, // Create in Python side
+					               {"artificial", Py_False},
+					               {"function", py_none()}, // Create in Python side
+					               {"symbol", py_none()},
+					               {"irq_number", py_int(safe_deref(irq_number).getValue())},
+					               {"priority", py_none()},
+					               {"entry_name", py_str(entry->getName())},
+					               {"handler_param", get_obj_from_value(safe_deref(param))},
+					               {"flags", py_int(safe_deref(flags).getValue())}});
+					Py_INCREF(Py_False);
+				}
 
 				return add_instance(context, "ISR", obj, safe_deref(context.global).getName().str(), true);
 			}
@@ -200,9 +216,15 @@ namespace ara::step {
 				    llvm::dyn_cast<llvm::ConstantInt>(get_element_checked(sem, 1, info_node, "count"));
 				const llvm::ConstantInt* limit =
 				    llvm::dyn_cast<llvm::ConstantInt>(get_element_checked(sem, 2, info_node, "limit"));
-				return py_dict({{"symbol", get_obj_from_value(global)},
-				                {"count", py_int(safe_deref(count).getValue())},
-				                {"limit", py_int(safe_deref(limit).getValue())}});
+
+				PyObject* obj;
+				{
+					TakeGIL gil;
+					obj = py_dict({{"symbol", get_obj_from_value(global)},
+					               {"count", py_int(safe_deref(count).getValue())},
+					               {"limit", py_int(safe_deref(limit).getValue())}});
+				}
+				return obj;
 			}
 
 			static Vertex parse_kernel_semaphore(const ZephyrStaticImpl& context) {
@@ -229,8 +251,11 @@ namespace ara::step {
 					const llvm::ConstantInt* limit = llvm::dyn_cast<llvm::ConstantInt>(
 					    get_element_checked(*context.initializer, 1, context.info_node, "limit"));
 
-					obj = py_dict({{"count", py_int(safe_deref(count).getValue())},
-					               {"limit", py_int(safe_deref(limit).getValue())}});
+					{
+						TakeGIL gil;
+						obj = py_dict({{"count", py_int(safe_deref(count).getValue())},
+						               {"limit", py_int(safe_deref(limit).getValue())}});
+					}
 				}
 
 				return add_instance(context, "UserSemaphore", obj, safe_deref(context.global).getName().str());
@@ -247,9 +272,13 @@ namespace ara::step {
 				assert(buf_ptr);
 				llvm::ArrayType* buf = llvm::dyn_cast<llvm::ArrayType>(safe_deref(buf_ptr).getElementType());
 
-				PyObject* obj = py_dict({{"symbol", get_obj_from_value(safe_deref(context.global))},
-				                         {"buf", py_none()},
-				                         {"max_entries", py_int(safe_deref(buf).getNumElements())}});
+				PyObject* obj;
+				{
+					TakeGIL gil;
+					obj = py_dict({{"symbol", get_obj_from_value(safe_deref(context.global))},
+					               {"buf", py_none()},
+					               {"max_entries", py_int(safe_deref(buf).getNumElements())}});
+				}
 				return add_instance(context, "Stack", obj, safe_deref(context.global).getName().str());
 			}
 
@@ -257,8 +286,12 @@ namespace ara::step {
 				const llvm::ConstantInt* size = llvm::dyn_cast<llvm::ConstantInt>(
 				    get_element_checked(*context.initializer, 1, context.info_node, "size"));
 
-				PyObject* obj = py_dict({{"symbol", get_obj_from_value(safe_deref(context.global))},
-				                         {"size", py_int(safe_deref(size).getValue())}});
+				PyObject* obj;
+				{
+					TakeGIL gil;
+					obj = py_dict({{"symbol", get_obj_from_value(safe_deref(context.global))},
+					               {"size", py_int(safe_deref(size).getValue())}});
+				}
 				return add_instance(context, "Pipe", obj, safe_deref(context.global).getName().str());
 			}
 
@@ -268,9 +301,13 @@ namespace ara::step {
 				const llvm::ConstantInt* max_msgs = llvm::dyn_cast<llvm::ConstantInt>(
 				    get_element_checked(*context.initializer, 3, context.info_node, "max_msgs"));
 
-				PyObject* obj = py_dict({{"symbol", get_obj_from_value(safe_deref(context.global))},
-				                         {"msg_size", py_int(safe_deref(msg_size).getValue())},
-				                         {"max_msgs", py_int(safe_deref(max_msgs).getValue())}});
+				PyObject* obj;
+				{
+					TakeGIL gil;
+					obj = py_dict({{"symbol", get_obj_from_value(safe_deref(context.global))},
+					               {"msg_size", py_int(safe_deref(msg_size).getValue())},
+					               {"max_msgs", py_int(safe_deref(max_msgs).getValue())}});
+				}
 				return add_instance(context, "MSGQ", obj, safe_deref(context.global).getName().str());
 			}
 
@@ -284,8 +321,13 @@ namespace ara::step {
 				    get_element_checked(*context.initializer, 0, context.info_node, "heap");
 				const llvm::ConstantInt* limit = llvm::dyn_cast_or_null<llvm::ConstantInt>(
 				    get_element_checked(safe_deref(sys_heap), 2, nullptr, "init_bytes"));
-				PyObject* obj = py_dict({{"symbol", get_obj_from_value(safe_deref(context.global))},
-				                         {"limit", py_int(safe_deref(limit).getValue())}});
+
+				PyObject* obj;
+				{
+					TakeGIL gil;
+					obj = py_dict({{"symbol", get_obj_from_value(safe_deref(context.global))},
+					               {"limit", py_int(safe_deref(limit).getValue())}});
+				}
 				return add_instance(context, "Heap", obj, safe_deref(context.global).getName().str());
 			}
 
@@ -300,9 +342,13 @@ namespace ara::step {
 					        ->getElementType();
 					llvm::GetElementPtrInst* fake_gep =
 					    llvm::GetElementPtrInst::Create(global_ptr, context.global, offset);
-					PyObject* obj = py_dict({{"symbol", get_obj_from_value(safe_deref(context.global))},
-					                         {"queue_type", py_int(queue_type)},
-					                         {"fake_gep", get_obj_from_value(safe_deref(fake_gep))}});
+					PyObject* obj;
+					{
+						TakeGIL gil;
+						obj = py_dict({{"symbol", get_obj_from_value(safe_deref(context.global))},
+						               {"queue_type", py_int(queue_type)},
+						               {"fake_gep", get_obj_from_value(safe_deref(fake_gep))}});
+					}
 					return add_instance(context, "Queue", obj, context.global->getName().str());
 				};
 			}

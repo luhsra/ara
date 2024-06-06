@@ -1,20 +1,19 @@
-// SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
-// SPDX-FileCopyrightText: 2022 Jan Neugebauer
 // SPDX-FileCopyrightText: 2023 Jan Neugebauer
+// SPDX-FileCopyrightText: 2024 Gerion Entrup <entrup@sra.uni-hannover.de>
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "posix_static.h"
 
+#include "common/util.h"
 #include "python_util.h"
-
-#include "llvm/IR/Module.h"
 
 #include <dictobject.h>
 #include <filesystem>
 #include <functional>
 #include <graph_filtering.hh>
 #include <graph_selectors.hh>
+#include <llvm/IR/Module.h>
 #include <string>
 #include <unordered_map>
 
@@ -34,7 +33,11 @@ namespace ara::step {
 
 			static void add_instance(const POSIXStaticImpl& context, PyObject* obj) {
 				const Vertex v = boost::add_vertex(context.g);
-				context.instances.obj[v] = boost::python::object(boost::python::handle<>(boost::python::borrowed(obj)));
+				{
+					TakeGIL gil;
+					context.instances.obj[v] =
+					    boost::python::object(boost::python::handle<>(boost::python::borrowed(obj)));
+				}
 				context.instances.is_control[v] = false;
 
 				// Extract file and line from the debug node if possible. Normally
@@ -48,16 +51,24 @@ namespace ara::step {
 			}
 
 			static void parse_mutex(const POSIXStaticImpl& context) {
-				PyObject* obj = py_dict({{"symbol", get_obj_from_value(safe_deref(context.global))},
-				                         {"type", py_str("Mutex")},
-				                         {"module", py_str("mutex")}});
+				PyObject* obj;
+				{
+					TakeGIL gil;
+					obj = py_dict({{"symbol", get_obj_from_value(safe_deref(context.global))},
+					               {"type", py_str("Mutex")},
+					               {"module", py_str("mutex")}});
+				}
 				add_instance(context, obj);
 			}
 
 			static void parse_cond(const POSIXStaticImpl& context) {
-				PyObject* obj = py_dict({{"symbol", get_obj_from_value(safe_deref(context.global))},
-				                         {"type", py_str("ConditionVariable")},
-				                         {"module", py_str("condition_variable")}});
+				PyObject* obj;
+				{
+					TakeGIL gil;
+					obj = py_dict({{"symbol", get_obj_from_value(safe_deref(context.global))},
+					               {"type", py_str("ConditionVariable")},
+					               {"module", py_str("condition_variable")}});
+				}
 				add_instance(context, obj);
 			}
 
