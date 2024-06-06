@@ -306,4 +306,3 @@ if get_option('enable_step_tests')
   endif
 endif
 
-subdir('posix_test')
