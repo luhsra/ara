@@ -30,7 +30,7 @@ namespace ara {
 	 * While dereferencing, it checks for a null pointer and fails in error case.
 	 */
 	template <class T>
-	inline remove_pointer<T>& safe_deref(T&& t) {
+	inline remove_pointer<T>& safe_deref(const T& t) {
 		assert(t != nullptr && "t is not null");
 		return *t;
 	}
