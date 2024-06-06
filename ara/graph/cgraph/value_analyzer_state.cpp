@@ -4,17 +4,32 @@
 
 // vim: set noet ts=4 sw=4:
 #include "value_analyzer_state.h"
-#include "callpath.h"
 
+#include "callpath.h"
 #include "common/exceptions.h"
 
 namespace ara::value_analyzer {
-	ValueLocation::ValueLocation(const llvm::CallBase& callsite, const graph::CallPath& callpath, const unsigned argument_nr) :
-		callsite(callsite.getName().str()),
-		function(callsite.getCalledFunction()->getName().str()),
-		callpath(callpath.print(/* call_site = */ true, /* instruction = */ false, true)),
-		arg_nr(argument_nr) {}
-	
+	std::string get_function_name(const llvm::CallBase& callsite) {
+		auto* func = callsite.getCalledFunction();
+		if (func == nullptr) {
+			auto* value = callsite.getCalledOperand();
+			if (const auto* alias = llvm::dyn_cast<llvm::GlobalAlias>(value)) {
+				if (llvm::isa<llvm::Function>(alias->getAliasee())) {
+					return alias->getName().str();
+				}
+				assert(false && "Found alias that points not to a function.");
+			}
+			assert(false && "Callee is neither a function nor an alias. Is it a function pointer?");
+		} else {
+			return func->getName().str();
+		}
+	}
+
+	ValueLocation::ValueLocation(const llvm::CallBase& callsite, const graph::CallPath& callpath,
+	                             const unsigned argument_nr)
+	    : callsite(callsite.getName().str()), function(get_function_name(callsite)),
+	      callpath(callpath.print(/* call_site = */ true, /* instruction = */ false, true)), arg_nr(argument_nr) {}
+
 	ValueLocation::ValueLocation(const llvm::json::Object& obj) {
 		const auto callsite = obj.getString("inst");
 		if (!callsite) {
