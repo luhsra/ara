@@ -7,6 +7,7 @@
 from enum import IntEnum
 from init_test import init_test, fail_if_json_not_equal
 from ara.os.os_util import UnknownArgument, DefaultArgument, LikelyArgument
+from ara.util import KConfigFile
 import json
 import os
 import sys
@@ -131,7 +132,13 @@ def main():
     with open(setting_file, "r") as f:
         config = json.load(f)
 
-    data = init_test(extra_config=config, extra_input=None, os_name=os_name)
+    extra_input = None
+    # see posix_cheats.h
+    if os_name == "Zephyr":
+        if KConfigFile(config['ZephyrStaticPost']['kconfigfile'])['CONFIG_BOARD'] == 'native_posix':
+            extra_input = {"entry_point": lambda sys_argv : "zephyr_app_main"}
+
+    data = init_test(extra_config=config, extra_input=extra_input , os_name=os_name)
     m_graph = data.graph
     data = data.data
     dump = json_instance_graph(m_graph.instances, m_graph.os.EdgeType if hasattr(m_graph.os, "EdgeType") else None)

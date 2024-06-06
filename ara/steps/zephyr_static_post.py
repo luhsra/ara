@@ -96,6 +96,10 @@ class ZephyrStaticPost(Step):
         # NOTE: main() can not be the entry point of a second normal thread because the signature
         # does not match
         main = graph_tool.util.find_vertex(cfg, cfg.vp['name'], 'main')
+        # see posix_cheats.h
+        if len(main) == 0 and Zephyr.config['CONFIG_BOARD'] == 'native_posix':
+            main = graph_tool.util.find_vertex(cfg, cfg.vp['name'], 'zephyr_app_main')
+
         if len(main) == 1:
             prio = int(Zephyr.config['CONFIG_MAIN_THREAD_PRIORITY'])
             stack_size = int(Zephyr.config['CONFIG_MAIN_STACK_SIZE'])
