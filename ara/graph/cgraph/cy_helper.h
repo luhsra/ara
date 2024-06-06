@@ -18,7 +18,13 @@
 
 #include <Python.h>
 #include <memory>
-#include <pyllco.h>
+/* We are doing nesting of Cython modules. Therefore, Cython throws a lot of "Please do not define the '__PYX_EXTERN_C'
+ * macro externally" errors. If we define it manually here, it silences these warnings.
+ */
+// clang-format off
+#define CYTHON_EXTERN_C extern "C++"
+#include "pyllco.h"
+// clang-format on
 
 namespace ara::graph {
 	inline SigType to_sigtype(int ty) { return static_cast<SigType>(ty); }
