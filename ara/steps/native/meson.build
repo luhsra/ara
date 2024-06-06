@@ -38,18 +38,6 @@ log_dep = declare_dependency(
 # steps
 step_dir = meson.current_build_dir()
 
-conf_data = configuration_data()
-if get_option('enable_step_tests')
-  test_pxd = ['test.pxd']
-  conf_data.set('step_tests', 'True')
-else
-  test_pxd = []
-  conf_data.set('step_tests', 'False')
-endif
-conf_file = configure_file(input: 'project_config.pxi.in',
-  output: 'project_config.pxi',
-  configuration: conf_data)
-
 step_pyx_gen = custom_target('step_pyx',
   output : ['step_pyx.cpp', 'step_pyx.h'],
   input : [files('step.pyx',
@@ -59,25 +47,13 @@ step_pyx_gen = custom_target('step_pyx',
                  'replace_syscalls_create.pxd',
                  'value_analyzer.pxd',
                  'value_analyzer.pxi',
-                 'tracer_api.pxi') + test_pxd + common_cython_files],
+                 'tracer_api.pxi',
+                 'test.pxd') + common_cython_files],
   command : [cython, '-I', graph_cython_inc, '-I', common_cython_inc, '-I', pyllco_cython_inc, '-I', step_dir, '@INPUT0@', '-o', '@OUTPUT0@'] + cython_flags,
-  depend_files: [conf_file],
 )
 
 step_pyx_cpp = step_pyx_gen[0]
 step_pyx_h   = step_pyx_gen[1]
-
-if get_option('enable_step_tests')
-  test_sources = files('test/bb_split_test.cpp',
-                       'test/comp_insert_test.cpp',
-                       'test/cfg_optimize_test.cpp',
-                       'test/fn_single_exit_test.cpp',
-                       'test/llvm_map_test.cpp',
-                       'test/posix_clang_global_test.cpp',
-                       'test/test.cpp')
-else
-  test_sources = []
-endif
 
 step_mod = py3_inst.extension_module('step',
   step_pyx_cpp,
@@ -111,7 +87,14 @@ step_mod = py3_inst.extension_module('step',
         # additional C++ entities
         'value_analyzer.cpp',
         'py_util.cpp',
-        'tracer_api.cpp') + test_sources,
+        'tracer_api.cpp',
+        'test/bb_split_test.cpp',
+        'test/comp_insert_test.cpp',
+        'test/cfg_optimize_test.cpp',
+        'test/fn_single_exit_test.cpp',
+        'test/llvm_map_test.cpp',
+        'test/posix_clang_global_test.cpp',
+        'test/test.cpp'),
   gnu_symbol_visibility: 'default',
   override_options: 'b_lundef=false',
   cpp_pch: 'pch/steps_pch.h',

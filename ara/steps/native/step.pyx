@@ -21,10 +21,7 @@ cimport cstep
 cimport cgraph
 cimport graph_data
 
-include "project_config.pxi"
-
-IF STEP_TESTS:
-    cimport test
+cimport test
 
 from cython.operator cimport dereference as deref
 from libcpp.memory cimport shared_ptr, unique_ptr
@@ -403,18 +400,15 @@ def provide_steps():
 
 
 def provide_test_steps():
-    IF STEP_TESTS:
-        """Do not use this, only for testing purposes."""
-        return [_native_step_fac(make_step_fac[test.BBSplitTest]()),
-                _native_step_fac(make_step_fac[test.CFGOptimizeTest]()),
-                _native_step_fac(make_step_fac[test.CompInsertTest]()),
-                _native_step_fac(make_step_fac[test.FnSingleExitTest]()),
-                _native_step_fac(make_step_fac[test.LLVMMapTest]()),
-                _native_step_fac(make_step_fac[test.PosixClangGlobalTest]()),
-                _native_step_fac(make_step_fac[test.Test0Step]()),
-                _native_step_fac(make_step_fac[test.Test2Step]())]
-    ELSE:
-        return []
+    """Do not use this, only for testing purposes."""
+    return [_native_step_fac(make_step_fac[test.BBSplitTest]()),
+            _native_step_fac(make_step_fac[test.CFGOptimizeTest]()),
+            _native_step_fac(make_step_fac[test.CompInsertTest]()),
+            _native_step_fac(make_step_fac[test.FnSingleExitTest]()),
+            _native_step_fac(make_step_fac[test.LLVMMapTest]()),
+            _native_step_fac(make_step_fac[test.PosixClangGlobalTest]()),
+            _native_step_fac(make_step_fac[test.Test0Step]()),
+            _native_step_fac(make_step_fac[test.Test2Step]())]
 
 # make this name extra long, since we have no namespaces here
 cdef public void step_manager_chain_step(object step_manager, const char* config) with gil:

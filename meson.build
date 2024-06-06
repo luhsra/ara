@@ -111,36 +111,6 @@ nop = find_program('true')
 st_flash = find_program('st-flash', required: false, disabler: true)
 sed = find_program('sed')
 
-## arch specific build tools
-# if get_option('arch') == 'i386'
-#     target_triple='x86_64-linux-gnu'
-# elif get_option('arch') == 'arm'
-#     target_triple = 'arm-none-eabi'
-# elif get_option('arch') == 'posix'
-#     target_triple = 'posix'
-# else
-#     error('unknown arch ' + get_option('arch'))
-# endif
-
-if not get_option('execute_ara') and get_option('enable_generator_tests')
-  error('execute_ara has to be true to set enable_generator_tests')
-endif
-
-# arch_error = 'Do you have an @0@ toolchain? Otherwise consider to switch to another architecture. See the "arch" config option for that.'
-#
-# foreach prog_name : ['ar', 'objcopy', 'size', 'nm', 'ld', 'objdump']
-#     if target_triple == 'posix'
-#         full_prog_name = prog_name
-#     else
-#         full_prog_name = target_triple + '-' + prog_name
-#     endif
-#     prog = find_program(full_prog_name, required: false)
-#     if not prog.found()
-#         error(arch_error.format(get_option('arch').to_upper()))
-#     endif
-#     set_variable(prog_name, prog)
-# endforeach
-
 # all dependencies found, build the actual program
 
 build_dir = meson.current_build_dir()
