@@ -7,6 +7,7 @@
 #include "test.h"
 
 #include <string>
+#include <regex>
 
 namespace ara::step {
 	std::string PosixClangGlobalTest::get_name() { return "PosixClangGlobalTest"; }
@@ -23,8 +24,13 @@ namespace ara::step {
 	void PosixClangGlobalTest::run() {
 		assert(input_file.get());
 		std::string file = *input_file.get();
-		bool static_case = (file == "subprojects/ara-posix-apps/appl/objs/clang_global_var_static.ll");
-		if (!static_case && file != "subprojects/ara-posix-apps/appl/objs/clang_global_var_dynamic.ll") {
+
+		std::regex rgx("clang_global_var_(dynamic|static)");
+		std::smatch match;
+		std::regex_search(file, match, rgx);
+
+		bool static_case = (match[0] == "clang_global_var_static");
+		if (!static_case && match[0] != "clang_global_var_dynamic") {
 			this->fail("unknown input file \"" + file +
 			           "\" (arbitrary input files are not allowed for this test case)");
 		}
