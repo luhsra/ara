@@ -55,7 +55,7 @@ extern "C" void interrupt_handler(long long mcause, unsigned long long * irq_con
 			//kout << "htif interrupt" << endl;
 			bad_trap();
 		} else if (device == IRQ_M_TIMER) {
-			//TODO add timer arch::Timer::tick();
+			arch::Timer::tick();
 			goto out;
 		} else if (device == IRQ_M_SOFT) { // IPI
 			// ack the interrupt;
