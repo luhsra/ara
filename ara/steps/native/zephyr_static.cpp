@@ -148,8 +148,9 @@ namespace ara::step {
 				    get_element_checked(*context.initializer, 7, context.info_node, "init_prio"));
 				const llvm::ConstantInt* options = llvm::dyn_cast<llvm::ConstantInt>(
 				    get_element_checked(*context.initializer, 8, context.info_node, "init_options"));
-				const llvm::ConstantInt* delay = llvm::dyn_cast<llvm::ConstantInt>(
-				    get_element_checked(*context.initializer, 9, context.info_node, "init_delay"));
+				/* FIXME: Zephyr 3.7.0 changed parameters for thread timeout
+				const llvm::ConstantInt* delay = 0; llvm::dyn_cast<llvm::ConstantInt>(
+				    get_element_checked(*context.initializer, 9, context.info_node, "init_delay"));*/
 
 				PyObject* obj;
 				{
@@ -166,7 +167,7 @@ namespace ara::step {
 					    {"entry_params", py_none()},
 					    {"priority", py_int(safe_deref(priority).getValue())},
 					    {"options", py_int(safe_deref(options).getValue())},
-					    {"delay", py_int(safe_deref(delay).getValue())},
+					    {"delay", py_int(0)}, //safe_deref(delay).getValue())},
 					});
 					Py_INCREF(Py_False);
 				}

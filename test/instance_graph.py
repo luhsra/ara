@@ -136,7 +136,8 @@ def main():
     # see posix_cheats.h
     if os_name == "Zephyr":
         if KConfigFile(config['ZephyrStaticPost']['kconfigfile'])['CONFIG_BOARD'] == 'native_posix':
-            extra_input = {"entry_point": lambda sys_argv : "zephyr_app_main"}
+            #extra_input = {"entry_point": lambda sys_argv : "zephyr_app_main"} # Zephyr v2.7.6
+            extra_input = {"entry_point": lambda sys_argv : "_posix_zephyr_main"} # Zephyr v3.2.0+
 
     data = init_test(extra_config=config, extra_input=extra_input , os_name=os_name)
     m_graph = data.graph
