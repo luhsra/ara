@@ -15,6 +15,8 @@ _Atomic(bool) ipi_cleared[MAX_CPUS];
 
 namespace arch {
 
+	hls_t hart_local_storage[MAX_HARTS];
+
 	int get_cpuid() {
 		/* This cannot be done from EL0 where syscalls are running
 		int ret;

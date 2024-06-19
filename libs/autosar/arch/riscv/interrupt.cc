@@ -10,6 +10,7 @@ static int ast_level;
 
 void arch::request_reschedule_ast() {
 	ast_requested = true;
+	kout << "request_reschedule_ast" << endl;
 }
 
 bool arch::in_syscall() {
@@ -84,6 +85,7 @@ out:
 	ast_level --;
 	if (ast_requested) {
 		ast_requested = false;
+		kout << "ast_requested" << endl;
 		__OS_ASTSchedule(0);
 	}
 #endif

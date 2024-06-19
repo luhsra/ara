@@ -39,7 +39,7 @@ extern "C" {
 #else
 		arch::Dispatcher::init();
 		// TODO enable timer
-		//arch::Timer::init();
+		arch::Timer::init(1000);
 #endif
 
 		init_generic();

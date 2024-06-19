@@ -1,4 +1,12 @@
 {
     "C_Cpp.default.configurationProvider": "mesonbuild.mesonbuild",
-    "mesonbuild.configureOnOpen": false
+    "mesonbuild.configureOnOpen": false,
+    "files.associations": {
+        "variant": "cpp",
+        "chrono": "cpp",
+        "*.tcc": "cpp",
+        "regex": "cpp",
+        "executor": "cpp",
+        "io_context": "cpp"
+    }
 }

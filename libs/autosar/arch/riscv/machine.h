@@ -6,6 +6,8 @@
 
 #include "htif.h"
 #include "csr.h"
+#include "bits.h"
+#include "timer.h"
 //#include "fdt.h"
 
 
@@ -146,6 +148,11 @@ public:
 		asm volatile ("wfi");
 	}
 
+
+	
+
+
+
 };
 
 #define __asm_label(a) #a
@@ -153,7 +160,27 @@ public:
 #define asm_label(label) asm volatile (".asm_label." label "_%=:" :: "m" (*(uint32_t *)0))
 // #define asm_label(label)
 
+typedef struct hls_t{
+    volatile uint32_t* ipi;
+    volatile int mipi_pending;
 
+    volatile uint64_t* timecmp = (uint64_t *) (CLINT_BASE + CLINT_TIMER_OFFSET);
+
+    volatile uint32_t* plic_m_thresh;
+    volatile uintptr_t* plic_m_ie;
+    volatile uint32_t* plic_s_thresh;
+    volatile uintptr_t* plic_s_ie;
+} hls_t;
+
+namespace arch {
+
+extern hls_t hart_local_storage[MAX_HARTS];
+
+}
+
+#define HLS() OTHER_HLS(read_csr(CSR_MHARTID))
+#define OTHER_HLS(id) (&::arch::hart_local_storage[(id)])
+// #define OTHER_HLS(id) (&::arch::hart_local_storage[(id)])
 
 
 #endif // __MACHINE_H__

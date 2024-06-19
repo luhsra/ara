@@ -3,6 +3,13 @@
 
 #include "arch/generic/stdint.h"
 
+#define CLINT_TIMER_OFFSET 0xbff8
+#define MTIMECMP_BASE 0x4000
+
+#define TIMER_FREQ 1000000
+
+
+
 namespace arch {
     extern volatile uint64_t *mtime;
 
