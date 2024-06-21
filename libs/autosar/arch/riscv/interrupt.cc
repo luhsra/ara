@@ -37,8 +37,10 @@ void arch::bad_soft_irq(unsigned char cause) {
 }
 
 
+
+
 extern "C" void interrupt_handler_c(long long mcause, unsigned long long * irq_context) {
-    //return;
+
 	// kout << "irq at: " << (int) mcause << "  " << hex;
     // for (unsigned int i = 1; i < 32; i++)
     //     kout << irq_context[i] << " ";
@@ -69,8 +71,8 @@ extern "C" void interrupt_handler_c(long long mcause, unsigned long long * irq_c
                 // Clear that interrupt
                 Machine::soft_irq_cause &= ~(((uint64_t)1) << IRQ);
             }
-
-            //*HLS()->ipi = 0;
+			kout << "IPI interrupt" << endl;
+            *HLS()->ipi = 0;
 
 			goto out;
 		}

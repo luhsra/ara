@@ -31,6 +31,28 @@
 
 #include <stdint.h>
 
+#define HLS() OTHER_HLS(read_csr(CSR_MHARTID))
+#define OTHER_HLS(id) (&::arch::hart_local_storage[(id)])
+
+typedef struct hls_t{
+    volatile uint32_t* ipi;
+    volatile int mipi_pending;
+
+    volatile uint64_t* timecmp = (uint64_t *) (CLINT_BASE + MTIMECMP_BASE);
+
+    volatile uint32_t* plic_m_thresh;
+    volatile uintptr_t* plic_m_ie;
+    volatile uint32_t* plic_s_thresh;
+    volatile uintptr_t* plic_s_ie;
+} hls_t;
+
+namespace arch {
+	extern hls_t hart_local_storage[MAX_HARTS];
+}
+
+
+
+
 class Machine
 {
 public:
@@ -129,14 +151,20 @@ public:
 	/**
 	 * \brief Trigger an interrupt
 	 */
-	static forceinline void trigger_interrupt(uint8_t irq_) {
+	static forceinline void trigger_interrupt(uint8_t irq_, uint8_t cpuid = 0, bool sync = false) {
 		bool interrupts = disable_interrupts();
         // Set the soft interrupt
 		soft_irq_cause |= (((uint64_t)1) << (irq_ % 64));
-        //*HLS()->ipi = 1;
+		
+		kout << "HLS comes next" << endl;
+		*HLS()->ipi = 1;
+		kout << "trigger_interrupt: " << (int) irq_ << endl;
 		if (interrupts) { enable_interrupts(); }
 	}
+
+
 	static forceinline void trigger_interrupt_from_user(uint8_t irq_) {
+		kout << "trigger_interrupt_from_user: " << (int) irq_ << endl; 
 		trigger_interrupt(irq_);
 	}
 
@@ -147,12 +175,6 @@ public:
 	static forceinline void sleep() {
 		asm volatile ("wfi");
 	}
-
-
-	
-
-
-
 };
 
 #define __asm_label(a) #a
@@ -160,27 +182,7 @@ public:
 #define asm_label(label) asm volatile (".asm_label." label "_%=:" :: "m" (*(uint32_t *)0))
 // #define asm_label(label)
 
-typedef struct hls_t{
-    volatile uint32_t* ipi;
-    volatile int mipi_pending;
 
-    volatile uint64_t* timecmp = (uint64_t *) (CLINT_BASE + MTIMECMP_BASE);
-
-    volatile uint32_t* plic_m_thresh;
-    volatile uintptr_t* plic_m_ie;
-    volatile uint32_t* plic_s_thresh;
-    volatile uintptr_t* plic_s_ie;
-} hls_t;
-
-namespace arch {
-
-extern hls_t hart_local_storage[MAX_HARTS];
-
-}
-
-#define HLS() OTHER_HLS(read_csr(CSR_MHARTID))
-#define OTHER_HLS(id) (&::arch::hart_local_storage[(id)])
-// #define OTHER_HLS(id) (&::arch::hart_local_storage[(id)])
 
 
 #endif // __MACHINE_H__
