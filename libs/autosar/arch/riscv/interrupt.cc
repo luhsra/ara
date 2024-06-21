@@ -38,8 +38,9 @@ void arch::bad_soft_irq(unsigned char cause) {
 }
 
 
-extern "C" void interrupt_handler(long long mcause, unsigned long long * irq_context) {
-    // kout << "irq at: " << (int) mcause << "  " << hex;
+extern "C" void interrupt_handler_c(long long mcause, unsigned long long * irq_context) {
+    //return;
+	// kout << "irq at: " << (int) mcause << "  " << hex;
     // for (unsigned int i = 1; i < 32; i++)
     //     kout << irq_context[i] << " ";
     // kout << endl;

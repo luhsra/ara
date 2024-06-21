@@ -19,15 +19,15 @@ void Timer::init(unsigned interval_ms) {
 }
 
 void Timer::reload() {
+
 	uintptr_t time = *mtime;
-	
 	
 	*HLS()->timecmp = time + (timebase_frequency/1000) * interval;
 }
 
 void Timer::tick() {
 	
-	//reload();
+	reload();
 	//kout << "Timer tick" << endl;
 	os::Counter::tick();
 }

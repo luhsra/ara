@@ -6,7 +6,7 @@
 #define CLINT_TIMER_OFFSET 0xbff8
 #define MTIMECMP_BASE 0x4000
 
-#define TIMER_FREQ 1000000
+#define TIMER_FREQ 100000
 
 
 

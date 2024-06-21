@@ -164,7 +164,7 @@ typedef struct hls_t{
     volatile uint32_t* ipi;
     volatile int mipi_pending;
 
-    volatile uint64_t* timecmp = (uint64_t *) (CLINT_BASE + CLINT_TIMER_OFFSET);
+    volatile uint64_t* timecmp = (uint64_t *) (CLINT_BASE + MTIMECMP_BASE);
 
     volatile uint32_t* plic_m_thresh;
     volatile uintptr_t* plic_m_ie;

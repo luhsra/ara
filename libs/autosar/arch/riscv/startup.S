@@ -79,6 +79,7 @@ idle_entry:
 .global interrupt_handler
 .global trap_vector
 trap_vector:
+	
 	csrw mscratch, sp
 	addi sp, sp, -34*8
 
@@ -122,7 +123,7 @@ trap_vector:
 	sd a1, 2*8(sp)            # sp
 	csrr a0, mcause
 	mv a1, sp
-	jal interrupt_handler
+	jal interrupt_handler_c
 
 	# Restore exception pointer
 	ld a0, 32*8(sp)
