@@ -41,7 +41,6 @@ namespace arch {
 		}
 
 		inline void set_running() const {
-			kout << "Set running" << endl;
 			state.running_marker = true;
 		}
 
@@ -54,7 +53,6 @@ namespace arch {
 
 		void start(const TCB *old) const {
 			(void) old;
-			kout << "Start set running" << endl;
 			set_running();
             //	kout << "Start to RA " << hex << this->state.ra << endl;
 			// Lets go to an extended stack
@@ -63,7 +61,6 @@ namespace arch {
 
 		void switchTo(const TCB *other) const {
 			other->set_running();
-			kout << "Switch to RA " << hex << this->state.ra << " to " << other->state.ra << endl;
 			__switch_to(&this->state, &other->state);
 		}
 

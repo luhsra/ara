@@ -24,7 +24,6 @@ struct Dispatcher {
         // update current context
 
         m_current = to;
-		kout << "doDispatch" << endl;
 		/* If we do not reset the idle loop, when leaving it the
 		   PreIdleHook is not called correctly on the next dispatch
 		   to idle */
@@ -35,10 +34,7 @@ struct Dispatcher {
 
 		CALL_HOOK(PreTaskHook);
 
-        kout << "f: " << (void*) from << " t: " << to->is_running() << Machine::interrupts_enabled() << endl;
-
 		if ((from == 0) || !from->is_running()) {
-			kout << "start" << endl;
 			to->start(from);
 		} else {
 			from->switchTo(to);
@@ -67,9 +63,8 @@ public:
 
 	static forceinline void Dispatch(const os::scheduler::Task &next,
 									 const os::scheduler::Task *current = 0) {
-		kout << "Dispatch" << endl;
+		
 		const TCB *cur = current ? &current->tcb : m_current;
-		kout << "cur: " << (void*) cur << " next: " << (void*) &next.tcb << endl;
         if(cur == &next.tcb)  {
 			return;
 		}
