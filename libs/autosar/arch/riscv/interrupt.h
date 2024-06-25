@@ -8,6 +8,7 @@ namespace arch{
 	void bad_soft_irq(unsigned char);
 
 	bool in_syscall();
+	
 }
 
 #endif

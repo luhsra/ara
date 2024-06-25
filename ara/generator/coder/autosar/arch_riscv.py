@@ -159,13 +159,7 @@ class RiscVArch(GenericArch):
         isr.function_name = "AUTOSAR_ISR_" + isr.name
         irq_number = isr.device
 
-        # TODO: GICv1 only?
-        # https://developer.arm.com/documentation/ihi0048/b/Programmers--Model/Distributor-register-descriptions/Software-Generated-Interrupt-Register--GICD-SGIR?lang=en
-        if (isr.device >= 16):
-            self._log.warning(f"isr {isr.device} > 16")
-            irq_number = irq_number % 16
-
-        handler = FunctionDefinitionBlock('ISR', [str(irq_number)])
+        handler = Function(f'irq_handler_{irq_number}', argstype=['unsigned char'], rettype='void')
         self.generator.source_file.function_manager.add(handler)
 
         # Forward declaration for the user defined function
@@ -174,69 +168,55 @@ class RiscVArch(GenericArch):
 
         # Forward declaration for our handler
         forward = FunctionDeclaration(f"irq_handler_{irq_number}",
-                                      "void*", ["void*", "uint32_t"],
-                                      extern_c=True)
+                                      argstype=['unsigned char'], rettype='void')
         self.generator.source_file.function_manager.add(forward)
 
         self.call(handler, isr.function_name)
-
-        prio = "IRQ_PRIO_MIN_ISR2"
-
-        # Call give the IRQ a priority at startuo, and enable it
-        self.call(self.generator.syscall_rules.StartOS,
-                  "arch::GIC::enable_irq",
-                  "void", [str(irq_number)],
-                  prepend=True)
-        self.call(self.generator.syscall_rules.StartOS,
-                  "arch::GIC::set_irq_priority",
-                  "void", [str(irq_number), prio],
-                  prepend=True)
 
         return irq_number
 
     # Sehr anders in POSIX
     # Der Interrupt Service Routine Table enthält Pointer auf die ISR Funktionen
     def generate_isr_table(self, isrs):
-        return
-        self.generator.source_file.include("machine.h")
+        self.generator.source_file.include("interrupt.h")
 
-        installed_irq_handlers = {  #0,      # Dispatch
-            1,  # Reschedule
-            12,  # TERM
-            27,  # V Alarm (raspi)
-            #29,     # P Alarm (zedboard)
-        }
+        installed_irq_handlers = set()
+        #{
+        #    1,  # Reschedule
+        #    12,  # TERM
+        #    27,  # V Alarm (raspi)
+        #    #29,     # P Alarm (zedboard)
+        #}
         for isr in isrs:
             irq_number = self.generate_isr(isr)
             installed_irq_handlers.add(irq_number)
 
         # Generate the ISR table
-        irq_handler_arr = DataObjectArray("arch::irq_handler_t const",
-                                          "irq_handlers",
-                                          "",
-                                          extern_c=True)
-        self.generator.source_file.data_manager.add(irq_handler_arr)
-        assert max(installed_irq_handlers) + 1 < 96
-        for irq in range(0, 96):  # 96 should be enough for everyone
+        irq_handler_arr = DataObjectArray("arch::interrupt_handler_t",
+                                          "isr_table",
+                                          "")
+        self.generator.source_file.data_manager.add(irq_handler_arr, namespace=("arch", ))
+        #assert max(installed_irq_handlers) + 1 < 64
+        for irq in range(0, 64):
             if irq in installed_irq_handlers:
                 irq_handler_arr[irq] = f"/*{irq}*/ irq_handler_{irq}"
             else:
-                irq_handler_arr[irq] = f"/*{irq}*/ irq_handler_unhandled"
+                irq_handler_arr[irq] = f"/*{irq}*/ arch::bad_soft_irq"
 
         # add termination handler for shutdownAllCores
-        TERM_handler = Function("AUTOSAR_ISR_TERM", "void", [], extern_c=True)
-
-        self.call(TERM_handler, "arch::sync_all_hardware_threads", "void",
-                  ["SYNC_PRE_SHUTDOWNHOOK"])
-        self.call(TERM_handler, "AUTOSAR_ShutdownOS", "void", ["E_OK"])
-        self.generator.source_file.function_manager.add(TERM_handler)
-
-        irq_handler_term = Function(f"irq_handler_{self.TERM_SIG}",
-                                    "void*", ["void*", "uint32_t"],
-                                    extern_c=True)
-        self.call(irq_handler_term, "AUTOSAR_ISR_TERM", "void", [])
-        irq_handler_term.add(Statement("return arg0"))
-        self.generator.source_file.function_manager.add(irq_handler_term)
+        #TERM_handler = Function("AUTOSAR_ISR_TERM", "void", [], extern_c=True)
+#
+        #self.call(TERM_handler, "arch::sync_all_hardware_threads", "void",
+        #          ["SYNC_PRE_SHUTDOWNHOOK"])
+        #self.call(TERM_handler, "AUTOSAR_ShutdownOS", "void", ["E_OK"])
+        #self.generator.source_file.function_manager.add(TERM_handler)
+#
+        #irq_handler_term = Function(f"irq_handler_{self.TERM_SIG}",
+        #                            "void*", ["void*", "uint32_t"],
+        #                            extern_c=True)
+        #self.call(irq_handler_term, "AUTOSAR_ISR_TERM", "void", [])
+        #irq_handler_term.add(Statement("return arg0"))
+        #self.generator.source_file.function_manager.add(irq_handler_term)
         
 
     def generate_kernelspace(self, userspace, abb, arguments):

@@ -19,6 +19,15 @@ bool arch::in_syscall() {
 
 uint64_t Machine::soft_irq_cause;
 
+extern "C" void AUTOSAR_DisableAllInterrupts() {
+	Machine::disable_interrupts();
+}
+
+extern "C" void AUTOSAR_EnableAllInterrupts() {
+	Machine::enable_interrupts();
+}
+
+
 extern "C" void bad_trap() {
 	kout << "machine mode: unhandlable trap "
 		<< hex << read_csr(CSR_MCAUSE) << " @ "
@@ -41,7 +50,7 @@ void arch::bad_soft_irq(unsigned char cause) {
 
 extern "C" void interrupt_handler_c(long long mcause, unsigned long long * irq_context) {
 
-	// kout << "irq at: " << (int) mcause << "  " << hex;
+	kout << "irq at: " << (int) mcause << "  " << hex;
     // for (unsigned int i = 1; i < 32; i++)
     //     kout << irq_context[i] << " ";
     // kout << endl;
@@ -61,18 +70,28 @@ extern "C" void interrupt_handler_c(long long mcause, unsigned long long * irq_c
 			arch::Timer::tick();
 			goto out;
 		} else if (device == IRQ_M_SOFT) { // IPI
+
+			kout << "IPI interrupt got triggered" << endl;
+			
+
 			// ack the interrupt;
             while (Machine::soft_irq_cause) {
                 // __builtin_ffs: Returns one plus the index of the
                 // least significant 1-bit of x, or if x is zero,
                 // returns zero.
                 uint8_t IRQ = __builtin_ffsll(Machine::soft_irq_cause) - 1;
-                //TODO call ISR arch::isr_table[IRQ](IRQ);
+
+				kout << "IPI interrupt: " << (int) IRQ << endl;
+
+                arch::isr_table[IRQ](IRQ);
+
                 // Clear that interrupt
                 Machine::soft_irq_cause &= ~(((uint64_t)1) << IRQ);
             }
-			kout << "IPI interrupt" << endl;
+			
             *HLS()->ipi = 0;
+
+			kout << "IPI interrupt finished" << endl;
 
 			goto out;
 		}

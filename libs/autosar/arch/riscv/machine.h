@@ -35,7 +35,7 @@
 #define OTHER_HLS(id) (&::arch::hart_local_storage[(id)])
 
 typedef struct hls_t{
-    volatile uint32_t* ipi;
+    volatile uint32_t* ipi = (uint32_t *) (CLINT_BASE);
     volatile int mipi_pending;
 
     volatile uint64_t* timecmp = (uint64_t *) (CLINT_BASE + MTIMECMP_BASE);
@@ -151,7 +151,7 @@ public:
 	/**
 	 * \brief Trigger an interrupt
 	 */
-	static forceinline void trigger_interrupt(uint8_t irq_, uint8_t cpuid = 0, bool sync = false) {
+	static forceinline void trigger_interrupt(uint8_t irq_) {
 		bool interrupts = disable_interrupts();
         // Set the soft interrupt
 		soft_irq_cause |= (((uint64_t)1) << (irq_ % 64));
@@ -159,6 +159,7 @@ public:
 		kout << "HLS comes next" << endl;
 		*HLS()->ipi = 1;
 		kout << "trigger_interrupt: " << (int) irq_ << endl;
+		kout << "HLS finished" << endl;
 		if (interrupts) { enable_interrupts(); }
 	}
 
