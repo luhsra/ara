@@ -57,15 +57,13 @@ do_reset:
 	la sp, os_stack + 4096 - 16
 	add sp, sp, a1 // offset to correct stack
 
-	bnez a0, park // park other CPUs for now
+	bnez a0, ap
 	jal main
 
 .size do_reset, . - do_reset
 
-.globl park
-park:
-    wfi // TODO wait until wakeup
-    j park
+ap:
+    jal mainAP
 
 .global idle_entry
 idle_entry:

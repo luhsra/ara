@@ -308,9 +308,9 @@ if get_option('enable_step_tests')
   if true
     foreach app : autosar_generated_targets_riscv
 
-      if app['core'] == 'multicore'
-        continue
-      endif
+      #if app['core'] == 'multicore'
+      #  continue
+      #endif
 
       test('autosar_generator_riscv_' + app['full_name'],
         py3_inst,

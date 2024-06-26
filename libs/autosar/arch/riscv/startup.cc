@@ -6,7 +6,15 @@
 
 #include "hardware_threads.h"
 
+extern "C" int main(void);
+
 #include "output.h"
+
+//get core_is_ready form mp.cc
+extern "C" _Atomic(bool) core_is_ready[MAX_CPUS];
+
+//array indicator that the core is ready to start
+//bool core_ready[MAX_CPUS] = {false};
 
 extern "C" {
     /* The initial stack should be placed in .data */
@@ -19,6 +27,7 @@ extern "C" {
 	void arch_startup(uintptr_t hartid, uintptr_t dtb) {
 		debug_core << __FUNCTION__ << endl;
 		// run constructors of global objects
+		
 		run_constructors();
 
 		// Enable soft interrupt source
@@ -44,4 +53,14 @@ extern "C" {
 
 		init_generic();
 	}
+}
+
+extern "C" void mainAP() {
+
+	kout << 'x' << endl; //arch::get_cpuid() << endl;
+	while (!core_is_ready[arch::get_cpuid()]) {
+		//kout << 'x' << endl;
+	}
+	main();
+
 }

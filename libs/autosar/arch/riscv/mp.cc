@@ -12,58 +12,52 @@ extern "C" int main(void);
 _Atomic(int) cores = 1;
 _Atomic(int) syncing_cores[arch::SYNC_MAX] = {0};
 _Atomic(bool) ipi_cleared[MAX_CPUS];
+_Atomic(bool) core_is_ready[MAX_CPUS] = {false};
+
 
 namespace arch {
+	
 
 	hls_t hart_local_storage[MAX_HARTS];
 
 	int get_cpuid() {
-		/* This cannot be done from EL0 where syscalls are running
-		int ret;
-		asm volatile(
-		    "mrc p15, 0, %[ret], c0, c0, 5;"   // cpuid to r0
-		    "and %[ret], %[ret], #0xf;"         // mask
-		:[ret] "=r" (ret)
-		::
-		);
-		return ret;*/
+		//return the id of the current core
 
-		/*
-		int reg_value;
-		asm("mov %0, r9" : "=r"(reg_value));
-		return reg_value;
-		*/
-		return 0;
+		uint32_t x;
+		asm volatile("csrr %0, mhartid" : "=r" (x) );
+	
+		return x;
 	}
 
 	unsigned int get_num_cores() { 
-		//return cores; 
-		return 1;
+		return cores;
 	}
 
 	void sync_all_hardware_threads(cpu_sync_point_t sync_point) {
-		/*
+		
 		int synced = ++syncing_cores[sync_point];
-		// debug_core << "Syncing[" << sync_point << "]: " << synced << "/" << cores << endl;
+		debug_core << "Syncing[" << sync_point << "]: " << synced << "/" << cores << endl;
 
 		// wait until all cores have synced
 		while (syncing_cores[sync_point] < cores)
 			;
-			*/
+			
 	}
 
 	void stop_hardware_thread() {
-		/*
 		Machine::disable_interrupts();
 
-		#sync all cores before machine shutdown
+		/* sync all cores before machine shutdown */
 		arch::sync_all_hardware_threads(arch::SYNC_POST_SHUTDOWNHOOK);
 
-		while (1) {
-			Machine::reset();
+		if (arch::get_cpuid() == 0) {
+			Machine::shutdown();
+			Machine::unreachable();
+		} else {
+			while (1) {
+				Machine::nop();
+			}
 		}
-		*/
-		Machine::shutdown();
 	}
 
 	void stop_other_hardware_threads() {
@@ -84,9 +78,13 @@ namespace arch {
 	}
 
 	StatusType start_hardware_thread(unsigned int hardware_number, void* bottom_of_stack, unsigned int size_of_stack) {
+		//set flag to indicate that the core is online
+
+
+		core_is_ready[hardware_number] = true;
+		cores++;
 		/*
-		if (hardware_number >= 4)
-			return E_NOT_OK;
+		
 
 		// LOCAL address and Maibox offset per CPU
 		uint32_t addr = 0xff800000 + 0x8c + hardware_number * 0x10;
@@ -96,7 +94,8 @@ namespace arch {
 		             [label] "X"(start_hardware_thread_stage2)
 		             : "r0");
 		*/
-		return E_NOT_OK;
+
+		return E_OK;
 	}
 
 } // namespace arch

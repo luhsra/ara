@@ -49,7 +49,7 @@ namespace arch {
 
 		/* sync all cores before machine shutdown */
 		arch::sync_all_hardware_threads(arch::SYNC_POST_SHUTDOWNHOOK);
-
+		kout << "Shutting down" << endl;	
 		while (1) {
 			Machine::reset();
 		}
