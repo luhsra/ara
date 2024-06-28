@@ -122,7 +122,8 @@ class ZephyrStaticPost(Step):
                 entry_params=(None, None, None),
                 priority=prio,
                 options=0,
-                delay=0
+                delay=0,
+                name="main"
             )
             ZephyrStaticPost.create_static_instance(self._graph.instances, "Thread", main_thread, "__main", True)
 
