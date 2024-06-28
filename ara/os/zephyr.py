@@ -34,6 +34,8 @@ from ara.steps.cfg_traversal import AnalysisContext
 
 from collections import defaultdict
 
+from pyirinterpreter import PyIRModuleInterpreter
+
 logger = get_logger("Zephyr")
 ValueAnalyzer = get_native_component("ValueAnalyzer")
 ValueAnalyzerResult = get_native_component("ValueAnalyzerResult")
@@ -835,7 +837,8 @@ class Zephyr(OSBase):
             entry_params=entry_params,
             priority=args.priority,
             options=args.options,
-            delay=args.delay
+            delay=args.delay,
+            name=""
         )
 
         # z_impl_k_thread_create
@@ -1117,6 +1120,9 @@ class Zephyr(OSBase):
         #  - thread = _priq_run_best(&_kernel.ready_q.runq); --> _priq_dumb_best OR z_priq_rb_best OR ...q
         #  - 
 
+
+
+
         Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_thread_join", "Thread")
         return state
 
@@ -1146,6 +1152,21 @@ class Zephyr(OSBase):
         # - z_get_next_ready_thread
         # - wait_for_switch(new_thread);
 		# - arch_switch();
+
+
+        ### Test: IRX
+
+        irm = PyIRModuleInterpreter()
+        import os
+        # path = os.path.join(os.getcwd(), "zephyr/kernel/sched.ll")
+        path = os.path.join(os.getcwd(), "zephyr/kernel/thread.ll")
+        functionName = b"z_impl_k_sleep"
+
+        if not irm.parseIRFile(bytes(path.encode("utf-8"))):
+            raise FileNotFoundError(f"Failed to parse LLVM-IR file {str(path)}")
+        
+        ### Test: IRX
+
 
         # threads = [(v, obj) for v, obj in state.instances.get(Thread)]
         threads = state.instances.get_controls().vertices()

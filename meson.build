@@ -119,6 +119,10 @@ nop = find_program('true')
 st_flash = find_program('st-flash', required: false, disabler: true)
 sed = find_program('sed')
 
+# irx
+irx = subproject('irx')
+irx_dir = irx.get_variable('irx_dir')
+
 # all dependencies found, build the actual program
 
 build_dir = meson.current_build_dir()
@@ -171,7 +175,7 @@ main = Main()
 sys.exit(main.main())
 '''
 
-python_dirs = [source_dir, pyllco_dir, step_dir, graph_data_dir]
+python_dirs = [source_dir, pyllco_dir, step_dir, graph_data_dir, irx_dir]
 python_path = 'PYTHONPATH=' + ':'.join(python_dirs)
 conv_wrapper_formatted = conv_wrapper.format('"' + '", "'.join(python_dirs) + '"', '')
 
