@@ -56,7 +56,7 @@ if true
     '-mcmodel=medany',
     '-Wall',
     '-Wextra',
-    '-DDEBUG',                     # Debugging
+    #'-DDEBUG',                     # Debugging
   ]
   autosar_riscv_ld_flags = [        # Linken der Bibliotheken
     '-Wl,-Map,@OUTPUT0@.map',

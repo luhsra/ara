@@ -67,7 +67,14 @@ ap:
 
 .global idle_entry
 idle_entry:
+	csrr a0, mhartid // read CPU ID
+
+	// calculate offset in stack table
+	li a1, 4096
+	mul a1, a0, a1
+	// set cpu0 stack
 	la sp, os_stack + 4096 - 16
+	add sp, sp, a1 // offset to correct stack
 	jal __OS_HOOK_PreIdleHook
 1:
 	wfi

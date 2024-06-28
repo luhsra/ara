@@ -27,8 +27,9 @@ extern "C" {
 	void arch_startup(uintptr_t hartid, uintptr_t dtb) {
 		debug_core << __FUNCTION__ << endl;
 		// run constructors of global objects
-		
-		run_constructors();
+
+		if (arch::get_cpuid() == 0)
+			run_constructors();
 
 		// Enable soft interrupt source
 		clear_csr(CSR_MIP, MIP_MSIP);
@@ -48,7 +49,7 @@ extern "C" {
 #else
 		arch::Dispatcher::init();
 		// TODO enable timer
-		arch::Timer::init(1000);
+		//arch::Timer::init(1000);
 #endif
 
 		init_generic();
@@ -57,10 +58,7 @@ extern "C" {
 
 extern "C" void mainAP() {
 
-	kout << 'x' << endl; //arch::get_cpuid() << endl;
-	while (!core_is_ready[arch::get_cpuid()]) {
-		//kout << 'x' << endl;
-	}
+	while (!core_is_ready[arch::get_cpuid()]); // wait for wakeup
 	main();
 
 }
