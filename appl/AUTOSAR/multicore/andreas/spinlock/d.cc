@@ -54,7 +54,7 @@ TASK(T30) {
 
 void PreIdleHook() {
 	if (GetCoreID() == OS_CORE_ID_MASTER) {
-		usleep(100 * 1000);
+		//usleep(100 * 1000);
 		test_start();
 		test_eq(counter, 4);
 		test_positive_tests_eq(1);

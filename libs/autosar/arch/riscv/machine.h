@@ -35,7 +35,7 @@
 #define OTHER_HLS(id) (&::arch::hart_local_storage[(id)])
 
 typedef struct hls_t{
-    volatile uint32_t* ipi = (uint32_t *) (CLINT_BASE);
+    volatile uint32_t* ipi = (uint32_t *) (CLINT_BASE); //TODO: OFFSET von HartID
     volatile int mipi_pending;
 
     volatile uint64_t* timecmp = (uint64_t *) (CLINT_BASE + MTIMECMP_BASE);

@@ -11,7 +11,8 @@ src_files = [
   'serial.cc',
   'startup.cc',
   'startup.S',
-  'timer.cc'
+  'timer.cc',
+  'spinlock.cc'
 ]
 
 obj_targets = []

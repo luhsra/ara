@@ -158,7 +158,7 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'andreas'/ 'spinlock','name': 'a',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'spinlock','name': 'b',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'spinlock','name': 'c',                     'oil': 'system.json'},
-  {'core': 'multicore',  'path': 'andreas'/ 'spinlock','name': 'd',                     'oil': 'system_d.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
+  {'core': 'multicore',  'path': 'andreas'/ 'spinlock','name': 'd',                     'oil': 'system_d.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'spinlock','name': 'e',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'spinlock','name': 'f',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'cores',   'name': '4',                     'oil': 'system.json'},

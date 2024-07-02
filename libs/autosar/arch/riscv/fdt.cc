@@ -403,6 +403,7 @@ static void clint_done(const struct fdt_scan_node *node, void *extra)
   scan->done = 1;
   arch::mtime = (volatile uint64_t *)((uintptr_t)scan->reg + 0xbff8);
 
+  //TODO
   for (int index = 0; end - value > 0; ++index) {
     uint32_t phandle = bswap(value[0]);
     int hart;
