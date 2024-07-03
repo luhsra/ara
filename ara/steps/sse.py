@@ -99,6 +99,9 @@ class SSE(Step):
             def next_step(counter):
                 if self.detailed_dump.get():
                     self.dump_sstg(sstg, extra=counter)
+        
+        
+        self._graph.os.llvmirfile = self._step_manager._config.program['input_file']
 
         run_sse(
             self._graph,

@@ -1159,15 +1159,18 @@ class Zephyr(OSBase):
         irm = PyIRModuleInterpreter()
         import os
         # path = os.path.join(os.getcwd(), "zephyr/kernel/sched.ll")
+        llvmirfile = graph.os.llvmirfile
         paths = [
-            os.path.join(os.getcwd(), "zephyr/kernel/thread.ll").encode('utf-8'),
-            os.path.join(os.getcwd(), "zephyr/kernel/sched.ll").encode('utf-8'),
+            #os.path.join(os.getcwd(), "zephyr/kernel/thread.ll").encode('utf-8'),
+            #os.path.join(os.getcwd(), "zephyr/kernel/sched.ll").encode('utf-8'),
+            llvmirfile.encode('utf-8'),
         ]
         functionName = b"z_impl_k_sleep"
 
         if not irm.parseIRFiles(paths):
             raise FileNotFoundError(f"Failed to parse LLVM-IR file {str(paths)}")
         
+
         ### Test: IRX
 
 
