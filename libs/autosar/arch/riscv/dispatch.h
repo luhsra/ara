@@ -12,7 +12,6 @@ struct Dispatcher {
 #ifndef CONFIG_OS_SYSTEMCALLS_WIRED
     static const TCB* m_current[MAX_CPUS];
 	static TCB  m_idle[MAX_CPUS];
-	static void* idle_dynamic_state[MAX_CPUS];
 
 	static noinline void idleEntry(void) {
 		CALL_HOOK(PreIdleHook);
