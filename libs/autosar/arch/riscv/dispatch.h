@@ -10,8 +10,9 @@ namespace arch {
 
 struct Dispatcher {
 #ifndef CONFIG_OS_SYSTEMCALLS_WIRED
-    static const TCB* m_current;
-	static TCB  m_idle;
+    static const TCB* m_current[MAX_CPUS];
+	static TCB  m_idle[MAX_CPUS];
+	static void* idle_dynamic_state[MAX_CPUS];
 
 	static noinline void idleEntry(void) {
 		CALL_HOOK(PreIdleHook);
@@ -23,12 +24,12 @@ struct Dispatcher {
     static noinline void doDispatch(const TCB *from, const TCB *to) {
         // update current context
 
-        m_current = to;
+        m_current[get_cpuid()] = to;
 		/* If we do not reset the idle loop, when leaving it the
 		   PreIdleHook is not called correctly on the next dispatch
 		   to idle */
-		if (from == &m_idle && to != &m_idle) {
-			m_idle.reset();
+		if (from == &m_idle[get_cpuid()] && to != &m_idle[get_cpuid()]) {
+			m_idle[get_cpuid()].reset();
 		}
 		
 
@@ -45,11 +46,11 @@ struct Dispatcher {
 public:
 
 	static forceinline void init(void) {
-		m_idle.reset();
+		m_idle[get_cpuid()].reset();
 	}
 
 	static forceinline void Idle(void) {
-		doDispatch(m_current, &m_idle);
+		doDispatch(m_current[get_cpuid()], &m_idle[get_cpuid()]);
     }
 
 	static forceinline void Prepare(const os::scheduler::Task& task) {
@@ -64,7 +65,7 @@ public:
 	static forceinline void Dispatch(const os::scheduler::Task &next,
 									 const os::scheduler::Task *current = 0) {
 		
-		const TCB *cur = current ? &current->tcb : m_current;
+		const TCB *cur = current ? &current->tcb : m_current[get_cpuid()];
         if(cur == &next.tcb)  {
 			return;
 		}

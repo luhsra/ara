@@ -8,6 +8,11 @@
         "regex": "cpp",
         "executor": "cpp",
         "io_context": "cpp",
-        "thread": "cpp"
+        "thread": "cpp",
+        "*.ipp": "cpp",
+        "bitset": "cpp",
+        "memory": "cpp",
+        "random": "cpp",
+        "optional": "cpp"
     }
 }

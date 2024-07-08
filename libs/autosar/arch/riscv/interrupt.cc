@@ -50,13 +50,14 @@ void arch::bad_soft_irq(unsigned char cause) {
 
 extern "C" void interrupt_handler_c(long long mcause, unsigned long long * irq_context) {
 
-	kout << "irq at: " << (int) mcause << "  " << hex;
+	//kout << " >irq: " << (int) mcause << hex << " at core " << arch::get_cpuid() << " context: " << *irq_context << endl;
     // for (unsigned int i = 1; i < 32; i++)
     //     kout << irq_context[i] << " ";
     // kout << endl;
 #ifndef CONFIG_OS_SYSTEMCALLS_WIRED
 	ast_level ++;
 #endif
+	
 	if (mcause < 0) { // Interrupt
 		uintptr_t device = mcause & 0xffffffff;
 		if (device == 2) { // htif
@@ -65,8 +66,10 @@ extern "C" void interrupt_handler_c(long long mcause, unsigned long long * irq_c
 			// 	goto out;
 			// }
 			//kout << "htif interrupt" << endl;
+			//kout << "htif interrupt" << endl;
 			bad_trap();
 		} else if (device == IRQ_M_TIMER) {
+			//kout << "timer interrupt" << endl;
 			arch::Timer::tick();
 			goto out;
 		} else if (device == IRQ_M_SOFT) { // IPI
@@ -95,10 +98,10 @@ extern "C" void interrupt_handler_c(long long mcause, unsigned long long * irq_c
 
 			goto out;
 		}
-		//kout << "device " << device << endl;
+		kout << "device " << device << endl;
 		bad_trap();
 	} else {
-		//kout << "trap " << (int) mcause << endl;
+		kout << "trap " << (int) mcause << endl;
 		bad_trap();
 	}
 out:

@@ -15,7 +15,7 @@ namespace arch {
 
 
     struct Timer {
-        static void init(unsigned interval_ms = 1);
+        static void init(unsigned interval_ms = 1000);
         static void reload();
         static void tick();
 

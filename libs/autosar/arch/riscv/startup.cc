@@ -59,6 +59,12 @@ extern "C" {
 extern "C" void mainAP() {
 
 	while (!core_is_ready[arch::get_cpuid()]); // wait for wakeup
+
+	//kout << "Core " << arch::get_cpuid() << " started" << endl;
+
+
+
+
 	main();
 
 }

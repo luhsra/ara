@@ -22,6 +22,7 @@ void Timer::reload() {
 
 	uintptr_t time = *mtime;
 	
+	//*OTHER_HLS(arch::get_cpuid())->timecmp = time + (timebase_frequency/1000) * interval;
 	*HLS()->timecmp = time + (timebase_frequency/1000) * interval;
 }
 

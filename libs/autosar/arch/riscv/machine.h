@@ -35,10 +35,10 @@
 #define OTHER_HLS(id) (&::arch::hart_local_storage[(id)])
 
 typedef struct hls_t{
-    volatile uint32_t* ipi = (uint32_t *) (CLINT_BASE); //TODO: OFFSET von HartID
+    volatile uint32_t* ipi = (uint32_t *) (CLINT_BASE + (4 * arch::get_cpuid()));
     volatile int mipi_pending;
 
-    volatile uint64_t* timecmp = (uint64_t *) (CLINT_BASE + MTIMECMP_BASE);
+    volatile uint64_t* timecmp = (uint64_t *) (CLINT_BASE + MTIMECMP_BASE + (8 * arch::get_cpuid()));
 
     volatile uint32_t* plic_m_thresh;
     volatile uintptr_t* plic_m_ie;
@@ -151,22 +151,33 @@ public:
 	/**
 	 * \brief Trigger an interrupt
 	 */
-	static forceinline void trigger_interrupt(uint8_t irq_) {
+	static forceinline void trigger_interrupt(uint8_t irq_, uint8_t cpuid = 0, bool sync = false) {
 		bool interrupts = disable_interrupts();
         // Set the soft interrupt
-		soft_irq_cause |= (((uint64_t)1) << (irq_ % 64));
+
+		if(!sync) {
+			*(OTHER_HLS(cpuid)->ipi) = 1;
+			if (interrupts) { enable_interrupts(); }
+			return;
+		}
+
+		ipi_cleared[cpuid] = false;
+
+		*(OTHER_HLS(cpuid)->ipi) = 1;
+
+		while (!ipi_cleared[cpuid]) {
+			Machine::sleep();
+		}
+
 		
-		kout << "HLS comes next" << endl;
-		*HLS()->ipi = 1;
-		kout << "trigger_interrupt: " << (int) irq_ << endl;
-		kout << "HLS finished" << endl;
+
 		if (interrupts) { enable_interrupts(); }
 	}
 
 
-	static forceinline void trigger_interrupt_from_user(uint8_t irq_) {
+	static forceinline void trigger_interrupt_from_user(uint8_t irq_, uint8_t cpuid = 0, bool sync = true) {
 		kout << "trigger_interrupt_from_user: " << (int) irq_ << endl; 
-		trigger_interrupt(irq_);
+		trigger_interrupt(irq_, cpuid, sync);
 	}
 
 	static forceinline void sync() {

@@ -37,7 +37,7 @@ namespace arch {
 		
 		int synced = ++syncing_cores[sync_point];
 		debug_core << "Syncing[" << sync_point << "]: " << synced << "/" << cores << endl;
-
+		//kout << synced << endl;
 		// wait until all cores have synced
 		while (syncing_cores[sync_point] < cores)
 			;
@@ -83,6 +83,7 @@ namespace arch {
 
 		core_is_ready[hardware_number] = true;
 		cores++;
+
 		/*
 		
 
