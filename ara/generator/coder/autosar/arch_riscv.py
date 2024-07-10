@@ -180,13 +180,12 @@ class RiscVArch(GenericArch):
     def generate_isr_table(self, isrs):
         self.generator.source_file.include("interrupt.h")
 
-        installed_irq_handlers = set()
-        #{
-        #    1,  # Reschedule
-        #    12,  # TERM
+        installed_irq_handlers = {
+            1,  # Reschedule
+            12,  # TERM
         #    27,  # V Alarm (raspi)
         #    #29,     # P Alarm (zedboard)
-        #}
+        }
         for isr in isrs:
             irq_number = self.generate_isr(isr)
             installed_irq_handlers.add(irq_number)
@@ -204,19 +203,30 @@ class RiscVArch(GenericArch):
                 irq_handler_arr[irq] = f"/*{irq}*/ arch::bad_soft_irq"
 
         # add termination handler for shutdownAllCores
-        #TERM_handler = Function("AUTOSAR_ISR_TERM", "void", [], extern_c=True)
+        TERM_handler = Function("AUTOSAR_ISR_TERM", "void", [], extern_c=True)
 #
-        #self.call(TERM_handler, "arch::sync_all_hardware_threads", "void",
-        #          ["SYNC_PRE_SHUTDOWNHOOK"])
-        #self.call(TERM_handler, "AUTOSAR_ShutdownOS", "void", ["E_OK"])
-        #self.generator.source_file.function_manager.add(TERM_handler)
+        self.call(TERM_handler, "arch::sync_all_hardware_threads", "void",
+                  ["SYNC_PRE_SHUTDOWNHOOK"])
+        self.call(TERM_handler, "AUTOSAR_ShutdownOS", "void", ["E_OK"])
+        self.generator.source_file.function_manager.add(TERM_handler)
 #
-        #irq_handler_term = Function(f"irq_handler_{self.TERM_SIG}",
-        #                            "void*", ["void*", "uint32_t"],
-        #                            extern_c=True)
-        #self.call(irq_handler_term, "AUTOSAR_ISR_TERM", "void", [])
-        #irq_handler_term.add(Statement("return arg0"))
-        #self.generator.source_file.function_manager.add(irq_handler_term)
+        irq_handler_term = Function(f"irq_handler_{self.TERM_SIG}",
+                                    "void", ["unsigned char"],
+                                    extern_c=True)
+        self.call(irq_handler_term, "AUTOSAR_ISR_TERM", "void", [])
+        irq_handler_term.add(Statement("return arg0"))
+        self.generator.source_file.function_manager.add(irq_handler_term)
+
+        IPI_handler = Function("AUTOSAR_ISR_IPI", "void", [], extern_c=True)
+
+        self.call(IPI_handler, "scheduler_[AUTOSAR_GetCoreID()].Schedule_impl", "void", ["true"])
+        self.generator.source_file.function_manager.add(IPI_handler)
+#
+        irq_handler_ipi = Function(f"irq_handler_{self.IPI_SIG}",
+                                    "void", ["unsigned char"],
+                                    extern_c=True)
+        self.call(irq_handler_ipi, "AUTOSAR_ISR_IPI", "void", [])
+        self.generator.source_file.function_manager.add(irq_handler_ipi)
         
 
     def generate_kernelspace(self, userspace, abb, arguments):

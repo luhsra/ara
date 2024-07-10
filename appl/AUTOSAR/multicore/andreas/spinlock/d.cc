@@ -17,7 +17,7 @@ void start() {
 		StartCore(OS_CORE_ID_3, &rv);
 	default:
 
-        kout << '#' <<  GetCoreID() << endl;
+        //kout << '#' <<  GetCoreID() << endl;
 		StartOS(0);
 	}
 }
@@ -27,7 +27,7 @@ TEST_MAKE_OS_MAIN(start())
 int counter = 0;
 
 TASK(T00) {
-	 kout << "a" << endl;
+	 //kout << "a" << endl;
 	//GetSpinlock(S1);
 	counter++;
 	//ReleaseSpinlock(S1);
@@ -35,7 +35,7 @@ TASK(T00) {
 }
 
 TASK(T10) {
-	 kout << "b" << endl;
+	 //kout << "b" << endl;
 	//GetSpinlock(S1);
 	counter++;
 	//ReleaseSpinlock(S1);
@@ -43,7 +43,7 @@ TASK(T10) {
 }
 
 TASK(T20) {
-	 kout << "c" << endl;
+	 //kout << "c" << endl;
 	//GetSpinlock(S1);
 	counter++;
 	//ReleaseSpinlock(S1);
@@ -51,7 +51,7 @@ TASK(T20) {
 }
 
 TASK(T30) {
-	 kout << "d" << endl;
+	 //kout << "d" << endl;
 	//GetSpinlock(S1);
 	counter++;
 	//ReleaseSpinlock(S1);
@@ -62,18 +62,20 @@ void PreIdleHook() {
 
 	//kout << "^" << GetCoreID() << endl;
 
-	if (GetCoreID() == OS_CORE_ID_1) {
+	if (GetCoreID() == OS_CORE_ID_0) {
 		//usleep(100 * 1000);
-		for(int i = 0; i < 1000000000; i++) {
+		for(int i = 0; i < 100000000; i++) {
 			Machine::nop();
 		}
 		test_start();
 		test_eq(counter, 4);
 		test_positive_tests_eq(1);
 		test_finish();
-		//ShutdownAllCores(E_OK);
+		ShutdownAllCores(E_OK);
 	}
+	//kout << "$$$" << GetCoreID() << endl;
 	while (1) {
-		Machine::sleep();
+		Machine::nop();
+		kout << GetCoreID() << endl;		
 	}
 }

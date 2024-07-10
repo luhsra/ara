@@ -10,6 +10,7 @@
  */
 
 #include "arch/generic/ostream.h"
+#include "os/spinlock.h"
 
 #include <stdint.h>
 
@@ -31,6 +32,7 @@ class Serial : public O_Stream<Serial> {
 	static void putchar(char c);
 
 	static void puts(const char* data);
+
 };
 
 #endif // __SERIAL_H__

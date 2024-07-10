@@ -17,7 +17,7 @@ bool arch::in_syscall() {
 }
 #endif
 
-uint64_t Machine::soft_irq_cause;
+uint64_t Machine::soft_irq_cause[MAX_CPUS] = {0};
 
 extern "C" void AUTOSAR_DisableAllInterrupts() {
 	Machine::disable_interrupts();
@@ -70,26 +70,32 @@ extern "C" void interrupt_handler_c(long long mcause, unsigned long long * irq_c
 			bad_trap();
 		} else if (device == IRQ_M_TIMER) {
 			//kout << "timer interrupt" << endl;
+			kout << "Tick at core " << arch::get_cpuid() << endl;
 			arch::Timer::tick();
 			goto out;
 		} else if (device == IRQ_M_SOFT) { // IPI
 
-			kout << "IPI interrupt got triggered" << endl;
-			
-
+			//kout << "IPI interrupt" << device << endl;
+			kout << "Entering IPI interrupt on core " << arch::get_cpuid() << endl;
 			// ack the interrupt;
-            while (Machine::soft_irq_cause) {
+            while (Machine::soft_irq_cause[arch::get_cpuid()]) {
                 // __builtin_ffs: Returns one plus the index of the
                 // least significant 1-bit of x, or if x is zero,
                 // returns zero.
-                uint8_t IRQ = __builtin_ffsll(Machine::soft_irq_cause) - 1;
+                uint8_t IRQ = __builtin_ffsll(Machine::soft_irq_cause[arch::get_cpuid()]) - 1;
 
 				kout << "IPI interrupt: " << (int) IRQ << endl;
+
+				if(IRQ == 12) {
+					kout << "Kill Core " << arch::get_cpuid() << endl;
+					Machine::shutdown();
+					Machine::unreachable();
+				}
 
                 arch::isr_table[IRQ](IRQ);
 
                 // Clear that interrupt
-                Machine::soft_irq_cause &= ~(((uint64_t)1) << IRQ);
+                Machine::soft_irq_cause[arch::get_cpuid()] &= ~(((uint64_t)1) << IRQ);
             }
 			
             *HLS()->ipi = 0;

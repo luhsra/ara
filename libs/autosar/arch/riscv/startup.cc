@@ -3,12 +3,16 @@
 #include "timer.h"
 #include "machine.h"
 #include "dispatch.h"
+#include "os/spinlock.h"
 
 #include "hardware_threads.h"
 
 extern "C" int main(void);
 
 #include "output.h"
+
+//outputspinlock
+os::Spinlock outputspinlock;
 
 //get core_is_ready form mp.cc
 extern "C" _Atomic(bool) core_is_ready[MAX_CPUS];
@@ -26,9 +30,9 @@ extern "C" {
 
 	void arch_startup(uintptr_t hartid, uintptr_t dtb) {
 		debug_core << __FUNCTION__ << endl;
-		// run constructors of global objects
 
 		if (arch::get_cpuid() == 0)
+
 			run_constructors();
 
 		// Enable soft interrupt source

@@ -10,7 +10,6 @@
 #include "timer.h"
 //#include "fdt.h"
 
-
 #include "output.h"
 #include "hardware_threads.h"
 
@@ -31,7 +30,7 @@
 
 #include <stdint.h>
 
-#define HLS() OTHER_HLS(read_csr(CSR_MHARTID))
+#define HLS() OTHER_HLS(arch::get_cpuid())
 #define OTHER_HLS(id) (&::arch::hart_local_storage[(id)])
 
 typedef struct hls_t{
@@ -56,7 +55,7 @@ namespace arch {
 class Machine
 {
 public:
-    static uint64_t soft_irq_cause;
+    static uint64_t soft_irq_cause[MAX_CPUS];
 
     static void init(void) {
     }
@@ -89,8 +88,8 @@ public:
 	static forceinline void enable_interrupts() {
 		set_csr(CSR_MSTATUS, MSTATUS_MIE);
         // We wait until the interrupt becomes actually pending.
-        if (Machine::soft_irq_cause != 0 && read_csr(CSR_MIP) & MIP_MSIP) {
-            while(Machine::soft_irq_cause != 0);
+        if (Machine::soft_irq_cause[arch::get_cpuid()] != 0 && read_csr(CSR_MIP) & MIP_MSIP) {
+            while(Machine::soft_irq_cause[arch::get_cpuid()] != 0);
         }
     }
 
@@ -119,7 +118,6 @@ public:
 	static noinline void unreachable(void) {
 		__builtin_unreachable(); // allow compiler optimization
 	}
-
 
 	static noinline void shutdown(void) {
 		// QEMU shutdown
@@ -153,29 +151,38 @@ public:
 	 */
 	static forceinline void trigger_interrupt(uint8_t irq_, uint8_t cpuid = 0, bool sync = false) {
 		bool interrupts = disable_interrupts();
+		
+		//disable interrupts on another core
+		
+
         // Set the soft interrupt
+		soft_irq_cause[cpuid] |= (((uint64_t)1) << (irq_ % 64));
 
 		if(!sync) {
+			
 			*(OTHER_HLS(cpuid)->ipi) = 1;
+			//*(volatile uint32_t *)(CLINT_BASE + (4 * cpuid)) = 1;
+
 			if (interrupts) { enable_interrupts(); }
 			return;
 		}
-
+		
 		ipi_cleared[cpuid] = false;
+
+		kout << "Syncing core " << (int) cpuid << " with interrupt " << (int) irq_ << endl;
 
 		*(OTHER_HLS(cpuid)->ipi) = 1;
 
 		while (!ipi_cleared[cpuid]) {
-			Machine::sleep();
+			Machine::nop();
 		}
 
-		
-
 		if (interrupts) { enable_interrupts(); }
+		
 	}
 
 
-	static forceinline void trigger_interrupt_from_user(uint8_t irq_, uint8_t cpuid = 0, bool sync = true) {
+	static forceinline void trigger_interrupt_from_user(uint8_t irq_, uint8_t cpuid = 0, bool sync = false) {
 		kout << "trigger_interrupt_from_user: " << (int) irq_ << endl; 
 		trigger_interrupt(irq_, cpuid, sync);
 	}

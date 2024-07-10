@@ -61,11 +61,16 @@ namespace arch {
 	}
 
 	void stop_other_hardware_threads() {
-		/*
+		
 		if (cores > 1) {
-			GIC::trigger_others(12);
+			int curr_cpuid = get_cpuid();
+			for (int i = 0; i < MAX_CPUS; i++) {
+				if (i == curr_cpuid)
+					continue;
+				Machine::trigger_interrupt(12, i, false);
+			}
 		}
-		*/
+		
 	}
 
 	extern "C" void* start_hardware_thread_stage2(int hardware_number) {
