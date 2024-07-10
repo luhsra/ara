@@ -1165,11 +1165,14 @@ class Zephyr(OSBase):
             #os.path.join(os.getcwd(), "zephyr/kernel/sched.ll").encode('utf-8'),
             llvmirfile.encode('utf-8'),
         ]
-        functionName = b"z_impl_k_sleep"
+        function_name = b"z_impl_k_sleep"
 
         if not irm.parseIRFiles(paths):
             raise FileNotFoundError(f"Failed to parse LLVM-IR file {str(paths)}")
-        
+
+        if not irm.runFunction(function_name, [args.ms]):
+            raise RuntimeError(f"Failed to run LLVM Interpreter for function {str(function_name)}")
+
 
         ### Test: IRX
 
