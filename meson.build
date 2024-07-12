@@ -26,6 +26,9 @@ if compiler.has_argument('-Wno-error=return-type-c-linkage')
     add_project_arguments('-Wno-error=return-type-c-linkage', language: ['c', 'cpp'])
 endif
 
+# The boost headers spam lots of warnings if this is not set
+add_project_arguments([ '-DBOOST_ALLOW_DEPRECATED_HEADERS' ], language: 'cpp')
+
 fs = import('fs')
 
 # check all dependencies first
@@ -94,6 +97,8 @@ svf_opts.append_compile_args('cpp', '-Wno-unused-parameter')
 svf_opts.append_compile_args('cpp', '-Wno-unused-variable')
 svf_opts.append_compile_args('cpp', '-Wno-unused-function')
 svf_opts.append_compile_args('cpp', '-Wno-maybe-uninitialized')
+svf_opts.append_compile_args('cpp', '-Wno-ignored-qualifiers')
+svf_opts.append_compile_args('cpp', '-Wno-system-headers')
 svf_opts.add_cmake_defines({'LLVM_DIR': llvm_dep.get_variable(configtool: 'prefix'),
                             'BUILD_SHARED_LIBS': 'on'})
 svf_proj = cmake.subproject('svf', options: svf_opts)
