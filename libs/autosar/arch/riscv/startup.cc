@@ -34,6 +34,11 @@ extern "C" {
 		if (arch::get_cpuid() == 0)
 
 			run_constructors();
+			
+			for (int i = 0; i < MAX_HARTS; i++) {
+				arch::hart_local_storage[i].ipi = (uint32_t *) (CLINT_BASE + (4 * i));
+				arch::hart_local_storage[i].timecmp = (uint64_t *) (CLINT_BASE + MTIMECMP_BASE + (8 * i));
+			}
 
 		// Enable soft interrupt source
 		clear_csr(CSR_MIP, MIP_MSIP);
@@ -53,7 +58,7 @@ extern "C" {
 #else
 		arch::Dispatcher::init();
 		// TODO enable timer
-		//arch::Timer::init(1000);
+		arch::Timer::init(1000);
 #endif
 
 		init_generic();

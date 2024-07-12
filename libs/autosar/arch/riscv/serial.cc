@@ -27,3 +27,4 @@ void Serial::puts(const char* data) {
 	while (*data) putchar(*data++);
 	
 }
+

@@ -6,7 +6,7 @@
 
 
 namespace arch {
-    volatile uint64_t *mtime = (uint64_t *) (CLINT_BASE + CLINT_TIMER_OFFSET);
+    volatile uint64_t *mtime = (uint64_t *) (CLINT_BASE + CLINT_TIMER_OFFSET + 8 * arch::get_cpuid());
 
 	uint64_t Timer::timebase_frequency = TIMER_FREQ;
 	unsigned Timer::interval;
@@ -21,9 +21,9 @@ void Timer::init(unsigned interval_ms) {
 void Timer::reload() {
 
 	uintptr_t time = *mtime;
-	
-	//*OTHER_HLS(arch::get_cpuid())->timecmp = time + (timebase_frequency/1000) * interval;
+
 	*HLS()->timecmp = time + (timebase_frequency/1000) * interval;
+	//debug_core << "Time" << endl;
 }
 
 void Timer::tick() {
@@ -32,10 +32,5 @@ void Timer::tick() {
 	//kout << "Timer tick" << endl;
 	os::Counter::tick();
 }
-
-
-
-
-
 
 }

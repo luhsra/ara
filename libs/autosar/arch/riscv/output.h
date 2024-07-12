@@ -14,10 +14,11 @@
 
 // debugging: print kout+debug on UART
 //#include "bufferedserial.h"
+#include "bufferedserial.h"
 #include "serial.h"
 extern Serial kout;
 extern Serial debug;
-extern Serial debug_core_arr[MAX_CPUS];
+extern BufferedSerial debug_core_arr[MAX_CPUS];
 
 #define debug_core (debug_core_arr[arch::get_cpuid()])
 

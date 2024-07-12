@@ -49,7 +49,7 @@ public:
 	}
 
 	static forceinline void Idle(void) {
-		kout << "Core " << get_cpuid() << " is idling" << endl;
+		//kout << "Core " << get_cpuid() << " is idling" << endl;
 		doDispatch(m_current[get_cpuid()], &m_idle[get_cpuid()]);
     }
 

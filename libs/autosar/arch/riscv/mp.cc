@@ -36,7 +36,7 @@ namespace arch {
 	void sync_all_hardware_threads(cpu_sync_point_t sync_point) {
 		
 		int synced = ++syncing_cores[sync_point];
-		debug_core << "Syncing[" << sync_point << "]: " << synced << "/" << cores << endl;
+		debug_core << "Syncing[" << sync_point << "] with core: " << get_cpuid() << " : " << synced << "/" << cores << endl;
 		//kout << synced << endl;
 		// wait until all cores have synced
 		while (syncing_cores[sync_point] < cores)
@@ -47,8 +47,11 @@ namespace arch {
 	void stop_hardware_thread() {
 		Machine::disable_interrupts();
 
+		debug_core << "Stopping core: " << get_cpuid() << endl;
 		/* sync all cores before machine shutdown */
 		arch::sync_all_hardware_threads(arch::SYNC_POST_SHUTDOWNHOOK);
+
+		//Machine::shutdown();
 
 		if (arch::get_cpuid() == 0) {
 			Machine::shutdown();
@@ -61,46 +64,26 @@ namespace arch {
 	}
 
 	void stop_other_hardware_threads() {
-		
+
 		if (cores > 1) {
 			int curr_cpuid = get_cpuid();
 			for (int i = 0; i < MAX_CPUS; i++) {
 				if (i == curr_cpuid)
 					continue;
-				Machine::trigger_interrupt(12, i, false);
+				if(core_is_ready[i]){
+					core_is_ready[i] = false;
+					Machine::trigger_interrupt(12, i, false);
+				}
+				
 			}
 		}
 		
 	}
 
-	extern "C" void* start_hardware_thread_stage2(int hardware_number) {
-		/*
-		MMU::enable();
-
-		cores++;
-		main();
-		*/
-	}
-
 	StatusType start_hardware_thread(unsigned int hardware_number, void* bottom_of_stack, unsigned int size_of_stack) {
-		//set flag to indicate that the core is online
-
 
 		core_is_ready[hardware_number] = true;
 		cores++;
-
-		/*
-		
-
-		// LOCAL address and Maibox offset per CPU
-		uint32_t addr = 0xff800000 + 0x8c + hardware_number * 0x10;
-		asm volatile("ldr r0,=%[label];" // target label to r0
-		             "str r0,[%0];"      // store r0 to precalculated address
-		             "sev;" ::"r"(addr),
-		             [label] "X"(start_hardware_thread_stage2)
-		             : "r0");
-		*/
-
 		return E_OK;
 	}
 

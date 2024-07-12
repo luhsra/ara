@@ -45,6 +45,35 @@ StatusType Spinlock::lock() {
 
 StatusType Spinlock::trylock(TryToGetSpinlockType* success) {
   kout << "T" << endl;
+
+  int result = 1;
+
+    asm volatile(
+        // Atomic memory load-reserved word acquire (lr.w)
+        // Load the value of the lock into result
+        "lr.w %[result], (%[lock])\n\t"
+        // Check if lock is already taken
+        // If result is not 0, jump to 0f
+        "bnez %[result], 0f\n\t"
+        // Store-conditional only if lock is not taken
+        // result = 0 if store-conditional was successful
+        // value = 1 and is stored in lock
+        "sc.w %[result], %[value], (%[lock])\n\t"
+        "0:"
+        // Output operands (result)
+        : [result] "=&r"(result)
+        // Input operands (lock (&this->sl), value(1))
+        : [lock] "r"(&this->sl), [value] "r"(1)
+        // Clobbered registers: "cc", "memory"
+        : "cc", "memory"
+    );
+
+    if (result == 0) {
+        *success = TRYTOGETSPINLOCK_SUCCESS;
+    } else {
+        *success = TRYTOGETSPINLOCK_NOSUCCESS;
+    }
+
   return E_OK;
 }
 

@@ -3,6 +3,7 @@ riscv_autosar_includes = ['-I', meson.current_source_dir()]
 # Wenn maschinenabhängige Dateien hinzugefügt werden, müssen sie hier eingebunden werden
 
 src_files = [
+  'bufferedserial.cc',
   'constructors.cc',
   'dispatch.cc',
   'interrupt.cc',

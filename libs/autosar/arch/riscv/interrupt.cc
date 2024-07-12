@@ -50,10 +50,7 @@ void arch::bad_soft_irq(unsigned char cause) {
 
 extern "C" void interrupt_handler_c(long long mcause, unsigned long long * irq_context) {
 
-	//kout << " >irq: " << (int) mcause << hex << " at core " << arch::get_cpuid() << " context: " << *irq_context << endl;
-    // for (unsigned int i = 1; i < 32; i++)
-    //     kout << irq_context[i] << " ";
-    // kout << endl;
+
 #ifndef CONFIG_OS_SYSTEMCALLS_WIRED
 	ast_level ++;
 #endif
@@ -70,27 +67,17 @@ extern "C" void interrupt_handler_c(long long mcause, unsigned long long * irq_c
 			bad_trap();
 		} else if (device == IRQ_M_TIMER) {
 			//kout << "timer interrupt" << endl;
-			kout << "Tick at core " << arch::get_cpuid() << endl;
 			arch::Timer::tick();
 			goto out;
 		} else if (device == IRQ_M_SOFT) { // IPI
 
-			//kout << "IPI interrupt" << device << endl;
-			kout << "Entering IPI interrupt on core " << arch::get_cpuid() << endl;
+			//kout << "Entering IPI interrupt on core " << arch::get_cpuid() << endl;
 			// ack the interrupt;
             while (Machine::soft_irq_cause[arch::get_cpuid()]) {
                 // __builtin_ffs: Returns one plus the index of the
                 // least significant 1-bit of x, or if x is zero,
                 // returns zero.
                 uint8_t IRQ = __builtin_ffsll(Machine::soft_irq_cause[arch::get_cpuid()]) - 1;
-
-				kout << "IPI interrupt: " << (int) IRQ << endl;
-
-				if(IRQ == 12) {
-					kout << "Kill Core " << arch::get_cpuid() << endl;
-					Machine::shutdown();
-					Machine::unreachable();
-				}
 
                 arch::isr_table[IRQ](IRQ);
 
@@ -100,7 +87,7 @@ extern "C" void interrupt_handler_c(long long mcause, unsigned long long * irq_c
 			
             *HLS()->ipi = 0;
 
-			kout << "IPI interrupt finished" << endl;
+			//kout << "IPI interrupt finished" << endl;
 
 			goto out;
 		}

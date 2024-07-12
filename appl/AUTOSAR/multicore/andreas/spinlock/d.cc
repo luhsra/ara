@@ -76,6 +76,10 @@ void PreIdleHook() {
 	//kout << "$$$" << GetCoreID() << endl;
 	while (1) {
 		Machine::nop();
-		kout << GetCoreID() << endl;		
+		//kout << GetCoreID() << endl;	
+		for(int i = 0; i < 100000000; i++) {
+			Machine::nop();
+		}
+		//kout << GetCoreID() << endl;	
 	}
 }
