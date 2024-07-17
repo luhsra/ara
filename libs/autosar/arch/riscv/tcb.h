@@ -46,9 +46,11 @@ namespace arch {
 
 		inline void reset(void) const {
 			state.running_marker = false;
-			// kout << "Fun: " << (void*)fun << endl;
+			//debug_core << "Resetting TCB " << this << endl;
+			//kout << "Fun: " << (void*)fun << endl;
 			state.ra = reinterpret_cast<unsigned long>(fun);
 			state.sp = reinterpret_cast<unsigned long>(stack) + stacksize;
+			//kout << "Fun end: " << endl;
 		}
 
 		void start(const TCB *old) const {

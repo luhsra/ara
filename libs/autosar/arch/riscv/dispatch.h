@@ -23,6 +23,7 @@ struct Dispatcher {
     static noinline void doDispatch(const TCB *from, const TCB *to) {
         // update current context
 
+		//kout << "Switching from " << from << " to " << to << endl;
         m_current[get_cpuid()] = to;
 		/* If we do not reset the idle loop, when leaving it the
 		   PreIdleHook is not called correctly on the next dispatch
@@ -49,7 +50,6 @@ public:
 	}
 
 	static forceinline void Idle(void) {
-		//kout << "Core " << get_cpuid() << " is idling" << endl;
 		doDispatch(m_current[get_cpuid()], &m_idle[get_cpuid()]);
     }
 

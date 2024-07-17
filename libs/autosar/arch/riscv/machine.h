@@ -38,7 +38,6 @@ typedef struct hls_t{
     volatile int mipi_pending;
 
     volatile uint64_t* timecmp; //= (uint64_t *) (CLINT_BASE + MTIMECMP_BASE + (8 * arch::get_cpuid()));
-
     volatile uint32_t* plic_m_thresh;
     volatile uintptr_t* plic_m_ie;
     volatile uint32_t* plic_s_thresh;

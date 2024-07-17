@@ -20,3 +20,6 @@ Null_Stream debug;
 Null_Stream debug_core;
 
 #endif // DEBUG
+
+//initialize BufferedSerial
+

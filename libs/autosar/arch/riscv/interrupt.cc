@@ -79,6 +79,8 @@ extern "C" void interrupt_handler_c(long long mcause, unsigned long long * irq_c
                 // returns zero.
                 uint8_t IRQ = __builtin_ffsll(Machine::soft_irq_cause[arch::get_cpuid()]) - 1;
 
+				//kout << "IPI interrupt " << (int) IRQ << endl;
+
                 arch::isr_table[IRQ](IRQ);
 
                 // Clear that interrupt

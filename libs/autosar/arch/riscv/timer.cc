@@ -6,7 +6,7 @@
 
 
 namespace arch {
-    volatile uint64_t *mtime = (uint64_t *) (CLINT_BASE + CLINT_TIMER_OFFSET + 8 * arch::get_cpuid());
+    volatile uint64_t *mtime = (uint64_t *) (CLINT_BASE + CLINT_TIMER_OFFSET);
 
 	uint64_t Timer::timebase_frequency = TIMER_FREQ;
 	unsigned Timer::interval;

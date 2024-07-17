@@ -8,7 +8,14 @@
 
 os::Spinlock BufferedSerial::serial_spinlock{};
 
-extern "C" void memset(void* dest, int pat, int size);
+void memset(void* dest, int pat, int size) {
+	uint8_t pattern = (uint8_t)pat;
+	uint8_t* destination = (uint8_t*)dest;
+
+	for (int i = 0; i != size; ++i) {
+		destination[i] = pattern;
+	}
+}
 
 void BufferedSerial::putchar(char character) {
 	if (this->printcpu) {
@@ -19,8 +26,8 @@ void BufferedSerial::putchar(char character) {
 		}
 	}
 	buf[idx++] = character;
-
-	if (idx == BUF_LEN - 1) {
+//
+	if (idx >= BUF_LEN - 1) {
 		character = '\n';
 		buf[idx++] = character;
 	}
@@ -36,17 +43,8 @@ void BufferedSerial::putchar(char character) {
 }
 
 void BufferedSerial::puts(const char* data) {
-	//Spinlock lock;
-
 	while (*data) putchar(*data++);
 }
 
-extern "C" void memset(void* dest, int pat, int size) {
-	uint8_t pattern = (uint8_t)pat;
-	uint8_t* destination = (uint8_t*)dest;
 
-	for (int i = 0; i != size; ++i) {
-		destination[i] = pattern;
-	}
-}
 

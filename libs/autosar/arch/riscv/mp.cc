@@ -47,19 +47,16 @@ namespace arch {
 	void stop_hardware_thread() {
 		Machine::disable_interrupts();
 
-		debug_core << "Stopping core: " << get_cpuid() << endl;
+		
 		/* sync all cores before machine shutdown */
 		arch::sync_all_hardware_threads(arch::SYNC_POST_SHUTDOWNHOOK);
 
+		debug_core << "Stopping core: " << get_cpuid() << endl;
+
 		//Machine::shutdown();
 
-		if (arch::get_cpuid() == 0) {
-			Machine::shutdown();
-			Machine::unreachable();
-		} else {
-			while (1) {
-				Machine::nop();
-			}
+		while(1) {
+			Machine::halt();
 		}
 	}
 
@@ -77,7 +74,6 @@ namespace arch {
 				
 			}
 		}
-		
 	}
 
 	StatusType start_hardware_thread(unsigned int hardware_number, void* bottom_of_stack, unsigned int size_of_stack) {
