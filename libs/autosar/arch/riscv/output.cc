@@ -9,8 +9,8 @@
 #if DEBUG
 
 //TODO Buffer for multicore
-Serial kout{};
-Serial debug{};
+BufferedSerial kout{false};
+BufferedSerial debug{false};
 BufferedSerial debug_core_arr[MAX_CPUS];
 
 #else // DEBUG

@@ -33,12 +33,12 @@ void BufferedSerial::putchar(char character) {
 	}
 
 	if (character == '\n') {
-		//int current_prio = arch::GIC::get_task_prio();
-		//arch::GIC::set_task_prio(0); // pause interrupts
 		BufferedSerial::serial_spinlock.lock();
 		Serial::puts(buf);
 		BufferedSerial::serial_spinlock.unlock();
+		
 		memset(buf, 0x00, BUF_LEN);
+		idx = 0;
 	}
 }
 

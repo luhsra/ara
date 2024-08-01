@@ -837,7 +837,7 @@ class AUTOSAR(OSBase):
         # sanity checks
         # check for second activation
         if lock_ctx.on_hold and lock_ctx.held_by == cur_ctl:
-            logger.info(
+            logger.error(
                 "%s by %s, but we already held the lock: %s", name, cur_ctl, lock_ctx
             )
             # just keep doing

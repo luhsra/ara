@@ -11,8 +11,6 @@ from ara.graph import ABBType
 
 from ara.steps import get_native_component
 from enum import Enum
-
-#TODO Importe Anpassen
  
 class TracePerf(Enum):
     NONE = 0
@@ -27,13 +25,9 @@ class RiscVArch(GenericArch):
         self.IPI_SIG = 1    #Interprocessor Interrupt Signal    Multicore
         self.TERM_SIG = 12  #Termination Signal                 Multicore
 
-    # Nicht in dOSEK
     def generate_startup_code(self):
         # generate other functions
         self.arch_rules.generate_functions()
-
-    # Gibt es nicht in Posix
-    # Gibt es nicht in dOSEK
     
     def generate_functions(self):
         super().generate_functions()
@@ -52,56 +46,15 @@ class RiscVArch(GenericArch):
                 self.call(ASTSchedule, "arch::Perf::trace_cycles", prepend=True)
                 
     # config-constraint-: (arch.self == posix) -> !arch.mpu
-    # Posix braucht kein Linkerscript
-    # RISCV braucht kein Linkerscript
     def generate_linkerscript(self):
         pass
-    """
-    # So steht es in dOSEK
-    def generate_data_objects(self):
-        # Generate all dataobjects for the system
-        conf_wired = self.system_graph.conf.os.systemcalls == "wired"
-        if conf_wired:
-            self.logic = self.system_graph.get_pass("LogicMinimizer")
-
-        # Generate Stacks
-        self.generate_dataobjects_task_stacks()
-        for subtask in self.system_graph.real_subtasks:
-            subtask.impl.stack.allocation_prefix +=" __attribute__((aligned(16))) "
-
-        self.generate_dataobjects_task_entries()
-        if conf_wired:
-            self.generate_wired_task_descriptors()
-            self.generate_rocket_config()
-        else:
-            self.generate_dataobjects_tcbs()
-            # Generate dummy rocket config
-            with self.generator.open_file("rocket.config") as fd:
-                config = {
-                    "coreHartCount":   1,
-                    "coreOSEKSyscallWidth": 1,
-                    "coreOSEKStateWidth":   1,
-                    "coreOSEKInitialState": 0,
-                    "coreHartCombinatorics": None,
-                    "alarms": {},
-                }
-                fd.write(json.dumps(config,indent=2, sort_keys=True))
-
-
-        self.generator.source_file.include("dispatch.h")
-    """
-
-    """
-    # So steht es in ARM
-    # Bleibt gleich
-    """
+    
     def generate_data_objects(self):
         # Generate all dataobjects for the system
         self.generate_dataobjects_task_stacks()  # From GenericArch
         self.generate_dataobjects_task_entries()  # From GenericArch
         self.generate_dataobjects_tcbs()
 
-    # Gibt es nicht in Posix
     def generate_system_code(self):
         # tracing for PMU
         self.PERF_TRACE = TracePerf.NONE
@@ -111,8 +64,6 @@ class RiscVArch(GenericArch):
         if PERF_TRACE_global is not None:
             self.PERF_TRACE = TracePerf(PERF_TRACE_global.get_initializer().get())
 
-    # Gibt es nicht in Posix
-    # Gleicher Name wir darüber
     def generate_dataobjects_tcbs(self):
         self.generator.source_file.include("tcb.h")
 
@@ -150,8 +101,6 @@ class RiscVArch(GenericArch):
         self.generator.source_file.data_manager.add(tcb_arr,
                                                     namespace=("arch", ))
 
-    # Hier muss vermutlich viel angepasst werden
-    # Interrupt Service Routine
     def generate_isr(self, isr):
 
         self.generator.source_file.include("machine.h")
@@ -175,8 +124,6 @@ class RiscVArch(GenericArch):
 
         return irq_number
 
-    # Sehr anders in POSIX
-    # Der Interrupt Service Routine Table enthält Pointer auf die ISR Funktionen
     def generate_isr_table(self, isrs):
         self.generator.source_file.include("interrupt.h")
 

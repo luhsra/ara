@@ -47,21 +47,24 @@ namespace arch {
 	void stop_hardware_thread() {
 		Machine::disable_interrupts();
 
-		
 		/* sync all cores before machine shutdown */
 		arch::sync_all_hardware_threads(arch::SYNC_POST_SHUTDOWNHOOK);
 
 		debug_core << "Stopping core: " << get_cpuid() << endl;
 
-		//Machine::shutdown();
-
-		while(1) {
-			Machine::halt();
+		if (arch::get_cpuid() == 0) {
+			Machine::shutdown();
+			Machine::unreachable();
+		} else {
+			while (1) {
+				Machine::nop();
+				//kout << "Trapped" << endl;
+			}
 		}
 	}
 
 	void stop_other_hardware_threads() {
-
+		kout << "Stopping other cores" << endl;
 		if (cores > 1) {
 			int curr_cpuid = get_cpuid();
 			for (int i = 0; i < MAX_CPUS; i++) {

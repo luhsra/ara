@@ -17,6 +17,7 @@
         "cstdio": "cpp",
         "*.def": "cpp",
         "*.inc": "cpp",
-        "list": "cpp"
+        "list": "cpp",
+        "ostream": "cpp"
     }
 }

@@ -2,46 +2,38 @@ autosar_includes += ['-I', meson.current_source_dir() / 'source' / 'os']
 
 autosar_targets = []
 autosar_apps = [
-  # Alarm 1
   {'core': 'singlecore', 'path': 'bcc1' / 'alarm1',    'name': 'a',                     'oil': 'system.json', 'mtrace': 'a.trace.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'alarm1',    'name': 'b',                     'oil': 'system.json', 'mtrace': 'b.trace.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'alarm1',    'name': 'c',                     'oil': 'system.json', 'mtrace': 'c.trace.json'}, 
   {'core': 'singlecore', 'path': 'bcc1' / 'alarm1',    'name': 'd',                     'oil': 'system.json', 'mtrace': 'd.trace.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'alarm1',    'name': 'e',                     'oil': 'system.json', 'mtrace': 'e.trace.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'alarm1',    'name': 'f',                     'oil': 'system.json', 'mtrace': 'f.trace.json'},
-  # Alarm 2
   {'core': 'singlecore', 'path': 'bcc1' / 'alarm2',    'name': 'a',                     'oil': 'system.json', 'mtrace': 'a.trace.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'alarm2',    'name': 'b',                     'oil': 'system.json', 'mtrace': 'b.trace.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'alarm2',    'name': 'c',                     'oil': 'system.json', 'mtrace': 'c.trace.json'},
-  # Alarm 3
   {'core': 'singlecore', 'path': 'bcc1' / 'alarm3',    'name': 'a',                     'oil': 'system.json', 'mtrace': 'a.trace.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'alarm3',    'name': 'b',                     'oil': 'system.json', 'mtrace': 'b.trace.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'alarm3',    'name': 'c',                     'oil': 'system.json', 'mtrace': 'c.trace.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'alarm3',    'name': 'd',                     'oil': 'system.json', 'mtrace': 'd.trace.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'alarm3',    'name': 'e',                     'oil': 'system.json', 'mtrace': 'e.trace.json'},
-  # BCC1/Complex d #TODO
   {'core': 'singlecore', 'path': 'bcc1' / 'complex1',  'name': 'a',                     'oil': 'system.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'complex1',  'name': 'b',                     'oil': 'system.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'complex1',  'name': 'c',                     'oil': 'system.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'complex1',  'name': 'd',                     'oil': 'system.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'complex2',  'name': 'a',                     'oil': 'system.json'},
-  # Mixed
   {'core': 'singlecore', 'path': 'bcc1' / 'counter1',  'name': 'a',                     'oil': 'system.json'},
 # {'core': 'singlecore', 'path': 'bcc1' / 'depsvc',    'name': 'depsvc',                'oil': 'system.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'hoffmann',  'name': 'a',                     'oil': 'system.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
-  # BCC1/ISR2 e #TODO
   {'core': 'singlecore', 'path': 'bcc1' / 'isr2',      'name': 'a',                     'oil': 'system.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'isr2',      'name': 'b',                     'oil': 'system.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'isr2',      'name': 'c',                     'oil': 'system.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'isr2',      'name': 'd',                     'oil': 'system.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'isr2',      'name': 'e',                     'oil': 'system.json'},
-  # Lukas Disabled
   {'core': 'singlecore', 'path': 'bcc1' / 'lukas',     'name': 'alarmstress',           'oil': 'alarmstress.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'singlecore', 'path': 'bcc1' / 'lukas',     'name': 'dispatch',              'oil': 'dispatch.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'singlecore', 'path': 'bcc1' / 'lukas',     'name': 'isr2',                  'oil': 'isr2.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'singlecore', 'path': 'pairwise',           'name': 'pairwise',              'oil': 'system.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'singlecore', 'path': 'pairwise',           'name': 'pairwise-fail',              'oil': 'system.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
-  # Resource 1
   {'core': 'singlecore', 'path': 'bcc1' / 'resource1', 'name': 'a',                     'oil': 'system.json', 'mtrace': 'a.trace.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'resource1', 'name': 'b',                     'oil': 'system.json', 'mtrace': 'b.trace.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'resource1', 'name': 'c',                     'oil': 'system.json', 'mtrace': 'c.trace.json'},
@@ -53,14 +45,11 @@ autosar_apps = [
   {'core': 'singlecore', 'path': 'bcc1' / 'resource1', 'name': 'j',                     'oil': 'system.json', 'mtrace': 'j.trace.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'resource1', 'name': 'k',                     'oil': 'system.json', 'mtrace': 'k.trace.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'resource1', 'name': 'l',                     'oil': 'system.json', 'mtrace': 'l.trace.json'},
-  # Resource 2
   {'core': 'singlecore', 'path': 'bcc1' / 'resource2', 'name': 'a',                     'oil': 'system.json', 'mtrace': 'a.trace.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'resource2', 'name': 'b',                     'oil': 'system.json', 'mtrace': 'b.trace.json'},
-  # SSE1
   {'core': 'singlecore', 'path': 'bcc1' / 'sse1',      'name': 'a',                     'oil': 'system.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'sse1',      'name': 'b',                     'oil': 'system.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'sse1',      'name': 'c',                     'oil': 'system.json'},
-  # Task1
   {'core': 'singlecore', 'path': 'bcc1' / 'task1',     'name': 'a',                     'oil': 'system.json', 'mtrace': 'a.trace.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'task1',     'name': 'b',                     'oil': 'system.json', 'mtrace': 'b.trace.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'task1',     'name': 'c',                     'oil': 'system.json', 'mtrace': 'c.trace.json'},
@@ -68,14 +57,11 @@ autosar_apps = [
   {'core': 'singlecore', 'path': 'bcc1' / 'task1',     'name': 'e',                     'oil': 'system.json', 'mtrace': 'e.trace.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'task1',     'name': 'f',                     'oil': 'system.json', 'mtrace': 'f.trace.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'task1',     'name': 'g',                     'oil': 'system.json', 'mtrace': 'g.trace.json'},
-  # Task2
   {'core': 'singlecore', 'path': 'bcc1' / 'task2',     'name': 'a',                     'oil': 'system.json', 'mtrace': 'a.trace.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'task2',     'name': 'b',                     'oil': 'system.json', 'mtrace': 'b.trace.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'task2',     'name': 'c',                     'oil': 'system.json', 'mtrace': 'c.trace.json'},
-  # Singlecore/Complex Disabled
   {'core': 'singlecore', 'path': 'complex',            'name': 'copter-without-alarms', 'oil': 'system-without-alarms.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'singlecore', 'path': 'complex',            'name': 'isorc',                 'oil': 'isorc.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
-  # BT1
   {'core': 'singlecore', 'path': 'ecc1' / 'bt1',       'name': 'a',                     'oil': 'system.json', 'mtrace': 'a.trace.json'},
   {'core': 'singlecore', 'path': 'ecc1' / 'bt1',       'name': 'b',                     'oil': 'system.json', 'mtrace': 'b.trace.json'},
   {'core': 'singlecore', 'path': 'ecc1' / 'bt1',       'name': 'c',                     'oil': 'system.json', 'mtrace': 'c.trace.json'},
@@ -84,7 +70,6 @@ autosar_apps = [
   {'core': 'singlecore', 'path': 'ecc1' / 'bt1',       'name': 'f',                     'oil': 'system.json', 'mtrace': 'f.trace.json'},
   {'core': 'singlecore', 'path': 'ecc1' / 'bt1',       'name': 'g',                     'oil': 'system.json', 'mtrace': 'g.trace.json'},
   {'core': 'singlecore', 'path': 'ecc1' / 'bt1',       'name': 'h',                     'oil': 'system.json', 'mtrace': 'h.trace.json'},
-  # Event1
   {'core': 'singlecore', 'path': 'ecc1' / 'event1',    'name': 'a',                     'oil': 'system.json', 'mtrace': 'a.trace.json'},
   {'core': 'singlecore', 'path': 'ecc1' / 'event1',    'name': 'b',                     'oil': 'system.json', 'mtrace': 'b.trace.json'},
   {'core': 'singlecore', 'path': 'ecc1' / 'event1',    'name': 'c',                     'oil': 'system.json', 'mtrace': 'c.trace.json'},
@@ -92,27 +77,21 @@ autosar_apps = [
   {'core': 'singlecore', 'path': 'ecc1' / 'event1',    'name': 'e',                     'oil': 'system.json', 'mtrace': 'e.trace.json'},
   {'core': 'singlecore', 'path': 'ecc1' / 'event1',    'name': 'f',                     'oil': 'system.json', 'mtrace': 'f.trace.json'},
   {'core': 'singlecore', 'path': 'ecc1' / 'event1',    'name': 'g',                     'oil': 'system.json', 'mtrace': 'g.trace.json'},
-  # EventISR1 c #TODO
   {'core': 'singlecore', 'path': 'ecc1' / 'eventisr1', 'name': 'a',                     'oil': 'system.json', 'mtrace': 'a.trace.json'},
   {'core': 'singlecore', 'path': 'ecc1' / 'eventisr1', 'name': 'b',                     'oil': 'system.json', 'mtrace': 'b.trace.json'},
   {'core': 'singlecore', 'path': 'ecc1' / 'eventisr1', 'name': 'c',                     'oil': 'system.json', 'mtrace': 'c.trace.json'},
   {'core': 'singlecore', 'path': 'ecc1' / 'eventisr1', 'name': 'd',                     'oil': 'system.json', 'mtrace': 'd.trace.json'},
   {'core': 'singlecore', 'path': 'ecc1' / 'eventisr1', 'name': 'e',                     'oil': 'system.json', 'mtrace': 'e.trace.json'},
   {'core': 'singlecore', 'path': 'ecc1' / 'eventisr1', 'name': 'f',                     'oil': 'system.json', 'mtrace': 'f.trace.json'},
-  # Sched
   {'core': 'singlecore', 'path': 'sched' ,             'name': 'a',                     'oil': 'a.json', 'mtrace': 'a.trace.json'},
-  # Path Disabled
   {'core': 'multicore',  'path': '',                   'name': 'minexample',            'oil': 'minexample.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
-  # Interrupts Disabled
   {'core': 'multicore',  'path': 'interrupts',        'name': 'a',                     'oil': 'a_system.json', 'mtrace': 'a_trace.json', 'timing': 'a_timings.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'interrupts',        'name': 'cross_alarms',          'oil': 'cross_alarms_system.json', 'mtrace': 'cross_alarms_trace.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
-  # 2Cores Disabled
   {'core': 'multicore',  'path': 'locks' / '2cores',  'name': 'a',                     'oil': 'system.json', 'mtrace': 'a.trace.json', 'locks': 'EXTRACT', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'locks' / '2cores',  'name': 'a_start1',              'oil': 'EXTRACT', 'mtrace': 'a_start1.trace.json', 'locks': 'EXTRACT', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'locks' / '2cores',  'name': 'b',                     'oil': 'system.json', 'mtrace': 'b.trace.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'locks' / '2cores',  'name': 'c',                     'oil': 'system.json', 'mtrace': 'c.trace.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'locks' / '2cores',  'name': 'd',                     'oil': 'system.json', 'mtrace': 'd.trace.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
-  # 3Cores Disabled
   {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'a',                     'oil': 'a.system.json', 'mtrace': 'a.trace.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'b',                     'oil': 'b.system.json', 'mtrace': 'b.trace.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'c',                     'oil': 'c.system.json', 'mtrace': 'c.trace.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
@@ -127,7 +106,6 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'l',                     'oil': 'system.json', 'mtrace': 'l.trace.json', 'locks': 'EXTRACT', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'm',                     'oil': 'system_m.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'n',                     'oil': 'system_m.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
-  # 6Cores Disabled
   {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-a',         'oil': 'identity-system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT', 'timing': 'BB', 'ttrace': 'EXTRACT', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-a-chain',   'oil': 'identity-system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-a-start5',  'oil': 'EXTRACT',              'mtrace': 'EXTRACT', 'locks': 'EXTRACT', 'timing': 'BB', 'ttrace': 'EXTRACT', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
@@ -140,15 +118,12 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'triple-b',           'oil': 'triple-system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'triple-c',           'oil': 'triple-system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'triple-d',           'oil': 'triple-system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
-  # Loops Disabled
   {'core': 'multicore',  'path': 'loops',              'name': 'a',                     'oil': 'system_a.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'loops',              'name': 'b',                     'oil': 'system_b.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'loops',              'name': 'c',                     'oil': 'system_b.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
-  # Timing Disabled
   {'core': 'multicore',  'path': 'timing',             'name': 'a',                     'oil': 'system_a.json', 'timing': 'a_timing.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'timing',             'name': 'b',                     'oil': 'system_b.json', 'timing': 'b_timing.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'timing',             'name': 'c',                     'oil': 'system_c.json', 'timing': 'c_timing.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
-  # Paper Disabled
   {'core': 'multicore',  'path': 'paper',              'name': 'running',               'oil': 'system_running.json', 'mtrace': 'running.trace.json', 'locks': 'EXTRACT', 'timing': 'BB', 'ttrace': 'running.timing.trace.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'paper',              'name': 'running_pmu',           'oil': 'system_running.json', 'mtrace': 'running.trace.json', 'locks': 'EXTRACT', 'timing': 'BB', 'ttrace': 'running.timing.trace.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'paper',              'name': 'running_long11',        'oil': 'system_running.json', 'locks': 'EXTRACT', 'timing': 'BB', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
@@ -161,13 +136,11 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'paper',              'name': 'interrupt_as_tasks3',   'oil': 'system_interrupt_as_tasks.json', 'locks': 'EXTRACT', 'timing': 'BB', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'paper',              'name': 'timing-semiordered',    'oil': 'system_timing.json', 'locks': 'EXTRACT', 'timing': 'BB', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'paper',              'name': 'timing-ordered',        'oil': 'system_timing.json', 'locks': 'EXTRACT', 'timing': 'BB', 'mtrace': 'EXTRACT', 'ttrace': 'EXTRACT', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
-  # Multicore/Complex Disabled
   {'core': 'multicore',  'path': 'complex',            'name': 'copter-without-alarms', 'oil': 'copter-without-alarms_system.json', 'timing': 'BB', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'complex',            'name': 'copter-with-alarms',    'oil': 'copter-with-alarms_system.json', 'timing': 'BB', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'complex',            'name': 'copter-single-alarm',   'oil': 'copter-single-alarm_system.json', 'timing': 'BB', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'complex',            'name': 'copter-autostart',      'oil': 'copter-autostart_system.json', 'locks': 'EXTRACT', 'timing': 'BB', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'complex',            'name': 'copter-autostart_pmu',  'oil': 'copter-autostart_system.json', 'locks': 'EXTRACT', 'timing': 'BB', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
-  # Andreas/IPI a, b, e, f, g #TODO
   {'core': 'multicore',  'path': 'andreas'/ 'ipi',     'name': 'a',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'ipi',     'name': 'b',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'ipi',     'name': 'c',                     'oil': 'system.json'},
@@ -175,7 +148,6 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'andreas'/ 'ipi',     'name': 'e',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'ipi',     'name': 'f',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'ipi',     'name': 'g',                     'oil': 'system.json'},
-  # Andreas/IPI2 a, b, d, #TODO
   {'core': 'multicore',  'path': 'andreas'/ 'ipi2',    'name': 'a',                     'oil': 'system_a.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'ipi2',    'name': 'b',                     'oil': 'system_b.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'ipi2',    'name': 'c',                     'oil': 'system_c.json'},
@@ -183,28 +155,24 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'andreas'/ 'ipi2',    'name': 'e',                     'oil': 'system_e.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'ipi2',    'name': 'f',                     'oil': 'system_f.json', 'synthesis_disabled': ['pi4', 'riscv']},
   {'core': 'multicore',  'path': 'andreas'/ 'ipi2',    'name': 'g',                     'oil': 'system_f.json', 'synthesis_disabled': ['pi4', 'riscv']},
-  # Spinlock a, b, f #TODO
   {'core': 'multicore',  'path': 'andreas'/ 'spinlock','name': 'a',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'spinlock','name': 'b',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'spinlock','name': 'c',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'spinlock','name': 'd',                     'oil': 'system_d.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'spinlock','name': 'e',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'spinlock','name': 'f',                     'oil': 'system.json'},
-  # Cores
   {'core': 'multicore',  'path': 'andreas'/ 'cores',   'name': '4',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'cores',   'name': '12',                    'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'cores',   'name': '16',                    'oil': 'system.json'},
-  # PMU Disabled
   {'core': 'multicore',  'path': 'andreas'/ 'pmu',    'name': 'minimal',                'oil': 'system_spinlock.json', 'synthesis_disabled': ['posix', 'riscv']},
   {'core': 'multicore',  'path': 'andreas'/ 'pmu',    'name': 'ipi_send',               'oil': 'system_ipi_send.json', 'synthesis_disabled': ['posix', 'riscv']},
   {'core': 'multicore',  'path': 'andreas'/ 'pmu',    'name': 'ipi_recv',               'oil': 'system_ipi_recv.json', 'synthesis_disabled': ['posix', 'riscv']},
   {'core': 'multicore',  'path': 'andreas'/ 'pmu',    'name': 'ipi_recv_cache',         'oil': 'system_ipi_recv.json', 'synthesis_disabled': ['posix', 'riscv']},
   {'core': 'multicore',  'path': 'andreas'/ 'pmu',    'name': 'ipi_max',                'oil': 'system_ipi_max.json', 'synthesis_disabled': ['posix', 'riscv']},
   {'core': 'multicore',  'path': 'andreas'/ 'pmu',    'name': 'get_spinlock',           'oil': 'system_spinlock.json', 'synthesis_disabled': ['posix', 'riscv']},
-  #{'core': 'multicore',  'path': 'andreas'/ 'arved',   'name': 'a',                     'oil': 'system_a.json'},
-  #{'core': 'multicore',  'path': 'andreas'/ 'arved',   'name': 'b',                     'oil': 'system_b.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'alarmmc','name': 'a',                     'oil': 'system_a.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'alarmmc','name': 'b',                     'oil': 'system_b.json'},
 ]
-# conformance tests for trampoline
 subdir('multicore' / 'trampoline')
 
 

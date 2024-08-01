@@ -21,9 +21,6 @@ void Serial::putchar(char c) {
 }
 
 void Serial::puts(const char* data) {
-	//Spinlock lock;
-
-
 	while (*data) putchar(*data++);
 	
 }

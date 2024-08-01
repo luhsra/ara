@@ -45,7 +45,7 @@ StatusType Spinlock::lock() {
 
 StatusType Spinlock::trylock(TryToGetSpinlockType* success) {
 
-  int result = 1;
+  int result = 0;
 
     asm volatile(
         // Atomic memory load-reserved word acquire (lr.w)
@@ -67,7 +67,7 @@ StatusType Spinlock::trylock(TryToGetSpinlockType* success) {
         : "cc", "memory"
     );
 
-    if (result == 0) {
+    if (!result) {
         *success = TRYTOGETSPINLOCK_SUCCESS;
     } else {
         *success = TRYTOGETSPINLOCK_NOSUCCESS;

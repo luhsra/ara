@@ -8,16 +8,17 @@
 
 #include "arch/generic/ostream.h"
 #include "hardware_threads.h"
+#include "bufferedserial.h"
 
 #ifndef FAIL
 #if DEBUG
 
 // debugging: print kout+debug on UART
 //#include "bufferedserial.h"
-#include "bufferedserial.h"
+
 #include "serial.h"
-extern Serial kout;
-extern Serial debug;
+extern BufferedSerial kout;
+extern BufferedSerial debug;
 extern BufferedSerial debug_core_arr[MAX_CPUS];
 
 #define debug_core (debug_core_arr[arch::get_cpuid()])

@@ -46,8 +46,6 @@ extern "C" {
 		//// Should be MIP_MSIE (same constant)
 		set_csr(CSR_MIE, MIP_MSIP);
 
-        // kout << "Hart ID: " << hartid << " DTB: " << dtb << endl;
-
 #ifdef CONFIG_OS_SYSTEMCALLS_WIRED
 
 #else
@@ -62,5 +60,4 @@ extern "C" void mainAP() {
 
 	while (!core_is_ready[arch::get_cpuid()]); // wait for wakeup
 	main();
-
 }

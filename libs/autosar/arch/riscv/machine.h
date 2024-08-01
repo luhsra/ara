@@ -48,6 +48,7 @@ namespace arch {
 	extern hls_t hart_local_storage[MAX_HARTS];
 }
 
+extern "C" _Atomic(bool) core_is_ready[MAX_CPUS];
 
 
 
@@ -125,7 +126,7 @@ public:
 	}
 
 	static noinline void halt(void) {
-		shutdown();
+		asm volatile ("wfi");
 	}
 
 	static forceinline void * exchange_saved_ip(unsigned id, void *pc) {
@@ -149,10 +150,13 @@ public:
 	 * \brief Trigger an interrupt
 	 */
 	static forceinline void trigger_interrupt(uint8_t irq_, uint8_t cpuid = 0, bool sync = false) {
+		
+		if(core_is_ready[cpuid] == false) {
+			debug_core << "Target CPU " << (int) cpuid << " is offline" << endl;
+			//return;
+		}
+		
 		bool interrupts = disable_interrupts();
-		
-		//disable interrupts on another core
-		
 
         // Set the soft interrupt
 		soft_irq_cause[cpuid] |= (((uint64_t)1) << (irq_ % 64));
@@ -160,14 +164,13 @@ public:
 		if(!sync) {
 			
 			*(OTHER_HLS(cpuid)->ipi) = 1;
-			//*(volatile uint32_t *)(CLINT_BASE + (4 * cpuid)) = 1;
 
 			if (interrupts) { enable_interrupts(); }
 			return;
 		}
 		
 		ipi_cleared[cpuid] = false;
-
+		debug_core << "Triggering IPI-Sync on core " << (int) cpuid << endl;
 		*(OTHER_HLS(cpuid)->ipi) = 1;
 
 		while (!ipi_cleared[cpuid]) {
