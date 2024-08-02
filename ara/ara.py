@@ -90,7 +90,8 @@ class Main:
         parser.add_argument('--generator_output', metavar="FILE",
                             help="file to store generated OS code")
         parser.add_argument('--step-settings', metavar="FILE", action='append',
-                            help="settings for individual steps. '-' is STDIN")
+                            help="settings for individual steps. '-' is STDIN. "
+                                 "Later given settings override previous ones.")
         parser.add_argument('--dependency_file',
                             help="file to write make-style dependencies into for "
                                 "build system integration")
