@@ -49,12 +49,12 @@ class FileDescriptorSyscalls:
                            (e.g. for read() it is FDType.READ)
         """
         cpu = state.cpus[cpu_id]
-        if type(args.fildes) == pyllco.ConstantInt: # Do not throw warning
-            return state
-        if type(args.fildes) != FileDescriptor:
+        if isinstance(args.fildes, pyllco.ConstantInt):  # Do not throw warning
+            return [state]
+        if isinstance(args.fildes, FileDescriptor):
             logger.warning(f"{label}: Could not get file descriptor argument. {('ValueAnalyzer failed with: ' + str(args.fildes.exception)) if type(args.fildes) == UnknownArgument else ''}")
             MissingInteractions.add_imprecise(['File', 'Pipe'], cpu.abb)
-            return state
+            return [state]
         assert args.fildes.points_to != None and args.fildes.type != None
         edge_type = PosixEdgeType.interaction
         if args.fildes.type & expected_type != expected_type:

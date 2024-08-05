@@ -125,7 +125,7 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
         state = state.copy()
         state.next_abbs = []
         set_next_abb(state, cpu_id)
-        return state
+        return [state]
 
     @staticmethod
     def _syscall_category_matching(syscall: SysCall, categories: set) -> bool:

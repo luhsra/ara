@@ -146,16 +146,16 @@ def add_edge_from_self_to(state, to: POSIXInstance, label: str, cpu_id: int, ty=
             if expected_instance == None:
                 logger.error("Fatal error: missing interaction and no expected_instance set in add_edge_from_self_to(). Now we have undetected missing interactions!")
                 MissingInteractions.add_undetected()
-                return state
+                return [state]
             if PosixOptions.enable_missing_interaction_count:
                 if type(expected_instance) == list:
                     MissingInteractions.add_imprecise(expected_instance, cpu.abb)
                 else:
                     MissingInteractions.add(expected_instance, cpu.abb)
-            return state
-    logger.debug(f"Create new edge from self to \"{to.name}\" with label: \"{label}\"")
+            return [state]
+    logger.debug(f'Create new edge from self to "{to.name}" with label: "{label}"')
     connect_from_here(state, cpu_id, to.vertex, label, ty)
-    return state
+    return [state]
 
 def register_instance(new_instance: POSIXInstance, obj_label: str, edge_label: str, graph, cpu_id: int, state: OSState, edge_type=PosixEdgeType.create):
     """Register the POSIX Instance <new_instance> in the Instance Graph."""
