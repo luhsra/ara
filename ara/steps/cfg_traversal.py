@@ -11,7 +11,6 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 
 from ara.graph import SyscallCategory
-from ara.graph.mix import ARA_ENTRY_POINT
 from ara.util import get_child_logger_or_none
 from ara.steps.util import is_recursive, is_in_condition, is_usually_taken
 from ara.os.os_base import (
@@ -224,6 +223,8 @@ class _SSERunner:
 
         elif cpu.exec_state == ExecState.syscall:
             name = self._cfg.vp.name[abb]
+            func = self._cfg.vp.name[self._cfg.get_function(abb)]
+            self._log.error(f"{name=} {func=} {call_path=}")
             syscall_name = self._cfg.get_syscall_name(abb)
             self._log.debug(f"Handle syscall: {name} ({syscall_name})")
             self._assign_context(state)
@@ -303,9 +304,8 @@ class _SSERunner:
                 new_state.cpus.one().exec_state = self._get_exec(next_node)
                 return [new_state]
             else:
-                # ARA_ENTRY_POINT is special
-                func = self._cfg.vp.name[self._cfg.get_function(abb)]
-                if func == ARA_ENTRY_POINT:
+                if len(state.cpus.one().call_path) == 0:
+                    # we are at the end
                     return []
                 # ISRs are able to exit, all other CFG not
                 return self._os.handle_exit(self._graph, state, cpu.id)
