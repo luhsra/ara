@@ -7,6 +7,7 @@
 import copy
 
 from collections import defaultdict
+from collections.abc import Iterable
 from dataclasses import dataclass
 
 from ara.graph import SyscallCategory
@@ -230,6 +231,7 @@ class _SSERunner:
                     self._graph, state, cpu.id,
                     categories=self._visitor.SYSCALL_CATEGORIES
                 )
+                assert isinstance(new_states, Iterable)
                 return new_states
             except CrossCoreAction as cca:
                 self._log.debug(f"Got cross core action (CPUs: {cca.cpu_ids}).")
