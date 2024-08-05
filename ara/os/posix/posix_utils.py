@@ -7,7 +7,7 @@
 from enum import IntEnum
 from ara.steps.instance_graph_stats import MissingInteractions
 import pyllco
-from ara.graph.graph import InstanceGraph
+from ara.graph.graph import InstanceGraph, single_check
 from ara.os.os_base import CPU, ControlInstance, OSState
 from ara.steps import get_native_component
 from dataclasses import dataclass, field
@@ -170,7 +170,7 @@ def register_instance(new_instance: POSIXInstance, obj_label: str, edge_label: s
     assert hasattr(new_instance, "name"), f"New instance of type {type(new_instance)} has no name."
     state.instances.vp.obj[v] = new_instance
     assign_id(state.instances, v)
-    return add_edge_from_self_to(state, new_instance, edge_label, cpu_id, edge_type)
+    return single_check(add_edge_from_self_to(state, new_instance, edge_label, cpu_id, edge_type))
 
 def get_running_thread(state, cpu_id) -> POSIXInstance:
     """Get the currently running thread as Instance object."""
