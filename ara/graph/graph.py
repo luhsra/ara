@@ -345,7 +345,13 @@ class CFG(graph_tool.Graph):
             return ''
         syscall = [x.target() for x in abb.out_edges()
                    if self.ep.type[x] == CFType.icf]
-        assert len(syscall) == 1
+        if len(syscall) != 1:
+            err_msg = (f"ABB {self.vp.name[abb]} point to no or multiple "
+                       f"syscalls (file {self.vp.files[abb]}, "
+                       f"line {self.vp.lines[abb]})")
+            _log(self).error(err_msg)
+            assert False, err_msg
+
         syscall_func = [x.source() for x in syscall[0].in_edges()
                         if self.ep.type[x] == CFType.f2a]
         assert len(syscall_func) == 1
