@@ -224,7 +224,6 @@ class _SSERunner:
         elif cpu.exec_state == ExecState.syscall:
             name = self._cfg.vp.name[abb]
             func = self._cfg.vp.name[self._cfg.get_function(abb)]
-            self._log.error(f"{name=} {func=} {call_path=}")
             syscall_name = self._cfg.get_syscall_name(abb)
             self._log.debug(f"Handle syscall: {name} ({syscall_name})")
             self._assign_context(state)
