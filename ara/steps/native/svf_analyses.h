@@ -22,10 +22,10 @@ namespace ara::step {
 
 		using ConfStep<SVFAnalyses>::ConfStep;
 
-		const static inline option::TOption<option::String> translation_map_template{
-		    "translation_map", "Filepath or JSON dictionary with a manual function pointer mapping.\n"
+		const static inline option::TOption<option::List<option::String>> translation_map_template{
+		    "translation_map", "List of filepaths with a manual function pointer mapping.\n"
 		                       "For the format see resolve_function_pointer.h"};
-		option::TOptEntity<option::String> translation_map;
+		option::TOptEntity<option::List<option::String>> translation_map;
 		virtual void init_options() override;
 
 		void apply_translation_map(SVF::PTACallGraph& callgraph);

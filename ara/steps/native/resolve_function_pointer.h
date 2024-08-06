@@ -109,10 +109,10 @@ namespace ara::step {
 		    "block_list", "Filepath or JSON list with invalid call targets for function pointer."};
 		option::TOptEntity<option::String> block_list;
 
-		const static inline option::TOption<option::String> translation_map_template{
-		    "translation_map", "Filepath or JSON dictionary with a manual function pointer mapping.\n"
+		const static inline option::TOption<option::List<option::String>> translation_map_template{
+		    "translation_map", "List of JSON files with a manual function pointer mapping.\n"
 		                       "For the format see resolve_function_pointer.h"};
-		option::TOptEntity<option::String> translation_map;
+		option::TOptEntity<option::List<option::String>> translation_map;
 
 		const static inline option::TOption<option::Bool> use_only_translation_map_template{
 		    "use_only_translation_map", "Use only the translation_map for pointer resolving and nothing else.",
