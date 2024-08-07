@@ -10,9 +10,12 @@ from .os_base import OSBase, ControlInstance, CPUList, CPU, OSState, ExecState
 from ara.util import get_logger
 from ara.graph import SyscallCategory, SigType, CallPath, CFG
 from ara.steps import get_native_component
+
 from dataclasses import dataclass
 from graph_tool import Vertex
 from enum import IntEnum
+from collections.abc import Iterable
+
 import pyllco
 import html
 import re
@@ -518,10 +521,9 @@ class Zephyr(OSBase):
         return ty in [ZephyrEdgeType.interaction, ZephyrEdgeType.create, 0]
 
     @staticmethod
-    def syscall_in_category(syscall, category):
+    def syscall_in_category(syscall, categories):
         """Checks wether a syscall interpreter belongs to the given category"""
         syscall_category = syscall.categories
-        categories = set((category,))
         return SyscallCategory.every in categories or (syscall_category | categories) == syscall_category
 
     @staticmethod
@@ -536,12 +538,15 @@ class Zephyr(OSBase):
 
         if Zephyr.syscall_in_category(syscall, categories):
             logger.info(f"Interpreting syscall: {syscall_name}")
-            return syscall(graph, state, cpu_id)
+            new_states = syscall(graph, state, cpu_id)
+            if isinstance(new_states, Iterable):
+                return new_states
+            return [new_states]
         else:
             state = state.copy()
             state.next_abbs = []
             set_next_abb(state, cpu_id)
-            return state
+            return [state]
 
     # k_tid_t k_thread_create(struct k_thread *new_thread, k_thread_stack_t *stack, size_t stack_size,
     #   k_thread_entry_t entry, void *p1, void *p2, void *p3, int prio, uint32_t options,
