@@ -513,7 +513,9 @@ class AUTOSAR(OSBase):
         return []
 
     @staticmethod
-    def interpret(graph, state, cpu_id, categories=SyscallCategory.every):
+    def interpret(graph, state, cpu_id, categories=None):
+        if not categories:
+            categories = {SyscallCategory.every}
         cfg = graph.cfg
         abb = state.cpus[cpu_id].abb
         syscall = cfg.get_syscall_name(abb)
@@ -524,9 +526,6 @@ class AUTOSAR(OSBase):
         )
 
         syscall_function = getattr(AUTOSAR, syscall)
-
-        if isinstance(categories, SyscallCategory):
-            categories = set((categories,))
 
         if SyscallCategory.every not in categories:
             sys_cat = syscall_function.categories

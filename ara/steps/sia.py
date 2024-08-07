@@ -162,7 +162,7 @@ class FlatAnalysis(Step):
                                  function,
                                  ctx)
 
-        categories = set([self._search_category()])
+        categories = self._search_category()
 
         traversed_syscalls = set()
 
@@ -371,7 +371,7 @@ class SIA(FlatAnalysis):
         return self.ep_name, 'Instances'
 
     def _search_category(self):
-        return SyscallCategory.create
+        return {SyscallCategory.create}
 
 
 class InteractionAnalysis(FlatAnalysis):
@@ -387,7 +387,7 @@ class InteractionAnalysis(FlatAnalysis):
         return '', 'Interactions'
 
     def _search_category(self):
-        return SyscallCategory.comm
+        return {SyscallCategory.comm}
 
     def _get_entry_points(self):
         cfg = self._graph.cfg

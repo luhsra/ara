@@ -349,7 +349,9 @@ class FreeRTOS(OSBase):
                        instances=instances, cfg=cfg)
 
     @staticmethod
-    def interpret(graph, state, cpu_id, categories=SyscallCategory.every):
+    def interpret(graph, state, cpu_id, categories=None):
+        if not categories:
+            categories = {SyscallCategory.every}
         cfg = graph.cfg
         abb = state.cpus[cpu_id].abb
         syscall = cfg.get_syscall_name(abb)
@@ -357,9 +359,6 @@ class FreeRTOS(OSBase):
                      f" (in {cfg.vp.name[cfg.get_function(abb)]})")
 
         syscall_function = getattr(FreeRTOS, syscall)
-
-        if isinstance(categories, SyscallCategory):
-            categories = set((categories,))
 
         if SyscallCategory.every not in categories:
             sys_cat = syscall_function.categories

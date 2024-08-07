@@ -135,8 +135,10 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
             return (sys_cat | categories) == sys_cat
 
     @staticmethod
-    def interpret(graph: Graph, state: OSState, cpu_id: int, categories=SyscallCategory.every):
+    def interpret(graph: Graph, state: OSState, cpu_id: int, categories=None):
         """Interprets a detected syscall."""
+        if not categories:
+            categories = {SyscallCategory.every}
 
         cfg = graph.cfg
         cpu = state.cpus[cpu_id]
@@ -158,9 +160,6 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
             sig_offest = 1 # Ignore first argument
         else:
             syscall_function = POSIX.syscalls[syscall] # Alias handling
-
-        if isinstance(categories, SyscallCategory):
-            categories = set((categories,))
 
         if not POSIX._syscall_category_matching(syscall_function, categories):
             return POSIX._do_not_interpret(state, cpu_id)

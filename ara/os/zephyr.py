@@ -527,7 +527,9 @@ class Zephyr(OSBase):
         return SyscallCategory.every in categories or (syscall_category | categories) == syscall_category
 
     @staticmethod
-    def interpret(graph, state, cpu_id, categories=SyscallCategory.every):
+    def interpret(graph, state, cpu_id, categories=None):
+        if not categories:
+            categories = {SyscallCategory.every}
         cfg = graph.cfg
         abb = state.cpus[cpu_id].abb
         syscall_name = cfg.get_syscall_name(abb)
