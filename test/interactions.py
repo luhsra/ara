@@ -14,7 +14,10 @@ from init_test import fail_if_json_not_equal, init_test
 
 def main():
     """Test for correct interaction detection."""
-    config = {"steps": ["InteractionAnalysis"]}
+    config = {"steps": ["InteractionAnalysis"],
+              "SIA": {"log_level": "debug"},
+              "InteractionAnalysis": {"log_level": "debug"},
+              "logger": {"StepManager": "info", "FreeRTOS": "debug"}}
     data = init_test(extra_config=config)
     instances = data.graph.instances
     dump = []
