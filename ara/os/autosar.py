@@ -467,11 +467,11 @@ class AUTOSAR(OSBase):
                             )
                             if acty_vertex in all_tasks:
                                 return
-                    logger.debug(f"Alarm {obj.name} activates {acty.name}.")
+                    logger.debug(f"Interrupt: Alarm {obj.name} activates {acty.name}.")
                     new_state = state.copy()
                     return AUTOSAR.ActivateTask(new_state, cpu_id, acty)
                 if isinstance(acty, Event):
-                    logger.debug(f"Alarm {obj.name} sets {acty.name}.")
+                    logger.debug(f"Interrupt: Alarm {obj.name} sets {acty.name}.")
                     new_state = state.copy()
                     for t in event_tgt.vertex(acty_vertex).in_neighbors():
                         task = instances.vp.obj[instances.vertex(t)]

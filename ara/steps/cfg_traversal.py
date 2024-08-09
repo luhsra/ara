@@ -303,10 +303,7 @@ class _SSERunner:
                 new_state.cpus.one().exec_state = self._get_exec(next_node)
                 return [new_state]
             else:
-                if len(state.cpus.one().call_path) == 0:
-                    # we are at the end
-                    return []
-                # ISRs are able to exit, all other CFG not
+                # The OS must decide what happens at the end
                 return self._os.handle_exit(self._graph, state, cpu.id)
 
         # computation block handling
@@ -321,7 +318,10 @@ class _SSERunner:
             new_states.append(new_state)
         # Trigger all interrupts. We are _not_ deciding over interarrival times
         # here. This should be done by the operation system model.
-        return new_states + self._trigger_irqs(state)
+        new_states += self._trigger_irqs(state)
+        self._log.debug("New states with ABBs: %s",
+                        ', '.join(self._cfg.vp.name[x.cpus.one().abb] for x in new_states))
+        return new_states
 
     def _system_semantic(self, state: OSState):
         # we can only handle a single core execution here

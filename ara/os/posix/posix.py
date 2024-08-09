@@ -135,6 +135,11 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
             return (sys_cat | categories) == sys_cat
 
     @staticmethod
+    def handle_exit(graph: Graph, state: OSState, cpu_id: int):
+        # we do not handle Interrupts currently
+        return []
+
+    @staticmethod
     def interpret(graph: Graph, state: OSState, cpu_id: int, categories=None):
         """Interprets a detected syscall."""
         if not categories:

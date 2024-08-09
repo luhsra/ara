@@ -594,7 +594,7 @@ class Printer(Step):
         dot_graph = pydot.Dot(graph_type='digraph', label=name)
         for function in functions:
             function = cfg.vertex(function)
-            dot_func = pydot.Cluster(cfg.vp.name[function],
+            dot_func = pydot.Cluster(cfg.vp.name[function].replace('.', '_'),
                                      label=cfg.vp.name[function])
             dot_graph.add_subgraph(dot_func)
 

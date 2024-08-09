@@ -8,7 +8,7 @@ from ara.steps.instance_graph_stats import MissingInteractions
 from .os_util import UnknownArgument, syscall, Arg, set_next_abb, connect_from_here, connect_instances, add_self_edge, find_instance_node, AutoDotInstance
 from .os_base import OSBase, ControlInstance, CPUList, CPU, OSState, ExecState
 from ara.util import get_logger
-from ara.graph import SyscallCategory, SigType, CallPath, CFG
+from ara.graph import SyscallCategory, SigType, CallPath, CFG, Graph
 from ara.steps import get_native_component
 
 from dataclasses import dataclass
@@ -519,6 +519,11 @@ class Zephyr(OSBase):
     @staticmethod
     def is_interaction(ty) -> bool:
         return ty in [ZephyrEdgeType.interaction, ZephyrEdgeType.create, 0]
+
+    @staticmethod
+    def handle_exit(graph: Graph, state: OSState, cpu_id: int):
+        # we do not handle Interrupts in a special way currently
+        return []
 
     @staticmethod
     def syscall_in_category(syscall, categories):
