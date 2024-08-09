@@ -218,7 +218,7 @@ class FlatAnalysis(Step):
         for syscall in syscalls.vertices():
             sys_name = cfg.get_syscall_name(syscall)
             m_syscall = os.syscalls[sys_name]
-            if self._search_category() not in m_syscall.categories:
+            if not self._search_category() & m_syscall.categories:
                 continue
 
             if mixed_mode and not m_syscall.atomic:
