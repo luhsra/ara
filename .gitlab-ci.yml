@@ -20,6 +20,7 @@ default:
   interruptible: true
 
 build-gcc:
+  stage: build
   only: [soso, citest]
   script:
     - !reference [.scripts, git]
@@ -32,6 +33,7 @@ build-gcc:
     - $CI_JOB_NAME/meson-logs/testlog.txt
 
 build-clang:
+  stage: build
   only: [soso, citest]
   script:
     - !reference [.scripts, git]
@@ -39,14 +41,21 @@ build-clang:
     - !reference [.scripts, build-pch]
 
 build-gcc-no-pch:
+  stage: build
   only: [soso, citest]
   script:
     - !reference [.scripts, git]
     - !reference [.scripts, build-no-pch]
 
 build-clang-no-pch:
+  stage: build
   only: [soso, citest]
   script:
     - !reference [.scripts, git]
     - !reference [.scripts, clang]
     - !reference [.scripts, build-no-pch]
+
+trigger_job:
+  stage: test
+  trigger:
+    project: research/parrot
