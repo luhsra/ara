@@ -56,6 +56,6 @@ class CondSyscalls:
              signature=(Arg('cond', hint=SigType.instance, ty=ConditionVariable),
                         Arg('mutex', hint=SigType.instance, ty=Mutex)))
     def pthread_cond_wait(graph, state, cpu_id, args, va):
-        state = add_edge_from_self_to(state, args.cond, "pthread_cond_wait()", cpu_id, expected_instance='ConditionVariable')
+        state_local = add_edge_from_self_to(state, args.cond, "pthread_cond_wait()", cpu_id, expected_instance='ConditionVariable')
         # Create also edge to Mutex:
         return add_edge_from_self_to(state, args.mutex, "pthread_cond_wait()", cpu_id, expected_instance='Mutex')

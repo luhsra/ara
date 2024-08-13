@@ -51,7 +51,7 @@ class FileDescriptorSyscalls:
         cpu = state.cpus[cpu_id]
         if isinstance(args.fildes, pyllco.ConstantInt):  # Do not throw warning
             return [state]
-        if isinstance(args.fildes, FileDescriptor):
+        if not isinstance(args.fildes, FileDescriptor):
             logger.warning(f"{label}: Could not get file descriptor argument. {('ValueAnalyzer failed with: ' + str(args.fildes.exception)) if type(args.fildes) == UnknownArgument else ''}")
             MissingInteractions.add_imprecise(['File', 'Pipe'], cpu.abb)
             return [state]
