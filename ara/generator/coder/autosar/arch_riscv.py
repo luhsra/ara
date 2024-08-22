@@ -109,6 +109,7 @@ class RiscVArch(GenericArch):
         irq_number = isr.device
 
         handler = Function(f'irq_handler_{irq_number}', argstype=['unsigned char'], rettype='void')
+        handler.unused_parameter(0)
         self.generator.source_file.function_manager.add(handler)
 
         # Forward declaration for the user defined function
@@ -161,7 +162,8 @@ class RiscVArch(GenericArch):
                                     "void", ["unsigned char"],
                                     extern_c=True)
         self.call(irq_handler_term, "AUTOSAR_ISR_TERM", "void", [])
-        irq_handler_term.add(Statement("return arg0"))
+        irq_handler_term.unused_parameter(0)
+
         self.generator.source_file.function_manager.add(irq_handler_term)
 
         IPI_handler = Function("AUTOSAR_ISR_IPI", "void", [], extern_c=True)
@@ -173,6 +175,8 @@ class RiscVArch(GenericArch):
                                     "void", ["unsigned char"],
                                     extern_c=True)
         self.call(irq_handler_ipi, "AUTOSAR_ISR_IPI", "void", [])
+        irq_handler_ipi.unused_parameter(0)
+
         self.generator.source_file.function_manager.add(irq_handler_ipi)
         
 
