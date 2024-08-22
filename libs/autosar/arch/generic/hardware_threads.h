@@ -14,6 +14,7 @@
 
 #include <stdint.h>
 
+extern _Atomic(bool) ipi_cleared[MAX_CPUS];
 namespace arch {
 
 	typedef enum {

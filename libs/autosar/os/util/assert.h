@@ -14,7 +14,7 @@
  * @brief Static and runtime asserts
  */
 
-#include "../../arch/posix/machine.h"
+#include "machine.h"
 
 #ifdef assert
 #undef assert
@@ -23,7 +23,7 @@
 
 //! Runtime assert, print assertion if debugging, else causes trap
 #ifndef NDEBUG
-#include "../../arch/posix/output.h"
+#include "output.h"
 #define assert(x)                                                                                                      \
 	{                                                                                                                  \
 		if ((x) == 0) {                                                                                                \

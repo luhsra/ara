@@ -28,8 +28,9 @@ class GenericArch(BaseCoder):
                                     extern_c=True)
             self.generator.source_file.data_manager.add(stack)
 
-            stackptr = DataObject("void *",
-                                    "OS_" + task.name + "_stackptr")
+            stackptr = DataObject("void *","OS_" + task.name + "_stackptr",
+                                  f"&{task.name}_stack[{stacksize}]")
+
             self.generator.source_file.data_manager.add(
                 stackptr, namespace=("arch", ))
 

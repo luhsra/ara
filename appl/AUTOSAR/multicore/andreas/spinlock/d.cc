@@ -54,7 +54,10 @@ TASK(T30) {
 
 void PreIdleHook() {
 	if (GetCoreID() == OS_CORE_ID_MASTER) {
-		usleep(100 * 1000);
+
+		for(int i = 0; i < 100000000; i++) {
+			Machine::nop();
+		}
 		test_start();
 		test_eq(counter, 4);
 		test_positive_tests_eq(1);

@@ -13,8 +13,6 @@
 
 using namespace arch;
 
-_Atomic(bool) ipi_cleared[MAX_CPUS];
-
 void Machine::trigger_interrupt(uint8_t irq, uint8_t cpuid, bool sync) {
 	// TODO: check if CPU is online
 

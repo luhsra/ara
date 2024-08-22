@@ -18,7 +18,7 @@ _Atomic(unsigned char) trace_table_idx = 0;
 
 volatile uint32_t fail_trace = 0;
 
-void test_prepare(void);
+void test_prepare(void) {};
 
 noinline void test(void);
 

@@ -1,0 +1,82 @@
+{
+  "cpus": [
+    {
+      "id": 0,
+      "tasks": {
+        "T00": {
+          "activation": 1,
+          "autostart": true,
+          "priority": 1,
+          "schedule": true
+        },
+        "T01": {
+          "activation": 1,
+          "autostart": false,
+          "priority": 2,
+          "schedule": true
+        }
+      },
+      "resources": {},
+      "events": {},
+      "alarms": {
+        "A1": {
+          "counter": "C1",
+          "action": {
+            "action": "activatetask",
+            "task": "T01"
+          },
+          "autostart": true,
+          "cycletime": 100,
+          "alarmtime": 100
+        }
+      },
+      "counters": {
+        "C1": {
+          "maxallowedvalue": 1024,
+          "ticksperbase": 1,
+          "mincycle": 1
+        }
+      },
+      "isrs": {}
+    }, {
+      "id": 1,
+      "tasks": {
+        "T10": {
+          "activation": 1,
+          "autostart": false,
+          "priority": 1,
+          "schedule": true
+        },
+        "T11": {
+          "activation": 1,
+          "autostart": false,
+          "priority": 2,
+          "schedule": true
+        }
+      },
+      "resources": {},
+      "events": {},
+      "alarms": {
+        "A2": {
+          "counter": "C2",
+          "action": {
+            "action": "activatetask",
+            "task": "T11"
+          },
+          "autostart": true,
+          "cycletime": 100,
+          "alarmtime": 100
+        }
+      },
+      "counters": {
+        "C2": {
+          "maxallowedvalue": 1024,
+          "ticksperbase": 1,
+          "mincycle": 1
+        }
+      },
+      "isrs": {}
+    }
+  ],
+  "spinlocks": []
+}

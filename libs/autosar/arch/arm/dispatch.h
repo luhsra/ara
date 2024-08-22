@@ -23,7 +23,6 @@
 #include "syscall.h"
 #include "tcb.h"
 
-extern _Atomic(bool) ipi_cleared[MAX_CPUS];
 namespace arch {
 
 	extern volatile void* startup_sp;

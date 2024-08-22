@@ -18,7 +18,7 @@ app = {'full_name': name_prefix_trampoline + name,
        'name': name,
        'oil': files('system.json'),
        'll': ll,
-       'synthesis_disabled': ['posix', 'pi4'],
+       'synthesis_disabled': ['posix', 'pi4', 'riscv'],
        'core': 'multicore',
        'path': 'trampoline/' + name,
       }

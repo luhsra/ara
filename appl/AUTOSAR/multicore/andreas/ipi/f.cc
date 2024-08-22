@@ -26,7 +26,7 @@ TEST_MAKE_OS_MAIN(start())
 
 TASK(T00) {
 	test_trace('0');
-	SetRelAlarm(A1, 500, 500);
+	SetRelAlarm(A1, 50, 50);
 	WaitEvent(E1);
 	ChainTask(T20);
 }

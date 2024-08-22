@@ -9,6 +9,8 @@ DeclareTask(T10);
 DeclareAlarm(A1);
 DeclareCounter(C1);
 
+_Atomic(int) ready = 0;
+
 void start() {
 	StatusType rv;
 	switch (GetCoreID()) {
@@ -34,10 +36,12 @@ TASK(T01) { // PRIO 2
 
 TASK(T02) { // PRIO 3
 	test_trace('2');
+	ready = true;
 	TerminateTask();
 }
 
 TASK(T10) {
+	while (!ready);
 	ActivateTask(T01); // IPI needed
 	TerminateTask();
 }
