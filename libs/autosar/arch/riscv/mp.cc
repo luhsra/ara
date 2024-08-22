@@ -64,17 +64,16 @@ namespace arch {
 	}
 
 	void stop_other_hardware_threads() {
-		kout << "Stopping other cores" << endl;
+		debug_core << "Stopping other cores" << endl;
 		if (cores > 1) {
 			int curr_cpuid = get_cpuid();
 			for (int i = 0; i < MAX_CPUS; i++) {
 				if (i == curr_cpuid)
 					continue;
 				if(core_is_ready[i]){
-					core_is_ready[i] = false;
 					Machine::trigger_interrupt(12, i, false);
+					core_is_ready[i] = false;
 				}
-				
 			}
 		}
 	}
