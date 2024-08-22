@@ -35,13 +35,10 @@ TASK(T01) { //Core 0 Prio 2
 	if(counter1 < 3) { //To avoid +- 1
 		test_trace('1');
 		counter1++;
-		TerminateTask();
-	}else{
-		while (1)
-		{
-			Machine::nop();
-		}
+	} else {
+		debug_core << "x" << endl;
 	}
+	TerminateTask();
 }
 
 TASK(T10) { //Core 1 Prio 1 + Autostart
@@ -52,23 +49,21 @@ TASK(T11) { //Core 1 Prio 2
 	if(counter2 < 3) { //To avoid +- 1
 		test_trace('1');
 		counter2++;
-		TerminateTask();
-	}else{
-		while (1)
-		{
-			Machine::nop();
-		}
+	} else {
+		debug_core << "x" << endl;
 	}
+	TerminateTask();
 }
 
 void PreIdleHook() {
-	//kout << "Hook: " << counter1 << " " << counter2 << endl;
-	if(counter1 >= 3 && counter2 >= 3) {
-		test_trace_assert("111111");
-		test_finish();
-		ShutdownMachine();
+	debug_core << "idle" << endl;
+	if (GetCoreID() == OS_CORE_ID_MASTER) {
+		if(counter1 >= 3 && counter2 >= 3) {
+			test_trace_assert("111111");
+			test_finish();
+			ShutdownMachine();
+		}
 	}
-	
 }
 
 

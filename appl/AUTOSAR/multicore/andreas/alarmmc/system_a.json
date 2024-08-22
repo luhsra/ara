@@ -26,8 +26,8 @@
             "task": "T01"
           },
           "autostart": true,
-          "cycletime": 100,
-          "alarmtime": 100
+          "cycletime": 200,
+          "alarmtime": 200
         }
       },
       "counters": {
@@ -64,8 +64,8 @@
             "task": "T11"
           },
           "autostart": true,
-          "cycletime": 100,
-          "alarmtime": 100
+          "cycletime": 200,
+          "alarmtime": 200
         }
       },
       "counters": {
