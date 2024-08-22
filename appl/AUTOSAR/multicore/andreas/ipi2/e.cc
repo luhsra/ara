@@ -9,7 +9,7 @@ DeclareTask(T10);
 DeclareAlarm(A1);
 DeclareCounter(C1);
 
-_Atomic(int) reached_end = 0;
+_Atomic(int) ready = 0;
 
 void start() {
 	StatusType rv;
@@ -30,20 +30,18 @@ TASK(T00) { // PRIO 1
 }
 
 TASK(T01) { // PRIO 2
-	test_trace('2');
-	while (!reached_end) {
-		/* block CPU with PRIO 2 */
-	}
+	test_trace('1');
 	ShutdownAllCores(E_OK);
 }
 
 TASK(T02) { // PRIO 3
 	test_trace('2');
-	reached_end = 1;
+	ready = true;
 	TerminateTask();
 }
 
 TASK(T10) {
+	while (!ready);
 	ActivateTask(T01); // IPI needed
 	TerminateTask();
 }
@@ -52,7 +50,7 @@ void ShutdownHook(StatusType status) {
 	(void)status;
 	/* The testcase has finished, check the output */
 	if (GetCoreID() == OS_CORE_ID_0) {
-		test_trace_assert("022");
+		test_trace_assert("021");
 		test_finish();
 	}
 }
