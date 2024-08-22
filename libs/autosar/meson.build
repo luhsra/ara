@@ -48,7 +48,7 @@ endif
 
 
 # RISC-V
-if true
+if riscv_enabled
   autosar_riscv_clang_flags = [
     '--target=riscv64-unknown-elf', # 64 bit Architektur
     '-march=rv64imac',              # Spezifikation der genauen Architektur

@@ -242,7 +242,7 @@ foreach app : autosar_apps
   endif
   app += {'ll_pi4': app_ll_pi4}
 
-  if true
+  if riscv_enabled
     app_ll_riscv = custom_target(full_name + '_ll_riscv',
                           input : sys + '.cc',
                           output : full_name + '.riscv.ll',
@@ -495,7 +495,7 @@ foreach app: autosar_targets
   endif
 
   
-  if true and not (app.has_key('synthesis_disabled') and 'riscv' in app['synthesis_disabled'])
+  if riscv_enabled and not (app.has_key('synthesis_disabled') and 'riscv' in app['synthesis_disabled'])
     if get_option('execute_ara')
       out = custom_target(
         full_name + '_mod_riscv',

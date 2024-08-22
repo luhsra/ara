@@ -52,7 +52,7 @@ if arm_enabled
                                         command: ar_cmd)
 endif
 
-if true
+if riscv_enabled
     obj_targets = []
 
     foreach src : src_files

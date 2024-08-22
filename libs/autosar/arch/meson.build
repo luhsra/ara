@@ -8,7 +8,7 @@ if posix_enabled
   subdir('posix')
 endif
 
-if true
+if riscv_enabled
   subdir('riscv')
 endif
 
