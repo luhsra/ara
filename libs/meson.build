@@ -24,11 +24,6 @@ if posix_enabled
   posix_ar = toolchains.get_variable('posix_ar')
 endif
 
-if true
-  #riscv_ar = toolchains.get_variable('riscv_ar')
-endif
-
-
 # subdir('include')
 # subdir('freertos')
 # subdir('osek')

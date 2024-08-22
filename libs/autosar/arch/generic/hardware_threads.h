@@ -44,7 +44,6 @@ namespace arch {
 	void sync_all_hardware_threads(cpu_sync_point_t);
 	void stop_hardware_thread();
 	void stop_other_hardware_threads();
-	
 } // namespace arch
 
 #endif

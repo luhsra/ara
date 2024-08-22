@@ -15,7 +15,6 @@ TASK(H1) {
 }
 
 TASK(H2) {
-	kout << "H2" << endl;
 	test_trace('a');
 	ActivateTask(H1);
 	test_trace('b');
