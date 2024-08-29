@@ -235,6 +235,22 @@ if get_option('enable_step_tests')
     )
   endforeach
 
+  ad = autosar_multicore_timing_artificial_delay
+  test('multisse_artificial_delay_short',
+    py3_inst,
+    args: [files('multisse.py'), ad['short_delay'], ad['ll'], ad['oil'], ad['sys_timings'], '1'],
+    env: [python_path],
+    depends: ara_py,
+    suite: ['analysis', 'multisse', 'timings']
+  )
+  test('multisse_artificial_delay_long',
+    py3_inst,
+    args: [files('multisse.py'), ad['long_delay'], ad['ll'], ad['oil'], ad['sys_timings'], '19'],
+    env: [python_path],
+    depends: ara_py,
+    suite: ['analysis', 'multisse', 'timings']
+  )
+
   test('multiple-configured-steps',
     py3_inst,
     args: files('multiple_configured_steps.py'),

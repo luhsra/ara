@@ -124,6 +124,7 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'timing',             'name': 'a',                     'oil': 'system_a.json', 'timing': 'a_timing.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'timing',             'name': 'b',                     'oil': 'system_b.json', 'timing': 'b_timing.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'timing',             'name': 'c',                     'oil': 'system_c.json', 'timing': 'c_timing.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
+  {'core': 'multicore',  'path': 'timing',             'name': 'artificial_delay',      'oil': 'artificial_delay.json', 'timing': 'BB', 'short_delay': 'artificial_delay.short.trace.json', 'long_delay': 'artificial_delay.long.trace.json', 'synthesis_disabled': ['posix', 'pi4']},
   {'core': 'multicore',  'path': 'paper',              'name': 'running',               'oil': 'system_running.json', 'mtrace': 'running.trace.json', 'locks': 'EXTRACT', 'timing': 'BB', 'ttrace': 'running.timing.trace.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'paper',              'name': 'running_pmu',           'oil': 'system_running.json', 'mtrace': 'running.trace.json', 'locks': 'EXTRACT', 'timing': 'BB', 'ttrace': 'running.timing.trace.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'paper',              'name': 'running_long11',        'oil': 'system_running.json', 'locks': 'EXTRACT', 'timing': 'BB', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
@@ -311,6 +312,15 @@ foreach app : autosar_apps
     endif
     app += {'locks': locks}
   endif
+
+  foreach extra_key : ['short_delay', 'long_delay']
+    if app.has_key(extra_key)
+      # file for uncommon actions
+      special = files(app['core'] / app['path'] / app[extra_key])
+      app += {extra_key: special}
+    endif
+  endforeach
+
   set_variable(full_name, app)
   autosar_targets += [app]
 

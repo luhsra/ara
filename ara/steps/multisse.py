@@ -6,7 +6,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 """Multicore SSE analysis."""
-import copy
 import os.path
 
 from collections import defaultdict
@@ -27,7 +26,7 @@ from ara.os.os_base import (OSState, CPUList, IRQ, CrossCoreAction,
 from ara.os.os_util import set_next_abb
 from ara.os.interrupts import irq_schedule
 
-from .option import Option, String, Bool
+from .option import Option, String, Bool, Integer
 from .step import Step
 from .util import open_with_dirs
 from .printer import mstg_to_dot, sp_mstg_to_dot, reduced_mstg_to_dot
@@ -157,6 +156,11 @@ class MultiSSE(Step):
                             help="Dump the MSTG every round",
                             ty=Bool(),
                             default_value=False)
+
+    syscall_delay = Option(name="syscall_delay",
+                           help="add artificial syscall delay (for IPIs)",
+                           ty=Integer(),
+                           default_value=-1)
 
     log_single_core_transitions = Option(
         name="log_single_core_transitions",
@@ -690,6 +694,7 @@ class MultiSSE(Step):
                                                 cross_state,
                                                 affected_cores,
                                                 starts,
+                                                self.syscall_delay.get(),
                                                 timing_calc=self._timings,
                                                 time=time)
             combinations.update(combs)

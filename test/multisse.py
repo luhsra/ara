@@ -96,9 +96,13 @@ def main():
     """Test for correct MultiSSE execution."""
     with_timings = len(sys.argv) > 4
     inp = {"oilfile": lambda argv: argv[3]}
+    syscall_delay = -1
+    if len(sys.argv) == 6:
+        syscall_delay = int(sys.argv[5])
     if with_timings:
         config = {"steps": ["ApplyTimings", "LockElision"],
-                  "MultiSSE": {"with_times": True}}
+                  "MultiSSE": {"with_times": True,
+                               "syscall_delay": syscall_delay}}
         inp["timings"] = lambda argv: argv[4]
     else:
         config = {"steps": ["LockElision"]}

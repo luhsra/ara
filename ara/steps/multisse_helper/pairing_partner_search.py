@@ -84,6 +84,7 @@ class _PairingPartnerSearch:
                  cross_state: graph_tool.Vertex,
                  affected_cores: Set[int],
                  restrictions: List[Range],
+                 syscall_delay: int,
                  timing_calc: TimingCalculator = None,
                  time: Equations = None):
         """Initializes the search.
@@ -93,6 +94,7 @@ class _PairingPartnerSearch:
         cross_state    -- The current cross syscall.
         affected_cores -- A set of cores with which should be paired.
         restrictions   -- A list of restrictions in the search corridor.
+        syscall_delay  -- Time for fake syscall delay or -1.
         timing_calc    -- A TimingCalculator instance, if timing is wanted.
                           None, otherwise.
         """
@@ -103,6 +105,7 @@ class _PairingPartnerSearch:
         self._affected_cores = affected_cores
         self._path = path
         self._restrictions = restrictions
+        self._syscall_delay = syscall_delay
         self._timings = timing_calc
         self._time = time
 
@@ -176,6 +179,29 @@ class _PairingPartnerSearch:
     def _get_path(self, graph, from_sp, to_sp):
         return shortest_path(graph, from_sp, to_sp)[1]
 
+    def _add_syscall_delays(self, eqs, path, core):
+        """Add artificial syscall delays to a path.
+
+        Normally, just computation ABBs contribute to the time of a path.
+        They might be interrupted by synchronisation points, though.
+        Mostly, they are leading to IPIs in the real system that need some
+        time. With this function, these time delays are added.
+        """
+        if self._syscall_delay < 0:
+            return []
+        delay_edges = []
+        for edge in path:
+            entry_sp = edge.target()
+            if self._mstg.vp.type[entry_sp] == StateType.entry_sync:
+                causing_core = self._mstg.get_syscall_state(entry_sp)[1]
+                if causing_core != core:
+                    # we found an SP pair that is not caused by our core.
+                    # for that we need to add the delay
+                    delay_edge = FakeEdge(src=entry_sp, tgt=entry_sp)
+                    eqs.add_range(delay_edge, TimeRange(up=0, to=self._syscall_delay))
+                    delay_edges.append(delay_edge)
+        return delay_edges
+
     def _add_ranges(self, eqs, edges):
         """Add a range to eqs for every edge in edges."""
         bcet = self._mstg.ep.bcet
@@ -226,8 +252,10 @@ class _PairingPartnerSearch:
             root_edges = self._get_edges_to(root_sp)
             e = FakeEdge(src=entry_sp, tgt=v)
             cur_edges = self._get_followsync_path(entry_sp) + [e]
+            delay_src_edges = self._add_syscall_delays(new_eqs, root_edges, self._cpu_id)
+            delay_dst_edges = self._add_syscall_delays(new_eqs, cur_edges, cpu_id)
             self._add_ranges(new_eqs, cur_edges[:-1])
-            new_eqs.add_equality(root_edges, cur_edges)
+            new_eqs.add_equality(root_edges + delay_src_edges, cur_edges + delay_dst_edges)
             if new_eqs.solvable():
                 good_v.append((v, new_eqs))
         return good_v
@@ -238,7 +266,6 @@ class _PairingPartnerSearch:
         Therefore, it uses the globally defined cores and path.
 
         Assuming this path of SPs (the numbers denoting the cores).
-
         SP1: [ 0 | 1 | 2 ]
                    |
                    v
@@ -597,6 +624,7 @@ def search_for_pairing_partners(mstg: graph_tool.Graph,
                                 cross_state: graph_tool.Vertex,
                                 affected_cores: Set[int],
                                 restrictions: List[Range],
+                                syscall_delay: int,
                                 timing_calc: TimingCalculator = None,
                                 time: Equations = None):
     """Search pairing partners.
@@ -604,6 +632,6 @@ def search_for_pairing_partners(mstg: graph_tool.Graph,
     Wrapper function for _PairingPartnerSearch.
     """
     p = _PairingPartnerSearch(mstg, core_map, type_map, path, cross_state,
-                              affected_cores, restrictions,
+                              affected_cores, restrictions, syscall_delay,
                               timing_calc=timing_calc, time=time)
     return p.get_result()

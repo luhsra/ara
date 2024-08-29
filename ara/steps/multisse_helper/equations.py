@@ -57,6 +57,7 @@ class Equations:
                 f"_highest: {self._highest})")
 
     def __str__(self):
+        # uncommment for proper equation printing
         return f"Equations({len(self._bounds.items())}, {len(self._equalities)})"
         ret = "Equations("
         for var, bound in self._bounds.items():
