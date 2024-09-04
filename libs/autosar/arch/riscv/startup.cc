@@ -4,6 +4,7 @@
 #include "machine.h"
 #include "dispatch.h"
 #include "os/spinlock.h"
+#include "boot_cpu.h"
 
 #include "hardware_threads.h"
 
@@ -26,8 +27,7 @@ extern "C" {
 
 	void arch_startup(uintptr_t hartid, uintptr_t dtb) {
 		
-
-		if (arch::get_cpuid() == 0) {
+		if (arch::get_cpuid() == BOOT_CORE) {
 		
 			run_constructors();
 
