@@ -166,6 +166,7 @@ class Task(FreeRTOSInstance, ControlInstance):
 
 @dataclass(kw_only=True)
 class ISR(FreeRTOSInstance, ControlInstance):
+    fail_for_mixed_syscalls: bool
     pass
 
 
@@ -299,7 +300,7 @@ class FreeRTOS(OSBase):
         return True
 
     @staticmethod
-    def register_isr(instances, cfg, isr_label):
+    def register_isr(instances, cfg, isr_label, fail_hard):
         entry_func = cfg.get_function_by_name(isr_label)
 
         for _, existing_isr in instances.get(ISR):
@@ -328,7 +329,8 @@ class FreeRTOS(OSBase):
                                   vidx=v,
                                   name=isr_name,
                                   call_path=CallPath(),
-                                  abb=CFG.INVALID_ABB)
+                                  abb=CFG.INVALID_ABB,
+                                  fail_for_mixed_syscalls=fail_hard)
 
         assign_id(instances, v)
 
@@ -373,10 +375,14 @@ class FreeRTOS(OSBase):
         if (cur_inst is not None and
                 isinstance(inst_vp.obj[cur_inst], ISR) and not
                 syscall_function.isr_call):
-            logger.error("Try to call a syscall not ready for ISRs from an ISR.")
-            logger.error("Instance: %s, Syscall: %s", inst_vp.label[cur_inst], syscall)
-            logger.error("Callpath: %s", state.cpus[cpu_id].call_path)
-            raise OSModelError("Syscall from ISR")
+            _log = logger.warning
+            if inst_vp.obj[cur_inst].fail_for_mixed_syscalls:
+                _log = logger.error
+            _log("Try to call a syscall not ready for ISRs from an ISR.")
+            _log("Instance: %s, Syscall: %s", inst_vp.label[cur_inst], syscall)
+            _log("Callpath: %s", state.cpus[cpu_id].call_path)
+            if inst_vp.obj[cur_inst].fail_for_mixed_syscalls:
+                raise OSModelError("Syscall from ISR")
         # TODO: place MissingInteractions.activate() in working initializer function
         MissingInteractions.activate()
         return syscall_function(graph, state, cpu_id)

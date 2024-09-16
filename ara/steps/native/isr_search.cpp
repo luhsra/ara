@@ -28,9 +28,11 @@ namespace ara::step {
 		ConfStep<ISRSearch>::init_options();
 		block_list = block_list_template.instantiate(get_name());
 		opts.emplace_back(block_list);
+		mixed_method_fail = mixed_method_fail_template.instantiate(get_name());
+		opts.emplace_back(mixed_method_fail);
 	}
 
-	Step::OptionVec ISRSearch::get_local_options() { return {block_list_template}; }
+	Step::OptionVec ISRSearch::get_local_options() { return {block_list_template, mixed_method_fail_template}; }
 
 	namespace {
 		const std::string get_func_name(const SVF::PTACallGraphNode& node) {
@@ -79,9 +81,11 @@ namespace ara::step {
 			}
 			syscall_itself = false;
 		}
+		const bool mmf = *mixed_method_fail.get();
 		// We need to register all ISRs. This is easier in Python
 		for (auto& func_name : isrs) {
-			llvm::json::Value create_isr_conf(llvm::json::Object{{"name", "CreateISR"}, {"entry_point", func_name}});
+			llvm::json::Value create_isr_conf(
+			    llvm::json::Object{{"name", "CreateISR"}, {"entry_point", func_name}, {"mixed_method_fail", mmf}});
 			step_manager.chain_step(create_isr_conf);
 		}
 	}

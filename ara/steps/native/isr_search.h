@@ -27,6 +27,10 @@ namespace ara::step {
 		const static inline option::TOption<option::String> block_list_template{
 		    "block_list", "Filepath or JSON list with invalid call targets for function pointer."};
 		option::TOptEntity<option::String> block_list;
+		const static inline option::TOption<option::Bool> mixed_method_fail_template{
+		    "mixed_method_fail", "Fail, when normal syscalls are called in ISR functions.", /* ty = */ option::Bool(),
+		    /* default_value = */ true};
+		option::TOptEntity<option::Bool> mixed_method_fail;
 		virtual void init_options() override;
 
 		static SVF::PTACallGraph& get_svf_callgraph();

@@ -4,7 +4,7 @@
 
 """Container for CreateISR."""
 from .step import Step
-from .option import Option, String
+from .option import Option, String, Bool
 
 
 class CreateISR(Step):
@@ -16,6 +16,11 @@ class CreateISR(Step):
     entry_point = Option(name="entry_point",
                          help="system entry point",
                          ty=String())
+
+    mixed_method_fail = Option(name="mixed_method_fail",
+                               help="Fail, when normal syscalls are called in ISR functions.",
+                               ty=Bool(),
+                               default_value=True)
 
     def get_single_dependencies(self):
         return [{"name": "CreateABBs", "entry_point": self.entry_point.get()}]
@@ -30,4 +35,7 @@ class CreateISR(Step):
 
         # currently, we need that step only for FreeRTOS
         if os.get_name() == "FreeRTOS":
-            os.register_isr(self._graph.instances, cfg, entry_label)
+            os.register_isr(self._graph.instances,
+                            cfg,
+                            entry_label,
+                            self.mixed_method_fail.get())
