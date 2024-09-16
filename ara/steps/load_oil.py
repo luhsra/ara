@@ -27,7 +27,6 @@ from ara.os.os_base import IRQ
 from ara.os.interrupts import fake_interrupt_function
 
 
-
 class LoadOIL(Step):
     """Reads an oil file and writes all information to the graph.
 
@@ -356,7 +355,6 @@ class LoadOIL(Step):
             instances.vp.label[irq_v] = irq.name
             instances.vp.id[irq_v] = f"{irq.name}.{v}"
             instances.vp.is_control[irq_v] = True
-            instances.add_edge(irq_v, v)
             e = self._add_edge(instances, irq_v, v)
             instances.ep.label[e] = "interrupts"
             instances.ep.type[e] = _autosar.InstanceEdge.interrupts
