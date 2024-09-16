@@ -7,6 +7,7 @@
 
 """Multicore SSE analysis."""
 import os.path
+import logging
 
 from collections import defaultdict
 from copy import copy
@@ -22,7 +23,7 @@ from graph_tool.topology import all_paths
 from ara.graph import MSTGraph, StateType, MSTType, single_check, edge_types
 from ara.util import has_path
 from ara.os.os_base import (OSState, CPUList, IRQ, CrossCoreAction,
-                            TaskStatus, IRQCPU)
+                            TaskStatus, IRQCPU, ExecState)
 from ara.os.os_util import set_next_abb
 from ara.os.interrupts import irq_schedule
 
@@ -253,6 +254,29 @@ class MultiSSE(Step):
 
         return single_core_states
 
+    def _get_common_metastate(self, meta_states):
+        """Unify all given metastates into one and return it."""
+        mstg = self._mstg.g
+        assert len(meta_states) >= 1, "Unification of meta states makes no sense."
+        meta_states = list(meta_states)
+        living_state = mstg.vertex(meta_states[0])
+        for other_state in meta_states[1:]:
+            other_state = mstg.vertex(other_state)
+            assert mstg.vp.cpu_id[living_state] == mstg.vp.cpu_id[other_state]
+            edges = []
+            for edge in other_state.in_edges():
+                edges.append((edge, mstg.add_edge(edge.source(), living_state)))
+            for edge in other_state.out_edges():
+                edges.append((edge, mstg.add_edge(living_state, edge.target())))
+            for old_edge, new_edge in edges:
+                for prop in ["type", "cpu_id", "irq", "bcet", "wcet"]:
+                    mstg.ep[prop][new_edge] = mstg.ep[prop][old_edge]
+                # this leads to problems with graph filtering
+                # mstg.remove_edge(old_edge)
+                mstg.ep.type[old_edge] = MSTType.invalid
+            mstg.vp.type[other_state] = StateType.invalid
+        return living_state
+
     def _run_sse(self, cpu_id, entry):
         """Run the single core SSE for the given entry.
 
@@ -260,7 +284,7 @@ class MultiSSE(Step):
         the vertex for the init state.
         """
         to_assign_states = set()
-        m_state = list()
+        m_states = set()
         cross_syscalls = list()
 
         def _add_state(state):
@@ -276,7 +300,17 @@ class MultiSSE(Step):
             mstg.vp.type[v] = StateType.state
             mstg.vp.state[v] = state
             mstg.vp.cpu_id[v] = cpu_id
-            self._log.debug(f"Add State {state.id} (node {int(v)})")
+            if self._log.level <= logging.DEBUG:
+                abb = state.cfg.vp.name[cpu.abb] if cpu.abb else "None"
+                instance = state.instances.vp.label[cpu.control_instance] if cpu.control_instance else "None"
+                self._log.debug(
+                    "Add LabSS %d (node %d, ABB: %s, CPUState: %s, Instance: %s))",
+                    state.id,
+                    v,
+                    abb,
+                    cpu.exec_state.name,
+                    instance,
+                )
 
             self._state_map[h] = v
 
@@ -353,19 +387,21 @@ class MultiSSE(Step):
                 e = mstg.add_edge(src, tgt)
                 mstg.ep.type[e] = MSTType.s2s
                 mstg.ep.cpu_id[e] = cpu_id
+                # try to find the other existing metastate to merge with
                 m_state_cand = _get_m_state(tgt)
+                # no other metastate found, just create a new one
                 if m_state_cand is None:
                     return
-                target = mstg.vp.state[tgt]
-                self._log.debug(
-                    "Found a transition to an already existing metastate "
-                    f"(State {source.id} (node {int(src)}) -> "
-                    f"State {target.id} (node {int(tgt)})).")
-                if m_state and m_state[0] == m_state_cand:
-                    return
-                assert (len(m_state) == 0
-                        ), "Multiple transitions to multiple metastates found."
-                m_state.append(m_state_cand)
+                if self._log.level <= logging.DEBUG:
+                    target = mstg.vp.state[tgt]
+                    self._log.debug(
+                        "Found a transition to an already existing metastate "
+                        f"(State {source.id} (node {int(src)}) -> "
+                        f"State {target.id} (node {int(tgt)})). "
+                        f"Metastate {int(m_state_cand)}"
+                    )
+                # store the metastate
+                m_states.add(m_state_cand)
 
             @staticmethod
             def next_step(counter):
@@ -414,15 +450,18 @@ class MultiSSE(Step):
         mstg = self._mstg.g
 
         # create the metastate
-        if len(m_state) == 0:
+        if len(m_states) == 0:
             is_new = True
             m_state = mstg.add_vertex()
             mstg.vp.type[m_state] = StateType.metastate
             mstg.vp.cpu_id[m_state] = cpu_id
-            self._log.debug(f"Add metastate {int(m_state)}")
+
+            if self._log.level <= logging.DEBUG:
+                lbs = ', '. join([f"L{mstg.vp.state[x].id}" for x in to_assign_states])
+                self._log.debug(f"Add metastate {int(m_state)} containing {lbs}")
         else:
             is_new = False
-            m_state = m_state[0]
+            m_state = self._get_common_metastate(m_states)
             cross_syscalls = find_cross_syscalls(self._mstg.g,
                                                  self._mstg.type_map,
                                                  m_state, init_v)

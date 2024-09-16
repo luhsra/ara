@@ -138,6 +138,7 @@ class StateType(enum.IntEnum): # */
     metastate = 2,
     entry_sync = 4,
     exit_sync = 8,
+    invalid = 16,
 
     #undef pass
     #define pass }; STANDARD_OPERATORS(StateType)}
@@ -169,6 +170,7 @@ class MSTType(enum.IntEnum): # */
     en2ex = 1 << 5,
     m2sy = 1 << 6,
     sync_neighbor = 1 << 7,
+    invalid = 1 << 8,
 
     #undef pass
     #define pass }; STANDARD_OPERATORS(MSTType)}
