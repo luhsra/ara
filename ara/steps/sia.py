@@ -291,7 +291,7 @@ class FlatAnalysis(Step):
                                              fake_state_ctx)
                     os.interpret(self._graph,
                                  state,
-                                 0,
+                                 fake_state_ctx.cpu_id,
                                  categories=self._search_category())
 
     def run(self):
