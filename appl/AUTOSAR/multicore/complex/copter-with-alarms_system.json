@@ -15,7 +15,8 @@
               "schedule": true,
               "resources": [
                 "SPIBus"
-              ]
+              ],
+              "spinlocks": ["SPIBusLock"]
             },
             "SignalGatherFinishedTask": {
               "activation": 1,
@@ -51,7 +52,8 @@
               "autostart": false,
               "priority": 11,
               "resources": ["SPIBus"],
-              "schedule": true
+              "schedule": true,
+              "spinlocks": ["SPIBusLock"]
             }
           }
         },
@@ -149,7 +151,8 @@
               "autostart": false,
               "priority": 0,
               "resources": ["SPIBus1"],
-              "schedule": true
+              "schedule": true,
+              "spinlocks": ["SPIBusLock"]
             }
           }
         }
