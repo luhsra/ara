@@ -16,6 +16,7 @@ def main():
     """Test for correct icfg mapping."""
     config = {"steps": [{"name": "CreateABBs", "entry_point": "_Z6vTask1Pv"},
                         {"name": "CreateABBs", "entry_point": "_Z6vTask2Pv"},
+                        {"name": "CreateABBs", "entry_point": "_Z26MHD_connection_handle_idleP14MHD_Connection"},
                         {"name": "CreateABBs", "entry_point": "main"},
                         'DumpCFG']}
     data = init_test(extra_config=config)

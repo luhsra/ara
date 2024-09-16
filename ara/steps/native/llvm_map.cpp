@@ -120,14 +120,20 @@ namespace ara::step {
 						// connect already mapped successors and predecessors
 						for (const BasicBlock* succ_b : successors(&bb)) {
 							if (bbs.find(succ_b) != bbs.end()) {
-								auto edge = boost::add_edge(bb_node, bbs[succ_b], g);
-								cfg.etype[edge.first] = static_cast<int>(graph::CFType::lcf);
+								auto [_, found] = edge(bb_node, bbs[succ_b], g);
+								if (!found) {
+									auto edge = boost::add_edge(bb_node, bbs[succ_b], g);
+									cfg.etype[edge.first] = static_cast<int>(graph::CFType::lcf);
+								}
 							}
 						}
 						for (const BasicBlock* pred_b : predecessors(&bb)) {
 							if (pred_b != &bb && bbs.find(pred_b) != bbs.end()) {
-								auto edge = boost::add_edge(bbs[pred_b], bb_node, g);
-								cfg.etype[edge.first] = static_cast<int>(graph::CFType::lcf);
+								auto [_, found] = edge(bbs[pred_b], bb_node, g);
+								if (!found) {
+									auto edge = boost::add_edge(bbs[pred_b], bb_node, g);
+									cfg.etype[edge.first] = static_cast<int>(graph::CFType::lcf);
+								}
 							}
 						}
 					}

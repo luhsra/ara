@@ -15,6 +15,7 @@ from collections import defaultdict
 from itertools import product
 from dataclasses import dataclass
 from typing import Set
+from functools import lru_cache
 
 from graph_tool import GraphView, Graph
 from graph_tool.topology import dominator_tree, all_circuits
@@ -56,13 +57,23 @@ class CreateABBs(Step):
         self._set_step_data(a + 1)
         return a
 
+    @lru_cache(maxsize=5)
+    @staticmethod
+    def _cached_circuits(graph):
+        vertices_in_circuits = numpy.ndarray([])
+        circuits = []
+        for circuit in all_circuits(graph):
+            vertices_in_circuits = numpy.union1d(vertices_in_circuits, circuit)
+            circuits.append(set(circuit))
+        return circuits, vertices_in_circuits
+
     def _all_loops_in_set(self, vertex, graph, s):
         """Check, if all loops which contain `vertex` are fully in set s."""
-        for circuit in all_circuits(graph):
-            if vertex not in circuit:
-                continue
-            cset = set(circuit)
-            if not cset.issubset(s):
+        circuits, vertices = CreateABBs._cached_circuits(graph)
+        if int(vertex) not in vertices:
+            return True
+        for circuit in circuits:
+            if not circuit.issubset(s):
                 return False
         return True
 
@@ -192,6 +203,7 @@ class CreateABBs(Step):
         abbs = []
         for func in list(cfg.reachable_functs(entry_func, cg)):
             def err(args):
+                # self._log.error(args)
                 return
 
             if f2a.vertex(func).out_degree() > 0:
