@@ -12,7 +12,7 @@ from .os_base import IRQCPU, TaskStatus, ExecState
 
 
 class IntrSyscall:
-    categories = [SyscallCategory.intr]
+    categories = {SyscallCategory.intr}
     is_stub = True
 
 
