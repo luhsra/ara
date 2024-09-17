@@ -246,11 +246,19 @@ class CFG(graph_tool.Graph):
         except StopIteration:
             return False
 
+    def _get_function_xbbs(self, function, edge_type):
+        """Get all XBBs of a function."""
+        e_type = edge_types(self, self.ep.type, edge_type)
+        for neighbor in e_type.vertex(function).out_neighbors():
+            yield neighbor
+
     def get_function_bbs(self, function):
-        """Get the BBs of the functions."""
-        for edge in self.vertex(function).out_edges():
-            if self.ep.type[edge] == CFType.f2b:
-                yield edge.target()
+        """Get all BBs of a function."""
+        return self._get_function_xbbs(function, CFType.f2b)
+
+    def get_function_abbs(self, function):
+        """Get all ABBs of a function."""
+        return self._get_function_xbbs(function, CFType.f2a)
 
     def get_abb(self, bb):
         """Get the ABB node for a BB."""

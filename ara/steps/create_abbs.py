@@ -15,7 +15,6 @@ from collections import defaultdict
 from itertools import product
 from dataclasses import dataclass
 from typing import Set
-from functools import lru_cache
 
 from graph_tool import GraphView, Graph
 from graph_tool.topology import dominator_tree, all_circuits
@@ -57,25 +56,19 @@ class CreateABBs(Step):
         self._set_step_data(a + 1)
         return a
 
-    @lru_cache(maxsize=5)
-    @staticmethod
-    def _cached_circuits(graph):
-        vertices_in_circuits = numpy.ndarray([])
-        circuits = []
-        for circuit in all_circuits(graph):
-            vertices_in_circuits = numpy.union1d(vertices_in_circuits, circuit)
-            circuits.append(set(circuit))
-        return circuits, vertices_in_circuits
-
-    def _all_loops_in_set(self, vertex, graph, s):
-        """Check, if all loops which contain `vertex` are fully in set s."""
-        circuits, vertices = CreateABBs._cached_circuits(graph)
-        if int(vertex) not in vertices:
-            return True
-        for circuit in circuits:
-            if not circuit.issubset(s):
-                return False
-        return True
+    def _get_abb_loops(self, func):
+        """Check all ABBs in the map for circuits."""
+        cfg = self._graph.cfg
+        reachable_abbs = cfg.new_vp("bool", val=False)
+        for v in cfg.get_function_abbs(func):
+            reachable_abbs[v] = True
+        lcfg = edge_types(cfg, cfg.ep.type, CFType.lcf)
+        abbs = CFGView(lcfg, vfilt=reachable_abbs)
+        loop_abbs = numpy.ndarray(shape=(0,), dtype=int)
+        for circuit in all_circuits(abbs):
+            loop_abbs = numpy.union1d(loop_abbs, circuit)
+        for abb in loop_abbs:
+            cfg.vp.part_of_loop[abb] = True
 
     def _add_abb(self, graph, func, entry, exit_v, body):
         cfg = self._graph.cfg
@@ -92,12 +85,8 @@ class CreateABBs(Step):
         cfg.vp.is_exit[abb] = any([cfg.vp.is_exit[bb] for bb in all_bbs])
 
         cfg.vp.is_exit_loop_head[abb] = cfg.vp.is_exit_loop_head[entry]
-        cfg.vp.part_of_loop[abb] = cfg.vp.part_of_loop[entry]
+        cfg.vp.part_of_loop[abb] = False  # see _get_abb_loops
         cfg.vp.exception_handler[abb] = cfg.vp.exception_handler[entry]
-
-        if (cfg.vp.part_of_loop[entry] and
-                self._all_loops_in_set(entry, graph, all_bbs)):
-            cfg.vp.part_of_loop[abb] = False
 
         if cfg.vp.type[abb] in [ABBType.call, ABBType.syscall]:
             cfg.vp.files[abb] = cfg.vp.files[entry]
@@ -193,6 +182,8 @@ class CreateABBs(Step):
         f2a = edge_types(cfg, cfg.ep.type, CFType.f2a)
         name = cfg.vp.name
 
+        functions = []
+
         entry_label = self.entry_point.get()
         entry_func = cfg.get_function_by_name(entry_label)
 
@@ -205,6 +196,8 @@ class CreateABBs(Step):
             def err(args):
                 # self._log.error(args)
                 return
+
+            functions.append(func)
 
             if f2a.vertex(func).out_degree() > 0:
                 # function is already handled
@@ -284,6 +277,10 @@ class CreateABBs(Step):
         # link edges
         for abb, exit_v, just_icf in abbs:
             self._add_edges(abb, exit_v, just_icf=just_icf)
+
+        for func in functions:
+            self._log.debug(f"Find loop in {name[func]}")
+            self._get_abb_loops(func)
 
         # remap callgraph links to ABBs instead of BBs
         callgraph = self._graph.callgraph
