@@ -165,7 +165,6 @@ namespace ara::step {
 		 */
 		Bookkeeping<SVFG>& caretaker;
 
-		bool die_at_visited = true;
 		bool skip_first_edge = false;
 
 		/**

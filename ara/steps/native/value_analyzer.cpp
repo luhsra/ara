@@ -221,7 +221,8 @@ namespace ara::step {
 
 		const Node<SVFG> current_node = source(current_edge, caretaker.get_g());
 		this->dbg() << "Analyzing node " << current_node << std::endl;
-		if (die_at_visited && caretaker.is_visited(current_node)) {
+		if (caretaker.is_visited(current_node)) {
+			this->dbg() << "Node already visited." << std::endl;
 			this->die_and_notify();
 			return;
 		}
