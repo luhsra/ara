@@ -192,6 +192,7 @@ namespace ara::step {
 	template <class SVFG>
 	void Traverser<SVFG>::die_and_notify() {
 		die();
+		this->dbg() << "notify boss: " << *boss << std::endl;
 		boss->remove(get_id());
 	}
 
@@ -522,6 +523,7 @@ namespace ara::step {
 		}
 		// check
 		if (workers.size() == 0) {
+			this->dbg() << "No worker left, die." << std::endl;
 			this->die_and_notify();
 			return;
 		}
@@ -537,6 +539,7 @@ namespace ara::step {
 
 	template <class SVFG>
 	void Traverser<SVFG>::send_report(Report<SVFG>&& report) {
+		// this->dbg() << "Got report." << std::endl;
 		reports.emplace_back(report);
 		act_if_necessary();
 	}
@@ -584,9 +587,10 @@ namespace ara::step {
 
 		auto it = std::find_if(reports.begin(), reports.end(), found_value);
 		if (it != reports.end()) {
+			// value found
 			std::vector<Report<SVFG>> finds;
 			std::copy_if(reports.begin(), reports.end(), std::back_inserter(finds), found_value);
-			if (finds.size() > 1 && reason == WaitingReason::in_phi) {
+			if (finds.size() > 1 && this->reason == WaitingReason::in_phi) {
 				// TODO we must not have two Found Values otherwise we are not able to handle it
 				this->dbg() << "PHINode with multiple value nodes is not supported." << std::endl;
 				throw ValuesUnknown("PHINode with multiple value nodes is not supported.");
