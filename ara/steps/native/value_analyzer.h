@@ -53,7 +53,7 @@ namespace ara::step {
 	template <typename SVFG>
 	using Report = std::variant<report_type::EndOfFunction, report_type::FoundValue<SVFG>>;
 
-	enum class WaitingReason { not_set, in_phi, i_am_manager };
+	enum class WaitingReason { not_set, in_phi, i_am_manager, end_of_function };
 	std::ostream& operator<<(std::ostream&, const WaitingReason&);
 
 	template <typename SVFG>

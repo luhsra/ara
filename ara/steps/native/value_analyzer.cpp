@@ -204,6 +204,7 @@ namespace ara::step {
 
 	template <class SVFG>
 	void Traverser<SVFG>::wakeup() {
+		this->reason = WaitingReason::not_set;
 		this->dbg() << "change status: active" << std::endl;
 		status = Status::active;
 	}
@@ -362,6 +363,10 @@ namespace ara::step {
 
 	template <class SVFG>
 	void Traverser<SVFG>::sleep_and_send(Report<SVFG>&& report) {
+
+		if (std::holds_alternative<report_type::EndOfFunction>(report)) {
+			this->reason = WaitingReason::end_of_function;
+		}
 		this->sleep();
 		boss->send_report(std::move(report));
 	}
@@ -613,12 +618,19 @@ namespace ara::step {
 				auto worker = workers.begin()->second;
 				boss->hire(worker);
 				workers.clear();
-				assert(reports.size() == 1 && "workers and reports size must match here");
+				Report<SVFG> report;
+				if (reports.size() == 0 && worker->reason == WaitingReason::end_of_function) {
+					// maybe the remaining subtravers slept the whole time and its report was vanished
+					report = report_type::EndOfFunction();
+				} else if (reports.size() == 1) {
+					report = std::move(*reports.begin());
+					reports.clear();
+				} else {
+					assert(false && "Unhandled case. Reports should be less or equal to amount of workers");
+				}
 				// we have no job anymore, just die()
 				this->dbg() << "Found PHI with one possible continuation. Continue with T" << worker->get_id()
 				            << " (boss=T" << boss->get_id() << "). Removing ourself." << std::endl;
-				auto report = std::move(*reports.begin());
-				reports.clear();
 				boss->send_report(std::move(report));
 				this->die_and_notify();
 			} else {
