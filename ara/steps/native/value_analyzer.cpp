@@ -410,7 +410,7 @@ namespace ara::step {
 					this->caretaker.get_logger().warn() << "reached max traverser level" << std::endl;
 					return Die();
 				}
-				return Finished<SVFG>{EndOfFunction()};
+				return Finished<SVFG>{report_type::EndOfFunction()};
 			}
 		}
 		if (hint == graph::SigType::symbol && llvm::isa<SVF::CallIndSVFGEdge>(vfg_edge)) {
@@ -430,14 +430,14 @@ namespace ara::step {
 			this->dbg() << "Found a previous assigned object." << std::endl;
 			this->dbg() << "CallPath: " << call_path << std::endl;
 			this->dbg() << "Asked for: " << node << " " << offset_print(offset) << std::endl;
-			return Finished<SVFG>{FoundValue<SVFG>{*id, node, {}, call_path}};
+			return Finished<SVFG>{report_type::FoundValue<SVFG>{*id, node, {}, call_path}};
 		}
 		if (llvm::isa<SVF::NullPtrVFGNode>(svf_node)) {
 			// Sigtype is not important here, a nullptr serves as value and symbol.
 			this->dbg() << "Found a nullptr." << std::endl;
 			auto nullval = llvm::ConstantPointerNull::get(
 			    llvm::PointerType::get(llvm::IntegerType::get(caretaker.get_module().getContext(), 8), 0));
-			return Finished<SVFG>{FoundValue<SVFG>{nullval, node, offset, std::nullopt}};
+			return Finished<SVFG>{report_type::FoundValue<SVFG>{nullval, node, offset, std::nullopt}};
 		}
 
 		if (auto stmt = llvm::dyn_cast<SVF::StmtVFGNode>(svf_node)) {
@@ -451,7 +451,7 @@ namespace ara::step {
 					this->dbg() << "Found a previous assigned object." << std::endl;
 					this->dbg() << "CallPath: " << call_path << std::endl;
 					this->dbg() << "Asked for: " << node << " " << offset_print(offset) << std::endl;
-					return Finished<SVFG>{FoundValue<SVFG>{*id, node, {}, graph::CallPath()}};
+					return Finished<SVFG>{report_type::FoundValue<SVFG>{*id, node, {}, graph::CallPath()}};
 				}
 			}
 
@@ -464,25 +464,25 @@ namespace ara::step {
 			if (hint == graph::SigType::value || hint == graph::SigType::undefined) {
 				if (const llvm::ConstantData* c = llvm::dyn_cast<llvm::ConstantData>(val)) {
 					this->dbg() << "Found constant data: " << pretty_print(*c) << std::endl;
-					return Finished<SVFG>{FoundValue<SVFG>{c, node, offset, std::nullopt}};
+					return Finished<SVFG>{report_type::FoundValue<SVFG>{c, node, offset, std::nullopt}};
 				}
 
 				if (const llvm::Function* func = llvm::dyn_cast<llvm::Function>(val)) {
 					this->dbg() << "Found function: " << pretty_print(*func) << std::endl;
-					return Finished<SVFG>{FoundValue<SVFG>{func, node, offset, std::nullopt}};
+					return Finished<SVFG>{report_type::FoundValue<SVFG>{func, node, offset, std::nullopt}};
 				}
 
 				if (const llvm::GlobalVariable* gv = llvm::dyn_cast<llvm::GlobalVariable>(val)) {
 					if (gv->hasExternalLinkage()) {
 						this->dbg() << "Found global external constant: " << pretty_print(*gv) << std::endl;
-						return Finished<SVFG>{FoundValue<SVFG>{gv, node, offset, std::nullopt}};
+						return Finished<SVFG>{report_type::FoundValue<SVFG>{gv, node, offset, std::nullopt}};
 					} else if (gv->getNumOperands() > 0) { // TODO consider using offset
 						// special handling for strings, they are pointer to constant data
 						const llvm::Value* gvv = gv->getOperand(0);
 						if (gvv != nullptr) {
 							if (const llvm::ConstantData* gvvc = llvm::dyn_cast<llvm::ConstantData>(gvv)) {
 								this->dbg() << "Found global constant data: " << pretty_print(*gvvc) << std::endl;
-								return Finished<SVFG>{FoundValue<SVFG>{gvvc, node, {}, std::nullopt}};
+								return Finished<SVFG>{report_type::FoundValue<SVFG>{gvvc, node, {}, std::nullopt}};
 							}
 						}
 					}
@@ -492,12 +492,12 @@ namespace ara::step {
 			if (hint == graph::SigType::symbol) {
 				if (const llvm::GlobalValue* gv = llvm::dyn_cast<llvm::GlobalValue>(val)) {
 					this->dbg() << "Found global value: " << pretty_print(*gv) << std::endl;
-					return Finished<SVFG>{FoundValue<SVFG>{gv, node, offset, std::nullopt}};
+					return Finished<SVFG>{report_type::FoundValue<SVFG>{gv, node, offset, std::nullopt}};
 				}
 
 				if (const llvm::AllocaInst* ai = llvm::dyn_cast<llvm::AllocaInst>(val)) {
 					this->dbg() << "Found alloca instruction (local variable): " << pretty_print(*ai) << std::endl;
-					return Finished<SVFG>{FoundValue<SVFG>{ai, node, offset, call_path}};
+					return Finished<SVFG>{report_type::FoundValue<SVFG>{ai, node, offset, call_path}};
 				}
 			}
 		}
@@ -542,7 +542,7 @@ namespace ara::step {
 	}
 
 	template <class SVFG>
-	void Traverser<SVFG>::handle_found_value(FoundValue<SVFG>&& report) {
+	void Traverser<SVFG>::handle_found_value(report_type::FoundValue<SVFG>&& report) {
 		sleep_and_send(report);
 	}
 
@@ -566,21 +566,21 @@ namespace ara::step {
 	}
 
 	template <class SVFG>
-	FoundValue<SVFG> Traverser<SVFG>::get_best_find(std::vector<Report<SVFG>>&& finds) const {
+	report_type::FoundValue<SVFG> Traverser<SVFG>::get_best_find(std::vector<Report<SVFG>>&& finds) const {
 		// current heuristic: if a previous assigned instance is found, take that, otherwise the first one
 		auto found_instance = [](Report<SVFG>& r) {
-			return std::holds_alternative<OSObject>(std::get<FoundValue<SVFG>>(r).value);
+			return std::holds_alternative<OSObject>(std::get<report_type::FoundValue<SVFG>>(r).value);
 		};
 		auto it = std::find_if(finds.begin(), finds.end(), found_instance);
 		if (it != finds.end()) {
-			return std::get<FoundValue<SVFG>>(std::move(*it));
+			return std::get<report_type::FoundValue<SVFG>>(std::move(*it));
 		}
-		return std::get<FoundValue<SVFG>>(std::move(finds[0]));
+		return std::get<report_type::FoundValue<SVFG>>(std::move(finds[0]));
 	}
 
 	template <class SVFG>
 	void Traverser<SVFG>::handle_reports() {
-		auto found_value = [](Report<SVFG>& r) { return std::holds_alternative<FoundValue<SVFG>>(r); };
+		auto found_value = [](Report<SVFG>& r) { return std::holds_alternative<report_type::FoundValue<SVFG>>(r); };
 
 		auto it = std::find_if(reports.begin(), reports.end(), found_value);
 		if (it != reports.end()) {
@@ -602,7 +602,7 @@ namespace ara::step {
 			return;
 		}
 		if (std::all_of(reports.begin(), reports.end(),
-		                [](Report<SVFG>& r) { return std::holds_alternative<EndOfFunction>(r); })) {
+		                [](Report<SVFG>& r) { return std::holds_alternative<report_type::EndOfFunction>(r); })) {
 			if (workers.size() == 1 && reason == WaitingReason::in_phi && boss != this) {
 				// currently waiting in phi node and we have only one subtraverser
 				// We can savely ignore the phi in this case. Pass the traverser to our boss.
@@ -689,7 +689,7 @@ namespace ara::step {
 	bool Manager<SVFG>::eval_node_result(TraversalResult<SVFG>&& result) {
 		bool ret = false;
 		std::visit(overloaded{[&](Finished<SVFG> f) {
-			                      this->value = std::move(std::get<FoundValue<SVFG>>(f.report));
+			                      this->value = std::move(std::get<report_type::FoundValue<SVFG>>(f.report));
 			                      this->caretaker.stop();
 			                      ret = true;
 		                      },
@@ -724,14 +724,14 @@ namespace ara::step {
 	}
 
 	template <class SVFG>
-	void Manager<SVFG>::handle_found_value(FoundValue<SVFG>&& report) {
+	void Manager<SVFG>::handle_found_value(report_type::FoundValue<SVFG>&& report) {
 		value = report;
 		this->sleep();
 		this->caretaker.stop();
 	}
 
 	template <class SVFG>
-	const FoundValue<SVFG> Manager<SVFG>::get_value() {
+	const report_type::FoundValue<SVFG> Manager<SVFG>::get_value() {
 		assert(value && "no value");
 		return *value;
 	}
@@ -893,8 +893,9 @@ namespace ara::step {
 	}
 
 	template <class SVFG>
-	FoundValue<SVFG> ValueAnalyzerImpl<SVFG>::do_backward_value_search(const Node<SVFG> start, graph::CallPath callpath,
-	                                                                   graph::SigType hint) {
+	report_type::FoundValue<SVFG> ValueAnalyzerImpl<SVFG>::do_backward_value_search(const Node<SVFG> start,
+	                                                                                graph::CallPath callpath,
+	                                                                                graph::SigType hint) {
 		Bookkeeping caretaker(va.logger, va.graph.get_module(), va.state, this->va.callgraph, this->va.svfg, g,
 		                      va.tracer, va.svf_objects.s_callgraph, hint);
 		std::shared_ptr<Manager<SVFG>> root = std::make_shared<Manager<SVFG>>(start, callpath, caretaker);
@@ -972,10 +973,10 @@ namespace ara::step {
 		va.logger.debug() << "Analyzing argument " << argument_nr << ": " << pretty_print(val) << std::endl;
 
 		// fast lane, if val is a constant, take it
-		FoundValue<SVFG> value;
+		report_type::FoundValue<SVFG> value;
 		if (const llvm::ConstantData* c = llvm::dyn_cast<llvm::ConstantData>(&val)) {
 			va.logger.debug() << "Found constant data: " << pretty_print(*c) << std::endl;
-			value = FoundValue<SVFG>{c, std::nullopt, {}, std::nullopt};
+			value = report_type::FoundValue<SVFG>{c, std::nullopt, {}, std::nullopt};
 		} else {
 			const Node<SVFG> v_node = get_vfg_node(val, argument_nr);
 			value = do_backward_value_search(v_node, callpath, hint);
@@ -1185,7 +1186,7 @@ namespace ara::step {
 	template <class SVFG>
 	Result ValueAnalyzerImpl<SVFG>::get_memory_value(const llvm::Value* intermediate_value, graph::CallPath callpath) {
 		const Node<SVFG> v_node = get_vfg_node(safe_deref(intermediate_value));
-		FoundValue<SVFG> result = do_backward_value_search(v_node, callpath, graph::SigType::symbol);
+		report_type::FoundValue<SVFG> result = do_backward_value_search(v_node, callpath, graph::SigType::symbol);
 		return Result{result.value, result.offset, std::nullopt, result.callpath};
 	}
 

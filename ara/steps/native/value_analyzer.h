@@ -23,8 +23,6 @@ namespace ara::cython {
 }
 
 namespace ara::step {
-	struct EndOfFunction {};
-
 	template <typename SVFG>
 	using Node = typename boost::graph_traits<SVFG>::vertex_descriptor;
 
@@ -41,15 +39,19 @@ namespace ara::step {
 	using OSObject = uint64_t;
 	using RawValue = std::variant<const llvm::Value*, OSObject>;
 
+	namespace report_type {
+		struct EndOfFunction {};
+
+		template <typename SVFG>
+		struct FoundValue {
+			RawValue value;                                     /* found LLVM value or previously assigned object */
+			std::optional<Node<SVFG>> source;                   /* SVFG node of the found value */
+			std::vector<const llvm::GetElementPtrInst*> offset; /* offset within a struct */
+			std::optional<graph::CallPath> callpath;            /* call context of this value */
+		};
+	} // namespace report_type
 	template <typename SVFG>
-	struct FoundValue {
-		RawValue value;                                     /* found LLVM value or previously assigned object */
-		std::optional<Node<SVFG>> source;                   /* SVFG node of the found value */
-		std::vector<const llvm::GetElementPtrInst*> offset; /* offset within a struct */
-		std::optional<graph::CallPath> callpath;            /* call context of this value */
-	};
-	template <typename SVFG>
-	using Report = std::variant<EndOfFunction, FoundValue<SVFG>>;
+	using Report = std::variant<report_type::EndOfFunction, report_type::FoundValue<SVFG>>;
 
 	enum class WaitingReason { not_set, in_phi, i_am_manager };
 	std::ostream& operator<<(std::ostream&, const WaitingReason&);
@@ -184,8 +186,8 @@ namespace ara::step {
 
 		tracer::Entity entity;
 
-		virtual void handle_found_value(FoundValue<SVFG>&& report);
-		FoundValue<SVFG> get_best_find(std::vector<Report<SVFG>>&& finds) const;
+		virtual void handle_found_value(report_type::FoundValue<SVFG>&& report);
+		report_type::FoundValue<SVFG> get_best_find(std::vector<Report<SVFG>>&& finds) const;
 
 		/**
 		 * Take care of all received reports.
@@ -334,10 +336,10 @@ namespace ara::step {
 	template <typename SVFG>
 	class Manager : public Traverser<SVFG> {
 		const Node<SVFG> node;
-		std::optional<FoundValue<SVFG>> value = std::nullopt;
+		std::optional<report_type::FoundValue<SVFG>> value = std::nullopt;
 
 		void act_if_necessary() override;
-		void handle_found_value(FoundValue<SVFG>&& report) override;
+		void handle_found_value(report_type::FoundValue<SVFG>&& report) override;
 
 	  public:
 		Manager(const Node<SVFG> node, graph::CallPath call_path, Bookkeeping<SVFG>& caretaker)
@@ -347,7 +349,7 @@ namespace ara::step {
 
 		bool eval_node_result(TraversalResult<SVFG>&& result);
 		void do_step() override;
-		const FoundValue<SVFG> get_value();
+		const report_type::FoundValue<SVFG> get_value();
 	};
 
 	struct SVFObjects {
@@ -402,8 +404,8 @@ namespace ara::step {
 		 *
 		 * \return a pair of the found llvm::Value and the corresponding Node
 		 */
-		FoundValue<SVFG> do_backward_value_search(const Node<SVFG> start, graph::CallPath callpath,
-		                                          graph::SigType hint);
+		report_type::FoundValue<SVFG> do_backward_value_search(const Node<SVFG> start, graph::CallPath callpath,
+		                                                       graph::SigType hint);
 
 		/**
 		 * Get the nth argument (llvm::Value) for a specific callsite.
