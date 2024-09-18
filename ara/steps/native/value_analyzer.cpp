@@ -116,9 +116,11 @@ namespace ara::step {
 			if (cbn == nullptr) {
 				return nullptr;
 			}
-
 			// get call site
-			assert(callgraph->hasCallGraphEdge(cbn) && "no valid call graph edge found");
+			if (!callgraph->hasCallGraphEdge(cbn)) {
+				// Callsite ID does not exist anymore, it belongs probably a removed edge
+				return nullptr;
+			}
 			SVF::PTACallGraphEdge* call_site = nullptr;
 			for (auto bi = callgraph->getCallEdgeBegin(cbn); bi != callgraph->getCallEdgeEnd(cbn); ++bi) {
 				if (id == (*bi)->getCallSiteID()) {
