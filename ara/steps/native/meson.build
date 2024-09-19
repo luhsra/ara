@@ -55,6 +55,8 @@ step_pyx_gen = custom_target('step_pyx',
 step_pyx_cpp = step_pyx_gen[0]
 step_pyx_h   = step_pyx_gen[1]
 
+step_pyx_h_dep = declare_dependency(sources: step_pyx_h)
+
 step_mod = py3_inst.extension_module('step',
   step_pyx_cpp,
   files('step.cpp',
@@ -99,10 +101,7 @@ step_mod = py3_inst.extension_module('step',
   override_options: 'b_lundef=false',
   cpp_pch: 'pch/steps_pch.h',
   link_depends: [log_bridge, graph_data_mod],
-  # depends: [step_pyx_h],  # not possible to express in meson
-  # not a problem though, since step_pyx_cpp is an explicit dependency
-  # and both are generated with the same target
-  dependencies: [log_dep, py3_inst.dependency(), llvm_dep, graph_tool_dep, graph_dep, common_dep, pyllco_dep, svf_dep],
+  dependencies: [log_dep, py3_inst.dependency(), llvm_dep, graph_tool_dep, graph_dep, common_dep, pyllco_dep, svf_dep, step_pyx_h_dep],
   install: true,
   subdir: 'ara' / 'steps'
 )
