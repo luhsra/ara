@@ -32,6 +32,15 @@ class Statistics:
     maximal_branches: int
     maximal_steps: int
 
+    def to_dict(self):
+        return {
+            "type": "ValueAnalyzerStatistics",
+            "amount_of_traversers": self.amount_of_traversers,
+            "maximal_depth": self.maximal_depth,
+            "maximal_branches": self.maximal_branches,
+            "maximal_steps": self.maximal_steps,
+        }
+
 
 cdef public _py_from_c_statistics(CStats* const cstats):
     return Statistics(amount_of_traversers=cstats.amount_of_traversers,

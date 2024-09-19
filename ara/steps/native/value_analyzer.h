@@ -23,6 +23,12 @@ namespace ara::cython {
 }
 
 namespace ara::step {
+	namespace limits {
+		static const int MAX_TRAVERSER_LEVEL = 20;
+		static const int MAX_EMPLOYEES = 600;
+		static const int MAX_TRAVERSERS = 2000;
+	} // namespace limits
+
 	template <typename SVFG>
 	using Node = typename boost::graph_traits<SVFG>::vertex_descriptor;
 
@@ -90,8 +96,8 @@ namespace ara::step {
 	std::ostream& operator<<(std::ostream& os, const Statistics& stats);
 
 	/**
-	* Central return type for the Python world.
-	*/
+	 * Central return type for the Python world.
+	 */
 	struct Result {
 		RawValue value;                                     /* found LLVM value or previously assigned object */
 		std::vector<const llvm::GetElementPtrInst*> offset; /* offset within a struct */
@@ -159,8 +165,6 @@ namespace ara::step {
 	template <typename SVFG>
 	class Traverser {
 	  private:
-		static const int MAX_TRAVERSER_LEVEL = 20;
-
 	  protected:
 		/**
 		 * The traverser's boss.
@@ -218,7 +222,7 @@ namespace ara::step {
 		void handle_reports();
 
 		bool eval_result(TraversalResult<SVFG>&& result);
-		void hire(std::shared_ptr<Traverser<SVFG>> worker);
+		bool hire(std::shared_ptr<Traverser<SVFG>> worker, bool ignore_limit=false);
 
 		/**
 		 * Handle a single Edge.
@@ -302,6 +306,7 @@ namespace ara::step {
 	 */
 	template <typename SVFG>
 	class Bookkeeping {
+
 		Logger& logger;
 		llvm::Module& module;
 		value_analyzer::ValueAnalyzerState& state;
@@ -326,9 +331,13 @@ namespace ara::step {
 		friend class ValueAnalyzerImpl;
 
 	  public:
-		void add_traverser(std::shared_ptr<Traverser<SVFG>> traverser) {
+		bool add_traverser(std::shared_ptr<Traverser<SVFG>> traverser) {
+			if ((stats.amount_of_traversers + 1) >= limits::MAX_TRAVERSERS) {
+				return false;
+			}
 			traversers.emplace_back(traverser);
 			stats.amount_of_traversers++;
+			return true;
 		}
 		Statistics get_statistics() { return stats; }
 		void set_new_branch_width(size_t width) { stats.advance(stats.maximal_branches, width); }
@@ -435,8 +444,8 @@ namespace ara::step {
 		 *
 		 * \return a pair of the found llvm::Value and the corresponding Node
 		 */
-		std::pair<report_type::FoundValue<SVFG>, Statistics> do_backward_value_search(const Node<SVFG> start, graph::CallPath callpath,
-		                                                       graph::SigType hint);
+		std::pair<report_type::FoundValue<SVFG>, Statistics>
+		do_backward_value_search(const Node<SVFG> start, graph::CallPath callpath, graph::SigType hint);
 
 		/**
 		 * Get the nth argument (llvm::Value) for a specific callsite.

@@ -9,11 +9,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "value_analyzer.h"
-#include "step_pyx.h"
 
+#include "common/exceptions.h"
 #include "common/llvm_common.h"
 #include "common/util.h"
 #include "graph_data.h"
+#include "step_pyx.h"
 
 #include <boost/range/adaptor/indexed.hpp>
 #include <boost/range/adaptor/map.hpp>
@@ -355,9 +356,15 @@ namespace ara::step {
 			            << std::endl;
 			worker->level = level;
 			worker->update_call_path(action, cg_edge);
-			new_boss->hire(worker);
+			if (!new_boss->hire(worker)) {
+				this->dbg() << "Too much branches, abort." << std::endl;
+				return Die();
+			}
+			if (!this->caretaker.add_traverser(worker)) {
+				this->dbg() << "Too much traverses in total, abort." << std::endl;
+				return Die();
+			}
 			this->dbg() << "Advance: new " << *worker << std::endl;
-			this->caretaker.add_traverser(worker);
 		}
 		if (spawned_traversers == 0) {
 			this->dbg() << "Advance: No further path. Die." << std::endl;
@@ -417,7 +424,7 @@ namespace ara::step {
 			} else {
 				this->dbg() << "Found call edge up, waiting for other nodes: " << *vfg_edge << std::endl;
 				level++;
-				if (level > MAX_TRAVERSER_LEVEL) {
+				if (level > limits::MAX_TRAVERSER_LEVEL) {
 					this->caretaker.get_logger().warn() << "reached max traverser level" << std::endl;
 					return Die();
 				}
@@ -573,10 +580,14 @@ namespace ara::step {
 	}
 
 	template <class SVFG>
-	void Traverser<SVFG>::hire(std::shared_ptr<Traverser> worker) {
+	bool Traverser<SVFG>::hire(std::shared_ptr<Traverser> worker, bool ignore_limit) {
+		if (!ignore_limit && (workers.size() + 1) >= limits::MAX_EMPLOYEES) {
+			return false;
+		}
 		workers[worker->get_id()] = worker;
 		worker->boss = this;
 		this->caretaker.set_new_branch_width(workers.size());
+		return true;
 	}
 
 	template <class SVFG>
@@ -622,7 +633,8 @@ namespace ara::step {
 				// currently waiting in phi node and we have only one subtraverser
 				// We can savely ignore the phi in this case. Pass the traverser to our boss.
 				auto worker = workers.begin()->second;
-				boss->hire(worker);
+				// do not respect the limit here, since we die anyway
+				boss->hire(worker, /*ignore_limit=*/true);
 				workers.clear();
 				Report<SVFG> report;
 				if (reports.size() == 0 && worker->reason == WaitingReason::end_of_function) {
@@ -754,7 +766,9 @@ namespace ara::step {
 
 	template <class SVFG>
 	const report_type::FoundValue<SVFG> Manager<SVFG>::get_value() {
-		assert(value && "no value");
+		if (!value) {
+			throw ValuesUnknown("No value found.");
+		}
 		return *value;
 	}
 
@@ -926,9 +940,9 @@ namespace ara::step {
 	}
 
 	template <class SVFG>
-	std::pair<report_type::FoundValue<SVFG>, Statistics> ValueAnalyzerImpl<SVFG>::do_backward_value_search(const Node<SVFG> start,
-	                                                                                graph::CallPath callpath,
-	                                                                                graph::SigType hint) {
+	std::pair<report_type::FoundValue<SVFG>, Statistics>
+	ValueAnalyzerImpl<SVFG>::do_backward_value_search(const Node<SVFG> start, graph::CallPath callpath,
+	                                                  graph::SigType hint) {
 		Bookkeeping caretaker(va.logger, va.graph.get_module(), va.state, this->va.callgraph, this->va.svfg, g,
 		                      va.tracer, va.svf_objects.s_callgraph, hint);
 		std::shared_ptr<Manager<SVFG>> root = std::make_shared<Manager<SVFG>>(start, callpath, caretaker);
@@ -1026,7 +1040,8 @@ namespace ara::step {
 			                  << std::endl;
 		}
 
-		return Result{std::move(value.value), std::move(value.offset), std::move(attrs), std::move(value.callpath), std::move(stats)};
+		return Result{std::move(value.value), std::move(value.offset), std::move(attrs), std::move(value.callpath),
+		              std::move(stats)};
 	}
 
 	template <class SVFG>
@@ -1222,7 +1237,7 @@ namespace ara::step {
 	template <class SVFG>
 	Result ValueAnalyzerImpl<SVFG>::get_memory_value(const llvm::Value* intermediate_value, graph::CallPath callpath) {
 		const Node<SVFG> v_node = get_vfg_node(safe_deref(intermediate_value));
-		auto [result, stats]= do_backward_value_search(v_node, callpath, graph::SigType::symbol);
+		auto [result, stats] = do_backward_value_search(v_node, callpath, graph::SigType::symbol);
 		return Result{result.value, result.offset, std::nullopt, result.callpath, std::move(stats)};
 	}
 
