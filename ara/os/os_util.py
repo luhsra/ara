@@ -504,7 +504,7 @@ def find_return_value(abb, callpath, va):
     try:
         return va.get_memory_value(ret_val, callpath=callpath)
     except ValuesUnknown:
-        return ValueAnalyzerResult(ret_val, [], None, callpath)
+        return ValueAnalyzerResult(ret_val, tuple(), None, callpath, None)
 
 
 def connect_instances(instance_graph, src, tgt, abb, label, ty=None):

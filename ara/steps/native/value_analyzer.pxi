@@ -25,7 +25,7 @@ class ConnectionStatusUnknown(RuntimeError):
 cdef public object py_connectionerror = ConnectionStatusUnknown
 
 
-@dataclass
+@dataclass(frozen=True)
 class Statistics:
     amount_of_traversers: int
     maximal_depth: int
@@ -40,7 +40,7 @@ cdef public _py_from_c_statistics(CStats* const cstats):
                       maximal_steps=cstats.maximal_steps)
 
 
-@dataclass
+@dataclass(frozen=True)
 class ValueAnalyzerResult:
     value: typing.Any
     offset: List[int]
