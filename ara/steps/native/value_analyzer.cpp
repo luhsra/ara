@@ -9,6 +9,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "value_analyzer.h"
+#include "step_pyx.h"
 
 #include "common/llvm_common.h"
 #include "common/util.h"
@@ -188,6 +189,8 @@ namespace ara::step {
 	template <class SVFG>
 	void Traverser<SVFG>::die() {
 		this->dbg() << "change status: dead" << std::endl;
+		this->caretaker.set_new_steps(this->trace.size());
+		this->caretaker.set_new_depth(this->level);
 		status = Status::dead;
 	}
 
@@ -573,6 +576,7 @@ namespace ara::step {
 	void Traverser<SVFG>::hire(std::shared_ptr<Traverser> worker) {
 		workers[worker->get_id()] = worker;
 		worker->boss = this;
+		this->caretaker.set_new_branch_width(workers.size());
 	}
 
 	template <class SVFG>
@@ -754,6 +758,16 @@ namespace ara::step {
 		return *value;
 	}
 
+	std::ostream& operator<<(std::ostream& out, const Statistics& stats) {
+		out << "Statistics(";
+		out << "amount_of_traversers=" << stats.amount_of_traversers << ", ";
+		out << "maximal_depth=" << stats.maximal_depth << ", ";
+		out << "maximal_branches=" << stats.maximal_branches << ", ";
+		out << "maximal_steps=" << stats.maximal_steps;
+		out << ")";
+		return out;
+	}
+
 	template <class SVFG>
 	void Bookkeeping<SVFG>::run() {
 		// while(true) {
@@ -761,6 +775,7 @@ namespace ara::step {
 			for (auto it = traversers.begin(); it != traversers.end();) {
 				auto traverser = *it;
 				if (should_stop) {
+					get_logger().debug() << "Stats: " << this->stats << std::endl;
 					get_logger().debug() << "Stopping..." << std::endl;
 					return;
 				}
@@ -911,7 +926,7 @@ namespace ara::step {
 	}
 
 	template <class SVFG>
-	report_type::FoundValue<SVFG> ValueAnalyzerImpl<SVFG>::do_backward_value_search(const Node<SVFG> start,
+	std::pair<report_type::FoundValue<SVFG>, Statistics> ValueAnalyzerImpl<SVFG>::do_backward_value_search(const Node<SVFG> start,
 	                                                                                graph::CallPath callpath,
 	                                                                                graph::SigType hint) {
 		Bookkeeping caretaker(va.logger, va.graph.get_module(), va.state, this->va.callgraph, this->va.svfg, g,
@@ -925,7 +940,7 @@ namespace ara::step {
 		caretaker.run();
 		auto& result = root->get_value();
 		va.logger.debug() << "FoundValue with offset " << offset_print(result.offset) << std::endl;
-		return result;
+		return std::make_pair(result, std::move(caretaker.get_statistics()));
 	}
 
 	template <class SVFG>
@@ -956,7 +971,7 @@ namespace ara::step {
 					        return;
 				        }
 				        va.logger.debug() << "Set function " << func->getName().str() << " as result." << std::endl;
-				        ret = Result{func, {}, std::nullopt, std::nullopt};
+				        ret = Result{func, {}, std::nullopt, std::nullopt, Statistics()};
 			        },
 			    },
 			    hint);
@@ -992,12 +1007,15 @@ namespace ara::step {
 
 		// fast lane, if val is a constant, take it
 		report_type::FoundValue<SVFG> value;
+		Statistics stats;
 		if (const llvm::ConstantData* c = llvm::dyn_cast<llvm::ConstantData>(&val)) {
 			va.logger.debug() << "Found constant data: " << pretty_print(*c) << std::endl;
 			value = report_type::FoundValue<SVFG>{c, std::nullopt, {}, std::nullopt};
 		} else {
 			const Node<SVFG> v_node = get_vfg_node(val, argument_nr);
-			value = do_backward_value_search(v_node, callpath, hint);
+			auto result = do_backward_value_search(v_node, callpath, hint);
+			value = std::move(result.first);
+			stats = std::move(result.second);
 		}
 
 		// printing
@@ -1008,7 +1026,7 @@ namespace ara::step {
 			                  << std::endl;
 		}
 
-		return Result{std::move(value.value), std::move(value.offset), std::move(attrs), std::move(value.callpath)};
+		return Result{std::move(value.value), std::move(value.offset), std::move(attrs), std::move(value.callpath), std::move(stats)};
 	}
 
 	template <class SVFG>
@@ -1204,8 +1222,8 @@ namespace ara::step {
 	template <class SVFG>
 	Result ValueAnalyzerImpl<SVFG>::get_memory_value(const llvm::Value* intermediate_value, graph::CallPath callpath) {
 		const Node<SVFG> v_node = get_vfg_node(safe_deref(intermediate_value));
-		report_type::FoundValue<SVFG> result = do_backward_value_search(v_node, callpath, graph::SigType::symbol);
-		return Result{result.value, result.offset, std::nullopt, result.callpath};
+		auto [result, stats]= do_backward_value_search(v_node, callpath, graph::SigType::symbol);
+		return Result{result.value, result.offset, std::nullopt, result.callpath, std::move(stats)};
 	}
 
 	PyObject* ValueAnalyzer::py_get_memory_value(const llvm::Value* intermediate_value, graph::CallPath callgraph) {
@@ -1288,8 +1306,9 @@ namespace ara::step {
 		TakeGIL gil;
 		PyObject* py_callpath = (result.callpath) ? result.callpath->get_python_obj() : Py_None;
 		PyObject* py_attrs = (result.attrs) ? get_obj_from_attr_set(*result.attrs) : Py_None;
-		return PyTuple_Pack(4, py_repack_raw_value(result.value), py_repack_offsets(result.offset), py_attrs,
-		                    py_callpath);
+		PyObject* py_stats = _py_from_c_statistics(&result.stats);
+		return PyTuple_Pack(5, py_repack_raw_value(result.value), py_repack_offsets(result.offset), py_attrs,
+		                    py_callpath, py_stats);
 	}
 
 	PyObject* ValueAnalyzer::py_get_argument_value(PyObject* callsite, graph::CallPath callpath, unsigned argument_nr,

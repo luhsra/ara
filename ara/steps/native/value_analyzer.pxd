@@ -20,6 +20,12 @@ cdef extern from "value_analyzer.h" namespace "ara::cython":
     cdef void raise_py_valueerror()
 
 cdef extern from "value_analyzer.h" namespace "ara::step":
+    cdef cppclass Statistics:
+        size_t amount_of_traversers
+        size_t maximal_depth
+        size_t maximal_branches
+        size_t maximal_steps
+
     cdef cppclass ValueAnalyzer:
         @staticmethod
         unique_ptr[ValueAnalyzer] get(cgraph.Graph, object, object)

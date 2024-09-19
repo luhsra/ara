@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "step.h"
+#include "value_analyzer.h" // needed for step_pyx.h
 #include "step_pyx.h"
 
 #include <llvm/Support/JSON.h>

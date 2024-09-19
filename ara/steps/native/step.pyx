@@ -36,6 +36,7 @@ cimport option as coption
 
 # includes for value_analyzer.pxi
 from value_analyzer cimport ValueAnalyzer as CVA
+from value_analyzer cimport Statistics as CStats
 from graph_data cimport CallPath, PyGraphData
 from libcpp.vector cimport vector
 from ir cimport Value as CValue, GetElementPtrInst as CGep

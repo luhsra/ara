@@ -8,11 +8,11 @@
 # ATTENTION: see step.pyx for c imports. Cython is really bad with double
 # imports
 
-import dataclasses
 import sys
 from ara.util import get_logger
 from ara.graph import SigType, ABBType, NodeLevel
 from typing import List
+from dataclasses import dataclass
 
 class ValuesUnknown(RuntimeError):
   pass
@@ -25,21 +25,28 @@ class ConnectionStatusUnknown(RuntimeError):
 cdef public object py_connectionerror = ConnectionStatusUnknown
 
 
-# TODO make this a dataclass once we have Cython 3
+@dataclass
+class Statistics:
+    amount_of_traversers: int
+    maximal_depth: int
+    maximal_branches: int
+    maximal_steps: int
+
+
+cdef public _py_from_c_statistics(CStats* const cstats):
+    return Statistics(amount_of_traversers=cstats.amount_of_traversers,
+                      maximal_depth=cstats.maximal_depth,
+                      maximal_branches=cstats.maximal_branches,
+                      maximal_steps=cstats.maximal_steps)
+
+
+@dataclass
 class ValueAnalyzerResult:
-        # value: typing.Any
-        # offset: List[int]
-        # attrs: pyllco.AttributeSet
-        # callpath: CallPath
-
-        def __init__(self, value, offset, attrs, callpath):
-            self.value = value
-            self.offset = offset
-            self.attrs = attrs
-            self.callpath = callpath
-
-        def __repr__(self):
-            return f"ValueAnalyzerResult(value={self.value}, offset={self.offset}, attrs={self.attrs}, callpath={self.callpath})"
+    value: typing.Any
+    offset: List[int]
+    attrs: pyllco.AttributeSet
+    callpath: CallPath
+    stats: Statistics
 
 
 cdef class ValueAnalyzer:
@@ -102,7 +109,7 @@ cdef class ValueAnalyzer:
         if callpath is None:
             callpath = CallPath()
         cdef unsigned arg_nr = argument_nr
-        value, offset, attr, rcallpath = deref(self._c_va).py_get_argument_value(
+        value, offset, attr, rcallpath, stats = deref(self._c_va).py_get_argument_value(
             callsite,
             callpath._c_callpath,
             arg_nr,
@@ -114,7 +121,7 @@ cdef class ValueAnalyzer:
             value = self._sys_objects[value]
 
         return ValueAnalyzerResult(value=value, offset=offset, attrs=attr,
-                                   callpath=rcallpath)
+                                   callpath=rcallpath, stats=stats)
 
     def get_return_value(self, callsite, callpath: CallPath = None):
         """Retrieve the next store of return value of the callsite.
@@ -142,14 +149,16 @@ cdef class ValueAnalyzer:
         """
         if callpath is None:
             callpath = CallPath()
-        value, offset, attr, rcallpath = deref(self._c_va).py_get_memory_value(intermediate_value._val,
-                                                                               callpath._c_callpath)
+        value, offset, attr, rcallpath, stats = deref(self._c_va).py_get_memory_value(
+            intermediate_value._val,
+            callpath._c_callpath
+        )
 
         if isinstance(value, int):
             value = self._sys_objects[value]
 
         return ValueAnalyzerResult(value=value, offset=offset, attrs=attr,
-                                   callpath=rcallpath)
+                                   callpath=rcallpath, stats=stats)
 
 
     def get_assignments(self, value: Value,

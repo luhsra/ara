@@ -5,6 +5,8 @@
 #include "tracer_api.h"
 
 #include "py_util.h"
+
+#include "value_analyzer.h" // needed for step_pys.h"
 #include "step_pyx.h"
 
 namespace ara::step::tracer {

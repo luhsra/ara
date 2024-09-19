@@ -97,6 +97,7 @@ def perform_va_for_syscall(va, m_graph, syscalls, data, name, syscall):
             if no_except:
                 py_val = value_to_py(result.value, result.attrs)
                 debug_print("Retrieved", py_val)
+                debug_print("Statistics", result.stats)
                 if result.offset:
                     num_offsets = [x.get_offset() for x in result.offset]
                     debug_print(f"With Offsets: "
@@ -121,6 +122,7 @@ def perform_va_for_syscall(va, m_graph, syscalls, data, name, syscall):
                 result = va.get_memory_value(store, callpath)
                 debug_print(f"Got store: {store}, value: {result.value}, "
                             f"offset: {result.offset}")
+                debug_print("Statistics", result.stats)
                 va.assign_system_object(result.value,
                                         obj["name"],
                                         result.offset)
@@ -131,7 +133,8 @@ def main():
     # All creation syscalls that we are testing.
     creation_syscalls = set({"xQueueCreateMutex", "xTaskCreateStatic", "xTaskCreate"})
 
-    config = {"steps": ["Syscall"] + ValueAnalyzer.get_dependencies()}
+    config = {"steps": ["Syscall"] + ValueAnalyzer.get_dependencies(),
+              "logger": {"ValueAnalyzer": "debug"}}
     data = init_test(extra_config=config)
     global logger
     logger = data.log

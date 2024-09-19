@@ -70,11 +70,34 @@ namespace ara::step {
 	template <typename SVFG>
 	using TraversalResult = std::variant<Finished<SVFG>, Wait, KeepGoing, Die>;
 
+	/**
+	 * Collect some statistics over the analysis.
+	 */
+	struct Statistics {
+		size_t amount_of_traversers = 0;
+		size_t maximal_depth = 0;
+		size_t maximal_branches = 0;
+		size_t maximal_steps = 0;
+
+		void advance(size_t& stat, size_t new_value) {
+			if (new_value > stat) {
+				stat = new_value;
+			}
+		}
+		friend std::ostream& operator<<(std::ostream& os, const Statistics& stats);
+	};
+
+	std::ostream& operator<<(std::ostream& os, const Statistics& stats);
+
+	/**
+	* Central return type for the Python world.
+	*/
 	struct Result {
 		RawValue value;                                     /* found LLVM value or previously assigned object */
 		std::vector<const llvm::GetElementPtrInst*> offset; /* offset within a struct */
 		std::optional<llvm::AttributeSet> attrs;            /* attributes specific to this callsite */
 		std::optional<graph::CallPath> callpath;            /* call context of this value */
+		Statistics stats;
 	};
 
 	/** Communication message for call paths
@@ -283,6 +306,7 @@ namespace ara::step {
 		llvm::Module& module;
 		value_analyzer::ValueAnalyzerState& state;
 		std::list<std::shared_ptr<Traverser<SVFG>>> traversers;
+		Statistics stats;
 		std::set<Node<SVFG>> visited;
 		std::shared_ptr<graph::CallGraph> call_graph;
 		std::shared_ptr<graph::SVFG> svfg;
@@ -302,7 +326,14 @@ namespace ara::step {
 		friend class ValueAnalyzerImpl;
 
 	  public:
-		void add_traverser(std::shared_ptr<Traverser<SVFG>> traverser) { traversers.emplace_back(traverser); }
+		void add_traverser(std::shared_ptr<Traverser<SVFG>> traverser) {
+			traversers.emplace_back(traverser);
+			stats.amount_of_traversers++;
+		}
+		Statistics get_statistics() { return stats; }
+		void set_new_branch_width(size_t width) { stats.advance(stats.maximal_branches, width); }
+		void set_new_depth(size_t depth) { stats.advance(stats.maximal_depth, depth); }
+		void set_new_steps(size_t steps) { stats.advance(stats.maximal_steps, steps); }
 		bool is_visited(const Node<SVFG> node) const { return visited.find(node) != visited.end(); }
 		void mark_visited(const Node<SVFG> node) { visited.emplace(node); }
 		std::shared_ptr<graph::CallGraph> get_call_graph() const { return call_graph; }
@@ -404,7 +435,7 @@ namespace ara::step {
 		 *
 		 * \return a pair of the found llvm::Value and the corresponding Node
 		 */
-		report_type::FoundValue<SVFG> do_backward_value_search(const Node<SVFG> start, graph::CallPath callpath,
+		std::pair<report_type::FoundValue<SVFG>, Statistics> do_backward_value_search(const Node<SVFG> start, graph::CallPath callpath,
 		                                                       graph::SigType hint);
 
 		/**
