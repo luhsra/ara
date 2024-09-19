@@ -141,6 +141,64 @@ class MSTG:
     sync_point_map: graph_tool.VertexPropertyMap
 
 
+class Statistics:
+    translation = {
+        MSTType.en2ex: "→s",
+        MSTType.follow_sync: "↓t",
+        MSTType.m2s: "↓m",
+        MSTType.m2sy: "↓y",
+        MSTType.s2s: "→l",
+        MSTType.st2sy: "→g",
+        MSTType.sy2sy: "→p",
+        MSTType.sync_neighbor: "↓n",
+        MSTType.invalid: "↓i",
+        StateType.entry_sync: "si",
+        StateType.exit_sync: "so",
+        StateType.metastate: "m",
+        StateType.state: "l",
+        StateType.invalid: "i",
+    }
+
+    def __init__(self):
+        self._stats = defaultdict(int)
+
+    def incr(self, obj_type):
+        self._stats[obj_type] += 1
+
+    def get_amount_of_type(self, obj_type):
+        return self._stats[obj_type]
+
+    def _get_obj_amount(self, obj):
+        amount = 0
+        for ty in obj:
+            amount += self._stats.get(ty, 0)
+        return amount
+
+    def get_edge_amount(self):
+        return self._get_obj_amount(MSTType)
+
+    def get_vertex_amount(self):
+        return self._get_obj_amount(StateType)
+
+    def get_entity_amount(self):
+        return sum(self._stats.values())
+
+    def __str__(self):
+        tr = self.translation
+        edges = '|'.join([f"{tr[ty]}{self._stats[ty]}" for ty in MSTType
+                          if self._stats[ty] != 0])
+        nodes = '|'.join([f"{tr[ty]}{self._stats[ty]}" for ty in StateType
+                          if self._stats[ty] != 0])
+        ret = [
+            "Statistics(",
+            "Nodes=", str(self.get_vertex_amount()),
+            ", Edges=", str(self.get_edge_amount()),
+            " [", nodes, "][", edges, "]",
+            ")",
+        ]
+        return ''.join(ret)
+
+
 class MultiSSE(Step):
     """Run the MultiCore SSE."""
 
@@ -162,6 +220,12 @@ class MultiSSE(Step):
                            help="add artificial syscall delay (for IPIs)",
                            ty=Integer(),
                            default_value=-1)
+
+    zero_round_limit = Option(name="zero_round_limit",
+                              help=("Stop analysis after this many zero rounds"
+                                    "(-1 means unlimited)"),
+                              ty=Integer(),
+                              default_value=-1)
 
     log_single_core_transitions = Option(
         name="log_single_core_transitions",
@@ -237,6 +301,7 @@ class MultiSSE(Step):
         sp = mstg.add_vertex()
         mstg.vp.type[sp] = StateType.exit_sync
         mstg.vp.state[sp] = os_state
+        self._stats.incr(StateType.exit_sync)
         self._mstg.sync_point_map[sp] = [x.id for x in os_state.cpus]
         self._log.debug(f"Add initial sync point {int(sp)}")
 
@@ -264,6 +329,8 @@ class MultiSSE(Step):
             other_state = mstg.vertex(other_state)
             assert mstg.vp.cpu_id[living_state] == mstg.vp.cpu_id[other_state]
             edges = []
+            # do not count the stats here, since it invalidates the
+            # old vertices/edges directyl
             for edge in other_state.in_edges():
                 edges.append((edge, mstg.add_edge(edge.source(), living_state)))
             for edge in other_state.out_edges():
@@ -300,6 +367,7 @@ class MultiSSE(Step):
             mstg.vp.type[v] = StateType.state
             mstg.vp.state[v] = state
             mstg.vp.cpu_id[v] = cpu_id
+            self._stats.incr(StateType.state)
             if self._log.level <= logging.DEBUG:
                 abb = state.cfg.vp.name[cpu.abb] if cpu.abb else "None"
                 instance = state.instances.vp.label[cpu.control_instance] if cpu.control_instance else "None"
@@ -387,6 +455,7 @@ class MultiSSE(Step):
                 e = mstg.add_edge(src, tgt)
                 mstg.ep.type[e] = MSTType.s2s
                 mstg.ep.cpu_id[e] = cpu_id
+                self._stats.incr(MSTType.s2s)
                 # try to find the other existing metastate to merge with
                 m_state_cand = _get_m_state(tgt)
                 # no other metastate found, just create a new one
@@ -455,6 +524,7 @@ class MultiSSE(Step):
             m_state = mstg.add_vertex()
             mstg.vp.type[m_state] = StateType.metastate
             mstg.vp.cpu_id[m_state] = cpu_id
+            self._stats.incr(StateType.metastate)
 
             if self._log.level <= logging.DEBUG:
                 lbs = ', '. join([f"L{mstg.vp.state[x].id}" for x in to_assign_states])
@@ -470,6 +540,7 @@ class MultiSSE(Step):
             e = mstg.add_edge(m_state, state)
             mstg.ep.type[e] = MSTType.m2s
             mstg.ep.cpu_id[e] = cpu_id
+            self._stats.incr(MSTType.m2s)
 
         if self.dump.get():
             self._dump_mstg(extra=f"metastate.{int(m_state)}")
@@ -783,6 +854,7 @@ class MultiSSE(Step):
         new_sp = mstg.add_vertex()
         mstg.vp.type[new_sp] = StateType.entry_sync
         mstg.vp.state[new_sp] = multi_state
+        self._stats.incr(StateType.entry_sync)
         self._log.debug(
             f"Add new entry sync point {int(new_sp)} between "
             f"{int(cross_state)} and {[int(x) for x in timed_states]}")
@@ -792,6 +864,7 @@ class MultiSSE(Step):
         for src in chain([cross_state], timed_states):
             e = mstg.add_edge(src, new_sp)
             mstg.ep.type[e] = MSTType.st2sy
+            self._stats.incr(MSTType.st2sy)
             metastate = mstg.get_metastate(src)
             cpu_id = mstg.vp.cpu_id[metastate]
             mstg.ep.cpu_id[e] = cpu_id
@@ -799,6 +872,7 @@ class MultiSSE(Step):
             m2sy_edge = mstg.add_edge(metastate, new_sp)
             mstg.ep.type[m2sy_edge] = MSTType.m2sy
             mstg.ep.cpu_id[m2sy_edge] = cpu_id
+            self._stats.incr(MSTType.m2sy)
 
         # irq handling
         cpu = mstg.vp.state[cross_state].cpus.one()
@@ -862,10 +936,12 @@ class MultiSSE(Step):
         for new_state in new_states:
             exit_sp = mstg.add_vertex()
             mstg.vp.type[exit_sp] = StateType.exit_sync
+            self._stats.incr(StateType.exit_sync)
             self._log.debug(f"Add exit sync point {int(exit_sp)}")
 
             e = mstg.add_edge(sp, exit_sp)
             mstg.ep.type[e] = MSTType.en2ex
+            self._stats.incr(MSTType.en2ex)
             spm = self._mstg.sync_point_map
             spm[exit_sp] = spm[sp]
 
@@ -956,6 +1032,7 @@ class MultiSSE(Step):
                     f"Add sy2sy edge between {int(root)} and {int(sp)}.")
                 e = mstg.add_edge(root, sp)
                 mstg.ep.type[e] = MSTType.sy2sy
+                self._stats.incr(MSTType.sy2sy)
 
                 if exists:
                     # trigger a reevaluation
@@ -983,6 +1060,7 @@ class MultiSSE(Step):
                 m2sy_edge = mstg.add_edge(pred_sp.vertex, sp)
                 self._log.debug(f"Add follow_sync edge: {str(m2sy_edge)}")
                 mstg.ep.type[m2sy_edge] = MSTType.follow_sync
+                self._stats.incr(MSTType.follow_sync)
                 set_time(mstg.ep.bcet, m2sy_edge, pred_sp.range.up)
                 set_time(mstg.ep.wcet, m2sy_edge, pred_sp.range.to)
 
@@ -1215,15 +1293,31 @@ class MultiSSE(Step):
             e = mstg.add_edge(sp, metastate.state)
             mstg.ep.type[e] = MSTType.m2sy
             mstg.ep.cpu_id[e] = metastate.cpu_id
+            self._stats.incr(MSTType.m2sy)
 
             # add st2sy edge
             e = mstg.add_edge(sp, metastate.entry)
             mstg.ep.type[e] = MSTType.st2sy
             mstg.ep.cpu_id[e] = metastate.cpu_id
+            self._stats.incr(MSTType.st2sy)
 
             metastates[cpu_id] = metastate
 
         return metastates
+
+    def _handle_stats(self, zero_rounds):
+        self._log.debug("Added this round: %s, (%d zero rounds)",
+                        self._stats, zero_rounds["amount"])
+        if self._stats.get_entity_amount() == 0:
+            if zero_rounds["last_round_zero"]:
+                zero_rounds["amount"] += 1
+            else:
+                zero_rounds["last_round_zero"] = True
+                zero_rounds["amount"] += 1
+        else:
+            zero_rounds["last_round_zero"] = False
+
+        return self._limit != -1 and zero_rounds["amount"] >= self._limit
 
     def run(self):
         entry_label = self.entry_point.get()
@@ -1232,6 +1326,8 @@ class MultiSSE(Step):
         self._log.info(f"Analyzing entry point: '{entry_label}'")
 
         self._mstg = self.create_mstg()
+        self._stats = Statistics()
+        self._limit = self.zero_round_limit.get()
         mstg = self._mstg.g
 
         if self.with_times.get():
@@ -1253,6 +1349,11 @@ class MultiSSE(Step):
 
         already_handled_sps = set()
 
+        # make this a dict to be able to pass it by reference
+        zero_rounds = {"last_round_zero": False, "amount": 0}
+
+        self._log.debug("Start state stats: %s", self._stats)
+
         # actual algorithm
         counter = 0
         while stack:
@@ -1260,6 +1361,8 @@ class MultiSSE(Step):
             # reeval_info: information if a reevaluation is needed, of type
             #              NewNodeReevaluation or NewEdgeReevaluation or None
             sp, reeval_info = stack.pop(0)
+            # new statistics for every round
+            self._stats = Statistics()
             if (sp, reeval_info) in reevaluates:
                 # we don't need to analyse sync points that are reevaluated
                 # later on anyway.
@@ -1283,6 +1386,8 @@ class MultiSSE(Step):
                                                                reeval_info)
                 stack.extend([(x, None) for x in t_stack])
                 reevaluates.update(reevals)
+                if self._handle_stats(zero_rounds):
+                    break
                 continue
 
             # handle current sync point
@@ -1330,6 +1435,9 @@ class MultiSSE(Step):
                 self._log.info("Stack empty. Beginning with reevaluations")
                 stack.extend(list(set(reevaluates)))
                 reevaluates.clear()
+
+            if self._handle_stats(zero_rounds):
+                break
 
         self._log.info(f"Analysis needed {counter} iterations.")
 
