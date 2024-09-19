@@ -145,6 +145,8 @@ namespace ara::step {
 			return os << "WaitingReason::in_phi";
 		case WaitingReason::i_am_manager:
 			return os << "WaitingReason::i_am_manager";
+		case WaitingReason::end_of_function:
+			return os << "WaitingReason::end_of_function";
 		}
 		return os;
 	}
