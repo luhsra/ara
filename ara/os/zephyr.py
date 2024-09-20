@@ -1158,21 +1158,76 @@ class Zephyr(OSBase):
 
         irm = PyIRModuleInterpreter()
         import os
-        # path = os.path.join(os.getcwd(), "zephyr/kernel/sched.ll")
+        import sys
+        sys.path.append("../subprojects/ara/subprojects/irx/ara-ir-interpreter")
+        import zephyr
+        from diff import diff
+
+        proxy = zephyr.StructProxy(irm)
+
         llvmirfile = graph.os.llvmirfile
+        llvmir_dirpath = os.path.dirname(llvmirfile)
+        basename = os.path.basename(llvmirfile)
+        name = os.path.splitext(basename)[0]
         paths = [
-            #os.path.join(os.getcwd(), "zephyr/kernel/thread.ll").encode('utf-8'),
-            #os.path.join(os.getcwd(), "zephyr/kernel/sched.ll").encode('utf-8'),
-            llvmirfile.encode('utf-8'),
+             os.path.join(llvmir_dirpath, f"{name}_build/zephyr/zephyr.elf.ll").encode('utf-8'),
+             os.path.join(llvmir_dirpath, f"{name}_build/zephyr/linker-globals.ll").encode('utf-8'),
         ]
         function_name = b"z_impl_k_sleep"
 
         if not irm.parseIRFiles(paths):
             raise FileNotFoundError(f"Failed to parse LLVM-IR file {str(paths)}")
+        
+        def create_thread():
+            t = zephyr.k_thread()
 
-        if not irm.runFunction(function_name, [args.ms]):
+            t.join_queue.waitq.head.cache = t
+            t.join_queue.waitq.tail.cache = t
+            t.base.qnode_dlist.head.cache = t
+            t.base.qnode_dlist.tail.cache = t
+
+            proxy.put(t)
+            
+            return t
+        
+        threads = []
+        threads.append(create_thread())
+        idle_thread = create_thread()
+
+        _kernel = proxy.Global(zephyr.z_kernel, '_kernel')
+        proxy.get(_kernel)
+
+        _kernel.cpus[0].current.ptr = threads[0].ptr
+        _kernel.cpus[0].idle_thread.ptr = idle_thread.ptr
+
+        proxy.put(_kernel)
+
+        # CONFIG_TIMEOUT_64BIT, todo fix k_timeout_t, load into struct, but llvm is i64
+        # TODO: check the function signature in ir code, and remove the args_hints
+
+        irm.stop(["arch_swap"])
+
+        if not irm.runFunction(function_name, [args.ms], ['APInt64']):
             raise RuntimeError(f"Failed to run LLVM Interpreter for function {str(function_name)}")
+        
+        if irm.getCurrentCallFunctionName() == "arch_swap":
+            print(irm.getCallStack())
+            print(irm.getCurrentCallFunctionName())
+            print(irm.getCurrentCallArgs())
+            for old in [idle_thread, _kernel] + threads:
+                print("\n", type(old), old.__ptr__)
+                new = type(old)()
+                new.ptr = old.ptr
+                proxy.get(new)
+                changes = diff(old, new)
+                for x in changes:
+                    print(f"{x.path_str():30s}: {x.obj1} => {x.obj2}")
 
+        while irm.isRunnable():
+            if not irm.resume():
+                raise RuntimeError(f"Failed to run LLVM Interpreter for function {str(function_name)}")
+
+        print("ExitValue:", irm.getExitValue())
 
         ### Test: IRX
 
