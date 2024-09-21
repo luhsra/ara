@@ -1170,8 +1170,8 @@ class Zephyr(OSBase):
         basename = os.path.basename(llvmirfile)
         name = os.path.splitext(basename)[0]
         paths = [
-             os.path.join(llvmir_dirpath, f"{name}_build/zephyr/zephyr.elf.ll").encode('utf-8'),
-             os.path.join(llvmir_dirpath, f"{name}_build/zephyr/linker-globals.ll").encode('utf-8'),
+             os.path.join(llvmir_dirpath, f"{name}-kernel.ll").encode('utf-8'), # load the full kernel code
+             os.path.join(llvmir_dirpath, f"{name}-linker-globals.ll").encode('utf-8'),
         ]
         function_name = b"z_impl_k_sleep"
 
