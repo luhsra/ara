@@ -16,6 +16,7 @@ from abc import ABC, abstractmethod
 
 from enum import Enum
 from typing import Tuple
+from copy import copy
 
 from ara.graph import SyscallCategory as _SyscallCategory, SigType as _SigType
 from ara.graph import CFType as _CFType, CFGView as _CFGView
@@ -205,6 +206,36 @@ class Parenthesis(Enum):
     RIGHT = 2
 
 
+_argument_value_cache = {"last_added": []}
+def _get_cached_argument_value(va, abb, idx, callpath, hint):
+    CACHE_LENGTH = 5
+
+    def _shorten_callpath(callpath, length):
+        short_cp = copy(callpath)
+        while len(short_cp) > length:
+            short_cp.pop_front()
+
+    key = (int(abb), idx, hint)
+    cp_length, s_cache = _argument_value_cache.get(key, (-1, None))
+    if cp_length != -1:
+        short_cp = _shorten_callpath(callpath, cp_length)
+        result = s_cache.get(short_cp, None)
+        if result:
+            return result
+    result = va.get_argument_value(abb, idx, callpath=callpath, hint=hint)
+    cp_length = result.stats.maximal_depth
+    if s_cache is None:
+        s_cache = {}
+        _argument_value_cache[key] = (cp_length, s_cache)
+        la = _argument_value_cache["last_added"]
+        la.append(key)
+        if len(la) > CACHE_LENGTH:
+            del _argument_value_cache[la.pop(0)]
+    short_cp = _shorten_callpath(callpath, cp_length)
+    s_cache[short_cp] = result
+    return result
+
+
 class SysCall:
     """Defines a system call.
 
@@ -305,10 +336,13 @@ class SysCall:
             if arg.hint == _SigType.instance:
                 hint = _SigType.symbol
             try:
-                result = va.get_argument_value(abb,
-                                               idx + sig_offset,
-                                               callpath=callpath,
-                                               hint=hint)
+                result = _get_cached_argument_value(
+                    va,
+                    abb,
+                    idx + sig_offset,
+                    callpath=callpath,
+                    hint=hint
+                )
             except ValuesUnknown as e:
                 values.append(UnknownArgument(exception=e, value=None))
                 continue
