@@ -19,6 +19,7 @@ import argparse
 import json
 import os
 import sys
+import logging
 
 # see https://git.skewed.de/count0/graph-tool/-/issues/766
 os.environ["OMP_WAIT_POLICY"] = "passive"
@@ -203,8 +204,16 @@ class Main:
                             {'steps': [{'name': 'IRWriter',
                                         'ir_file': self.args.ir_output}]}, None)
 
-        logger.info("History: \n" + "\n".join([f"{se.uuid} {se.name}"
-                                            for se in self.s_manager.get_history()]))
+        if logger.level <= logging.DEBUG:
+            def step_info(step_entry):
+                config = json.dumps(step_entry.all_config, indent=2)
+                return f"{step_entry.uuid} {step_entry.name} Config:\n{config}"
+        else:
+            def step_info(step_entry):
+                return f"{step_entry.uuid} {step_entry.name}"
+
+        logger.info("History: \n" + "\n".join([step_info(se)
+                                               for se in self.s_manager.get_history()]))
 
 
 if __name__ == '__main__':
