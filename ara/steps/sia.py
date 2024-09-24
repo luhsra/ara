@@ -14,7 +14,7 @@ from ara.graph.mix import GraphType, ARA_ENTRY_POINT
 
 from .cfg_traversal import Visitor, run_sse, AnalysisContext
 from .step import Step
-from .option import Option, String, Choice
+from .option import Option, String, Choice, Integer
 from .util import is_in_condition, is_usually_taken, is_recursive
 
 
@@ -24,6 +24,8 @@ from graph_tool import GraphView, Vertex
 from graph_tool.topology import all_paths
 from graph_tool.util import find_vertex
 from itertools import chain
+
+CALLPATH_LIMIT = 1000
 
 
 @dataclass(kw_only=True)
@@ -58,6 +60,12 @@ class FlatAnalysis(Step):
                             ty=Choice("flowsensitive",
                                       "flowinsensitive",
                                       "mixed"))
+
+    path_limit = Option(name="path_limit",
+                        help=("Fail at that many paths to the same syscall."
+                              " -1 deactivates the feature."),
+                        default_value=-1,
+                        ty=Integer())
 
     def get_single_dependencies(self):
         raise NotImplementedError
@@ -206,6 +214,7 @@ class FlatAnalysis(Step):
         instances = self._graph.instances
 
         entry_points = self._get_entry_points()
+        path_limit = self.path_limit.get()
 
         if self.trace_algorithm.get():
             init_fast_trace(self)
@@ -266,9 +275,11 @@ class FlatAnalysis(Step):
                     fake_state_ctx = self._prepare_fake_states(inst)
 
                 path_to_self = [[]] if entry_point == function else []
-                for path in chain(
+                for idx, path in enumerate(chain(
                         all_paths(rev_cg, function, entry_point, edges=True),
-                        path_to_self):
+                        path_to_self)):
+                    if path_limit > 0 and idx > path_limit:
+                        self._fail("Too much paths to the same syscall.")
 
                     if self.trace_algorithm.get():
                         self.tracer.entity_is_looking_at(
