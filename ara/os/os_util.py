@@ -221,6 +221,7 @@ def _get_cached_argument_value(va, abb, idx, callpath, hint):
         short_cp = _shorten_callpath(callpath, cp_length)
         result = s_cache.get(short_cp, None)
         if result:
+            # logger.debug("Cache Hit")
             return result
     result = va.get_argument_value(abb, idx, callpath=callpath, hint=hint)
     cp_length = result.stats.maximal_depth
@@ -234,6 +235,11 @@ def _get_cached_argument_value(va, abb, idx, callpath, hint):
     short_cp = _shorten_callpath(callpath, cp_length)
     s_cache[short_cp] = result
     return result
+
+
+def _clear_cache():
+    _argument_value_cache.clear()
+    _argument_value_cache["last_added"] = []
 
 
 class SysCall:
@@ -316,7 +322,15 @@ class SysCall:
         ValueAnalyzer = get_native_component("ValueAnalyzer")
         ValuesUnknown = get_native_component("ValuesUnknown")
 
-        va = ValueAnalyzer(
+        class CachingValueAnalyzer(ValueAnalyzer):
+            def get_argument_value(self, abb, idx, callpath=None, hint=None):
+                return _get_cached_argument_value(super(), abb, idx, callpath, hint)
+
+            def assign_system_object(self, value, instance, offset, callpath):
+                _clear_cache()
+                return super().assign_system_object(value, instance, offset, callpath)
+
+        va = CachingValueAnalyzer(
             graph,
             current_step.tracer if hasattr(current_step, "tracer") else None)
 
@@ -336,8 +350,7 @@ class SysCall:
             if arg.hint == _SigType.instance:
                 hint = _SigType.symbol
             try:
-                result = _get_cached_argument_value(
-                    va,
+                result = va.get_argument_value(
                     abb,
                     idx + sig_offset,
                     callpath=callpath,
