@@ -20,10 +20,6 @@ class FindPointerLoops(Step):
     loop. Due to overapproximations with function pointers there might be
      unwanted loops. This step finds and prints these loops.
      """
-    dummy_option = Option(name="dummy_option",
-                          help="An option to demonstrate options.",
-                          ty=Integer())
-
     def get_single_dependencies(self):
         return ["CallGraph"]
 
