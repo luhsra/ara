@@ -173,6 +173,7 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'andreas'/ 'pmu',    'name': 'get_spinlock',           'oil': 'system_spinlock.json', 'synthesis_disabled': ['posix', 'riscv']},
   {'core': 'multicore',  'path': 'andreas'/ 'alarmmc','name': 'a',                     'oil': 'system_a.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'alarmmc','name': 'b',                     'oil': 'system_b.json'},
+  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'hello_world','name': 'a',     'oil': 'system.json'},
 ]
 subdir('multicore' / 'trampoline')
 
