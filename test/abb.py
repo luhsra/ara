@@ -41,7 +41,7 @@ def main():
                 "part_of_loop": cfg.vp.part_of_loop[abb],
                 "implemented": cfg.vp.implemented[abb],
                 "type": ABBType(cfg.vp.type[bb]).name,
-                "id": sha1(json.dumps(bout).encode("UTF-8")).hexdigest()[:8]}
+                "id": sha1(json.dumps(bout, sort_keys=True).encode("UTF-8")).hexdigest()[:8]}
         mapping[abb] = lout["id"]
 
         out_v.append(lout)
@@ -57,7 +57,7 @@ def main():
            "edges": sorted(out_e, key=lambda e: (e['source'], e['target']))}
 
     # with open(data.data_file, "w") as f:
-    #     json.dump(out, f, indent=2)
+    #     json.dump(out, f, indent=2, sort_keys=True)
     fail_if_json_not_equal(data.data, out)
 
 
