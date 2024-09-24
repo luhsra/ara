@@ -13,6 +13,10 @@ from pathlib import Path
 from graph_tool.topology import all_circuits
 
 
+class UnavoidableCircle(Exception):
+    pass
+
+
 class FindPointerLoops(Step):
     """Show loops in the callgraph.
 
@@ -64,8 +68,10 @@ class FindPointerLoops(Step):
             for node in circle:
                 cycle_hotness[callgraph.vp.function_name[node]].append(circle)
 
+        max_idx = 3
+
         for idx, (func, circles) in enumerate(sorted(cycle_hotness.items(), key=lambda x: len(x[1]))):
-            if idx > 3:
+            if idx > max_idx:
                 self._fail("bad")
 
             def unwrap(x):
@@ -74,40 +80,56 @@ class FindPointerLoops(Step):
             self._log.warn("Hotness %d, Function %s", idx, unwrap(func))
             circle = circles[0]
 
-            warning = "CIRCLE PATH:\n-----------------------\n\n"
-            self._log.warn(repr(list(circle)))
-            for src, dst in zip(list(circle), list(circle)[1:] + [None]):
-                src_lbl = unwrap(callgraph.vp.function_name[src])
-                if dst is None:
-                    continue
-                for edge in callgraph.edge(src, dst, all_edges=True):
-                    cs = callgraph.ep.callsite[edge]
-                    files = cfg.vp.files[cs]
-                    lines = cfg.vp.lines[cs]
-                    locations = set()
-                    for file, line in zip(files, lines):
-                        if line == 0:
-                            continue
-                        locations.add((file, line))
-                    if not callgraph.ep.indirect[edge]:
-                        loc_compressed = defaultdict(set)
-                        for file, line in locations:
-                            loc_compressed[Path(file)].add(str(line))
-                        loc_compressed = {file.name: ':'.join(lines) for file, lines in loc_compressed.items()}
-                        src_lbl += " (" + ' '.join([f"{file}:{lines}" for file, lines in loc_compressed.items()]) + ')\n'
+            try:
+                warning = "CIRCLE PATH:\n-----------------------\n\n"
+                has_indirect_edge = False
+                for src, dst in zip(list(circle), list(circle)[1:] + [None]):
+                    src_lbl = unwrap(callgraph.vp.function_name[src])
+                    if dst is None:
                         continue
-                    src_lbl += '\n'
-                    for file, line in locations:
-                        fl = f'    {file}:{line}\n'
-                        ct = ''
-                        with open(file) as f:
-                            ct = '    ' + f.read().splitlines()[line - 1] + '\n'
-                        src_lbl += fl + ct
-                        others = set()
-                        for other_edge in callgraph.vertex(src).out_edges():
-                            if callgraph.ep.callsite[other_edge] == cs:
-                                others.add(callgraph.vp.function_name[other_edge.target()])
-                        if others:
-                            src_lbl += '    Other callsites\n' + ''.join([f'        {unwrap(x)}\n' for x in others])
-                warning += src_lbl
+                    for edge in callgraph.edge(src, dst, all_edges=True):
+                        has_indirect_edge |= callgraph.ep.indirect[edge]
+                        cs = callgraph.ep.callsite[edge]
+                        files = cfg.vp.files[cs]
+                        for file in files:
+                            if any(filter(lambda x: x in file, ["unique_ptr.h", "std_function.h"])):
+                                raise UnavoidableCircle()
+                        if len(files) == 0:
+                            raise UnavoidableCircle()
+                        lines = cfg.vp.lines[cs]
+                        locations = set()
+                        for file, line in zip(files, lines):
+                            if line == 0:
+                                continue
+                            locations.add((file, line))
+                        if not callgraph.ep.indirect[edge]:
+                            loc_compressed = defaultdict(set)
+                            for file, line in locations:
+                                loc_compressed[Path(file)].add(str(line))
+                            loc_compressed = {file.name: ':'.join(lines) for file, lines in loc_compressed.items()}
+                            src_lbl += " (" + ' '.join([f"{file}:{lines}" for file, lines in loc_compressed.items()]) + ')\n'
+                            continue
+                        src_lbl += '\n'
+                        for file, line in locations:
+                            fl = f'    {file}:{line}\n'
+                            ct = ''
+                            with open(file) as f:
+                                ct = '    ' + f.read().splitlines()[line - 1] + '\n'
+                            src_lbl += fl + ct
+                            others = set()
+                            for other_edge in callgraph.vertex(src).out_edges():
+                                if callgraph.ep.callsite[other_edge] == cs:
+                                    others.add(callgraph.vp.function_name[other_edge.target()])
+                            if others:
+                                src_lbl += '    Other callsites\n' + ''.join([f'        {unwrap(x)} ({x})\n' for x in others])
+                    warning += src_lbl
+                if not has_indirect_edge:
+                    self._log.warn("Only direct edges.")
+                    max_idx += 1
+                    continue
+            except UnavoidableCircle:
+                self._log.warn("Unavoidable")
+                max_idx += 1
+                continue
+            self._log.warn(repr(list(circle)))
             self._log.warn(warning)
