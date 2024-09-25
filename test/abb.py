@@ -34,7 +34,7 @@ def main():
                          "part_of_loop": cfg.vp.part_of_loop[bb],
                          "implemented": cfg.vp.implemented[bb],
                          "type": ABBType(cfg.vp.type[bb]).name,
-                         "lines": list(cfg.vp.lines[bb])})
+                         "lines": list(sorted(cfg.vp.lines[bb]))})
 
         lout = {"bbs": bout,
                 "is_exit": cfg.vp.is_exit[abb],
