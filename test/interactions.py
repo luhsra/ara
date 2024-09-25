@@ -7,6 +7,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import os.path
+import json
 
 # Note: init_test must be imported first
 from init_test import fail_if_json_not_equal, init_test
@@ -60,10 +61,15 @@ def main():
     def sort_key(item):
         if item['type'] == "instance":
             return "0" + item['id']
+        else:
+            return "1" + json.dumps(item, sort_keys=True)
         return "1"
 
-    # log.warn(json.dumps(sorted(dump, key=sort_key), indent=2))
-    fail_if_json_not_equal(data.data, sorted(dump, key=sort_key))
+    dump = sorted(dump, key=sort_key)
+
+    # with open(data.data_file, "w") as f:
+    #     json.dump(dump, f, indent=2, sort_keys=True)
+    fail_if_json_not_equal(data.data, dump)
 
 
 if __name__ == '__main__':
