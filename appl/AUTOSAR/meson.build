@@ -1,5 +1,7 @@
 autosar_includes += ['-I', meson.current_source_dir() / 'source' / 'os']
 
+llvm_link_cmd = toolchains.get_variable('llvm_link_cmd')
+
 autosar_targets = []
 autosar_apps = [
   {'core': 'singlecore', 'path': 'bcc1' / 'alarm1',    'name': 'a',                     'oil': 'system.json', 'mtrace': 'a.trace.json'},

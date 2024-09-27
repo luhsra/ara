@@ -7,8 +7,6 @@
 
 tools_dir = meson.current_source_dir()
 
-compare_nm = files('compare_nm.py')
-compare_time = files('compare_time.py')
 gdb_hw_script = files('gdb_stm32.sh')
 qemu_test_runner = files('qemu_test_runner.py')
 validate_generator_runner = files('validate_generator_runner.py')
