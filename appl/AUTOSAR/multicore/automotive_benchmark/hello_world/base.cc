@@ -23,7 +23,7 @@ TEST_MAKE_OS_MAIN(start())
 
 TASK(T00) {
 	GetSpinlock(S1);
-	test_trace('5');
+	test_trace('0');
 	ActivateTask(T01);
 	ActivateTask(T10);
 	ReleaseSpinlock(S1);
