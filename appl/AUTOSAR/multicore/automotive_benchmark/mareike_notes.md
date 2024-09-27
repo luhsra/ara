@@ -18,25 +18,27 @@ subprojects/ara/libs/autosar
 os.h + test/test.h + arch/arm/platforms/raspberry/perf.h for wait
 
 
-# Running application
-Can test either with QEMU or on local Pi!
-
+# Running test cases
+`ara/libs/autosar/meson.build` line 17 Debug flag.
 ## QEMU
-use lines 23-26 in ara/libs/autosar/meson.build
-'''ninja ara@@run_autosar_multicore_automotive_benchmark_hello_world_base_pi4'''
+Include lines 23-26 in `ara/libs/autosar/meson.build`, then
+`ninja ara@@run_autosar_multicore_automotive_benchmark_hello_world_base_pi4`
 
-## Pi
-comment lines 23-26 out in ara/libs/autosar/meson.build.
+## Local Pi4
+Remove lines 23-26 in `ara/libs/autosar/meson.build`.
 
-Use pdu to start pi (can only be done from inside sra network). SSH to lab-pc67, works only with ip 10.33.23.167 inside the sra network.
-Use '''sudo minicom -D /dev/ttyUSB0''' to read serial via USB cable.
+Use pdu to start pi (can only be done from inside sra network). SSH to lab-pc67, works only with ip 10.33.23.167 inside the sra network. \
+
+Alternativly use `python3 power.p KVM6 ON` to start the pi.
+Use `sudo minicom -D /dev/ttyUSB0` to read serial via USB cable.
+Then `ninja ara@@tftp_autosar_multicore_automotive_benchmark_hello_world_base_pi4`
 ### sd card -- not used anymore
 Copy files to sd card and boot then: 4x files + 1x test.img.
 '''ninja subprojects/ara/appl/AUTOSAR/autosar_multicore_automotive_benchmark_hello_world_a_pi4.bin'''
-### tftp
+### tftp - works automatically now
 follow manual and setup tftp-hpa server, confige dnsmasq.conf. Then no sd card in pi and connect Lan cable, then pi should boot. Also add /srv/tftp to Docker file. 
 !DOESNT work yet, give Pi ip addr, instead do:
 
 '''ninja ara@@tftp_autosar_multicore_automotive_benchmark_hello_world_base_pi4''' to create test.img in /srv/tftp/test.img
 copy to lab-pc00 /proj/tftp/research/rpi4: '''scp /srv/tftp/test.img mar.burg@lab-pc00:/proj/tftp/research/rpi4/base.img''' and change config.txt to match image
-then start pi and it continuesly netboots the image
+then start pi and it continuesly netboots the image.
