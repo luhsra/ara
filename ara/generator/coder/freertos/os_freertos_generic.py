@@ -63,7 +63,7 @@ class FreeRTOSGenericOS(GenericOS):
         sum_sure = sum([heap_usage_sure, heap_decline])
         if heap_size_total < sum_maybe:
             self._log.warning(
-                "FreeRTOS heap usage might  exceed heap size: %s / %s)",
+                "FreeRTOS heap usage might exceed heap size: %s / %s)",
                 sum_maybe, heap_size_total)
         if heap_size_total < sum_sure:
             self._log.error("FreeRTOS heap usage exceeds heap size: %s / %s)",
