@@ -8,6 +8,8 @@
 
 #include "replace_syscalls_create.h"
 
+#include "common/util.h"
+
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/IR/GlobalVariable.h"
 #include "llvm/IR/TypeFinder.h"
@@ -97,7 +99,14 @@ namespace ara::step {
 		graph::CFG cfg = graph.get_cfg();
 		BasicBlock* ret_bb = nullptr;
 		graph_tool::gt_dispatch<>()(
-		    [&](auto& g) { create_bb_dispatched(g, cfg, extract<int64_t>(task.attr("abb")), ret_bb); },
+		    [&](auto& g) {
+			    int64_t abb;
+			    {
+				    TakeGIL gil;
+				    abb = extract<int64_t>(task.attr("abb"));
+			    }
+			    create_bb_dispatched(g, cfg, abb, ret_bb);
+		    },
 		    graph_tool::always_directed())(cfg.graph.get_graph_view());
 		return ret_bb;
 	}
@@ -414,8 +423,13 @@ namespace ara::step {
 		graph_tool::gt_dispatch<>()(
 		    [&](auto& g) {
 			    using Graph = typename std::remove_reference<decltype(g)>::type;
-			    auto f = extract<typename boost::graph_traits<Graph>::vertex_descriptor>(task.attr("function"));
-			    taskFN = cfg.get_llvm_function<Graph>(f);
+			    using Vertex = typename boost::graph_traits<Graph>::vertex_descriptor;
+			    Vertex func;
+			    {
+				    TakeGIL gil;
+				    func = extract<Vertex>(task.attr("function"));
+			    }
+			    taskFN = cfg.get_llvm_function<Graph>(func);
 		    },
 		    graph_tool::always_directed())(cfg.graph.get_graph_view());
 
@@ -534,6 +548,7 @@ namespace ara::step {
 		graph::InstanceGraph instances = graph.get_instances();
 		graph_tool::gt_dispatch<>()(
 		    [&](auto& g) {
+			    TakeGIL gil;
 			    object freertos = import("ara.os.freertos");
 			    object task_cls = freertos.attr("Task");
 			    object queue_cls = freertos.attr("Queue");
