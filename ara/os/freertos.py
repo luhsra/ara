@@ -53,7 +53,8 @@ class FreeRTOSInstance(object):
         return f"{type(self).__name__}({attrs})"
 
     def heap_decline(self):
-        if self.specialization_level in ['static', 'initialized']:
+        if (hasattr(self, 'specialization_level') and
+                self.specialization_level in ['static', 'initialized']):
             return self.heap_need
         return 0
 
