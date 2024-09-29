@@ -1,5 +1,5 @@
 # SPDX-FileCopyrightText: 2022 Jan Neugebauer
-# SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2024 Gerion Entrup <entrup@sra.uni-hannover.de>
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -81,8 +81,15 @@ class MissingInteractions:
 class InstanceGraphStats(Step):
     """Gather statistics about the Instance Graph."""
 
-    def get_single_dependencies(self):
-        return ["InteractionAnalysis"]
+    def get_dependencies(self, step_history):
+        needed = ['SIA', 'InteractionAnalysis', 'LoadOIL', 'ZeyphrStatic']
+        fulfilled = False
+        for step in step_history:
+            if step["name"] in needed:
+                fulfilled = True
+                break
+        if not fulfilled:
+            self.fail("Need one these steps beforehand: %s", ",".join(needed))
 
     def _write_failing_interaction_syscalls_to_file(self):
         """Write file and line of all failing interaction syscalls grouped by instance type to file"""
