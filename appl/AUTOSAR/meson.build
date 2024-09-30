@@ -128,7 +128,7 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'timing',             'name': 'c',                     'oil': 'system_c.json', 'timing': 'c_timing.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'timing',             'name': 'artificial_delay',      'oil': 'artificial_delay.json', 'timing': 'BB', 'short_delay': 'artificial_delay.short.trace.json', 'long_delay': 'artificial_delay.long.trace.json', 'synthesis_disabled': ['posix', 'pi4']},
   {'core': 'multicore',  'path': 'paper',              'name': 'running',               'oil': 'system_running.json', 'mtrace': 'running.trace.json', 'locks': 'EXTRACT', 'timing': 'BB', 'ttrace': 'running.timing.trace.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
-  {'core': 'multicore',  'path': 'paper',              'name': 'running_pmu',           'oil': 'system_running.json', 'mtrace': 'running.trace.json', 'locks': 'EXTRACT', 'timing': 'BB', 'ttrace': 'running.timing.trace.json', 'synthesis_disabled': ['posix', 'riscv']},
+  {'core': 'multicore',  'path': 'paper',              'name': 'running_pmu',           'oil': 'system_running.json', 'mtrace': 'running.trace.json', 'locks': 'EXTRACT', 'timing': 'BB', 'ttrace': 'running.timing.trace.json', 'synthesis_disabled': ['posix', 'riscv'], 'opt': true, 'variants': ['T11', 'T02', 'T01']},
   {'core': 'multicore',  'path': 'paper',              'name': 'running_long11',        'oil': 'system_running.json', 'locks': 'EXTRACT', 'timing': 'BB', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'paper',              'name': 'deadlock',              'oil': 'system_running.json', 'locks': 'EXTRACT', 'timing': 'BB', 'mtrace': 'deadlock.trace.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'paper',              'name': 'minimal',               'oil': 'system_minimal.json', 'locks': 'EXTRACT', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
@@ -192,18 +192,28 @@ with_timing_settings = custom_target(
   command: ['echo', '{"steps": ["ApplyTimings", "LockElision", "IPIAvoidance"], "MultiSSE": {"with_times": true}}'],
 )
 
-
+autosar_apps_with_variants = []
 foreach app : autosar_apps
   # src file
   sys = app['core'] / app['path'] / app['name']
   full_name = 'autosar_' + sys.underscorify()
-  app += {'src': files(sys + '.cc'), 'full_name': full_name}
+  if app.has_key('variants')
+    foreach variant : app['variants']
+      full_name = 'autosar_' + sys.underscorify() + '_' + variant
+      autosar_apps_with_variants += [app + {'src': files(sys + '.cc')[0], 'full_name': full_name, 'variant': variant}]
+    endforeach
+  else
+    autosar_apps_with_variants += [app + {'src': files(sys + '.cc')[0], 'full_name': full_name}]
+  endif
+endforeach
 
-
+foreach app : autosar_apps_with_variants
+  sys = app['core'] / app['path'] / app['name']
+  full_name = app['full_name']
   #oil file
   if app['oil'] == 'EXTRACT'
-    oil = custom_target('autosar_' + sys.underscorify() + '.system.json',
-                        input: sys + '.cc',
+    oil = custom_target(full_name + '.system.json',
+                        input: app['src'],
                         output : full_name + '.system.json',
                         capture: true,
                         command : [sed, '-n', '/if SYSTEM_JSON/,/SYSTEM_JSON/{/SYSTEM_JSON/d;p}', '@INPUT@'])
@@ -211,6 +221,11 @@ foreach app : autosar_apps
     oil = files(app['core'] / app['path'] / app['oil'])[0]
   endif
   app += {'oil': oil}
+
+  variant_flags = []
+  if app.has_key('variant')
+    variant_flags += ['-DVARIANT_' + app['variant']]
+  endif
 
   # compile the application
   if posix_enabled
@@ -222,6 +237,7 @@ foreach app : autosar_apps
                                     posix_autosar_includes +
                                     autosar_includes +
                                     clang_flags +
+                                    variant_flags +
                                     autosar_posix_clang_flags +
                                     '-O0' + # dont optimize before IR
                                     ir_flags)
@@ -239,6 +255,7 @@ foreach app : autosar_apps
                                     arm_autosar_includes +
                                     autosar_includes +
                                     clang_flags +
+                                    variant_flags +
                                     autosar_pi4_clang_flags +
                                     '-O0' + # dont optimize before IR
                                     ir_flags)
@@ -256,6 +273,7 @@ foreach app : autosar_apps
                                     riscv_autosar_includes +
                                     autosar_includes +
                                     clang_flags +
+                                    variant_flags +
                                     autosar_riscv_clang_flags +
                                     '-O0' + # dont optimize before IR
                                     ir_flags)
@@ -301,8 +319,6 @@ foreach app : autosar_apps
   endif
   app += {'sys_timings': sys_timings}
 
-
-
   # lock elision test data
   if app.has_key('locks')
     if app['locks'] == 'EXTRACT'
@@ -327,8 +343,6 @@ foreach app : autosar_apps
 
   set_variable(full_name, app)
   autosar_targets += [app]
-
-
 endforeach
 
 autosar_generated_targets_posix = []
@@ -432,80 +446,102 @@ foreach app: autosar_targets
 
 
   if arm_enabled and not (app.has_key('synthesis_disabled') and 'pi4' in app['synthesis_disabled'])
-    if get_option('execute_ara')
-      out = custom_target(
-        full_name + '_mod_pi4',
-        input : app['ll_pi4'],
-        output : [
-          full_name + '_mod.pi4.ll',
-          full_name+'_autosar.pi4.cc',
-          full_name+'_autosar.pi4.ld'
-        ],
-        depfile : full_name + '_mod.pi4.ll.dep',
-        command : [
-          py3_inst, ara_py, app['ll_pi4'],
-          '--os', 'AUTOSAR',
-          '--oilfile', app['oil'],
-          '--ir_output', '@OUTPUT0@',
-          '--step-settings', files('../../settings/autosar_generator_arm.json'),
-          '--generator_output', '@OUTPUT1@',
-          #'--timings', app['sys_timings']
-        ]
-      )
-    else
-      out = disabler()
+    ara_opt_settings = {
+      'opt': autosar_generator_arm_opt,
+      'noopt': autosar_generator_arm_noopt
+    }
+    opt_targets = ['noopt']
+    if app.has_key('opt') and app['opt']
+      opt_targets += ['opt']
     endif
-    app_ll_mod = out[0]
-    autosar = out[1]
-    linker_script = out[2]
-    app += {'ll_pi4_mod': app_ll_mod}
-    app += {'autosar_pi4': autosar}
-    app += {'linker_script_pi4': linker_script}
+    foreach opt : opt_targets
+      opt_app_name = full_name + '_' + opt
+      if get_option('execute_ara')
+        out = custom_target(
+          opt_app_name + '_mod_pi4',
+          input : app['ll_pi4'],
+          output : [
+            opt_app_name + '_mod.pi4.ll',
+            opt_app_name +'_autosar.pi4.cc',
+            opt_app_name +'_autosar.pi4.ld'
+          ],
+          depfile : opt_app_name + '_mod.pi4.ll.dep',
+          command : [
+            py3_inst, ara_py, app['ll_pi4'],
+            '--os', 'AUTOSAR',
+            '--oilfile', app['oil'],
+            '--ir_output', '@OUTPUT0@',
+            '--step-settings', ara_opt_settings[opt],
+            '--generator_output', '@OUTPUT1@',
+            #'--timings', app['sys_timings']
+          ]
+        )
+      else
+        out = disabler()
+      endif
+      app_ll_mod = out[0]
+      autosar = out[1]
+      linker_script = out[2]
+      app += {'ll_pi4_mod_' + opt: app_ll_mod}
+      app += {'autosar_pi4_' + opt: autosar}
+      app += {'linker_script_pi4_' + opt: linker_script}
 
-    app_image_pi4 = custom_target(full_name + '_image_pi4',
-                            input: [
-                              app_ll_mod,
-                              autosar,
-                              libautosar_test_pi4,
-                              libautosar_os_pi4,
-                              libautosar_arch_pi4,
-                              libautosar_generic_pi4
-                            ],
-                            output : full_name + '_pi4',
-                            depfile : full_name + '.pi4.dep',
-                            command : clang_cpp +
-                                      ['-T', linker_script] +
-                                      arm_autosar_includes +
-                                      autosar_includes +
-                                      ld_flags +
-                                      autosar_pi4_ld_flags +
-                                      clang_flags +
-                                      autosar_pi4_clang_flags)
+      app_image_pi4 = custom_target(opt_app_name + '_image_pi4',
+                              input: [
+                                app_ll_mod,
+                                autosar,
+                                libautosar_test_pi4,
+                                libautosar_os_pi4,
+                                libautosar_arch_pi4,
+                                libautosar_generic_pi4
+                              ],
+                              output : opt_app_name + '_pi4',
+                              depfile : opt_app_name + '.pi4.dep',
+                              command : clang_cpp +
+                                        ['-T', linker_script] +
+                                        arm_autosar_includes +
+                                        autosar_includes +
+                                        ld_flags +
+                                        autosar_pi4_ld_flags +
+                                        clang_flags +
+                                        autosar_pi4_clang_flags)
 
-    app += {'app_image_pi4': app_image_pi4}
-    run_cmd = libplatforms_proj.get_variable('qemu_rpi4_32bit_cmd') + app_image_pi4
-    app += {'run_cmd_pi4': run_cmd}
-    run_target('run_' + full_name + '_pi4', command: run_cmd)
+      app += {'app_image_pi4_' + opt: app_image_pi4}
+      run_cmd = libplatforms_proj.get_variable('qemu_rpi4_32bit_cmd') + app_image_pi4
+      app += {'run_cmd_pi4_' + opt: run_cmd}
+      rt = 'run_' + opt_app_name + '_pi4'
+      run_target(rt, command: run_cmd)
+      summary('Run @0@ on Qemu'.format(opt_app_name), 'meson compile ' + rt, bool_yn: true, section: 'MACAW, AUTOSAR synthesis')
 
+      pi4_bin = custom_target(opt_app_name + '_pi4_bin',
+                          input: [
+                            app_image_pi4,
+                          ],
+                          output : opt_app_name + '_pi4.bin',
+                          depfile : opt_app_name + '.pi4.bin.dep',
+                          command : [ llvm_objcopy,
+                                    '-O', 'binary',
+                                    '@INPUT@',
+                                    '@OUTPUT@'])
 
-    pi4_bin = custom_target(full_name + '_pi4_bin',
-                        input: [
-                          app_image_pi4,
-                        ],
-                        output : full_name + '_pi4.bin',
-                        depfile : full_name + '.pi4.bin.dep',
-                        command : [ llvm_objcopy,
-                                  '-O', 'binary',
-                                  '@INPUT@',
-                                  '@OUTPUT@'])
+      scp = find_program('scp')
+      ssh = find_program('ssh')
 
-    pi4_bin_pxe = run_target('tftp_' + full_name + '_pi4',
-                        depends : [pi4_bin],
-                        command : [rpi4_tftp_deploy,
-                                  pi4_bin.full_path()])
+      rt = 'tftp_' + opt_app_name + '_pi4'
+      pi4_bin_pxe = run_target(rt,
+                          depends : [pi4_bin],
+                          command : [
+                            py3_inst,
+                            rpi4_tftp_deploy,
+                            pi4_bin.full_path(),
+                            '--ssh-host', libplatforms_proj.get_variable('tftp_host'),
+                            '--scp', scp.full_path(),
+                            '--ssh', ssh.full_path(),
+                          ])
+      summary('Flash @0@ on RPI with TFTP'.format(opt_app_name), 'meson compile ' + rt, bool_yn: true, section: 'MACAW, AUTOSAR synthesis')
 
-
-    autosar_generated_targets_pi4 += app
+      autosar_generated_targets_pi4 += app
+    endforeach
   endif
 
   
