@@ -21,6 +21,8 @@
 
 #define MAX_TRACES 64
 
+extern "C" void wait(int a, int b);
+
 namespace arch {
 	class Perf {
 		static int cycles[MAX_TRACES];
