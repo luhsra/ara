@@ -53,8 +53,10 @@ TEST_MAKE_OS_MAIN( start() )
  * CPU0
  */
 TASK(T01) {
-	arch::Perf::start();
-	//arch::Perf::trace_cycles();
+	// arch::Perf::start();
+#ifdef VARIANT_T01
+	arch::Perf::trace_cycles();
+#endif
 	//test_trace('6');
 	ara_timing_info(20, 25);
 	GetSpinlock(S1);
@@ -65,7 +67,9 @@ TASK(T01) {
 
 	//test_trace_assert("123456");
 	//test_finish();
-	//arch::Perf::trace_cycles();
+#ifdef VARIANT_T01
+	arch::Perf::trace_cycles();
+#endif
 	arch::Perf::print_cycles();
 
 	ShutdownMachine();
@@ -74,10 +78,14 @@ TASK(T01) {
 TASK(T02) {
 	arch::Perf::start();
 	//test_trace('3');
+#ifdef VARIANT_T02
 	arch::Perf::trace_cycles();
+#endif
 	ara_timing_info(60, 80);
-	arch::Perf::trace_cycles();
-	//test_trace('5');
+	// arch::Perf::trace_cycles();
+#ifdef VARIANT_T02
+	test_trace('5');
+#endif
 	/* ... some computation ... */
 	TerminateTask();
 }
@@ -92,30 +100,42 @@ TASK(T11) {
 	arch::Perf::start();
 	// heat up measurement caching
 	ara_timing_info(1, 1);
-	//arch::Perf::trace_cycles();
+#ifdef VARIANT_T11
+	arch::Perf::trace_cycles();
 	arch::Perf::reset_counters();
 	arch::Perf::reset();
 
-	//arch::Perf::trace_cycles(); // T11 start
+	arch::Perf::trace_cycles(); // T11 start
+#endif
 	ara_timing_info(1, 2);		//
 	/* ... some computation ... */
 	GetSpinlock(S1);
-	//arch::Perf::trace_cycles(); // ABB9+10
+#ifdef VARIANT_T11
+	arch::Perf::trace_cycles(); // ABB9+10
+#endif
 	ara_timing_info(8, 16);		//
 	/* ... */
 	ReleaseSpinlock(S1);
-	//arch::Perf::trace_cycles(); // ABB11+12
+#ifdef VARIANT_T11
+	arch::Perf::trace_cycles(); // ABB11+12
+#endif
 	ara_timing_info(1, 3);
 	//test_trace('2');
 	ActivateTask(T02);
-	//arch::Perf::trace_cycles(); // ABB13+14
+#ifdef VARIANT_T11
+	arch::Perf::trace_cycles(); // ABB13+14
+#endif
 	ara_timing_info(10, 20);	// 
 	//test_trace('4');
 	ActivateTask(T01);
-	//arch::Perf::trace_cycles(); // ABB15+16
+#ifdef VARIANT_T11
+	arch::Perf::trace_cycles(); // ABB15+16
+#endif
 	ara_timing_info(20, 30);	// 
 	ActivateTask(T21);
-	//arch::Perf::trace_cycles(); // ABB17+18
+#ifdef VARIANT_T11
+	arch::Perf::trace_cycles(); // ABB17+18
+#endif
 	ara_timing_info(3, 4);
 
 	TerminateTask();
