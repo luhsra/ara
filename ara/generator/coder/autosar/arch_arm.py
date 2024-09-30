@@ -29,7 +29,11 @@ class ArmArch(GenericArch):
         self.arch_rules.generate_functions()
 
     def generate_functions(self):
-        super().generate_functions()
+        # override generic generate_functions
+        timing_info = Function("ara_timing_info", "void", ["int", "int"], extern_c=True)
+        timing_info.add(Statement("debug_core << \" timing \" << arg0 << \" \" << arg1 << endl"))
+        self.call(timing_info, "wait", "void", ["arg0, arg1"])
+        self.generator.source_file.function_manager.add(timing_info)
 
         kickoff = Function("AUTOSAR_kickoff", "void", [], extern_c=True)
         #kickoff.add(Statement("debug_core << __FUNCTION__ << endl"))
@@ -60,6 +64,7 @@ class ArmArch(GenericArch):
         self.generate_dataobjects_tcbs()
 
     def generate_system_code(self):
+        self.generator.source_file.include("perf.h")
         # tracing for PMU
         self.PERF_TRACE = TracePerf.NONE
         ValueAnalyzer = get_native_component("ValueAnalyzer")
@@ -209,8 +214,7 @@ class ArmArch(GenericArch):
             self.call(kernelspace.system, "arch::Perf::trace_cycles")
             self.call(kernelspace.post_hook, "arch::Perf::trace_cycles")
 
-
-        if userspace.is_isr == False:
+        if not userspace.is_isr:
             kernelspace.post_hook.add(Comment("Dispatch directly back to Userland"))
             self.call(kernelspace.post_hook, "Dispatcher::ResumeToTask", "void",
                     [self.generator.syscall_rules.task_desc(userspace.calling_task)])
