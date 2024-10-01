@@ -17,15 +17,18 @@ TASK(H1) {
 
 TASK(H2) {
 	arch::Perf::start();
-	kout << "Starting wait!" <<  endl;
-	wait(0,1);
-	kout << "Done 0!" << endl;
-	wait(1000000,1);
-	kout << "Done 1000000!" << endl;
-	ara_timing_info(2,3);
-	kout << "ara_timing_info 2!" << endl;
-	ara_timing_info(5,10);
-	kout << "ara_timing_info 5!" << endl;
+	kout << "Starting!" <<  endl;
+
+	kout << sizeof(unsigned int) <<  endl;
+
+	for (unsigned i = 0; i < 500; i++)
+	{
+		// new_wait(4200000);
+		new_wait(1000000000);
+	}
+
+	kout << "max int done" << endl;
+	
 
 	test_trace('2');
 	TerminateTask();
@@ -44,7 +47,7 @@ void PreIdleHook() {
 	static int cycle_count;
 	cycle_count++;
 
-	if (cycle_count > 5) {
+	if (cycle_count > 3) {
 		test_trace_assert("22222");
 		test_finish();
 		ShutdownMachine();

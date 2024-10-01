@@ -1,4 +1,4 @@
-1. setup Docker 
+1. setup Docker (after update: `docker build -t scm.sra.uni-hannover.de:5050/research/parrot .`)
     1. run_docker.sh
 2. build (only one time)
     1. meson setup build --native-file native-debian.ini
@@ -7,7 +7,20 @@
     2. ninja ara@@run_autosar_multicore_andreas_pmu_get_spinlock_pi4
 
 # subprojects
-Code of all repos is found there :) or in gitlab
+Code of all repos is found there :) or in gitlab. /
+Parrot: Sammelrepo
+ARA: eigene Branch automotive_appl
+ara-libplatforms: automotive_appl nicht mehr in use
+
+
+## Git
+Use this cmd to get updates from soso (main branch), and include them into automotive_appl.
+```bash
+git checkout automotive_appl
+git pull origin soso --rebase
+git push
+```
+
 
 # examples
 cd subprojects/ara/appl/AUTOSAR/multicore/andreas

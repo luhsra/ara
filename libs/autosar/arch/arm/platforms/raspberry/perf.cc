@@ -30,3 +30,32 @@ extern "C" void wait(int a, int b){
 		};
 	//}
 };
+
+extern "C" void new_wait(int a) {
+	int counter = 0;
+	if (a == 0) return;
+	uint32_t starttime = arch::Perf::get_cycles();
+	uint32_t endtime = starttime + a;
+
+	// endtime *= 2;
+
+	kout << "a: " <<  a << " s: " << starttime << " e: " << endtime << endl;
+
+	if (starttime < endtime) {
+		while (endtime >= arch::Perf::get_cycles()) {
+			counter++;
+		};
+	} else if (starttime > endtime) {
+		while (endtime <= arch::Perf::get_cycles()) {
+			counter++;
+			while (endtime >= arch::Perf::get_cycles()) {
+				counter++;
+			}
+			
+		};
+	}
+	
+	kout << "a: " <<  a << " s: " << starttime << " e: " << endtime << " leave at: " << arch::Perf::get_cycles()<< endl;
+	
+	
+}
