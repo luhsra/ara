@@ -1159,7 +1159,7 @@ class Zephyr(OSBase):
         irm = PyIRModuleInterpreter()
         import os
         import sys
-        sys.path.append("../subprojects/ara/subprojects/irx/ara-ir-interpreter")
+        sys.path.append("../subprojects/ara/subprojects/irx/")
         import zephyr
         from diff import diff
 
@@ -1170,14 +1170,24 @@ class Zephyr(OSBase):
         basename = os.path.basename(llvmirfile)
         name = os.path.splitext(basename)[0]
         paths = [
-             os.path.join(llvmir_dirpath, f"{name}-kernel.ll").encode('utf-8'), # load the full kernel code
-             os.path.join(llvmir_dirpath, f"{name}-linker-globals.ll").encode('utf-8'),
+             os.path.join(llvmir_dirpath, f"{name}.ll"), # application + thread definitions
+             os.path.join(llvmir_dirpath, f"{name}-kernel.ll"), # load the full kernel code
         ]
+        build_native_sym = True # TODO: get the actual value
+        if build_native_sym:
+            paths += ['subprojects/ara/subprojects/irx/native_runner/runner.ll']
+        
         function_name = b"z_impl_k_sleep"
 
         if not irm.parseIRFiles(paths):
             raise FileNotFoundError(f"Failed to parse LLVM-IR file {str(paths)}")
         
+        # if irm.hasExternal("nsi_simu_time"):
+            # irm.setInitializer("nsi_simu_time", "i64 0")
+
+        if not irm.createInterpreter():
+            raise RuntimeError("Failed to create interpreter")
+
         def create_thread():
             t = zephyr.k_thread()
 
@@ -1205,7 +1215,7 @@ class Zephyr(OSBase):
         # CONFIG_TIMEOUT_64BIT, todo fix k_timeout_t, load into struct, but llvm is i64
         # TODO: check the function signature in ir code, and remove the args_hints
 
-        irm.stop(["arch_swap"])
+        irm.stop(["arch_swap"]) # CONF: or arch_switch
 
         if not irm.runFunction(function_name, [args.ms], ['APInt64']):
             raise RuntimeError(f"Failed to run LLVM Interpreter for function {str(function_name)}")
@@ -1222,12 +1232,23 @@ class Zephyr(OSBase):
                 changes = diff(old, new)
                 for x in changes:
                     print(f"{x.path_str():30s}: {x.obj1} => {x.obj2}")
-
+            
+            irm.putReturnValue(0, 'APInt32') # emulate that the callee returned 0
+            
         while irm.isRunnable():
             if not irm.resume():
                 raise RuntimeError(f"Failed to run LLVM Interpreter for function {str(function_name)}")
 
         print("ExitValue:", irm.getExitValue())
+        
+        for old in [idle_thread, _kernel] + threads:
+            print("\n", type(old), old.__ptr__)
+            new = type(old)()
+            new.ptr = old.ptr
+            proxy.get(new)
+            changes = diff(old, new)
+            for x in changes:
+                print(f"{x.path_str():30s}: {x.obj1} => {x.obj2}")
 
         ### Test: IRX
 
