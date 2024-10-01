@@ -81,12 +81,12 @@ TASK(T02) {
 #ifdef VARIANT_T02
 	arch::Perf::trace_cycles();
 #endif
-	ara_timing_info(60, 80);
-	// arch::Perf::trace_cycles();
-#ifdef VARIANT_T02
-	test_trace('5');
-#endif
 	/* ... some computation ... */
+	ara_timing_info(60, 80);
+#ifdef VARIANT_T02
+	arch::Perf::trace_cycles();
+	//test_trace('5');
+#endif
 	TerminateTask();
 }
 
