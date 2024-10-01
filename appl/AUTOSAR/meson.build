@@ -2,6 +2,9 @@ autosar_includes += ['-I', meson.current_source_dir() / 'source' / 'os']
 
 llvm_link_cmd = toolchains.get_variable('llvm_link_cmd')
 
+scp = find_program('scp')
+ssh = find_program('ssh')
+
 autosar_targets = []
 autosar_apps = [
   {'core': 'singlecore', 'path': 'bcc1' / 'alarm1',    'name': 'a',                     'oil': 'system.json', 'mtrace': 'a.trace.json'},
@@ -523,9 +526,6 @@ foreach app: autosar_targets
                                     '-O', 'binary',
                                     '@INPUT@',
                                     '@OUTPUT@'])
-
-      scp = find_program('scp')
-      ssh = find_program('ssh')
 
       rt = 'tftp_' + opt_app_name + '_pi4'
       pi4_bin_pxe = run_target(rt,
