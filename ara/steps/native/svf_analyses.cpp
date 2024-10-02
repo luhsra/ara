@@ -144,8 +144,8 @@ namespace ara::step {
 
 	void SVFAnalyses::run() {
 		// Disable SVF ThreadCallGraph because this option will not work with POSIX os model.
-		const char* command_line[] = {"ara", "-enable-tcg=false"};
-		llvm::cl::ParseCommandLineOptions(2, command_line);
+		const char* command_line[] = {"ara", "-enable-tcg=false", "-"}; // HACK FIX: Not enough positional command line arguments specified
+		llvm::cl::ParseCommandLineOptions(3, command_line);
 
 		logger.info() << "Building SVF graphs." << std::endl;
 		SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(graph.get_module());

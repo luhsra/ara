@@ -1153,6 +1153,16 @@ class Zephyr(OSBase):
         # - wait_for_switch(new_thread);
 		# - arch_switch();
 
+        def get_threads():
+            # threads = [(v, obj) for v, obj in instances.get(Thread)]
+            threads = state.instances.get_controls().vertices()
+            for v in threads:
+                obj = state.instances.vp.obj[v]
+                if obj not in state.context:
+                    logger.warning("Tried to access non available context")
+                    continue
+                yield state.context[obj]
+        
 
         ### Test: IRX
 
@@ -1160,8 +1170,10 @@ class Zephyr(OSBase):
         import os
         import sys
         sys.path.append("../subprojects/ara/subprojects/irx/")
+        sys.path.append("../subprojects/irx")
         import zephyr
         from diff import diff
+        import ara.os.zephyr_adapters as za
 
         proxy = zephyr.StructProxy(irm)
 
@@ -1175,7 +1187,8 @@ class Zephyr(OSBase):
         ]
         build_native_sym = True # TODO: get the actual value
         if build_native_sym:
-            paths += ['subprojects/ara/subprojects/irx/native_runner/runner.ll']
+            #paths += ['subprojects/ara/subprojects/irx/native_runner/runner.ll']
+            paths += ['subprojects/irx/native_runner/runner.ll']
         
         function_name = b"z_impl_k_sleep"
 
@@ -1188,8 +1201,11 @@ class Zephyr(OSBase):
         if not irm.createInterpreter():
             raise RuntimeError("Failed to create interpreter")
 
-        def create_thread():
+
+        def create_thread(status):
             t = zephyr.k_thread()
+
+            t.status = status
 
             t.join_queue.waitq.head.cache = t
             t.join_queue.waitq.tail.cache = t
@@ -1200,9 +1216,14 @@ class Zephyr(OSBase):
             
             return t
         
+        threads_map = {}
         threads = []
-        threads.append(create_thread())
-        idle_thread = create_thread()
+        for tctx in get_threads():
+            print("AbSS Thread context:", tctx)
+            t = create_thread(za.ThreadStateAdapter.fromAbSS(tctx.status))
+            threads.append(t)
+            threads_map[t.ptr] = tctx
+        idle_thread = create_thread(za.ThreadStateAdapter.fromAbSS(TaskStatus.ready))
 
         _kernel = proxy.Global(zephyr.z_kernel, '_kernel')
         proxy.get(_kernel)
@@ -1233,6 +1254,21 @@ class Zephyr(OSBase):
                 for x in changes:
                     print(f"{x.path_str():30s}: {x.obj1} => {x.obj2}")
             
+
+            # new_z_kernel = zephyr.z_kernel()
+            # new_z_kernel.ptr = _kernel.ptr
+            # proxy.get(new_z_kernel)
+            # print("ready_q.cache (za):", za.ThreadStateAdapter.fromZephyr(new_z_kernel.ready_q.cache))
+            for old in threads:
+                new = type(old)()
+                new.ptr = old.ptr
+                proxy.get(new)
+                abSSTState = za.ThreadStateAdapter.fromZephyr(new.base.thread_state)
+                if abSSTState:
+                    print(type(old), old.__ptr__)
+                    print("\n base.thread_state (za):", abSSTState.name)
+                    print("\n AbSS:", threads_map[t.ptr])
+            
             irm.putReturnValue(0, 'APInt32') # emulate that the callee returned 0
             
         while irm.isRunnable():
@@ -1253,14 +1289,8 @@ class Zephyr(OSBase):
         ### Test: IRX
 
 
-        # threads = [(v, obj) for v, obj in state.instances.get(Thread)]
-        threads = state.instances.get_controls().vertices()
-        for v in threads:
-           obj = state.instances.vp.obj[v]
-           if obj not in state.context:
-               logger.warning("Tried to access non available context")
-               continue
-           state.context[obj].status = TaskStatus.ready
+        for tctx in get_threads():
+           tctx.status = TaskStatus.ready
 
         cpu = state.cpus[cpu_id]
 
