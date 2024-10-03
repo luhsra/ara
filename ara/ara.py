@@ -167,19 +167,23 @@ class Main:
         if self.extra_settings.get("steps", None) and self.args.step:
             parser.error("Provide steps either with '--step' or in '--step-settings'.")
 
-        if self.args.manual_corrections:
-            if self.args.step:
-                self.extra_settings["steps"] = [self.args.step, "ManualCorrections"]
-                self.args.step = None
-            else:
-                self.extra_settings["steps"].append("ManualCorrections")
+        def step_sneak_in(arg, step_name, after=False):
+            if arg:
+                if self.args.step:
+                    steps = [self.args.step]
+                    self.args.step = None
+                else:
+                    steps = self.extra_settings["steps"]
+                if after:
+                    steps.append(step_name)
+                else:
+                    steps.insert(0, step_name)
+                self.extra_settings["steps"] = steps
 
-        if self.args.va_corrections:
-            if self.args.step:
-                self.extra_settings["steps"] = ["ValueAnalyzerCorrections", self.args.step]
-                self.args.step = None
-            else:
-                self.extra_settings["steps"].insert(0, "ValueAnalyzerCorrections")
+        step_sneak_in(self.args.manual_corrections, "ManualCorrections",
+                      after=True)
+        step_sneak_in(self.args.va_corrections, "ValueAnalyzerCorrections")
+        step_sneak_in(self.args.timings, "ApplyTimings")
 
         self.graph.os = get_os(self.args.os)
 

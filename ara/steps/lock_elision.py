@@ -8,12 +8,12 @@
 from ara.os.autosar import Spinlock
 from ara.os.os_base import ExecState
 from ara.graph import MSTType, StateType
-from .step import Step
+from .stats import StatsStep, StatData
 
 from .option import Option, Bool
 
 
-class LockElision(Step):
+class LockElision(StatsStep):
     """Detect lock usages within the SSTG that are not necessary."""
 
     fail_on_deadlock = Option(
@@ -213,8 +213,14 @@ class LockElision(Step):
             else:
                 self._log.warn(f"Deadlock detected {deadlock}")
 
-        self._set_step_data({
-            'spin_states': lock_count,
-            'DEADLOCK': deadlock,
-            'callsites': details,
-        })
+        step_data = [
+            StatData(key="spin_stats", value=lock_count, prefix_key=False),
+            StatData(key='DEADLOCK', value=deadlock),
+            StatData(key='callsites', value=details, prefix_key=False),
+            StatData(key="locks", value=len(lock_count)),
+            StatData(key="unneeded_locks",
+                     value=len([1 for x in lock_count.values() if x == 0])),
+            StatData(key="unneeded_call_pairs",
+                     value=len([1 for x in details.values() if x["elide"]])),
+        ]
+        self._print_and_store(step_data)

@@ -34,7 +34,7 @@ from ara.os.os_util import set_next_abb
 from ara.os.interrupts import irq_schedule
 
 from .option import Option, String, Bool, Integer
-from .step import Step
+from .stats import StatsStep, StatData
 from .util import open_with_dirs
 from .printer import mstg_to_dot, sp_mstg_to_dot, reduced_mstg_to_dot
 from .cfg_traversal import Visitor, run_sse
@@ -221,7 +221,7 @@ class Statistics:
         return ''.join(ret)
 
 
-class MultiSSE(Step):
+class MultiSSE(StatsStep):
     """Run the MultiCore SSE."""
 
     entry_point = Option(name="entry_point",
@@ -1512,6 +1512,9 @@ class MultiSSE(Step):
 
         self._graph.mstg = mstg
 
+        step_data = [StatData(key="rounds", value=counter)]
+        self._print_and_store(step_data)
+
         if self.dump.get():
             self._step_manager.chain_step({
                 "name": "Printer",
@@ -1531,8 +1534,3 @@ class MultiSSE(Step):
                 "graph_name": "SP MSTG",
                 "subgraph": "sp_mstg",
             })
-        step_data = {"rounds": counter,
-                     "vertices": len(list(mstg.vertices())),
-                     "edges": len(list(mstg.edges())),
-                     }
-        self._set_step_data(step_data)

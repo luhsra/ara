@@ -4,12 +4,11 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Container for IPIAvoidance."""
 from ara.graph import MSTType, single_check
-from .step import Step
-
-import timeit
+from .stats import StatsStep, StatData
 
 
-class IPIAvoidance(Step):
+
+class IPIAvoidance(StatsStep):
     """Detect unnecessary IPIs for ActivateTask, ChainTask, SetEvent calls.
 
     If an ActivateTask should activate a Task on another core but this core is
@@ -87,4 +86,9 @@ class IPIAvoidance(Step):
             abb_name = self._graph.cfg.vp.name[res['abb']]
             self._log.warn(f"State {res['state']} ({abb_name}) {s} an IPI.")
 
-        self._set_step_data(out)
+        data = [
+            StatData(key="places", value=out, prefix_key=False),
+            StatData(key="not_used_ipis", value=len([x for x in out
+                                                     if not x['ipi_needed']]))
+        ]
+        self._print_and_store(data)
