@@ -1,4 +1,5 @@
-benchmark_gen = files('benchmark_gen.py')
+benchmark_gen = files('benchmark_gen.py')[0]
+benchmark_gen_jinja = files('benchmark_gen_system.jinja')[0]
 
 full_name = 'synthetic'
 # sys, oil = custom_target('autosar_multicore_dynamic_' + seed,
