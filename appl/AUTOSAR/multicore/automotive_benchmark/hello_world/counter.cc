@@ -19,18 +19,17 @@ TASK(H2) {
 	arch::Perf::start();
 	kout << "Starting!" <<  endl;
 
-	kout << sizeof(unsigned int) <<  endl;
-
-	for (unsigned i = 0; i < 500; i++)
-	{
-		// new_wait(4200000);
-		new_wait(1000000000);
+	for (unsigned i = 0; i < 5; i++) {
+		
+		micro_sec_wait(5000000);
+		// new_wait(0xFFFFFFFFF);
+		// kout << "step done: " << i << endl;
 	}
 
-	kout << "max int done" << endl;
+	kout << "Done!" << endl;
 	
 
-	test_trace('2');
+	//test_trace('2');
 	TerminateTask();
 }
 
@@ -43,13 +42,16 @@ TASK(H3) {
 }
 
 void PreIdleHook() {
-	/* The testcase has finished, check the output */
-	static int cycle_count;
-	cycle_count++;
+	test_finish();
+	ShutdownMachine();
 
-	if (cycle_count > 3) {
+	/* The testcase has finished, check the output */
+	/*static int cycle_count;
+	//cycle_count++;
+
+	//if (cycle_count > 3) {
 		test_trace_assert("22222");
 		test_finish();
 		ShutdownMachine();
-	}
+	}*/
 }

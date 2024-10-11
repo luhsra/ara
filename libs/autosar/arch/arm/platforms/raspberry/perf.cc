@@ -17,7 +17,7 @@ extern "C" void wait(int a, int b){
 	uint32_t endtime = starttime + a*time_resolution;
 	//kout << "waiting for " << a*time_resolution << " cycles" << endl;
 
-	// wait for at least BCET, assuming 1*time_resolution is already caclulated for, because of system call 
+	// wait for at least BCET, assuming 1*time_resolution is already caclulated for, because of system call
 	/*volatile int c;
 	if (a == 60) { //for running_pmu T02
 		while (counter < 6661) {
@@ -31,31 +31,63 @@ extern "C" void wait(int a, int b){
 	//}
 };
 
-extern "C" void new_wait(int a) {
-	int counter = 0;
-	if (a == 0) return;
+/*
+* Wait for wait_time cpu cycles, measured by arch::Perf,
+* maxValue is 0xFFFF FFFF / 4 294 967 295
+*/
+extern "C" void cycles_wait(uint32_t wait_time) {
+	
+	// if (wait_time == 0) return;
 	uint32_t starttime = arch::Perf::get_cycles();
-	uint32_t endtime = starttime + a;
+	uint32_t endtime = starttime + wait_time;
 
-	// endtime *= 2;
+	// kout << (hex) << "Wait_time: " <<  wait_time << " start: " << starttime << " end: " << endtime << endl;
 
-	kout << "a: " <<  a << " s: " << starttime << " e: " << endtime << endl;
-
+	// no overflow happens
 	if (starttime < endtime) {
-		while (endtime >= arch::Perf::get_cycles()) {
-			counter++;
-		};
-	} else if (starttime > endtime) {
-		while (endtime <= arch::Perf::get_cycles()) {
-			counter++;
-			while (endtime >= arch::Perf::get_cycles()) {
-				counter++;
-			}
+		while (arch::Perf::get_cycles() <= endtime) {
 			
 		};
+	// overflow happend
+	} else if (starttime > endtime) {
+
+		// wait until overflow happend back to 0
+		while (arch::Perf::get_cycles() >= endtime) {
+
+		};
+
+		// then wait until cycles is above endtime
+		while (arch::Perf::get_cycles() <= endtime) {
+
+		};
 	}
-	
-	kout << "a: " <<  a << " s: " << starttime << " e: " << endtime << " leave at: " << arch::Perf::get_cycles()<< endl;
-	
-	
+
+	// kout << "Done, get_cycles: " << arch::Perf::get_cycles() << endl;
+
 }
+
+
+// somehow cant calulate MEASURED_CYCLES * X, when using #define
+/* 
+	kout << "MEASURED_CYCLES: " << MEASURED_CYCLES << endl;
+	kout << "time*MEASURED_CYCLES: " << wait_time * MEASURED_CYCLES << endl;
+	kout << "time*TMP_MEASURED: " << wait_time * TMP_MEASURED << endl;
+*/
+uint32_t const MAX_UINT_32 = 0xFFFFFFFF;
+// measured time in microsecond that qemu took to wait for 0xFFFFFFFF cycles -> ~5.6s
+uint32_t measured_time_micro_s = 5600000;
+// calculated number of cpu cycles for arround 1 microsecond -> 766
+uint32_t measured_cycles = MAX_UINT_32/measured_time_micro_s;
+
+/*
+* Wait for wait_time microseconds, 
+* maxTime is 5 600 000 micro-s / 5.6s
+* precision ~ 0.1s	
+*/
+extern "C" void micro_sec_wait(uint32_t wait_time) {
+
+	unsigned TMP_MEASURED = 766;
+
+	cycles_wait(wait_time * measured_cycles);
+}
+
