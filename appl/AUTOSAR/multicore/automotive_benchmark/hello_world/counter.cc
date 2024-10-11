@@ -17,11 +17,11 @@ TASK(H1) {
 
 TASK(H2) {
 	arch::Perf::start();
-	kout << "Starting!" <<  endl;
+	kout << "Starting v5!" <<  endl;
 
-	for (unsigned i = 0; i < 5; i++) {
+	for (unsigned i = 0; i < 60000; i++) {
 		
-		micro_sec_wait(5000000);
+		micro_sec_wait(1000);
 		// new_wait(0xFFFFFFFFF);
 		// kout << "step done: " << i << endl;
 	}
