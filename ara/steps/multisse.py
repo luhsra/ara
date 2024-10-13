@@ -65,11 +65,17 @@ class NewNodeReevaluation:
     from_sp: graph_tool.Vertex
     cores: Set[int]
 
+    def __str__(self):
+        return f"NewNodeReevaluation(from_sp={int(self.from_sp)}, cores={self.cores})"
+
 
 @dataclass(frozen=True)
 class NewEdgeReevaluation:
     """Store necessary data for the reevaluation of a new edge."""
     root: graph_tool.Vertex  # the root sync point
+
+    def __str__(self):
+        return f"NewEdgeReevaluation(root={int(self.root)})"
 
 
 class GenericReevaluation:
@@ -800,8 +806,15 @@ class MultiSSE(StatsStep):
                                                  only_root=only_root)
 
         combinations = set()
-        self._log.info("New pairing partner search over %d paths",
-                       len(root_paths))
+        c_state = mstg.vp.state[cross_state]
+        self._log.info(
+            "New pairing partner search over %d paths (State %s, ABB %s, Core %s, affected %s)",
+            len(root_paths),
+            int(cross_state),
+            c_state.cfg.vp.name[c_state.cpus.one().abb],
+            current_core,
+            list(affected_cores),
+        )
         # self._log.debug(f"Cur core {current_core}")
         # self._log.debug(f"Affected cores {list(affected_cores)}")
         # for path in root_paths:
