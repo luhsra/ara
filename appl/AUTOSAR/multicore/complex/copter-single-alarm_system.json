@@ -99,7 +99,8 @@
           "action": {
             "action": "activatetask",
             "task": "CopterControlWatchdogTask"
-          }
+          },
+          "autostart": false
         }
       },
       "counters": {
@@ -160,13 +161,7 @@
       "events": { },
       "alarms": { },
       "counters": {},
-      "isrs": {
-        "MavLinkRecvHandler": {
-          "category": 2,
-          "device": 37,
-          "priority": 100
-        }
-      }
+      "isrs": { }
     }
   ],
   "spinlocks": [
