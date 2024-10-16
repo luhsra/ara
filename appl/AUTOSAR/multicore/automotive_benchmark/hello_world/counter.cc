@@ -3,55 +3,31 @@
 #include "arch/arm/platforms/raspberry/perf.cc"
 
 DeclareTask(H1);
-DeclareTask(H2);
-DeclareTask(H3);
-DeclareAlarm(A1);
-DeclareCounter(C1);
 
 TEST_MAKE_OS_MAIN(StartOS(0))
 
 TASK(H1) {
-	test_trace('1');
-	TerminateTask();
-}
-
-TASK(H2) {
+	// needed for wait functions
 	arch::Perf::start();
-	kout << "Starting v5!" <<  endl;
 
-	for (unsigned i = 0; i < 60000; i++) {
+	kout << "Starting!" <<  endl;
+
+	for (unsigned i = 0; i < 10; i++) {
 		
-		micro_sec_wait(1000);
-		// new_wait(0xFFFFFFFFF);
-		// kout << "step done: " << i << endl;
+		micro_sec_wait(1000000);
+		// cycles_wait(0xFFFFFFFF);
+
+		kout << "step: " << i+1 << endl;
+		
 	}
 
 	kout << "Done!" << endl;
 	
-
-	//test_trace('2');
 	TerminateTask();
 }
 
-TASK(H3) {
-	int x = 5;
-	x = x*x;
-
-	test_trace(x);
-	TerminateTask();
-}
-
+// after single Task is finished this is called
 void PreIdleHook() {
 	test_finish();
 	ShutdownMachine();
-
-	/* The testcase has finished, check the output */
-	/*static int cycle_count;
-	//cycle_count++;
-
-	//if (cycle_count > 3) {
-		test_trace_assert("22222");
-		test_finish();
-		ShutdownMachine();
-	}*/
 }
