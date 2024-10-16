@@ -180,6 +180,7 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'andreas'/ 'alarmmc','name': 'b',                     'oil': 'system_b.json'},
   {'core': 'multicore',  'path': 'automotive_benchmark'/ 'hello_world','name': 'base',     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'automotive_benchmark'/ 'hello_world','name': 'counter',     'oil': 'counter_system.json'},
+  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'hello_world','name': 'auto',     'oil': 'auto_system.json'},
 ]
 subdir('multicore' / 'trampoline')
 
