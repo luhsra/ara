@@ -41,12 +41,20 @@ extern "C" void cycles_wait(uint32_t wait_time) {
 	uint32_t starttime = arch::Perf::get_cycles();
 	uint32_t endtime = starttime + wait_time;
 
+	// the comparison happens not at every cycle, therefore the overflow cases might be skipped
+	if (endtime < 0x0000FFFF) {
+		endtime = 0x0000FFFF;
+	}
+	else if (endtime > 0xFFFF0000) {
+		endtime = 0xFFFF0000;
+	}
+
 	// kout << (hex) << "Wait_time: " <<  wait_time << " start: " << starttime << " end: " << endtime << endl;
 
 	// no overflow happens
 	if (starttime < endtime) {
 		while (arch::Perf::get_cycles() <= endtime) {
-			
+
 		};
 	// overflow happend
 	} else if (starttime > endtime) {
@@ -89,6 +97,7 @@ uint32_t cycles_pi = 250;
 */
 extern "C" void micro_sec_wait(uint32_t wait_time) {
 
+	// cycles_wait(wait_time * measured_cycles_qemu);
 	cycles_wait(wait_time * cycles_pi);
 }
 
