@@ -1,3 +1,8 @@
+# Useful stuff
+Getrennt ARA analyse und optimieren durch MultiSSE, später generierung. sind verschieden
+
+
+## Setup
 1. setup Docker (after update: `docker build -t scm.sra.uni-hannover.de:5050/research/parrot .`)
     1. run_docker.sh
 2. build (only one time)
@@ -5,12 +10,25 @@
 3. cd build/
     1. ninja -t targets 
     2. ninja ara@@run_autosar_multicore_andreas_pmu_get_spinlock_pi4
+use `-v` at end for more output /
+use `ARA_LOGLEVEL=debug` at the beginning -> show individual cmds
 
-# subprojects
+## subprojects
 Code of all repos is found there :) or in gitlab. /
-Parrot: Sammelrepo
-ARA: eigene Branch automotive_appl
-ara-libplatforms: automotive_appl nicht mehr in use
+### Parrot: Sammelrepo
+### ARA: eigene Branch automotive_appl
+ara/ara/os/interrupts.py fake_interrupt_function -> In der ARA Analyse wird durch die MultiSEE eine Graph erstellt, dort für jeden Alarm einen eigenen Interrupt Kern, sollte aber besser nur für jeden Counter einen Interrupt kern erzeugen
+\
+ara/ara/setps/printer.py convertieren von Graphstrukturen
+\
+Ara wird in Steps ausgeführt, auflistbar mit `/usr/bin/python3 subprojects/ara/ara.py -l`, welche wird festgelegt durch .json file. Example here:
+```bash
+/usr/bin/python3 subprojects/ara/ara.py subprojects/ara/appl/AUTOSAR/autosar_multicore_automotive_benchmark_hello_world_auto.pi4.ll --os AUTOSAR --oilfile ../subprojects/ara/appl/AUTOSAR/multicore/automotive_benchmark/hello_world/auto_system.json --step-settings ../subprojects/ara/appl/AUTOSAR/multicore/automotive_benchmark/hello_world/custom_ara_config_testing.json
+```
+list of steps + properties of each step, enable logging or dumping to `build/dump`. \
+"DumpCFG", "DumpCallgraph", "DumpInstances".
+
+### ara-libplatforms: automotive_appl nicht mehr in use
 
 
 ## Git
@@ -21,6 +39,14 @@ git pull origin soso --rebase
 git push
 ```
 
+## Other tools
+Graphviewer: xdot (via apt)
+graph-tool: Python Library für graphen
+
+
+\
+\
+\ 
 
 # examples
 cd subprojects/ara/appl/AUTOSAR/multicore/andreas
@@ -29,6 +55,9 @@ edit ara/appl/AUTOSAR/meson.build to add new examples
 # libs
 subprojects/ara/libs/autosar
 os.h + test/test.h + arch/arm/platforms/raspberry/perf.h for wait
+
+
+
 
 
 # Running test cases
