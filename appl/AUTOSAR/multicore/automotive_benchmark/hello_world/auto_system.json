@@ -20,6 +20,54 @@
             "autostart": false,
             "priority": 4,
             "schedule": true
+          },
+          "MS2": {
+            "activation": 1,
+            "autostart": false,
+            "priority": 4,
+            "schedule": true
+          },
+          "MS5": {
+            "activation": 1,
+            "autostart": false,
+            "priority": 4,
+            "schedule": true
+          },
+          "MS10": {
+            "activation": 1,
+            "autostart": false,
+            "priority": 4,
+            "schedule": true
+          },
+          "MS20": {
+            "activation": 1,
+            "autostart": false,
+            "priority": 4,
+            "schedule": true
+          },
+          "MS50": {
+            "activation": 1,
+            "autostart": false,
+            "priority": 4,
+            "schedule": true
+          },
+          "MS100": {
+            "activation": 1,
+            "autostart": false,
+            "priority": 4,
+            "schedule": true
+          },
+          "MS200": {
+            "activation": 1,
+            "autostart": false,
+            "priority": 4,
+            "schedule": true
+          },
+          "MS1000": {
+            "activation": 1,
+            "autostart": false,
+            "priority": 4,
+            "schedule": true
           }
         },
         "resources": {},
@@ -28,19 +76,99 @@
           "C1": {
             "maxallowedvalue": 65535,
             "ticksperbase": 1,
-            "mincycle": 100
+            "mincycle": 1
           }
         },
         "alarms": {
-          "A1": {
+          "AMS1": {
             "counter": "C1",
             "action": {
               "action": "activatetask",
-              "task": "P1"
+              "task": "MS1"
+            },
+            "autostart": true,
+            "cycletime": 10,
+            "alarmtime": 1
+          },
+          "AMS2": {
+            "counter": "C1",
+            "action": {
+              "action": "activatetask",
+              "task": "MS2"
+            },
+            "autostart": true,
+            "cycletime": 20,
+            "alarmtime": 1
+          },
+          "AMS5": {
+            "counter": "C1",
+            "action": {
+              "action": "activatetask",
+              "task": "MS5"
+            },
+            "autostart": true,
+            "cycletime": 50,
+            "alarmtime": 1
+          },
+          "AMS10": {
+            "counter": "C1",
+            "action": {
+              "action": "activatetask",
+              "task": "MS10"
+            },
+            "autostart": true,
+            "cycletime": 100,
+            "alarmtime": 1
+          },
+          "AMS20": {
+            "counter": "C1",
+            "action": {
+              "action": "activatetask",
+              "task": "MS20"
+            },
+            "autostart": true,
+            "cycletime": 200,
+            "alarmtime": 1
+          },
+          "AMS50": {
+            "counter": "C1",
+            "action": {
+              "action": "activatetask",
+              "task": "MS50"
+            },
+            "autostart": true,
+            "cycletime": 500,
+            "alarmtime": 1
+          },
+          "AMS100": {
+            "counter": "C1",
+            "action": {
+              "action": "activatetask",
+              "task": "MS100"
             },
             "autostart": true,
             "cycletime": 1000,
-            "alarmtime": 100
+            "alarmtime": 1
+          },
+          "AMS200": {
+            "counter": "C1",
+            "action": {
+              "action": "activatetask",
+              "task": "MS200"
+            },
+            "autostart": true,
+            "cycletime": 2000,
+            "alarmtime": 1
+          },
+          "AMS1000": {
+            "counter": "C1",
+            "action": {
+              "action": "activatetask",
+              "task": "MS1000"
+            },
+            "autostart": true,
+            "cycletime": 10000,
+            "alarmtime": 1
           }
         }
       }
