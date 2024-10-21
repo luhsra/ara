@@ -36,6 +36,9 @@ from collections import defaultdict
 
 from pyirinterpreter import PyIRModuleInterpreter
 
+import ara.os.zephyr_adapters as za
+from ara.os.zephyr_interpreter import ZephyrInterpreter
+
 logger = get_logger("Zephyr")
 ValueAnalyzer = get_native_component("ValueAnalyzer")
 ValueAnalyzerResult = get_native_component("ValueAnalyzerResult")
@@ -1165,79 +1168,89 @@ class Zephyr(OSBase):
         
 
         ### Test: IRX
-
-        irm = PyIRModuleInterpreter()
-        import os
         import sys
         sys.path.append("../subprojects/ara/subprojects/irx/")
         sys.path.append("../subprojects/irx")
+
         import zephyr
         from diff import diff
-        import ara.os.zephyr_adapters as za
+        from typing import Annotated
+        from proxy import ArraySize
 
-        proxy = zephyr.StructProxy(irm)
+        zi = ZephyrInterpreter([])
+        zi.init(graph.os.llvmirfile)
+        zi.z_cstart()
+        # zi.bg_thread_main()
 
-        llvmirfile = graph.os.llvmirfile
-        llvmir_dirpath = os.path.dirname(llvmirfile)
-        basename = os.path.basename(llvmirfile)
-        name = os.path.splitext(basename)[0]
-        paths = [
-             os.path.join(llvmir_dirpath, f"{name}.ll"), # application + thread definitions
-             os.path.join(llvmir_dirpath, f"{name}-kernel.ll"), # load the full kernel code
-        ]
-        build_native_sym = True # TODO: get the actual value
-        if build_native_sym:
-            #paths += ['subprojects/ara/subprojects/irx/native_runner/runner.ll']
-            paths += ['subprojects/irx/native_runner/runner.ll']
+
+        irm = zi.irm
+        proxy = zi.proxy
+        _kernel = zi._kernel
+
+
+        # # remove main thread from ready qeueu
+        # z_main_thread = proxy.Global(zephyr.k_thread, 'z_main_thread')
+        # zi.unready_thread(z_main_thread)
         
-        function_name = b"z_impl_k_sleep"
-
-        if not irm.parseIRFiles(paths):
-            raise FileNotFoundError(f"Failed to parse LLVM-IR file {str(paths)}")
-        
-        # if irm.hasExternal("nsi_simu_time"):
-            # irm.setInitializer("nsi_simu_time", "i64 0")
-
-        if not irm.createInterpreter():
-            raise RuntimeError("Failed to create interpreter")
+        proxy.get(_kernel)
 
 
-        def create_thread(status):
-            t = zephyr.k_thread()
+        # irm.set_print_llvmir(True)
+        # zi.unready_thread(threads[0])
 
-            t.status = status
-
-            t.join_queue.waitq.head.cache = t
-            t.join_queue.waitq.tail.cache = t
-            t.base.qnode_dlist.head.cache = t
-            t.base.qnode_dlist.tail.cache = t
-
-            proxy.put(t)
-            
-            return t
+        print(_kernel.ready_q.cache)
+        print(_kernel.cpus[0].current)
+        print(_kernel.cpus[0].idle_thread)
         
         threads_map = {}
         threads = []
         for tctx in get_threads():
             print("AbSS Thread context:", tctx)
-            t = create_thread(za.ThreadStateAdapter.fromAbSS(tctx.status))
+            t = zi.helper_create_thread(za.ThreadStateAdapter.fromAbSS(tctx.status))
             threads.append(t)
             threads_map[t.ptr] = tctx
-        idle_thread = create_thread(za.ThreadStateAdapter.fromAbSS(TaskStatus.ready))
+        
+        zi.run_function('z_mark_thread_as_started', [threads[0].ptr], ['PTR'])
+        zi.run_function('z_ready_thread', [threads[0].ptr], ['PTR'])
 
-        _kernel = proxy.Global(zephyr.z_kernel, '_kernel')
         proxy.get(_kernel)
 
-        _kernel.cpus[0].current.ptr = threads[0].ptr
-        _kernel.cpus[0].idle_thread.ptr = idle_thread.ptr
+        # irm.set_print_llvmir(True)
+        # zi.unready_thread(threads[0])
+
+        print('_kernel.ready_q.cache', _kernel.ready_q.cache)
+        print('_kernel.cpus[0].current', _kernel.cpus[0].current)
+        print('_kernel.cpus[0].idle_thread', _kernel.cpus[0].idle_thread)
+        print('z_main_thread', zi.z_main_thread.__ptr__)
+        print('_thread_dummy', zi._thread_dummy.__ptr__)
+        print('_kernel.ready_q.runq.next', _kernel.ready_q.runq.next)
+        print('_kernel.ready_q.runq.prev', _kernel.ready_q.runq.prev)
+
+        _kernel.ready_q.cache.ptr = threads[0].ptr
+        _kernel.cpus[0].current.ptr = _kernel.ready_q.cache.ptr
+        #_kernel.cpus[0].idle_thread.ptr = idle_thread.ptr
 
         proxy.put(_kernel)
+
+        zi.helper_threads_enqueue(threads[1:])
+        #zi.helper_threads_ready(threads)
+
+        #idle_thread = zi.helper_create_thread(za.ThreadStateAdapter.fromAbSS(TaskStatus.ready), False)
+        idle_thread = zi.z_idle_threads[0]
+
+        #zi.helper_get_objs([idle_thread] + threads)
+                
+        proxy.get(idle_thread)
+
+
 
         # CONFIG_TIMEOUT_64BIT, todo fix k_timeout_t, load into struct, but llvm is i64
         # TODO: check the function signature in ir code, and remove the args_hints
 
+        function_name = b"z_impl_k_sleep"
         irm.stop(["arch_swap"]) # CONF: or arch_switch
 
+        #irm.set_print_llvmir(True)
         if not irm.runFunction(function_name, [args.ms], ['APInt64']):
             raise RuntimeError(f"Failed to run LLVM Interpreter for function {str(function_name)}")
         
@@ -1264,10 +1277,12 @@ class Zephyr(OSBase):
                 new.ptr = old.ptr
                 proxy.get(new)
                 abSSTState = za.ThreadStateAdapter.fromZephyr(new.base.thread_state)
-                if abSSTState:
-                    print(type(old), old.__ptr__)
-                    print("\n base.thread_state (za):", abSSTState.name)
-                    print("\n AbSS:", threads_map[t.ptr])
+                abSSTStateName = str(abSSTState)
+                if isinstance(abSSTState, TaskStatus):
+                    abSSTStateName = abSSTState.name
+                print(type(old), old.__ptr__)
+                print("\n base.thread_state (za):", abSSTStateName)
+                print("\n AbSS:", threads_map[t.ptr])
             
             irm.putReturnValue(0, 'APInt32') # emulate that the callee returned 0
             
@@ -1288,20 +1303,26 @@ class Zephyr(OSBase):
 
         ### Test: IRX
 
+        for t in threads:
+            proxy.get(t)
+            abSSTState = za.ThreadStateAdapter.fromZephyr(t.base.thread_state)
+            if isinstance(abSSTState, TaskStatus):
+                threads_map[t.ptr].status = TaskStatus.ready
+            else:
+                logger.warn("Unknown state returned abSSTState: {abSSTState}")
+        #for tctx in get_threads():
+        #   tctx.status = TaskStatus.ready
 
-        for tctx in get_threads():
-           tctx.status = TaskStatus.ready
-
-        cpu = state.cpus[cpu_id]
-
-        old_vertex = state.instances.vertex(cpu.control_instance)
-        old_task = state.instances.vp.obj[old_vertex]
-        # old_ctx = state.context[old_task]
-        
-        # state.context[old_task].status = TaskStatus.ready
-        state.context[old_task].status = TaskStatus.blocked
-        # old_ctx.abb = state.cfg.vertex(cpu.abb)
-        # old_ctx.call_path = cpu.call_path
+        # cpu = state.cpus[cpu_id]
+        # 
+        # old_vertex = state.instances.vertex(cpu.control_instance)
+        # old_task = state.instances.vp.obj[old_vertex]
+        # # old_ctx = state.context[old_task]
+        # 
+        # # state.context[old_task].status = TaskStatus.ready
+        # state.context[old_task].status = TaskStatus.blocked
+        # # old_ctx.abb = state.cfg.vertex(cpu.abb)
+        # # old_ctx.call_path = cpu.call_path
 
         Zephyr.debug_print_threads(state)
 

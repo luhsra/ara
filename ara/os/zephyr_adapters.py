@@ -40,8 +40,9 @@ class ThreadStateAdapter(enum.IntFlag):
 
         # need more information than just the thread.state
         # _z_kernel for the queues ...
-
-        return ZephyrMap[state]
+        if state in ZephyrMap:
+            return ZephyrMap[state]
+        return state
 
     @staticmethod
     def fromAbSS(state: TaskStatus) -> int:
