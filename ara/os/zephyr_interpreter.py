@@ -12,6 +12,16 @@ from diff import diff
 from proxy import StructProxy, ArraySize
 import ara.os.zephyr_adapters as za
 
+import os.path
+
+
+def try_find_file(paths):
+    for p in paths:
+        if os.path.isfile(p):
+            return p
+    raise RuntimeError(f"File not found: {paths}")
+        
+
 class ZephyrInterpreter:
 
     def __init__(self, config):
@@ -37,8 +47,10 @@ class ZephyrInterpreter:
         ]
         build_native_sym = True # TODO: get the actual value
         if build_native_sym:
-            paths += ['subprojects/ara/subprojects/irx/native_runner/runner.ll']
-            #paths += ['subprojects/irx/native_runner/runner.ll']
+            paths += [try_find_file([
+                'subprojects/ara/subprojects/irx/native_runner/runner.ll',
+                'subprojects/irx/native_runner/runner.ll'
+            ])]
 
         if not irm.parseIRFiles(paths):
             raise FileNotFoundError(f"Failed to parse LLVM-IR file {str(paths)}")

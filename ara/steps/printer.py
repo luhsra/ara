@@ -57,7 +57,7 @@ def remap(x, in_min=0.0, in_max=1.0, out_min=0.0, out_max=1.0):
 
 def with_color(value, color, min=0.0, max=1.0):
     '''Picks a color and wraps the value in a XML tag with the color attribute'''
-    return f'<font color="{remap(color, float(min), float(max))} 0.700 0.800">{value}</font>'
+    return f"<font color='{remap(color, float(min), float(max))} 0.700 0.800'>\"{value}\"</font>"
 
 def _sstg_state_as_dot(sstg, state_vert):
     attrs = {"fontsize": 14}

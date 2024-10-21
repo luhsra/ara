@@ -348,6 +348,14 @@ class ZephyrEdgeType(IntEnum):
     same_symbol_than = 2
 
 
+@dataclass
+class ZephyrCPUAnalysisContext:
+    current: object = None
+
+    def copy(self):
+        return ZephyrCPUAnalysisContext(self.current)
+
+
 class Zephyr(OSBase):
     '''
         Vertex and edge properties:
@@ -544,6 +552,8 @@ class Zephyr(OSBase):
         prio_vert, prio_thread = max(threads, key=lambda t: t[1].priority)
         entry_abb = cfg.get_entry_abb(prio_thread.function)
         
+        # TODO get number of configured CPUs from config
+
         cpus = [
             CPU(
                 id=cpu_id,
@@ -670,6 +680,12 @@ class Zephyr(OSBase):
         # logger.warn(f"context: {state.context}")
 
         Zephyr.debug_print_threads(state)
+
+        for cpu_id in cpus:
+            cpu_ctx = state.cpus[cpu_id].analysis_context
+            if cpu_ctx:
+                logger.debug(f"cpu {cpu_id}: interpreter _kernel.cpus[{cpu_id}].current ->"
+                             f" {cpu_ctx.current}")
 
         # get cpu mapping
         cpu_map = defaultdict(list)
@@ -1188,7 +1204,7 @@ class Zephyr(OSBase):
         _kernel = zi._kernel
 
 
-        # # remove main thread from ready qeueu
+        # # remove main thread from ready queue
         # z_main_thread = proxy.Global(zephyr.k_thread, 'z_main_thread')
         # zi.unready_thread(z_main_thread)
         
@@ -1307,22 +1323,32 @@ class Zephyr(OSBase):
             proxy.get(t)
             abSSTState = za.ThreadStateAdapter.fromZephyr(t.base.thread_state)
             if isinstance(abSSTState, TaskStatus):
-                threads_map[t.ptr].status = TaskStatus.ready
+                threads_map[t.ptr].status = abSSTState
             else:
-                logger.warn("Unknown state returned abSSTState: {abSSTState}")
-        #for tctx in get_threads():
-        #   tctx.status = TaskStatus.ready
+                logger.warning("Unknown state returned abSSTState: {abSSTState}")
+                threads_map[t.ptr].status = TaskStatus.blocked
+        
+        # for tctx in get_threads():
+        #    tctx.status = TaskStatus.ready
+# 
+        cpu = state.cpus[cpu_id]
+        
+        # TODO: make a dirty flag to prevent from unnecessarily get
+        proxy.get(zi._kernel)
 
-        # cpu = state.cpus[cpu_id]
-        # 
-        # old_vertex = state.instances.vertex(cpu.control_instance)
-        # old_task = state.instances.vp.obj[old_vertex]
-        # # old_ctx = state.context[old_task]
-        # 
-        # # state.context[old_task].status = TaskStatus.ready
-        # state.context[old_task].status = TaskStatus.blocked
-        # # old_ctx.abb = state.cfg.vertex(cpu.abb)
-        # # old_ctx.call_path = cpu.call_path
+        state.cpus[cpu_id].analysis_context = ZephyrCPUAnalysisContext()
+
+        state.cpus[cpu_id].analysis_context.current = threads_map[zi._kernel.cpus[cpu_id].current.ptr]
+        
+        
+        old_vertex = state.instances.vertex(cpu.control_instance)
+        old_task = state.instances.vp.obj[old_vertex]
+        # old_ctx = state.context[old_task]
+        
+        # state.context[old_task].status = TaskStatus.ready
+        state.context[old_task].status = TaskStatus.blocked
+        # old_ctx.abb = state.cfg.vertex(cpu.abb)
+        # old_ctx.call_path = cpu.call_path
 
         Zephyr.debug_print_threads(state)
 
