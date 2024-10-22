@@ -89,7 +89,7 @@ class InstanceGraphStats(Step):
                 fulfilled = True
                 break
         if not fulfilled:
-            self._fail("Need one these steps beforehand: %s", ",".join(needed))
+            self._fail("Need one these steps beforehand: " + ",".join(needed))
 
     def _write_failing_interaction_syscalls_to_file(self):
         """Write file and line of all failing interaction syscalls grouped by instance type to file"""
