@@ -41,7 +41,20 @@
 #define SERIAL_BASE 0xE0001000
 
 #define PRIVATE_TIMER_BASE 0xF8F00600
-#define CPU_FREQ_HZ 500000000
+#define CPU_FREQ_HZ     500000000
+#define QEMU_FREQ_APROX 766000000
+
+// used in perf.cc to calculate how long it takes to advance one tick
+#ifdef QEMU
+    /* measured time in microsecond that qemu took to wait for 0xFFFFFFFF cycles -> ~5.6s
+    uint32_t measured_time_micro_s = 5600000;
+    // calculated number of cpu cycles for arround 1 microsecond -> 766
+    uint32_t measured_cycles_qemu = MAX_UINT_32/measured_time_micro_s;*/
+    #define WAIT_FREQUENCE (QEMU_FREQ_APROX / 1000000)
+#else
+    // pi runs is 250 MHz
+    #define WAIT_FREQUENCE (CPU_FREQ_HZ / 2000000)
+#endif
 
 // According to GICdist().ICTR = 2
 // max IRQs = 32*(ICTR+1)

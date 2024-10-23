@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "perf.h"
+#include "platform.h"
 
 int arch::Perf::cycles[MAX_TRACES] = {0};
 int arch::Perf::cycles_nr = 0;
@@ -74,30 +75,13 @@ extern "C" void cycles_wait(uint32_t wait_time) {
 
 }
 
-
-// somehow cant calulate MEASURED_CYCLES * X, when using #define
-/* 
-	kout << "MEASURED_CYCLES: " << MEASURED_CYCLES << endl;
-	kout << "time*MEASURED_CYCLES: " << wait_time * MEASURED_CYCLES << endl;
-	kout << "time*TMP_MEASURED: " << wait_time * TMP_MEASURED << endl;
-*/
-uint32_t const MAX_UINT_32 = 0xFFFFFFFF;
-// measured time in microsecond that qemu took to wait for 0xFFFFFFFF cycles -> ~5.6s
-uint32_t measured_time_micro_s = 5600000;
-// calculated number of cpu cycles for arround 1 microsecond -> 766
-uint32_t measured_cycles_qemu = MAX_UINT_32/measured_time_micro_s;
-// pi runs with 250 MHz
-uint32_t cycles_pi = 250;
-
-
 /*
 * Wait for wait_time microseconds, 
 * maxTime is 5 600 000 micro-s / 5.6s
 * precision depends
 */
 extern "C" void micro_sec_wait(uint32_t wait_time) {
-
-	// cycles_wait(wait_time * measured_cycles_qemu);
-	cycles_wait(wait_time * cycles_pi);
+	
+	cycles_wait(WAIT_FREQUENCE * wait_time);
 }
 

@@ -10,7 +10,7 @@ TASK(H1) {
 	// needed for wait functions
 	arch::Perf::start();
 
-	kout << "Starting!" <<  endl;
+	kout << "Starting Counter Test!" <<  endl;
 
 	for (unsigned i = 0; i < 10; i++) {
 		
