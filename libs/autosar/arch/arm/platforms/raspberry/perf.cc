@@ -38,7 +38,6 @@ extern "C" void wait(int a, int b){
 */
 extern "C" void cycles_wait(uint32_t wait_time) {
 	
-	// if (wait_time == 0) return;
 	uint32_t starttime = arch::Perf::get_cycles();
 	uint32_t endtime = starttime + wait_time;
 
@@ -74,6 +73,75 @@ extern "C" void cycles_wait(uint32_t wait_time) {
 	// kout << "Done, get_cycles: " << arch::Perf::get_cycles() << endl;
 
 }
+
+
+extern "C" bool cycles_wait_starttime(uint32_t starttime, uint32_t wait_time) {
+	
+	uint32_t endtime = starttime + wait_time;
+	uint32_t currenttime = arch::Perf::get_cycles();
+
+	// check if waiting is needed
+	// no overflow -> simple
+	if (starttime < endtime) {	
+		if (currenttime > endtime) {
+			return false;
+		}
+	}
+	// endtime overflowed, need to check that current overflowed aswell
+	else {
+		if (currenttime > endtime && currenttime < starttime) {
+			return false;
+		}
+	}
+	
+
+	// the comparison happens not at every cycle, therefore the overflow cases might be skipped
+	if (endtime < 0x0000FFFF) {
+		endtime = 0x0000FFFF;
+	}
+	else if (endtime > 0xFFFF0000) {
+		endtime = 0xFFFF0000;
+	}
+
+	// kout << (hex) << "Wait_time: " <<  wait_time << " start: " << starttime << " end: " << endtime << endl;
+
+	// no overflow happens
+	if (starttime < endtime) {
+		while (arch::Perf::get_cycles() <= endtime) {
+
+		};
+	// overflow happend
+	} else if (starttime > endtime) {
+
+		// wait until overflow happend back to 0
+		while (arch::Perf::get_cycles() >= endtime) {
+
+		};
+
+		// then wait until cycles is above endtime
+		while (arch::Perf::get_cycles() <= endtime) {
+
+		};
+	}
+	
+	return true;
+	// kout << "Done, get_cycles: " << arch::Perf::get_cycles() << endl;
+
+}
+
+
+/**
+ * Wait for wait_time microseconds minus the time that passed after measuring start_time
+ * @param start_time cycles, measured by arch::Perf::get_cycles()
+ * @param wait_time time in microseconds, for what should be waited 
+ * @return true if waiting happend, or false if waiting window was already over
+ *  */
+extern "C" bool micro_sec_wait_upto(uint32_t start_time, uint32_t wait_time) {
+	
+	return cycles_wait_starttime(start_time, WAIT_FREQUENCE * wait_time);
+
+}
+
 
 /*
 * Wait for wait_time microseconds, 
