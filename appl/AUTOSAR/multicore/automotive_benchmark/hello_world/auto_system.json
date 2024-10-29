@@ -3,28 +3,22 @@
       {
         "id": 0,
         "tasks": {
-          "W1": {
+          "SCHED1": {
             "activation": 1,
             "autostart": true,
-            "priority": 5,
-            "schedule": true
-          },
-          "P1": {
-            "activation": 1,
-            "autostart": false,
-            "priority": 3,
+            "priority": 1,
             "schedule": true
           },
           "MS1": {
             "activation": 1,
             "autostart": false,
-            "priority": 4,
+            "priority": 2,
             "schedule": true
           },
           "MS2": {
             "activation": 1,
             "autostart": false,
-            "priority": 4,
+            "priority": 3,
             "schedule": true
           },
           "MS5": {
@@ -36,141 +30,44 @@
           "MS10": {
             "activation": 1,
             "autostart": false,
-            "priority": 4,
+            "priority": 5,
             "schedule": true
           },
           "MS20": {
             "activation": 1,
             "autostart": false,
-            "priority": 4,
+            "priority": 6,
             "schedule": true
           },
           "MS50": {
             "activation": 1,
             "autostart": false,
-            "priority": 4,
+            "priority": 7,
             "schedule": true
           },
           "MS100": {
             "activation": 1,
             "autostart": false,
-            "priority": 4,
+            "priority": 8,
             "schedule": true
           },
           "MS200": {
             "activation": 1,
             "autostart": false,
-            "priority": 4,
+            "priority": 9,
             "schedule": true
           },
           "MS1000": {
             "activation": 1,
             "autostart": false,
-            "priority": 4,
+            "priority": 10,
             "schedule": true
           }
         },
         "resources": {},
         "events": {},
-        "counters": {
-          "C1": {
-            "maxallowedvalue": 65535,
-            "ticksperbase": 1,
-            "mincycle": 1
-          }
-        },
-        "alarms": {
-          "AMS1": {
-            "counter": "C1",
-            "action": {
-              "action": "activatetask",
-              "task": "MS1"
-            },
-            "autostart": true,
-            "cycletime": 10,
-            "alarmtime": 1
-          },
-          "AMS2": {
-            "counter": "C1",
-            "action": {
-              "action": "activatetask",
-              "task": "MS2"
-            },
-            "autostart": true,
-            "cycletime": 20,
-            "alarmtime": 1
-          },
-          "AMS5": {
-            "counter": "C1",
-            "action": {
-              "action": "activatetask",
-              "task": "MS5"
-            },
-            "autostart": true,
-            "cycletime": 50,
-            "alarmtime": 1
-          },
-          "AMS10": {
-            "counter": "C1",
-            "action": {
-              "action": "activatetask",
-              "task": "MS10"
-            },
-            "autostart": true,
-            "cycletime": 100,
-            "alarmtime": 1
-          },
-          "AMS20": {
-            "counter": "C1",
-            "action": {
-              "action": "activatetask",
-              "task": "MS20"
-            },
-            "autostart": true,
-            "cycletime": 200,
-            "alarmtime": 1
-          },
-          "AMS50": {
-            "counter": "C1",
-            "action": {
-              "action": "activatetask",
-              "task": "MS50"
-            },
-            "autostart": true,
-            "cycletime": 500,
-            "alarmtime": 1
-          },
-          "AMS100": {
-            "counter": "C1",
-            "action": {
-              "action": "activatetask",
-              "task": "MS100"
-            },
-            "autostart": true,
-            "cycletime": 1000,
-            "alarmtime": 1
-          },
-          "AMS200": {
-            "counter": "C1",
-            "action": {
-              "action": "activatetask",
-              "task": "MS200"
-            },
-            "autostart": true,
-            "cycletime": 2000,
-            "alarmtime": 1
-          },
-          "AMS1000": {
-            "counter": "C1",
-            "action": {
-              "action": "activatetask",
-              "task": "MS1000"
-            },
-            "autostart": true,
-            "cycletime": 10000,
-            "alarmtime": 1
-          }
-        }
+        "counters": {},
+        "alarms": {}
       }
     ]
   }

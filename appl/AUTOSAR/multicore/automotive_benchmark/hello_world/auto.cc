@@ -2,8 +2,7 @@
 #include "test/test.h"
 #include "arch/arm/platforms/raspberry/perf.cc"
 
-DeclareTask(W1);
-DeclareTask(P1);
+DeclareTask(SCHED1);
 DeclareTask(MS1);
 DeclareTask(MS2);
 DeclareTask(MS5);
@@ -13,47 +12,52 @@ DeclareTask(MS50);
 DeclareTask(MS100);
 DeclareTask(MS200);
 DeclareTask(MS1000);
-DeclareCounter(C1);
-DeclareAlarm(A1);
-DeclareAlarm(A2);
-DeclareAlarm(A5);
-DeclareAlarm(A10);
-DeclareAlarm(A20);
-DeclareAlarm(A50);
-DeclareAlarm(A100);
-DeclareAlarm(A200);
-DeclareAlarm(A1000);
 
 TEST_MAKE_OS_MAIN(StartOS(0))
 
-unsigned version = 3;
+unsigned version = 1;
+unsigned runs = 10000;	// lower bound for runtime in ms
 
-/*
-* In json:
-* "ticksperbase": X
-* "mincycle": X
-* are not implemented!
-*/
-
-
-
-TASK(W1) {
+// startup + control Task
+TASK(SCHED1) {
 	arch::Perf::start();
-    kout << "V:" << version << " Started Perf!" << endl;
-    /*kout << "Wait 1s!" << endl;
-	micro_sec_wait(1000000);
-    kout << "Done!" << endl;
-	*/
-    test_trace('W');
+    kout << "V:" << version << " Started Auto Test!" << endl;
+	test_trace('S');
+
+	for (unsigned i = 0; i < runs; i++) {
+
+		ActivateTask(MS1);
+
+		if (i % 2 == 0) {
+			ActivateTask(MS2);
+		}
+		if (i % 5 == 0) {
+			ActivateTask(MS5);
+		}
+		if (i % 10 == 0) {
+			ActivateTask(MS10);
+		}
+		if (i % 20 == 0) {
+			ActivateTask(MS20);
+		}
+		if (i % 50 == 0) {
+			ActivateTask(MS50);
+		}
+		if (i % 100 == 0) {
+			ActivateTask(MS100);
+		}
+		if (i % 200 == 0) {
+			ActivateTask(MS200);
+		}
+		if (i % 1000 == 0) {
+			ActivateTask(MS1000);
+		}
+
+		micro_sec_wait(1000);
+	}
+	
 	TerminateTask();
 }
-
-TASK(P1) {
-    kout << "P1!" << endl;
-	test_trace('P');
-	TerminateTask();
-}
-
 
 TASK(MS1) {
     kout << "MS1" << endl;
@@ -112,14 +116,8 @@ TASK(MS1000) {
 
 void PreIdleHook() {
 
-	/* The testcase has finished, check the output */
-	static int cycle_count;
-    cycle_count++;
-    kout << "Cycle: " << cycle_count << endl;
+	test_trace_assert("TODO");
+	test_finish();
+	ShutdownMachine();
 
-	if (cycle_count > 100) {
-		test_trace_assert("TODO");
-		test_finish();
-		ShutdownMachine();
-	}
 }
