@@ -12,25 +12,25 @@
           "MS1": {
             "activation": 1,
             "autostart": false,
-            "priority": 2,
+            "priority": 10,
             "schedule": true
           },
           "MS2": {
             "activation": 1,
             "autostart": false,
-            "priority": 3,
+            "priority": 9,
             "schedule": true
           },
           "MS5": {
             "activation": 1,
             "autostart": false,
-            "priority": 4,
+            "priority": 8,
             "schedule": true
           },
           "MS10": {
             "activation": 1,
             "autostart": false,
-            "priority": 5,
+            "priority": 7,
             "schedule": true
           },
           "MS20": {
@@ -42,25 +42,25 @@
           "MS50": {
             "activation": 1,
             "autostart": false,
-            "priority": 7,
+            "priority": 5,
             "schedule": true
           },
           "MS100": {
             "activation": 1,
             "autostart": false,
-            "priority": 8,
+            "priority": 4,
             "schedule": true
           },
           "MS200": {
             "activation": 1,
             "autostart": false,
-            "priority": 9,
+            "priority": 3,
             "schedule": true
           },
           "MS1000": {
             "activation": 1,
             "autostart": false,
-            "priority": 10,
+            "priority": 2,
             "schedule": true
           }
         },

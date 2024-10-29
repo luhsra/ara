@@ -16,9 +16,18 @@ DeclareTask(MS1000);
 TEST_MAKE_OS_MAIN(StartOS(0))
 
 unsigned version = 1;
-unsigned runs = 10000;	// lower bound for runtime in ms
 
-// startup + control Task
+// how often the scheduler gets started, 1ms each
+unsigned runs = 5000;
+
+// number of runnables
+unsigned RUNNABLES = 1000;
+
+// Predifined periods to trigger runnables (in ms) + share of these periods (in %)
+unsigned PERIOD[] = {1, 2, 5, 10, 20, 50, 100, 200, 1000};
+unsigned SHARE[] = {3, 2, 2, 25, 25, 3, 20, 1, 4, 15};
+
+// startup + control Task, loweest prio
 TASK(SCHED1) {
 	arch::Perf::start();
     kout << "V:" << version << " Started Auto Test!" << endl;
@@ -26,7 +35,10 @@ TASK(SCHED1) {
 
 	for (unsigned i = 0; i < runs; i++) {
 
+		// uint32_t current_cycle = arch::Perf::get_cycles();
+
 		ActivateTask(MS1);
+		// record cycle
 
 		if (i % 2 == 0) {
 			ActivateTask(MS2);
@@ -52,8 +64,8 @@ TASK(SCHED1) {
 		if (i % 1000 == 0) {
 			ActivateTask(MS1000);
 		}
-
 		micro_sec_wait(1000);
+		//micro_sec_wait_upto(current_cycle, 1000000);
 	}
 	
 	TerminateTask();
