@@ -15,7 +15,7 @@ DeclareTask(MS1000);
 
 TEST_MAKE_OS_MAIN(StartOS(0))
 
-unsigned version = 3;
+unsigned version = 1;
 
 
 // how often the scheduler gets started, 1ms each
@@ -36,7 +36,7 @@ const unsigned TIME[] = {5, 5, 12, 11, 9, 18, 11, 3, 1};
 TASK(SCHED1) {
 	arch::Perf::start();
     kout << "V:" << version << " Started Auto Test!" << endl;
-	micro_sec_wait(10000000);
+	micro_sec_wait(50000000);
 	test_trace('S');
 
 	for (unsigned i = 0; i < runs; i++) {
@@ -139,8 +139,10 @@ void PreIdleHook() {
 
 	test_trace_assert("TODO");
 	test_finish();
+	
+	kout << "# in Time: " << count_trace('1') << " failed: " << count_trace('0') << endl;
 
-	micro_sec_wait(10000000);
+	micro_sec_wait(50000000);
 
 	ShutdownMachine();
 
