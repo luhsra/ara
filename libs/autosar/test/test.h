@@ -271,7 +271,9 @@ static forceinline void test_main(void) {
 	/* debug << "dOSEK halt" << endl; */
 }
 
+
 extern "C" noinline void test_trace(char chr);
+extern "C" noinline unsigned count_trace(char chr);
 
 extern "C" void arch_startup();
 

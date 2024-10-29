@@ -68,6 +68,17 @@ noinline void test_trace_assert(const char* expected) {
 	test_positive_tests_gt(0);
 }
 
+// returns how often chr occurs in trace
+unsigned count_trace(char chr) {
+	unsigned count = 0;
+	for (unsigned i = 0; i < 0xff; i++) {
+		if (trace_table[i] == chr) {
+			count++;
+		}
+	}
+	return count;
+}
+
 void test_trace(char chr) {
 	//debug_core << "test_trace: " << chr << endl;
 	fail_trace = (uint32_t)chr;
