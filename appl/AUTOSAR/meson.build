@@ -178,9 +178,9 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'andreas'/ 'pmu',    'name': 'get_spinlock',           'oil': 'system_spinlock.json', 'synthesis_disabled': ['posix', 'riscv']},
   {'core': 'multicore',  'path': 'andreas'/ 'alarmmc','name': 'a',                     'oil': 'system_a.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'alarmmc','name': 'b',                     'oil': 'system_b.json'},
-  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'hello_world','name': 'base',     'oil': 'system.json'},
-  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'hello_world','name': 'counter',     'oil': 'counter_system.json'},
-  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'hello_world','name': 'auto',     'oil': 'auto_system.json'},
+  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'spinlock',     'oil': 'spinlock_system.json'},
+  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'counter',     'oil': 'counter_system.json'},
+  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'auto',     'oil': 'auto_system.json'},
 ]
 subdir('multicore' / 'trampoline')
 
