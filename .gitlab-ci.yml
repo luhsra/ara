@@ -57,5 +57,6 @@ build-clang-no-pch:
 
 trigger_job:
   stage: test
+  only: [soso, citest]
   trigger:
     project: research/parrot
