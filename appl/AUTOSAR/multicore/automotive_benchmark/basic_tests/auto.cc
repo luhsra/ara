@@ -25,13 +25,13 @@ const unsigned SCHEDUL_INTERVAL = 1000;
 
 // FROM: REAL WORLD AUTOMOTIVE BENCHMARKS FOR FREE
 // #runnables / 100 -> how many runnables are 1% of system
-const unsigned RUNNABLES = 10;
+const unsigned RUNNABLES = 1;
 // Predifined periods to trigger runnables (in ms)
 const unsigned PERIOD[] = {1, 2, 5, 10, 20, 50, 100, 200, 1000};
 // const unsigned PERIOD[] = {1, 2, 7, 11, 23, 51, 104, 199, 1003};
 // Share of these periods (in %)
 const unsigned SHARE[] = {3, 2, 2, 25, 25, 3, 20, 1, 4};
-// Average execution time in microseconds (in ys)
+// Average execution time in microseconds (in us)
 const unsigned TIME[] = {5, 5, 12, 11, 9, 18, 11, 3, 1};
 
 // startup + control Task, loweest prio
@@ -73,13 +73,14 @@ TASK(SCHED1) {
 			ActivateTask(MS1000);
 		}
 
+		uint32_t end_cycle = arch::Perf::get_cycles();
+
 		bool in_time = micro_sec_wait_upto(start_cycle, SCHEDUL_INTERVAL);
 		in_time ? test_trace('1') : test_trace('0');
 		
-		//uint32_t end_cycle = arch::Perf::get_cycles();
-		// kout << "t: " << 1000 * WAIT_FREQUENCE << " d: " << end_cycle - start_cycle << endl;	
-		// kout << "s: " << start_cycle << " e: " << end_cycle << endl;	
-		// kout << "Run: \t" << i << " | In time? " << in_time << "\n" << endl;
+		kout << "t: " << 1000 * WAIT_FREQUENCE << " d: " << end_cycle - start_cycle << endl;	
+		kout << "s: " << start_cycle << " e: " << end_cycle << endl;	
+		kout << "Run: \t" << i << " | In time? " << in_time << "\n" << endl;
 		
 	}
 
@@ -134,15 +135,15 @@ TASK(MS1000) {
 
 void PreIdleHook() {
 	kout << "TASKPERIOD| NUMBER OF RUNNABLES | EXPECTED RUNTIME" << endl;
-	kout << "MS1       | " << RUNNABLES * SHARE[0] << "x \t\t| " << RUNNABLES * SHARE[0] * TIME[0] << "ys" << endl;
-    kout << "MS2       | " << RUNNABLES * SHARE[1] << "x \t\t| " << RUNNABLES * SHARE[1] * TIME[1] << "ys" << endl;
-    kout << "MS5       | " << RUNNABLES * SHARE[2] << "x \t\t| " << RUNNABLES * SHARE[2] * TIME[2] << "ys" << endl;
-    kout << "MS10      | " << RUNNABLES * SHARE[3] << "x \t\t| " << RUNNABLES * SHARE[3] * TIME[3] << "ys" << endl;
-    kout << "MS20      | " << RUNNABLES * SHARE[4] << "x \t\t| " << RUNNABLES * SHARE[4] * TIME[4] << "ys" << endl;
-    kout << "MS50      | " << RUNNABLES * SHARE[5] << "x \t\t| " << RUNNABLES * SHARE[5] * TIME[5] << "ys" << endl;
-    kout << "MS100     | " << RUNNABLES * SHARE[6] << "x \t\t| " << RUNNABLES * SHARE[6] * TIME[6] << "ys" << endl;
-    kout << "MS200     | " << RUNNABLES * SHARE[7] << "x \t\t| " << RUNNABLES * SHARE[7] * TIME[7] << "ys" << endl;
-    kout << "MS1000    | " << RUNNABLES * SHARE[8] << "x \t\t| " << RUNNABLES * SHARE[8] * TIME[8] << "ys" << endl;
+	kout << "MS1       | " << RUNNABLES * SHARE[0] << "x \t\t| " << RUNNABLES * SHARE[0] * TIME[0] << "us" << endl;
+    kout << "MS2       | " << RUNNABLES * SHARE[1] << "x \t\t| " << RUNNABLES * SHARE[1] * TIME[1] << "us" << endl;
+    kout << "MS5       | " << RUNNABLES * SHARE[2] << "x \t\t| " << RUNNABLES * SHARE[2] * TIME[2] << "us" << endl;
+    kout << "MS10      | " << RUNNABLES * SHARE[3] << "x \t\t| " << RUNNABLES * SHARE[3] * TIME[3] << "us" << endl;
+    kout << "MS20      | " << RUNNABLES * SHARE[4] << "x \t\t| " << RUNNABLES * SHARE[4] * TIME[4] << "us" << endl;
+    kout << "MS50      | " << RUNNABLES * SHARE[5] << "x \t\t| " << RUNNABLES * SHARE[5] * TIME[5] << "us" << endl;
+    kout << "MS100     | " << RUNNABLES * SHARE[6] << "x \t\t| " << RUNNABLES * SHARE[6] * TIME[6] << "us" << endl;
+    kout << "MS200     | " << RUNNABLES * SHARE[7] << "x \t\t| " << RUNNABLES * SHARE[7] * TIME[7] << "us" << endl;
+    kout << "MS1000    | " << RUNNABLES * SHARE[8] << "x \t\t| " << RUNNABLES * SHARE[8] * TIME[8] << "us" << endl;
 
 	kout << "\n# in Time: " << count_trace('1') << "\t|\tFailed: " << count_trace('0') << "\n" << endl;
 
