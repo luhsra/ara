@@ -1,8 +1,9 @@
 #include "serial.h"
+#include "machine.h"
 #include "hardware_threads.h"
 #include "os/spinlock.h" // Include the header file that defines the Spinlock class
 
-#ifndef UART
+#ifndef UART // use default UART value(e.g. QEMU)
 #define UART        0x10000000
 #define UART_WAIT
 #endif
@@ -20,6 +21,8 @@ void Serial::putchar(char c) {
 
 #ifdef UART_WAIT
 	while ((*UART_LSR & UART_LSR_EMPTY_MASK) == 0);
+#else
+	for (long long i = 0; i < (1<<12); i++) {Machine::nop();} // experimentally configured delay
 #endif
 	*UART_THR = c;
 
