@@ -13,8 +13,8 @@ _Atomic(int) positive_tests;
 _Atomic(int) experiment_number;
 expected_value_t expected_values[EXPECTED_VALUES_MAX];
 _Atomic(bool) interrupts_suspended = false;
-_Atomic(char) trace_table[256];
-_Atomic(unsigned char) trace_table_idx = 0;
+_Atomic(char) trace_table[TRACE_LENGTH];
+_Atomic(unsigned) trace_table_idx = 0;
 
 volatile uint32_t fail_trace = 0;
 
@@ -36,22 +36,22 @@ noinline void test_finish(int tests) {
 
 noinline void test_trace_dump(void) {
 	kout << "traced: ";
-	for (unsigned char i = 0; i < trace_table_idx; i++) {
+	for (unsigned i = 0; i < trace_table_idx; i++) {
 		kout << trace_table[i];
 	}
 }
 
 noinline void test_trace_assert(const char* expected) {
 	int good = 1;
-	unsigned char count = 0;
+	unsigned count = 0;
 	test_start_check();
-	for (; expected[count] != 0 && count < 255; count++) {
+	for (; expected[count] != 0 && count < (TRACE_LENGTH - 1); count++) {
 	}
 	if (count != trace_table_idx) {
 		kout << "trace length != expected " << (int)trace_table_idx << endl;
 		good = 0;
 	} else {
-		for (unsigned char i = 0; i < trace_table_idx; i++) {
+		for (unsigned i = 0; i < trace_table_idx; i++) {
 			if (trace_table[i] != expected[i] && expected[i] != 'X') { // dont care
 				kout << "too unqeual: " << trace_table[i] << " at " << (int)i << endl;
 				good = 0;
@@ -71,7 +71,7 @@ noinline void test_trace_assert(const char* expected) {
 // returns how often chr occurs in trace
 unsigned count_trace(char chr) {
 	unsigned count = 0;
-	for (unsigned i = 0; i < 0xff; i++) {
+	for (unsigned i = 0; i < TRACE_LENGTH; i++) {
 		if (trace_table[i] == chr) {
 			count++;
 		}
@@ -82,7 +82,7 @@ unsigned count_trace(char chr) {
 void test_trace(char chr) {
 	//debug_core << "test_trace: " << chr << endl;
 	fail_trace = (uint32_t)chr;
-	if (trace_table_idx < 0xff)
+	if (trace_table_idx < TRACE_LENGTH)
 		trace_table[trace_table_idx++] = chr;
 	// kout << trace_table[trace_table_idx-1] << endl;
 }
