@@ -56,6 +56,7 @@ build-clang-no-pch:
     - !reference [.scripts, build-no-pch]
 
 trigger_job:
+  only: [soso, citest]
   stage: test
   trigger:
     project: research/parrot
