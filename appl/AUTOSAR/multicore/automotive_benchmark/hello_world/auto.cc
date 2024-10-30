@@ -73,16 +73,13 @@ TASK(SCHED1) {
 			ActivateTask(MS1000);
 		}
 
-		uint32_t end_cycle = arch::Perf::get_cycles();
-
 		bool in_time = micro_sec_wait_upto(start_cycle, SCHEDUL_INTERVAL);
 		in_time ? test_trace('1') : test_trace('0');
 		
-		
-		kout << "t: " << 1000 * WAIT_FREQUENCE << " d: " << end_cycle - start_cycle << endl;	
+		//uint32_t end_cycle = arch::Perf::get_cycles();
+		// kout << "t: " << 1000 * WAIT_FREQUENCE << " d: " << end_cycle - start_cycle << endl;	
 		// kout << "s: " << start_cycle << " e: " << end_cycle << endl;	
-
-		kout << "Run: \t" << i << " | In time? " << in_time << "\n" << endl;
+		// kout << "Run: \t" << i << " | In time? " << in_time << "\n" << endl;
 		
 	}
 
