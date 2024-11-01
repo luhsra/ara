@@ -16,16 +16,18 @@ DeclareTask(MS1000);
 TEST_MAKE_OS_MAIN(StartOS(0))
 
 const unsigned VERSION = 1;
-
+/**
+ * Test large number of runnables that get started in predifined periods
+ * FROM: REAL WORLD AUTOMOTIVE BENCHMARKS FOR FREE
+ */
 
 // how often the scheduler gets started
 const unsigned RUNS = 1000;
-// start new runnables each ms = 1000ym
+// start new runnables each ms = 1000um
 const unsigned SCHEDUL_INTERVAL = 1000;
 
-// FROM: REAL WORLD AUTOMOTIVE BENCHMARKS FOR FREE
 // #runnables / 100 -> how many runnables are 1% of system
-const unsigned RUNNABLES = 1;
+const unsigned RUNNABLES = 10;
 // Predifined periods to trigger runnables (in ms)
 const unsigned PERIOD[] = {1, 2, 5, 10, 20, 50, 100, 200, 1000};
 // const unsigned PERIOD[] = {1, 2, 7, 11, 23, 51, 104, 199, 1003};
@@ -37,7 +39,7 @@ const unsigned TIME[] = {5, 5, 12, 11, 9, 18, 11, 3, 1};
 // startup + control Task, loweest prio
 TASK(SCHED1) {
 	arch::Perf::start();
-    kout << "V:" << VERSION << " Started Auto Test with " << RUNNABLES * 100 << " runnables." << endl;
+    kout << "V:" << VERSION << " Started Runnables Test with " << RUNNABLES * 100 << " runnables." << endl;
 	micro_sec_wait(30000000);
 	test_trace('S');
 
@@ -78,10 +80,11 @@ TASK(SCHED1) {
 		bool in_time = micro_sec_wait_upto(start_cycle, SCHEDUL_INTERVAL);
 		in_time ? test_trace('1') : test_trace('0');
 		
+		/*
 		kout << "t: " << 1000 * WAIT_FREQUENCE << " d: " << end_cycle - start_cycle << endl;	
 		kout << "s: " << start_cycle << " e: " << end_cycle << endl;	
 		kout << "Run: \t" << i << " | In time? " << in_time << "\n" << endl;
-		
+		*/
 	}
 
 	TerminateTask();
@@ -150,7 +153,8 @@ void PreIdleHook() {
 	test_trace_dump();
 	test_finish();
 	
-	micro_sec_wait(50000000);
+	micro_sec_wait(30000000);
+
 	ShutdownMachine();
 
 }
