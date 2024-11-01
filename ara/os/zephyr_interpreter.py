@@ -1,5 +1,6 @@
 import os
 import sys
+import copy
 from typing import Annotated
 import ara.os.zephyr_adapters as za
 from pyirinterpreter import PyIRModuleInterpreter
@@ -45,7 +46,7 @@ class ZephyrInterpreter:
              os.path.join(llvmir_dirpath, f"{name}.ll"), # application + thread definitions
              os.path.join(llvmir_dirpath, f"{name}-kernel.ll"), # load the full kernel code
         ]
-        build_native_sym = True # TODO: get the actual value
+        build_native_sym = 'CONFIG_BOARD' in self.config and self.config['CONFIG_BOARD'] == 'native_sim'
         if build_native_sym:
             paths += [try_find_file([
                 'subprojects/ara/subprojects/irx/native_runner/runner.ll',
@@ -65,6 +66,8 @@ class ZephyrInterpreter:
         self._kernel = proxy.Global(zephyr.z_kernel, '_kernel')
         self.z_main_thread = proxy.Global(zephyr.k_thread, 'z_main_thread')
         self.z_idle_threads = proxy.Global(Annotated[list[zephyr.k_thread], ArraySize(1)], 'z_idle_threads')
+        self.timeout_list = proxy.Global(zephyr._dnode, 'timeout_list')
+
 
     def run_function(self, function_name, args, arg_type_hints):
         if not self.irm.runFunction(function_name.encode("ascii"), args, arg_type_hints):
@@ -102,19 +105,19 @@ class ZephyrInterpreter:
         # do prepare_multithreading "manually" to prevent to queue z_main_thread
         self.run_function("z_sched_init", [], [])
 
+        # to simplify:
+        # we will not thread the main thread special and initialize it with all other threads
         #self.run_function('z_mark_thread_as_started', [self.z_main_thread.ptr], ['PTR'])
         #self.run_function('z_ready_thread', [self.z_main_thread.ptr], ['PTR'])
 
         self.run_function("z_init_cpu", [0], ['APInt32'])
 
 
-        proxy.get(self._kernel)
-
+        #proxy.get(self._kernel)
         #self._kernel.ready_q.cache.ptr = self.z_main_thread.ptr
         #self._kernel.ready_q.cache.ptr = self._thread_dummy.ptr
         #self._kernel.cpus[0].current.ptr = self._kernel.ready_q.cache.ptr
-
-        proxy.put(self._kernel)
+        #proxy.put(self._kernel)
 
     def bg_thread_main(self):
         self.run_function("z_init_static_threads", [], []) # currently does not work
@@ -190,8 +193,10 @@ class ZephyrInterpreter:
         return t
     
     def helper_threads_enqueue(self, threads, delay: int = 0):
+        # self.k_sched_lock()
         for t in threads:
-            self.thread_schedule_new(t, delay)
+            #self.z_mark_thread_as_started(t)
+            self.thread_schedule_new(t, delay) # todo replace with z_mark_thread_as_started
     
     def helper_threads_ready(self, threads):
         for t in threads:
@@ -206,3 +211,34 @@ class ZephyrInterpreter:
 
     def z_ready_thread(self, t: zephyr.k_thread):
         self.run_function("z_ready_thread", [t.ptr], ['PTR'])
+
+    def z_mark_thread_as_started(self, t: zephyr.k_thread):
+        self.run_function("z_mark_thread_as_started", [t.ptr], ['PTR'])
+    
+    # def k_sched_lock(self):
+    #     self.run_function("k_sched_lock", [], [])
+
+
+
+    def dlist_itr_ptr(self, obj, attrs):
+        target = obj
+        for attr2 in attrs:
+            target = getattr(target, attr2)
+        if target.ptr is None:
+            self.proxy.update_ptr(obj, attrs)
+        
+        return self.dlist_itr(target)
+
+    def dlist_itr(self, node: zephyr._dnode):
+        current = node
+
+        assert node.ptr != 0
+        
+        for _ in range(0, 10000): # upper limit
+            if current.head.ptr == node.ptr: # same as current.next
+                break
+            yield copy.copy(current.head) # same as current.next
+            current = self.proxy.deref_no_cache(current.head) # same as current.next
+        else:
+            raise RuntimeError("dlist currupted or max depth exceeded")
+

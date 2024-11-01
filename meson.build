@@ -65,7 +65,9 @@ llc = toolchains.get_variable('llc')
 llvm_dis = toolchains.get_variable('llvm_dis')
 llvm_opt = toolchains.get_variable('llvm_opt')
 
-boost_dep = dependency('boost', include_type: 'system', modules: ['graph', 'python' + py3_inst.language_version().replace('.', '')])
+distro_id = run_command('lsb_release', '-is', check: true).stdout().strip().to_lower()
+boost_python = 'python' + (distro_id == 'opensuse' ? '3' : py3_inst.language_version().replace('.', ''))
+boost_dep = dependency('boost', include_type: 'system', modules: ['graph', boost_python])
 graph_tool_dep = dependency('graph-tool-py' + py3_inst.language_version(), include_type: 'system', version: '>=2.68')
 
 # Workaround for https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1070676

@@ -57,7 +57,7 @@ def remap(x, in_min=0.0, in_max=1.0, out_min=0.0, out_max=1.0):
 
 def with_color(value, color, min=0.0, max=1.0):
     '''Picks a color and wraps the value in a XML tag with the color attribute'''
-    return f"<font color='{remap(color, float(min), float(max))} 0.700 0.800'>\"{value}\"</font>"
+    return f"<font color='{remap(color, float(min), float(max))} 0.700 0.800'>\"{value}\" {color}</font>"
 
 def _sstg_state_as_dot(sstg, state_vert):
     attrs = {"fontsize": 14}
@@ -68,6 +68,15 @@ def _sstg_state_as_dot(sstg, state_vert):
     label = f"State {obj.id}"
     cpu = obj.cpus.one()
     thread_info = []
+
+    from ara.os.zephyr import Zephyr
+    # instances_id1 = id(obj.instances.vp.obj[obj.instances.vertex(Zephyr.kernel)])
+    # instances_id2 = id(obj.instances.vp.obj[Zephyr.kernel])
+    # print(instances_id1, instances_id2)
+    # kernel = obj.instances.vp.obj[Zephyr.kernel]
+    kernel = obj.context[Zephyr.kernel]
+
+
     if cpu.control_instance:
         instance = obj.instances.vp.label[obj.instances.vertex(cpu.control_instance)]
 
@@ -81,12 +90,16 @@ def _sstg_state_as_dot(sstg, state_vert):
 
         # FIXME this is zephyr specific code: move it into printer_zephyr
         if hasattr(thread, 'name'):
-            thread_list = [(obj.name) for v, obj in obj.instances.get(ZephyrThread)]
+            thread_list = [(v, obj) for v, obj in obj.instances.get(ZephyrThread)]
+            thread_names = list(map(lambda x: x[1].name, thread_list))
             thread_count = len(thread_list)
             thread_idx = -1
-            if thread.name in thread_list:
-                thread_idx = thread_list.index(thread.name)
-            thread_info.append(("thread", with_color(thread.name, thread_idx, -1, thread_count)))
+            idstr = ""
+            if thread.name in thread_names:
+                thread_idx = thread_names.index(thread.name)
+                v = thread_list[thread_idx][0]
+                idstr = f"{str(v)}"
+            thread_info.append(("thread", with_color(thread.name, thread_idx, -1, thread_count) + idstr))
     else:
         instance = "Idle"
     if cpu.abb:
@@ -108,6 +121,7 @@ def _sstg_state_as_dot(sstg, state_vert):
                 ("call_path", cpu.call_path),
                 ("type", ExecState(cpu.exec_state).name),
                 ("abb", abb),
+                ("kernel", str(kernel)),
             ] + xcet
         ] + [
             f"<i>{k}</i>: {str(v)}"

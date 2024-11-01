@@ -21,8 +21,7 @@ from .os_base import OSBase, ControlInstance, CPUList, CPU, OSState, ExecState, 
 from ara.util import get_logger
 from ara.graph import SyscallCategory, SigType, CallPath, CFG, Graph
 from ara.steps import get_native_component
-
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from graph_tool import Vertex
 from enum import IntEnum
 from collections.abc import Iterable
@@ -30,9 +29,12 @@ from collections.abc import Iterable
 import pyllco
 import html
 import re
+import copy
 from ara.steps.cfg_traversal import AnalysisContext
 
 from collections import defaultdict
+from typing import Iterator, List
+import attr
 
 from pyirinterpreter import PyIRModuleInterpreter
 
@@ -89,8 +91,41 @@ class ZephyrKernel(ZephyrInstance):
         "style": "filled"
     }
 
+    queue: int = 0
+
     def __hash__(self):
-        return hash(("ZephyrKernel", self.heap_size, self.symbol))
+        return hash(("ZephyrKernel", self.heap_size, self.symbol, self.queue))
+
+
+@dataclass # (frozen=True)
+class ZephyrKernelContext:
+    """Kernel Object Representation"""
+
+    # Zephyr: .kernel.ready_q.runq (_dnode)
+    ready_q: List[Vertex] = field(default_factory=lambda: []) # list of thread vertices
+
+    # Zephyr: .kernel.ready_q.cache (*k_thread)
+    cache: Vertex = None # list of next thread vertex
+
+    def __repr__(self) -> str:
+        threads = []
+        for v in self.ready_q:
+            threads.append(str(v))
+        s = "[ready_q: "
+        s += ", ".join(threads)
+        s += "]"
+        return s
+    
+    def __copy__(self):
+        return type(self)(ready_q=list(self.ready_q),
+                          cache=self.cache,
+                          )
+
+    def __hash__(self) -> int:
+        ready_q_hash = 0
+        for v in self.ready_q:
+            ready_q_hash += hash(v)
+        return hash((__class__.__name__, ready_q_hash, self.cache))
 
 
 @dataclass
@@ -356,6 +391,10 @@ class ZephyrCPUAnalysisContext:
         return ZephyrCPUAnalysisContext(self.current)
 
 
+
+
+
+
 class Zephyr(OSBase):
     '''
         Vertex and edge properties:
@@ -377,9 +416,12 @@ class Zephyr(OSBase):
     """A dict<str, int> that stores the number of times an identifier was requested."""
     id_count = {}
 
+    """Current LLVM-IR File (hacky way)"""
+    llvm_ir_file = ""
+
     @staticmethod
     def get_special_steps():
-        return ["ZephyrStaticPost"]
+        return ["ZephyrStaticPost", "LoadKernelLL"]
 
     @staticmethod
     def has_dynamic_instances():
@@ -484,6 +526,8 @@ class Zephyr(OSBase):
 
         connect_from_here(state, cpu_id, v, call, ty=ZephyrEdgeType.create)
 
+        return v
+
     @staticmethod
     def find_instance_by_symbol(state: OSState, symbol: pyllco.Value) -> Vertex:
         """Returns an iterator over all instance vertices with the given symbol"""
@@ -537,6 +581,17 @@ class Zephyr(OSBase):
         connect_from_here(state, cpu_id, Zephyr.kernel, call, ty=ZephyrEdgeType.interaction)
 
     @staticmethod
+    def get_thread_ccs(state) -> Iterator[ControlContext]:
+        """get all instance threads ControlContexts"""
+        threads = [(v, obj) for v, obj in state.instances.get(Thread)]
+        for v, obj in threads:
+            if obj not in state.context:
+                logger.warning("Tried to access non available context: %s", obj.entry_name)
+                # thread may not be created yet
+                continue
+            yield state.context[obj]
+
+    @staticmethod
     def debug_print_threads(state):
         for v, obj in state.instances.get(Thread):
             if obj in state.context:
@@ -550,9 +605,27 @@ class Zephyr(OSBase):
         cpu_id = 0
         threads = [(v, obj) for v, obj in instances.get(Thread)]
         prio_vert, prio_thread = max(threads, key=lambda t: t[1].priority)
-        entry_abb = cfg.get_entry_abb(prio_thread.function)
+        # entry_abb = cfg.get_entry_abb(prio_thread.function)
+        # tA = cfg.get_function_by_name("threadA")
+        # tB = cfg.get_function_by_name("threadB")
+        # tA2 = cfg.get_function_by_name("__ara_fake_entry")
+        # z_thread_entry = cfg.get_function_by_name('__ara_mock_z_thread_entry')
+
+        # A_abb = cfg.get_entry_abb(tA)
         
+        # if cfg.has_abbs(tB):
+        #     B_abb = cfg.get_entry_abb(tB)
+        #     print(B_abb)
+        # else:
+        #     logger.warning("No ABBs found for", tB)
+
+        
+        entry_abb = cfg.get_entry_abb(prio_thread.function)
+
         # TODO get number of configured CPUs from config
+        n_cpus = int(Zephyr.config['CONFIG_MP_MAX_NUM_CPUS'])
+
+        assert n_cpus == 1
 
         cpus = [
             CPU(
@@ -565,42 +638,60 @@ class Zephyr(OSBase):
                 analysis_context=None,
             )
         ]
-        
+
         running_tasks.append(prio_thread)
-            
+
         # logger.debug(
         #     f"Initial: Choose {instances.vp.obj[instances.vertex(prio_vert)]} for CPU {cpu_id}."
         # )
-        
+
         logger.debug(f"CFG: {cfg}")
-        
+
         state = OSState(cpus=CPUList(cpus), instances=instances, cfg=cfg)
-        
+
+        kernel = ZephyrKernelContext()
+        state.context[Zephyr.kernel] = kernel
+        kernel.cache = prio_vert
+        #state.instances.vp.obj[Zephyr.kernel].queue = 1
+
+
         max_prio = 0
-        for i, obj in threads:
-            logger.debug(f"instances: cpu_id:{i} obj:{obj}")
+        for v, obj in threads:
+            # FIXME: Actual the thread entry is wrapped by z_thread_entry
+            # something like: abb=cfg.get_entry_abb(z_thread_entry(obj.function, p1, p2, p3))
+            # z_thread_entry = cfg.get_function_by_name("__ara_mock_z_thread_entry") # "z_thread_entry"
+            # entry = obj.z_thread_entry
+            entry = obj.function
+            abb = cfg.get_entry_abb(entry)
+            # if cfg.has_abbs(entry):
+            #     abb = cfg.get_entry_abb(entry)
+            
+            logger.debug(f"instances: cpu_id:{v} obj:{obj}")
             logger.debug(f"instances: function:{obj.function}")
             prio = 2 * obj.priority
             max_prio = max(max_prio, prio)
 
             status = TaskStatus.ready
 
-            # FIXME: Actual the thread entry is wrapped by z_thread_entry
-            # something like: abb=cfg.get_entry_abb(z_thread_entry(obj.function, p1, p2, p3))
             state.context[obj] = ControlContext(
                 status=status,
-                abb=cfg.get_entry_abb(obj.function),
+                abb=abb,
                 call_path=CallPath(),
                 dyn_prio=[prio],
             )
 
+            kernel.ready_q.append(v)
+
             obj.cpu_id = 0 # put everything on the first cpu
-        
+
         for task in running_tasks:
             ctx = state.context[task]
             ctx.status = TaskStatus.running
             ctx.abb = None
             ctx.call_path = CallPath()
+        
+
+
         
         # task_to_shed = running_tasks
         # for cpu in cpus:
@@ -610,7 +701,7 @@ class Zephyr(OSBase):
         #     task.cpu_id = cpu.id
 
         Zephyr.debug_print_threads(state)
-        
+
         return state
 
     @staticmethod
@@ -675,11 +766,26 @@ class Zephyr(OSBase):
             cpus = [cpu.id for cpu in state.cpus]
 
         logger.debug(f"Scheduling state {state} on CPUs: {cpus}")
-        
+
         # logger.warn(f"state: {state}")
         # logger.warn(f"context: {state.context}")
 
         Zephyr.debug_print_threads(state)
+
+
+        kernel = state.context[Zephyr.kernel]
+        
+        # if len(kernel.ready_q) <= 0:
+        #     logger.warning(f"no thread in ready list")
+        #     return
+        # new_vertex = kernel.ready_q[0]
+
+        if kernel.cache is None:
+            logger.warning("no thread in set in cache")
+            return
+        
+        new_vertex = kernel.cache
+
 
         for cpu_id in cpus:
             cpu_ctx = state.cpus[cpu_id].analysis_context
@@ -687,57 +793,66 @@ class Zephyr(OSBase):
                 logger.debug(f"cpu {cpu_id}: interpreter _kernel.cpus[{cpu_id}].current ->"
                              f" {cpu_ctx.current}")
 
-        # get cpu mapping
-        cpu_map = defaultdict(list)
-        for v in state.instances.get_controls().vertices():
-            obj = state.instances.vp.obj[v]
-            logger.warn(f"vp: {obj.cpu_id}")
-            logger.warn(f"vp: {obj.entry_name}")
-            # we do not handle IRQs here
-            if isinstance(obj, IRQ):
-                continue
-            logger.warn(f"obj.cpu_id: {obj.cpu_id}")
-            # if obj.cpu_id in cpus + [-1]:
-            if obj.cpu_id in cpus:
-                if obj not in state.context:
-                    logger.warning("Tried to access non available context")
-                    continue
-                thread_context = state.context[obj]
-                status = thread_context.status
-                if status in [TaskStatus.running, TaskStatus.ready]:
-                    cpu_map[0].append((v, state.context[obj]))
-                    # cpu_map[obj.cpu_id].append((v, state.context[obj]))
-                logger.warn("Object %s is in status %s", obj, TaskStatus(status).name)
-        
+        # # get cpu mapping
+        # cpu_map = defaultdict(list)
+        # for v in state.instances.get_controls().vertices():
+        #     obj = state.instances.vp.obj[v]
+        #     logger.warn(f"vp: {obj.cpu_id}")
+        #     logger.warn(f"vp: {obj.entry_name}")
+        #     # we do not handle IRQs here
+        #     if isinstance(obj, IRQ):
+        #         continue
+        #     logger.warn(f"obj.cpu_id: {obj.cpu_id}")
+        #     # if obj.cpu_id in cpus + [-1]:
+        #     if obj.cpu_id in cpus:
+        #         if obj not in state.context:
+        #             logger.warning("Tried to access non available context")
+        #             continue
+        #         thread_context = state.context[obj]
+        #         status = thread_context.status
+        #         if status in [TaskStatus.running, TaskStatus.ready]:
+        #             cpu_map[0].append((v, state.context[obj]))
+        #             # cpu_map[obj.cpu_id].append((v, state.context[obj]))
+        #         logger.warn("Object %s is in status %s", obj, TaskStatus(status).name)
 
-        # HACK: pick a thread that has been terminated
-        # todo maybe check if the next abb is exit node
-        # alternative: dont re reschedule, but what if we are in a different context then a thread (ISR)
-        if len(cpu_map[0]) <= 0:
-            for v in state.instances.get_controls().vertices():
-                obj = state.instances.vp.obj[v]
-                if obj.cpu_id in cpus:
-                    if obj not in state.context:
-                        logger.warning("Tried to access non available context")
-                        continue
-                    thread_context = state.context[obj]
-                    status = thread_context.status
-                    if status in [TaskStatus.terminated]:
-                        cpu_map[0].append((v, state.context[obj]))
-                        # break
 
-        assert len(cpu_map) > 0, "No threads are ready or no thread found at all"
-        
+        # # HACK: pick a thread that has been terminated
+        # # todo maybe check if the next abb is exit node
+        # # alternative: don't re reschedule, but what if we are in a different context then a thread (ISR)
+        # if len(cpu_map[0]) <= 0:
+        #     for v in state.instances.get_controls().vertices():
+        #         obj = state.instances.vp.obj[v]
+        #         if obj.cpu_id in cpus:
+        #             if obj not in state.context:
+        #                 logger.warning("Tried to access non available context")
+        #                 continue
+        #             thread_context = state.context[obj]
+        #             status = thread_context.status
+        #             if status in [TaskStatus.terminated]:
+        #                 cpu_map[0].append((v, state.context[obj]))
+        #                 # break
+
         for cpu in filter(lambda cpu: cpu.id in cpus, state.cpus):
-            logger.warn(f"cpu.id: {cpu.id}")
-            logger.warn(f"cpu_map[cpu.id]: {cpu_map[cpu.id]}")
-            new_vertex, new_ctx = max(
-                cpu_map[cpu.id], key=lambda t: t[1].dyn_prio[-1]
-            )
+            logger.warning(f"cpu.id: {cpu.id}")
+            # logger.warning(f"cpu_map[cpu.id]: {cpu_map[cpu.id]}")
+
+            assert cpu.id == 0 # only support one cpu
+
+            # # assert len(cpu_map[cpu.id]) > 0, "No threads are ready or no thread found at all"
+            # if len(cpu_map[cpu.id]) <= 0:
+            #     # TODO: maybe swap in idle thread
+            #     continue
+
+            # new_vertex, new_ctx = max(
+            #     cpu_map[cpu.id], key=lambda t: t[1].dyn_prio[-1]
+            # )
+
             new_vertex = state.instances.vertex(new_vertex)
             new_label = state.instances.vp.label[new_vertex]
-            new_task = state.instances.vp.obj[new_vertex]
-            new_entry_name = new_task.entry_name
+            new_obj = state.instances.vp.obj[new_vertex]
+            new_entry_name = new_obj.entry_name
+
+            new_ctx = state.context[new_obj]
 
             # not coming from idle
             if cpu.control_instance:
@@ -807,7 +922,7 @@ class Zephyr(OSBase):
                 cpu.call_path = CallPath()
                 cpu.control_instance = None
                 cpu.exec_state = ExecState.idle
-        
+
         Zephyr.debug_print_threads(state)
 
 
@@ -821,7 +936,7 @@ class Zephyr(OSBase):
         #     new_state.context[isr] = # TODO
         #     return [new_state]
         return []
-    
+
     # k_tid_t k_thread_create(struct k_thread *new_thread, k_thread_stack_t *stack, size_t stack_size,
     #   k_thread_entry_t entry, void *p1, void *p2, void *p3, int prio, uint32_t options,
     #   k_timeout_t delay)
@@ -860,25 +975,28 @@ class Zephyr(OSBase):
             name=""
         )
 
+        logger.debug("k_thread_create: %s", instance.entry_name)
+
+        Zephyr.create_instance(cfg, state, cpu_id, va, "Thread", instance, args.symbol, "k_thread_create")
+
         # z_impl_k_thread_create
         #  z_setup_new_thread
         #   setup_thread_stack
         #  schedule_new_thread
 
-        # status = TaskStatus.ready
+        # ABB only available in SSE, but not in SIA ?
+        if cfg.has_abbs(instance.function):
+            status = TaskStatus.ready
+            prio = 2 * instance.priority
+            entry_abb = cfg.get_entry_abb(instance.function)
 
-        # prio = 100
+            state.context[instance] = ControlContext(
+                status=status,
+                abb=entry_abb,
+                call_path=CallPath(),
+                dyn_prio=[prio],
+            )
 
-        # state.context[obj] = ControlContext(
-        #     status=status,
-        #     abb=cfg.get_entry_abb(cfg.get_function_by_name(entry_name)),
-        #     call_path=CallPath(),
-        #     dyn_prio=[prio],
-        # )
-        
-        logger.debug(f"k_thread_create: {instance}")
-        
-        Zephyr.create_instance(cfg, state, cpu_id, va, "Thread", instance, args.symbol, "k_thread_create")
         return state
 
     # int irq_connect_dynamic(unsigned int irq, unsigned int priority,
@@ -928,7 +1046,7 @@ class Zephyr(OSBase):
         Zephyr.create_instance(cfg, state, cpu_id, va, "KernelSemaphore", instance, args.symbol, "k_sem_init")
 
         # set_next_abb(state, cpu_id)
-        
+
         return state
 
     # int sys_sem_init(struct sys_sem *sem, unsigned int initial_count, unsigned int limit)
@@ -1111,11 +1229,17 @@ class Zephyr(OSBase):
     # Syscall.comm
     #
 
+
+    # TODO: we need to make sure as long as the timeout is not empty a new state is returned
+    # probably need to return two states as soon as a timeout is pending, one with expired timeout and own with active timeout
+
+
     #
     # Thread
     #
 
     # int k_thread_join(struct k_thread *thread, k_timeout_t timeout)
+    @staticmethod
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("symbol", hint=SigType.instance, ty=Thread),
                         Arg("timeout", hint=SigType.value)))
@@ -1137,9 +1261,74 @@ class Zephyr(OSBase):
 
         # - next_up()
         #  - thread = _priq_run_best(&_kernel.ready_q.runq); --> _priq_dumb_best OR z_priq_rb_best OR ...q
-        #  - 
+        #  -
 
 
+
+
+
+
+
+        kernel = state.context[Zephyr.kernel]
+
+        if len(kernel.ready_q) <= 0:
+            logging.warning("len(kernel.ready_q) <= 0")
+            return
+
+        ### Test: IRX
+        import sys
+        sys.path.append("../subprojects/ara/subprojects/irx/")
+        sys.path.append("../subprojects/irx")
+
+        import zephyr
+        from diff import diff
+
+        zi = ZephyrInterpreter(Zephyr.config)
+
+        threads, idle_thread, threads_map, threads_vertex_map = Zephyr.prepare(zi, state, cpu_id)
+
+        irm = zi.irm
+        proxy = zi.proxy
+        _kernel = zi._kernel
+        timeout_list = zi.timeout_list
+
+
+        function_name = b"k_thread_join"
+        irm.stop(["arch_swap"]) # z_swap(inlined) CONF: arch_swap or with SMP: arch_switch
+
+
+        def thread_sym_2_ptr(symbol):
+            # obj = state.instances.vp.obj[symbol]
+            tctx = state.context[symbol]
+            return threads[0] # debug testing!!!
+        
+        thread = thread_sym_2_ptr(args.symbol)
+
+
+        timeout = args.timeout
+        if timeout == -1:
+            if Zephyr.config['CONFIG_TIMEOUT_64BIT']:
+                timeout = 0xFFFFFFFFFFFFFFFF
+            else:
+                timeout = 0xFFFFFFFF
+
+
+        #irm.set_print_llvmir(True)
+        if not irm.runFunction(function_name, [thread.ptr, timeout], ['PTR', 'APInt64']):
+            raise RuntimeError(f"Failed to run LLVM Interpreter for function {str(function_name)}")
+
+        if irm.getCurrentCallFunctionName() == "arch_swap":
+            Zephyr.debug_irx_print_kernel_objects(zi, threads, idle_thread, threads_map)
+
+            irm.putReturnValue(0, 'APInt32') # emulate that the callee returned 0
+
+        while irm.isRunnable():
+            if not irm.resume():
+                raise RuntimeError(f"Failed to run LLVM Interpreter for function {str(function_name)}")
+
+        print("ExitValue:", irm.getExitValue())
+
+        # Zephyr.update(zi, state, cpu_id, threads, idle_thread, threads_map, threads_vertex_map)
 
 
         Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_thread_join", "Thread")
@@ -1156,10 +1345,218 @@ class Zephyr(OSBase):
         add_self_edge(state, cpu_id, "k_sleep", ty=ZephyrEdgeType.interaction)
         return state
 
+    @staticmethod
+    def debug_irx_print_kernel_objects(zi, threads, idle_thread, threads_map):
+
+        import sys
+        sys.path.append("../subprojects/ara/subprojects/irx/")
+        sys.path.append("../subprojects/irx")
+
+        import zephyr
+        from diff import diff
+
+        irm = zi.irm
+        proxy = zi.proxy
+        _kernel = zi._kernel
+
+        print(irm.getCallStack())
+        print(irm.getCurrentCallFunctionName())
+        print(irm.getCurrentCallArgs())
+        for old in [idle_thread, _kernel] + threads:
+            print("\n", type(old), old.__ptr__)
+            new = type(old)()
+            new.ptr = old.ptr
+            proxy.get(new)
+            changes = diff(old, new)
+            for x in changes:
+                print(f"{x.path_str():30s}: {x.obj1} => {x.obj2}")
+
+        # new_z_kernel = zephyr.z_kernel()
+        # new_z_kernel.ptr = _kernel.ptr
+        # proxy.get(new_z_kernel)
+        # print("ready_q.cache (za):", za.ThreadStateAdapter.fromZephyr(new_z_kernel.ready_q.cache))
+
+        for old in threads:
+            new = type(old)()
+            new.ptr = old.ptr
+            proxy.get(new)
+            abSSTState = za.ThreadStateAdapter.fromZephyr(new.base.thread_state)
+            abSSTStateName = str(abSSTState)
+            if isinstance(abSSTState, TaskStatus):
+                abSSTStateName = abSSTState.name
+            print(type(old), old.__ptr__)
+            print("\n base.thread_state (za):", abSSTStateName)
+            print("\n AbSS:", threads_map[old.ptr])
+
+    @staticmethod
+    def prepare(zi, state, cpu_id):
+        kernel = state.context[Zephyr.kernel]
+
+        import sys
+        sys.path.append("../subprojects/ara/subprojects/irx/")
+        sys.path.append("../subprojects/irx")
+
+        import zephyr
+        from diff import diff
+        from typing import Annotated
+        from proxy import ArraySize
+
+        # zi.init(graph.os.llvm_ir_file)
+        zi.init(Zephyr.llvm_ir_file)
+        zi.z_cstart()
+        # zi.bg_thread_main()
+
+        proxy = zi.proxy
+        _kernel = zi._kernel
+        timeout_list = zi.timeout_list
+
+        # # remove main thread from ready queue
+        # z_main_thread = proxy.Global(zephyr.k_thread, 'z_main_thread')
+        # zi.unready_thread(z_main_thread)
+
+        proxy.get(_kernel)
+        proxy.get(timeout_list)
+
+
+        # irm.set_print_llvmir(True)
+        # zi.unready_thread(threads[0])
+
+        print(_kernel.ready_q.cache)
+        print(_kernel.cpus[cpu_id].current)
+        print(_kernel.cpus[cpu_id].idle_thread)
+
+        threads = []
+        threads_map = {}
+        threads_vertex_map = {}
+        # for tctx in Zephyr.get_thread_ccs(state):
+        for v in kernel.ready_q:
+            obj = state.instances.vp.obj[v]
+            tctx = state.context[obj]
+            print("AbSS Thread context:", tctx)
+            t = zi.helper_create_thread(za.ThreadStateAdapter.fromAbSS(tctx.status))
+            threads.append(t)
+            threads_map[t.ptr] = tctx
+            threads_vertex_map[t.ptr] = v
+
+        # TODO: this should be the kernel.cache thread
+        zi.run_function('z_mark_thread_as_started', [threads[0].ptr], ['PTR'])
+        zi.run_function('z_ready_thread', [threads[0].ptr], ['PTR'])
+
+        proxy.get(_kernel)
+
+        # irm.set_print_llvmir(True)
+        # zi.unready_thread(threads[0])
+
+        print('_kernel.ready_q.cache', _kernel.ready_q.cache)
+        print('_kernel.cpus[0].current', _kernel.cpus[cpu_id].current)
+        print('_kernel.cpus[0].idle_thread', _kernel.cpus[cpu_id].idle_thread)
+        print('z_main_thread', zi.z_main_thread.__ptr__)
+        print('_thread_dummy', zi._thread_dummy.__ptr__)
+        print('_kernel.ready_q.runq.next', _kernel.ready_q.runq.next)
+        print('_kernel.ready_q.runq.prev', _kernel.ready_q.runq.prev)
+
+        # switch_to_main_thread
+        _kernel.ready_q.cache.ptr = threads[0].ptr
+        _kernel.cpus[cpu_id].current.ptr = _kernel.ready_q.cache.ptr
+        #_kernel.cpus[0].idle_thread.ptr = idle_thread.ptr
+
+        proxy.put(_kernel)
+
+        zi.helper_threads_enqueue(threads[1:])
+        # zi.helper_threads_ready(threads)
+
+        #zi.helper_get_objs([idle_thread] + threads)
+        #idle_thread = zi.helper_create_thread(za.ThreadStateAdapter.fromAbSS(TaskStatus.ready), False)
+        idle_thread = zi.z_idle_threads[cpu_id]
+        proxy.get(idle_thread)
+
+
+        return threads, idle_thread, threads_map, threads_vertex_map
+        
+    @staticmethod
+    def update(zi, state, cpu_id, threads, idle_thread, threads_map, threads_vertex_map):
+        import sys
+        sys.path.append("../subprojects/ara/subprojects/irx/")
+        sys.path.append("../subprojects/irx")
+
+        import zephyr
+        from diff import diff
+
+        kernel = state.context[Zephyr.kernel]
+
+        proxy = zi.proxy
+        _kernel = zi._kernel
+        timeout_list = zi.timeout_list
+
+        for old in [idle_thread, _kernel, timeout_list] + threads:
+            print("\n", type(old), old.__ptr__)
+            new = type(old)()
+            new.ptr = old.ptr
+            proxy.get(new)
+            changes = diff(old, new)
+            for x in changes:
+                print(f"{x.path_str():30s}: {x.obj1} => {x.obj2}")
+
+        proxy.get(timeout_list)
+        proxy.get(_kernel)
+
+        for ptr in zi.dlist_itr(timeout_list):
+            print("dlist_itr", ptr)
+            timeout_base_thread = proxy.container_of_ptr(ptr, zephyr._thread_base, 'timeout')
+            timeout_thread = proxy.container_of(timeout_base_thread, zephyr.k_thread, 'base')
+            print("timeout_thread: ", timeout_thread.__ptr__)
+        
+        # calculate missing ptr address as it is embedded in a structure
+        #_kernel.ready_q.runq.ptr = _kernel.ptr + proxy.offset_of(_kernel, ['ready_q', 'runq'])
+        #proxy.update_ptr(_kernel, ['ready_q', 'runq'])
+        
+        kernel.ready_q.clear()
+
+        for ptr in zi.dlist_itr_ptr(_kernel, ["ready_q", "runq"]): # only for CONFIG_SCHED_DUMB
+            ptr.cls = zephyr.k_thread # "cast" *dlist to *k_thread"
+            print("dlist_itr ready_q", ptr)
+
+            v = threads_vertex_map[ptr.ptr]
+            kernel.ready_q.append(v)
+
+        # update next thread
+        if _kernel.ready_q.cache.ptr in threads_vertex_map:
+            kernel.cache = threads_vertex_map[_kernel.ready_q.cache.ptr]
+        else:
+            kernel.cache = None
+
+        ### Test: IRX
+
+
+        for t in threads:
+            proxy.get(t)
+            abSSTState = za.ThreadStateAdapter.fromZephyr(t.base.thread_state)
+            if isinstance(abSSTState, TaskStatus):
+                threads_map[t.ptr].status = abSSTState
+            else:
+                logger.warning("Unknown state returned abSSTState: {abSSTState}")
+                threads_map[t.ptr].status = TaskStatus.blocked
+                raise RuntimeError("Unknown state returned")
+
+        # for tctx in get_thread_CCs():
+        #    tctx.status = TaskStatus.ready
+#
+        cpu = state.cpus[cpu_id]
+
+        # TODO: make a dirty flag to prevent from unnecessarily get
+        proxy.get(zi._kernel)
+
+        state.cpus[cpu_id].analysis_context = ZephyrCPUAnalysisContext()
+
+        state.cpus[cpu_id].analysis_context.current = threads_map[zi._kernel.cpus[cpu_id].current.ptr]
+    
+
     # int32_t k_msleep(int32_t ms)
+    @staticmethod
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("ms", hint=SigType.value),))
     def k_msleep(graph, state, cpu_id, args, va):
+        old_state = state
         state = state.copy()
 
         # handle: K_FOREVER: Thread suspends, calls: k_thread_suspend(_current);
@@ -1172,16 +1569,12 @@ class Zephyr(OSBase):
         # - wait_for_switch(new_thread);
 		# - arch_switch();
 
-        def get_threads():
-            # threads = [(v, obj) for v, obj in instances.get(Thread)]
-            threads = state.instances.get_controls().vertices()
-            for v in threads:
-                obj = state.instances.vp.obj[v]
-                if obj not in state.context:
-                    logger.warning("Tried to access non available context")
-                    continue
-                yield state.context[obj]
-        
+        #state.instances.vp.obj[Zephyr.kernel].queue = state.instances.vp.obj[Zephyr.kernel].queue + 1 # static
+        # print(hash(state.instances.vp.obj[Zephyr.kernel]))
+        kernel = state.context[Zephyr.kernel]
+
+        if len(kernel.ready_q) <= 0:
+            return old_state
 
         ### Test: IRX
         import sys
@@ -1190,73 +1583,15 @@ class Zephyr(OSBase):
 
         import zephyr
         from diff import diff
-        from typing import Annotated
-        from proxy import ArraySize
 
-        zi = ZephyrInterpreter([])
-        zi.init(graph.os.llvmirfile)
-        zi.z_cstart()
-        # zi.bg_thread_main()
+        zi = ZephyrInterpreter(Zephyr.config)
 
+        threads, idle_thread, threads_map, threads_vertex_map = Zephyr.prepare(zi, state, cpu_id)
 
         irm = zi.irm
         proxy = zi.proxy
         _kernel = zi._kernel
-
-
-        # # remove main thread from ready queue
-        # z_main_thread = proxy.Global(zephyr.k_thread, 'z_main_thread')
-        # zi.unready_thread(z_main_thread)
-        
-        proxy.get(_kernel)
-
-
-        # irm.set_print_llvmir(True)
-        # zi.unready_thread(threads[0])
-
-        print(_kernel.ready_q.cache)
-        print(_kernel.cpus[0].current)
-        print(_kernel.cpus[0].idle_thread)
-        
-        threads_map = {}
-        threads = []
-        for tctx in get_threads():
-            print("AbSS Thread context:", tctx)
-            t = zi.helper_create_thread(za.ThreadStateAdapter.fromAbSS(tctx.status))
-            threads.append(t)
-            threads_map[t.ptr] = tctx
-        
-        zi.run_function('z_mark_thread_as_started', [threads[0].ptr], ['PTR'])
-        zi.run_function('z_ready_thread', [threads[0].ptr], ['PTR'])
-
-        proxy.get(_kernel)
-
-        # irm.set_print_llvmir(True)
-        # zi.unready_thread(threads[0])
-
-        print('_kernel.ready_q.cache', _kernel.ready_q.cache)
-        print('_kernel.cpus[0].current', _kernel.cpus[0].current)
-        print('_kernel.cpus[0].idle_thread', _kernel.cpus[0].idle_thread)
-        print('z_main_thread', zi.z_main_thread.__ptr__)
-        print('_thread_dummy', zi._thread_dummy.__ptr__)
-        print('_kernel.ready_q.runq.next', _kernel.ready_q.runq.next)
-        print('_kernel.ready_q.runq.prev', _kernel.ready_q.runq.prev)
-
-        _kernel.ready_q.cache.ptr = threads[0].ptr
-        _kernel.cpus[0].current.ptr = _kernel.ready_q.cache.ptr
-        #_kernel.cpus[0].idle_thread.ptr = idle_thread.ptr
-
-        proxy.put(_kernel)
-
-        zi.helper_threads_enqueue(threads[1:])
-        #zi.helper_threads_ready(threads)
-
-        #idle_thread = zi.helper_create_thread(za.ThreadStateAdapter.fromAbSS(TaskStatus.ready), False)
-        idle_thread = zi.z_idle_threads[0]
-
-        #zi.helper_get_objs([idle_thread] + threads)
-                
-        proxy.get(idle_thread)
+        timeout_list = zi.timeout_list
 
 
 
@@ -1264,91 +1599,44 @@ class Zephyr(OSBase):
         # TODO: check the function signature in ir code, and remove the args_hints
 
         function_name = b"z_impl_k_sleep"
-        irm.stop(["arch_swap"]) # CONF: or arch_switch
+        irm.stop(["arch_swap"]) # z_swap(inlined) CONF: arch_swap or with SMP: arch_switch
 
         #irm.set_print_llvmir(True)
         if not irm.runFunction(function_name, [args.ms], ['APInt64']):
             raise RuntimeError(f"Failed to run LLVM Interpreter for function {str(function_name)}")
-        
-        if irm.getCurrentCallFunctionName() == "arch_swap":
-            print(irm.getCallStack())
-            print(irm.getCurrentCallFunctionName())
-            print(irm.getCurrentCallArgs())
-            for old in [idle_thread, _kernel] + threads:
-                print("\n", type(old), old.__ptr__)
-                new = type(old)()
-                new.ptr = old.ptr
-                proxy.get(new)
-                changes = diff(old, new)
-                for x in changes:
-                    print(f"{x.path_str():30s}: {x.obj1} => {x.obj2}")
-            
 
-            # new_z_kernel = zephyr.z_kernel()
-            # new_z_kernel.ptr = _kernel.ptr
-            # proxy.get(new_z_kernel)
-            # print("ready_q.cache (za):", za.ThreadStateAdapter.fromZephyr(new_z_kernel.ready_q.cache))
-            for old in threads:
-                new = type(old)()
-                new.ptr = old.ptr
-                proxy.get(new)
-                abSSTState = za.ThreadStateAdapter.fromZephyr(new.base.thread_state)
-                abSSTStateName = str(abSSTState)
-                if isinstance(abSSTState, TaskStatus):
-                    abSSTStateName = abSSTState.name
-                print(type(old), old.__ptr__)
-                print("\n base.thread_state (za):", abSSTStateName)
-                print("\n AbSS:", threads_map[t.ptr])
-            
+        if irm.getCurrentCallFunctionName() == "arch_swap":
+            Zephyr.debug_irx_print_kernel_objects(zi, threads, idle_thread, threads_map)
+
             irm.putReturnValue(0, 'APInt32') # emulate that the callee returned 0
-            
+
         while irm.isRunnable():
             if not irm.resume():
                 raise RuntimeError(f"Failed to run LLVM Interpreter for function {str(function_name)}")
 
         print("ExitValue:", irm.getExitValue())
-        
-        for old in [idle_thread, _kernel] + threads:
-            print("\n", type(old), old.__ptr__)
-            new = type(old)()
-            new.ptr = old.ptr
-            proxy.get(new)
-            changes = diff(old, new)
-            for x in changes:
-                print(f"{x.path_str():30s}: {x.obj1} => {x.obj2}")
 
-        ### Test: IRX
 
-        for t in threads:
-            proxy.get(t)
-            abSSTState = za.ThreadStateAdapter.fromZephyr(t.base.thread_state)
-            if isinstance(abSSTState, TaskStatus):
-                threads_map[t.ptr].status = abSSTState
-            else:
-                logger.warning("Unknown state returned abSSTState: {abSSTState}")
-                threads_map[t.ptr].status = TaskStatus.blocked
-        
-        # for tctx in get_threads():
-        #    tctx.status = TaskStatus.ready
-# 
-        cpu = state.cpus[cpu_id]
-        
-        # TODO: make a dirty flag to prevent from unnecessarily get
-        proxy.get(zi._kernel)
+        Zephyr.update(zi, state, cpu_id, threads, idle_thread, threads_map, threads_vertex_map)
 
-        state.cpus[cpu_id].analysis_context = ZephyrCPUAnalysisContext()
+        # cur_task_vertex = state.cur_control_inst(cpu_id)
 
-        state.cpus[cpu_id].analysis_context.current = threads_map[zi._kernel.cpus[cpu_id].current.ptr]
-        
-        
-        old_vertex = state.instances.vertex(cpu.control_instance)
-        old_task = state.instances.vp.obj[old_vertex]
+        # old_vertex = state.instances.vertex(cpu.control_instance)
+        # print("old_vertex", id(old_vertex), id(cpu.control_instance))
+        # print("old_vertex", (old_vertex))
+        # print("old_vertex", (cpu.control_instance))
+
+        # old_task = state.instances.vp.obj[old_vertex]
         # old_ctx = state.context[old_task]
-        
-        # state.context[old_task].status = TaskStatus.ready
-        state.context[old_task].status = TaskStatus.blocked
-        # old_ctx.abb = state.cfg.vertex(cpu.abb)
-        # old_ctx.call_path = cpu.call_path
+        # # old_ctx.status = TaskStatus.ready
+        # old_ctx.status = TaskStatus.blocked
+        # # old_ctx.abb = state.cfg.vertex(cpu.abb)
+        # # old_ctx.call_path = cpu.call_path
+
+        print("state.cur_context(cpu_id).status: ", state.cur_context(cpu_id).status)
+
+        # state.cur_context(cpu_id).status = TaskStatus.blocked
+
 
         Zephyr.debug_print_threads(state)
 
@@ -2010,7 +2298,7 @@ class Zephyr(OSBase):
         Zephyr.debug_print_threads(state)
 
         return state
-    
+
 
     class InstanceEdge(IntEnum):
         have = 1 << 1

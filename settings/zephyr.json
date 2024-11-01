@@ -1,5 +1,7 @@
 {
 	"steps": [
+		"ZephyrThreadEntry",
+		"SIA",
 		"InteractionAnalysis",
         "Printer"
 	],

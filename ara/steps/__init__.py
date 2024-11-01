@@ -37,6 +37,7 @@ def provide_steps():
     from .instance_graph_stats import InstanceGraphStats
     from .ipi_avoidance import IPIAvoidance
     from .load_oil import LoadOIL
+    from .load_kernel_ll import LoadKernelLL
     from .lock_elision import LockElision
     from .manual_corrections import ManualCorrections
     from .mark_loop_head import MarkLoopHead
@@ -79,6 +80,7 @@ def provide_steps():
     yield InstanceGraphStats
     yield InteractionAnalysis
     yield LoadOIL
+    yield LoadKernelLL
     yield LockElision
     yield ManualCorrections
     yield MarkLoopHead

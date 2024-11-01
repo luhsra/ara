@@ -84,14 +84,14 @@ class ZephyrStaticPost(Step):
                 va.assign_system_object(inst.symbol, inst, offset)
             if issubclass(instance_type, ControlInstance):
                 function = cfg.get_function_by_name(inst.entry_name)
-                # try to get the mock thread entry wrapper
-                # z_thread_entry_name = ARA_ENTRY_POINT # Maybe both ARA_ENTRY_POINT and z_thread_entry could be merged in the future
-                z_thread_entry_name = '__ara_mock_z_thread_entry'
-                z_thread_entry = cfg.get_function_by_name(z_thread_entry_name)
-                if z_thread_entry is not None:
-                    function = z_thread_entry
-                else:
-                    logger.warning("%s not found!", z_thread_entry_name)
+                # # try to get the mock thread entry wrapper
+                # # z_thread_entry_name = ARA_ENTRY_POINT # Maybe both ARA_ENTRY_POINT and z_thread_entry could be merged in the future
+                # z_thread_entry_name = '__ara_mock_z_thread_entry'
+                # z_thread_entry = cfg.get_function_by_name(z_thread_entry_name)
+                # if z_thread_entry is not None:
+                #     function = z_thread_entry
+                # else:
+                #     logger.warning("%s not found!", z_thread_entry_name)
 
                 inst.cfg = cfg
                 inst.function = function
