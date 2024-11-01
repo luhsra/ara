@@ -9,6 +9,10 @@ DeclareTask(T11);
 DeclareSpinlock(S1);
 DeclareSpinlock(S2);
 
+/**
+ * First testcase copied from andreas, testing Tasks and system.json
+ */
+
 void start() {
 	StatusType rv;
 	switch (GetCoreID()) {
