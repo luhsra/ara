@@ -145,8 +145,8 @@ extern "C" bool micro_sec_wait_upto(uint32_t start_time, uint32_t wait_time) {
 
 /*
 * Wait for wait_time microseconds, 
-* maxTime is 5 600 000 micro-s / 5.6s
-* precision depends
+* maxTime on Pi is 		17.1s = 17 100 000 us
+* maxTime with Qemu is  4.3s  = 4 300 000 us
 */
 extern "C" void micro_sec_wait(uint32_t wait_time) {
 	
