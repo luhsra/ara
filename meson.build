@@ -124,6 +124,8 @@ sed = find_program('sed')
 # irx
 irx = subproject('irx')
 irx_dir = irx.get_variable('irx_dir')
+irx_mod = irx.get_variable('irx_tgt')
+
 
 # all dependencies found, build the actual program
 
@@ -186,6 +188,8 @@ ara_py = custom_target('ara-py',
     output: 'ara.py',
     depends: [step_mod, graph_data_mod],
     command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_py_content.format(py3_inst.full_path()+python_opt_arg, conv_wrapper_formatted)],
+    depends: [step_mod, graph_data_mod, irx_mod],
+    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_py_content.format(py3_inst.path()+python_opt_arg, conv_wrapper_formatted)],
     build_by_default: true
 )
 

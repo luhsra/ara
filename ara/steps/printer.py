@@ -57,7 +57,7 @@ def remap(x, in_min=0.0, in_max=1.0, out_min=0.0, out_max=1.0):
 
 def with_color(value, color, min=0.0, max=1.0):
     '''Picks a color and wraps the value in a XML tag with the color attribute'''
-    return f"<font color='{remap(color, float(min), float(max))} 0.700 0.800'>\"{value}\" {color}</font>"
+    return f"<font color='{remap(color, float(min), float(max))} 0.700 0.800'>\"{value}\"</font>"
 
 def _sstg_state_as_dot(sstg, state_vert):
     attrs = {"fontsize": 14}
@@ -79,14 +79,7 @@ def _sstg_state_as_dot(sstg, state_vert):
 
     if cpu.control_instance:
         instance = obj.instances.vp.label[obj.instances.vertex(cpu.control_instance)]
-
         thread = obj.cur_control_inst(cpu.id)
-        # ctx = obj.cur_context(cpu.id)
-        # print("_sstg_state_as_dot CPU ", cpu)
-        # print("_sstg_state_as_dot thread ", thread)
-        # print("_sstg_state_as_dot ctx", ctx)
-
-        # TODO add more useful attr
 
         # FIXME this is zephyr specific code: move it into printer_zephyr
         if hasattr(thread, 'name'):
@@ -99,7 +92,14 @@ def _sstg_state_as_dot(sstg, state_vert):
                 thread_idx = thread_names.index(thread.name)
                 v = thread_list[thread_idx][0]
                 idstr = f"{str(v)}"
-            thread_info.append(("thread", with_color(thread.name, thread_idx, -1, thread_count) + idstr))
+            thread_info.append(("thread", with_color(thread.name, thread_idx, -1, thread_count) + " " + idstr))
+
+            context = obj.context[thread]
+            thread_info.append(("preempt", context.preempt))
+            thread_info.append(("thread_state", bin(context.thread_state)))
+            vertices = [str(obj.instances.vertex_index[v]) for v in context.join_queue]
+            thread_info.append(("join_queue", ", ".join(vertices)))
+
     else:
         instance = "Idle"
     if cpu.abb:

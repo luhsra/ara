@@ -14,6 +14,7 @@ from .cfg_traversal import Visitor, run_sse
 
 import graph_tool
 import os
+from ara.os.zephyr import Zephyr
 
 from .printer import sstg_to_dot
 from .util import open_with_dirs
@@ -100,6 +101,7 @@ class SSE(Step):
                 if self.detailed_dump.get():
                     self.dump_sstg(sstg, extra=counter)
         
+        Zephyr.enable_sse = True
 
         run_sse(
             self._graph,

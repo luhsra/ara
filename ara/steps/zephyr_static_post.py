@@ -134,3 +134,27 @@ class ZephyrStaticPost(Step):
         ZephyrOptions.enable_missing_interaction_count = self.enable_missing_interaction_count.get()
         if ZephyrOptions.enable_missing_interaction_count:
             MissingInteractions.activate()
+
+
+        # create idle threads
+        n_cpus = int(Zephyr.config['CONFIG_MP_MAX_NUM_CPUS'])
+        for cpu_id in range(n_cpus):
+            prio = int(Zephyr.config['CONFIG_NUM_PREEMPT_PRIORITIES'])
+            stack_size = int(Zephyr.config['CONFIG_IDLE_STACK_SIZE'])
+            idle_thread = Thread(
+                cpu_id=cpu_id,
+                cfg=cfg,
+                artificial=True,
+                function=None,
+                symbol=None, # f'z_idle_threads[{cpu_id}]',
+                stack=None, # f'z_idle_stacks[{cpu_id}]',
+                stack_size=stack_size,
+                entry_name="idle",
+                entry_params=(None, None, None),
+                priority=prio,
+                options=0,
+                delay=0,
+                name=f"idle {cpu_id:02d}",
+                start_in_init=False
+            )
+            Zephyr.idle_threads[cpu_id] = ZephyrStaticPost.create_static_instance(self._graph.instances, "Thread", idle_thread, idle_thread.name, True)
