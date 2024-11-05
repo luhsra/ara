@@ -181,6 +181,7 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'spinlock',     'oil': 'spinlock_system.json'},
   {'core': 'multicore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'waiting',     'oil': 'waiting_system.json'},
   {'core': 'multicore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'runnables',     'oil': 'runnables_system.json'},
+  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'labels',     'oil': 'labels_system.json'},
 ]
 subdir('multicore' / 'trampoline')
 
