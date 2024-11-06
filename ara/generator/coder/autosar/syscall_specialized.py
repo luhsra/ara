@@ -91,7 +91,7 @@ class SpecializedSystemCalls(GenericSystemCalls):
         needed = True
         if not self.generator.ara_step.lock_elision.get():
             return needed
-        step_data = self.ara_graph.step_data["LockElision"]["num_callsites"]
+        step_data = self.ara_graph.step_data["LockElision"]["callsites"]
 
         for lock in step_data.values():  # check results
             if release and lock["release_abb"] != abb:

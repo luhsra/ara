@@ -474,7 +474,7 @@ foreach app: autosar_targets
             '--ir_output', '@OUTPUT0@',
             '--step-settings', ara_opt_settings[opt],
             '--generator_output', '@OUTPUT1@',
-            #'--timings', app['sys_timings']
+            '--timings', app['sys_timings']
           ]
         )
       else
