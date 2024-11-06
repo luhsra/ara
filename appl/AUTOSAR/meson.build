@@ -530,11 +530,13 @@ foreach app: autosar_targets
                           depends : [pi4_bin],
                           command : [
                             py3_inst,
-                            rpi4_tftp_deploy,
+                            tftp_deploy,
                             pi4_bin.full_path(),
                             '--ssh-host', libplatforms_proj.get_variable('tftp_host'),
                             '--scp', scp.full_path(),
                             '--ssh', ssh.full_path(),
+                            '--path', '/proj/tftp/research/rpi4',
+                            '--rpi',
                           ])
       summary('Flash @0@ on RPI with TFTP'.format(opt_app_name), 'meson compile ' + rt, bool_yn: true, section: 'MACAW, AUTOSAR synthesis')
 
@@ -596,23 +598,35 @@ foreach app: autosar_targets
     run_cmd = ['qemu-system-riscv64', '-M', 'virt', '-smp', '16', '-no-reboot', '-nographic', '-serial','mon:stdio', '-bios'] + app_image_riscv
 
     app += {'run_cmd_riscv': run_cmd}
-    run_target('run_' + full_name + '_riscv', command: run_cmd)
+    rt = 'run_' + full_name + '_riscv'
+    run_target(rt, command: run_cmd)
+    summary('Run @0@ on RISC-V Qemu'.format(full_name), 'meson compile ' + rt, bool_yn: true, section: 'MACAW, AUTOSAR synthesis')
 
-    #riscv_bin = custom_target(full_name + '_riscv_bin',
-    #                    input: [
-    #                      app_image_riscv,
-    #                    ],
-    #                    output : full_name + '_riscv.bin',
-    #                    depfile : full_name + '.riscv.bin.dep',
-    #                    command : [ llvm_objcopy,
-    #                              '-O', 'binary',
-    #                              '@INPUT@',
-    #                              '@OUTPUT@'])
+    riscv_bin = custom_target(full_name + '_riscv_bin',
+                        input: [
+                          app_image_riscv,
+                        ],
+                        output : full_name + '_riscv.bin',
+                        depfile : full_name + '.riscv.bin.dep',
+                        command : [ llvm_objcopy,
+                                  '-O', 'binary',
+                                  '@INPUT@',
+                                  '@OUTPUT@'])
 
-    #pi4_bin_pxe = run_target('tftp_' + full_name + '_riscv',
-    #                    depends : [riscv_bin],
-    #                    command : [riscv_tftp_deploy,
-    #                              riscv_bin.full_path()])
+    rt = 'tftp_' + full_name + '_riscv'
+    riscv_bin_tftp = run_target(rt,
+                        depends : [riscv_bin],
+                        command : [
+                          py3_inst,
+                          tftp_deploy,
+                          riscv_bin.full_path(),
+                          '--ssh-host', libplatforms_proj.get_variable('tftp_host'),
+                          '--scp', scp.full_path(),
+                          '--ssh', ssh.full_path(),
+                          '--path', '/proj/tftp/research/beaglev',
+                          '--beaglev',
+                        ])
+      summary('Flash @0@ on BeagleV with TFTP'.format(full_name), 'meson compile ' + rt, bool_yn: true, section: 'MACAW, AUTOSAR synthesis')
 
 
     autosar_generated_targets_riscv += app

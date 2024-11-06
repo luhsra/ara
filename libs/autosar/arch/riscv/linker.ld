@@ -11,10 +11,20 @@ OUTPUT_ARCH( "riscv" )
 ENTRY( _start )
 
 
+MEMORY
+{
+  ram (wxa) : ORIGIN = 0x80000000, LENGTH = 128M
+}
+
+PHDRS
+{
+  text PT_LOAD;
+  data PT_LOAD;
+  bss PT_LOAD;
+}
+
 SECTIONS
 {
-    . = 0x80000000;
-
     .text : {
          KEEP(*(.text.init))
          /* constructors */
@@ -27,7 +37,7 @@ SECTIONS
          *(.text)
          *(.text.*)
          *(.gnu.linkonce.t.*)
-    }
+    } >ram AT>ram :text
 
   . = ALIGN(16);
 /* rodata: Read-only data */
@@ -39,7 +49,7 @@ SECTIONS
     *(.rodata.*)
     *(.gnu.linkonce.r.*)
     PROVIDE( _erodata = . );
-  }
+  } >ram AT>ram :text
 
   /*--------------------------------------------------------------------*/
   /* HTIF, isolated onto separate page                                  */
@@ -69,7 +79,7 @@ SECTIONS
   *(.srodata*)
   *(.gnu.linkonce.d.*)
   *(.comment)
-  }
+  } >ram AT>ram :data
 
   /* End of initialized data segment */
   PROVIDE( edata = . );
@@ -86,7 +96,7 @@ SECTIONS
     *(.sdata.*)
     *(.srodata.*)
     *(.gnu.linkonce.s.*)
-  }
+  } >ram AT>ram :data
 
   /*--------------------------------------------------------------------*/
   /* Uninitialized data segment                                         */
@@ -102,7 +112,7 @@ SECTIONS
     *(.sbss)
     *(.sbss.*)
     *(.gnu.linkonce.sb.*)
-  }
+  } >ram AT>ram :bss
 
   /* bss: Uninitialized writeable data section */
   . = .;
@@ -113,7 +123,7 @@ SECTIONS
     *(.bss.*)
     *(.gnu.linkonce.b.*)
     *(COMMON)
-  }
+  } >ram AT>ram :bss
   _bss_end = .;
   _ebss = .;
 

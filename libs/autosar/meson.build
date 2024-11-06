@@ -8,6 +8,8 @@ autosar_includes += ['-I', meson.current_source_dir() / 'os' / 'util']
 
 libplatforms_proj = subproject('ara-libplatforms')
 ar_cmd = [toolchains.get_variable('llvm_ar'), ['rcs', '@OUTPUT@', '@INPUT@']]
+llvm_objcopy = toolchains.get_variable('llvm_objcopy')
+tftp_deploy = libplatforms_proj.get_variable('tftp_deploy')
 
 if arm_enabled
 
@@ -29,8 +31,6 @@ if arm_enabled
     libplatform_proj.get_variable('arm_ld_flags')
   ]
 
-  llvm_objcopy = toolchains.get_variable('llvm_objcopy')
-  rpi4_tftp_deploy = libplatforms_proj.get_variable('rpi4_tftp_deploy')
 endif
 
 if posix_enabled
@@ -50,13 +50,14 @@ endif
 # RISC-V
 if riscv_enabled
   autosar_riscv_clang_flags = [
+    libplatform_proj.get_variable('beaglev_clang_flags'),
     '--target=riscv64-unknown-elf', # 64 bit Architektur
     '-march=rv64imac',              # Spezifikation der genauen Architektur
     '-O3',                          # Optimierungsstufe
     '-mcmodel=medany',
     '-Wall',
     '-Wextra',
-    #'-DDEBUG',                     # Debugging
+    '-DDEBUG',                     # Debugging
   ]
   autosar_riscv_ld_flags = [        # Linken der Bibliotheken
     '-Wl,-Map,@OUTPUT0@.map',
