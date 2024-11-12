@@ -15,13 +15,13 @@ DeclareTask(MS1000);
 
 TEST_MAKE_OS_MAIN(StartOS(0))
 
-const unsigned VERSION = 1;
 /**
  * Test large number of runnables that get started in predifined periods
  * and allocate lables -> memory to them
  * FROM: REAL WORLD AUTOMOTIVE BENCHMARKS FOR FREE
  */
 
+const char* taskStrings[] = {"MS1", "MS2", "MS5", "MS10", "MS20", "MS50", "MS100", "MS200", "MS1000"};
 enum task_id {
 	MS1_id = 0,
 	MS2_id = 1,
@@ -32,9 +32,8 @@ enum task_id {
 	MS100_id = 6,
 	MS200_id = 7,
 	MS1000_id = 8,
-
+	MS_LAST_id = 9,
 };
-const char* taskStrings[] = {"MS1", "MS2", "MS5", "MS10", "MS20", "MS50", "MS100", "MS200", "MS1000"};
 
 // how often the scheduler gets started
 const unsigned RUNS = 1000;
@@ -88,61 +87,32 @@ enum memory_position {
 	MS1000_mem = MS200_mem + RUNNABLES_PER100 * SHARE[MS200_id] * SIZE_PER_RUNNABLE,
 };
 
+/**
+ ********************* SCHEDULER *********************
+ */
 
-// better would be to split labels to runnables, 9 runnables
-//uint8_t communication[9][] = NUMBER_OF_LABELS/ SHARE[] * AVAERAGE_LABEL_SIZE];
-
-
-
-unsigned i = 0;
 // startup + control Task, loweest prio
+unsigned cycle = 0;
 TASK(SCHED1) {
 	arch::Perf::start();
-    kout << "V:" << VERSION << " - Label Test w " << NUMBER_OF_RUNNABLES << " Runnables + " << NUMBER_OF_LABELS << " Labels." << endl;
+    kout << "********************" << endl;
+	kout << "Label Test w\t" << NUMBER_OF_RUNNABLES << "\tRunnables and\t" << NUMBER_OF_LABELS << "\tLabels." << endl;
+    kout << "********************" << endl;
 
+	// optionaly wait
 	// micro_sec_wait(30000000);
-	test_trace('S');
 
-	for (; i < RUNS; i++) {
+	for (; cycle < RUNS; cycle++) {
 
 		uint32_t start_cycle = arch::Perf::get_cycles();
 
-		if (i % PERIOD[MS1_id] == 0) {
-			memory_pos = MS1_mem;
-			ActivateTask(MS1);
+		for (task_id id = MS1_id; id < MS_LAST_id; id = task_id(id+1)) {
+			if (cycle % PERIOD[id] == 0) {
+				memory_pos = memory_position(id);
+				ActivateTask(MS1);
 		}	
-		if (i % PERIOD[MS2_id] == 0) {
-			memory_pos = MS2_mem;
-			ActivateTask(MS2);
 		}
-		if (i % PERIOD[MS5_id] == 0) {
-			memory_pos = MS5_mem;
-			ActivateTask(MS5);
-		}
-		if (i % PERIOD[MS10_id] == 0) {
-			memory_pos = MS10_mem;
-			ActivateTask(MS10);
-		}
-		if (i % PERIOD[MS20_id] == 0) {
-			memory_pos = MS20_mem;
-			ActivateTask(MS20);
-		}
-		if (i % PERIOD[MS50_id] == 0) {
-			memory_pos = MS50_mem;
-			ActivateTask(MS50);
-		}
-		if (i % PERIOD[MS100_id] == 0) {
-			memory_pos = MS100_mem;
-			ActivateTask(MS100);
-		}
-		if (i % PERIOD[MS200_id] == 0) {
-			memory_pos = MS200_mem;
-			ActivateTask(MS200);
-		}
-		if (i % PERIOD[MS1000_id] == 0) {
-			memory_pos = MS1000_mem;
-			ActivateTask(MS1000);
-		}
+		
 
 		uint32_t end_cycle = arch::Perf::get_cycles();
 
@@ -150,28 +120,26 @@ TASK(SCHED1) {
 		in_time ? test_trace('1') : test_trace('0');
 
 		if (!in_time) {
-			//kout << i << " " << " timing failed" << endl;
+			//kout << cycle << " " << " timing failed" << endl;
 		}
 
 		/*
 		kout << "t: " << 1000 * WAIT_FREQUENCE << " d: " << end_cycle - start_cycle << endl;	
 		kout << "s: " << start_cycle << " e: " << end_cycle << endl;	
-		kout << "Run: \t" << i << " | In time? " << in_time << "\n" << endl;
+		kout << "Run: \t" << cycle << " | In time? " << in_time << "\n" << endl;
 		*/
 	}
 
 	TerminateTask();
 }
 
-TASK(MS1) {
+void runTask(task_id task) {
 
 	uint32_t start_cycle = arch::Perf::get_cycles();
 
-	const unsigned task_id = MS1_id;
-	// number of runs
-	const unsigned runs = RUNNABLES_PER100 * SHARE[task_id];
+	const unsigned runs = RUNNABLES_PER100 * SHARE[task];
 	// calculation time
-	const unsigned time = runs * TIME[task_id];
+	const unsigned time = runs * TIME[task];
 	// label size
 	const unsigned memory = runs * SIZE_PER_RUNNABLE;
 	
@@ -200,359 +168,72 @@ TASK(MS1) {
 	
 	bool in_time = micro_sec_wait_upto(start_cycle, time);
 	if (!in_time) {
-		kout << i << " " <<  taskStrings[task_id] << " took longer because of memory" << endl;
+		kout << "Cycle:\t" << cycle << "\t" << taskStrings[task] << "\ttook longer because of memory" << endl;
 	}
+	return;
+}
 
+
+TASK(MS1) {
+
+	runTask(task_id::MS1_id);
+	
 	TerminateTask();
 }
 
 TASK(MS2) {
 
-	uint32_t start_cycle = arch::Perf::get_cycles();
-
-	const unsigned task_id = MS2_id;
-	// number of runs
-	const unsigned runs = RUNNABLES_PER100 * SHARE[task_id];
-	// calculation time
-	const unsigned time = runs * TIME[task_id];
-	// label size
-	const unsigned memory = runs * SIZE_PER_RUNNABLE;
-	
-	const unsigned reads = runs * READ_ACCESSES_PER_RUNNABLE;
-	const unsigned writes = runs * WRITE_ACCESSES_PER_RUNNABLE;
-	const unsigned read_writes = runs * RW_ACCESSES_PER_RUNNABLE;
-
-	// READS
-	uint8_t tmp = 1;
-	// compiler wegoptimiert das?
-	for (unsigned i = 0; i < reads; memory_pos++, i++) {
-		tmp += communication[memory_pos];
-	}
-
-	// WRITES
-	for (unsigned i = 0; i < writes; memory_pos++, i++) {
-		communication[memory_pos] = tmp;
-	}
-
-	// READ + WRITES
-	for (unsigned i = 0; i < read_writes; memory_pos++, i++) {
-		tmp = communication[memory_pos] + 1;
-		communication[memory_pos] = tmp;
-	}
-
-	
-	bool in_time = micro_sec_wait_upto(start_cycle, time);
-	if (!in_time) {
-		kout << i << " " << taskStrings[task_id] << " took longer because of memory" << endl;
-	}
+	runTask(task_id::MS2_id);
 
 	TerminateTask();
 }
 
+
 TASK(MS5) {
 
-	uint32_t start_cycle = arch::Perf::get_cycles();
-
-	const unsigned task_id = MS5_id;
-	// number of runs
-	const unsigned runs = RUNNABLES_PER100 * SHARE[task_id];
-	// calculation time
-	const unsigned time = runs * TIME[task_id];
-	// label size
-	const unsigned memory = runs * SIZE_PER_RUNNABLE;
-	
-	const unsigned reads = runs * READ_ACCESSES_PER_RUNNABLE;
-	const unsigned writes = runs * WRITE_ACCESSES_PER_RUNNABLE;
-	const unsigned read_writes = runs * RW_ACCESSES_PER_RUNNABLE;
-
-	// READS
-	uint8_t tmp = 1;
-	// compiler wegoptimiert das?
-	for (unsigned i = 0; i < reads; memory_pos++, i++) {
-		tmp += communication[memory_pos];
-	}
-
-	// WRITES
-	for (unsigned i = 0; i < writes; memory_pos++, i++) {
-		communication[memory_pos] = tmp;
-	}
-
-	// READ + WRITES
-	for (unsigned i = 0; i < read_writes; memory_pos++, i++) {
-		tmp = communication[memory_pos] + 1;
-		communication[memory_pos] = tmp;
-	}
-
-	
-	bool in_time = micro_sec_wait_upto(start_cycle, time);
-	if (!in_time) {
-		kout << i << " " << taskStrings[task_id] << " took longer because of memory" << endl;
-	}
-
+	runTask(task_id::MS5_id);
 	TerminateTask();
 }
 
 TASK(MS10) {
 
-	uint32_t start_cycle = arch::Perf::get_cycles();
-
-	const unsigned task_id = MS10_id;
-	// number of runs
-	const unsigned runs = RUNNABLES_PER100 * SHARE[task_id];
-	// calculation time
-	const unsigned time = runs * TIME[task_id];
-	// label size
-	const unsigned memory = runs * SIZE_PER_RUNNABLE;
-	
-	const unsigned reads = runs * READ_ACCESSES_PER_RUNNABLE;
-	const unsigned writes = runs * WRITE_ACCESSES_PER_RUNNABLE;
-	const unsigned read_writes = runs * RW_ACCESSES_PER_RUNNABLE;
-
-	// READS
-	uint8_t tmp = 1;
-	// compiler wegoptimiert das?
-	for (unsigned i = 0; i < reads; memory_pos++, i++) {
-		tmp += communication[memory_pos];
-	}
-
-	// WRITES
-	for (unsigned i = 0; i < writes; memory_pos++, i++) {
-		communication[memory_pos] = tmp;
-	}
-
-	// READ + WRITES
-	for (unsigned i = 0; i < read_writes; memory_pos++, i++) {
-		tmp = communication[memory_pos] + 1;
-		communication[memory_pos] = tmp;
-	}
-
-	
-	bool in_time = micro_sec_wait_upto(start_cycle, time);
-	if (!in_time) {
-		kout << i << " " << taskStrings[task_id] << " took longer because of memory" << endl;
-	}
-
+	runTask(task_id::MS10_id);
 	TerminateTask();
 }
 
 TASK(MS20) {
 	
-	uint32_t start_cycle = arch::Perf::get_cycles();
-
-	const unsigned task_id = MS20_id;
-	// number of runs
-	const unsigned runs = RUNNABLES_PER100 * SHARE[task_id];
-	// calculation time
-	const unsigned time = runs * TIME[task_id];
-	// label size
-	const unsigned memory = runs * SIZE_PER_RUNNABLE;
-	
-	const unsigned reads = runs * READ_ACCESSES_PER_RUNNABLE;
-	const unsigned writes = runs * WRITE_ACCESSES_PER_RUNNABLE;
-	const unsigned read_writes = runs * RW_ACCESSES_PER_RUNNABLE;
-
-	// READS
-	uint8_t tmp = 1;
-	// compiler wegoptimiert das?
-	for (unsigned i = 0; i < reads; memory_pos++, i++) {
-		tmp += communication[memory_pos];
-	}
-
-	// WRITES
-	for (unsigned i = 0; i < writes; memory_pos++, i++) {
-		communication[memory_pos] = tmp;
-	}
-
-	// READ + WRITES
-	for (unsigned i = 0; i < read_writes; memory_pos++, i++) {
-		tmp = communication[memory_pos] + 1;
-		communication[memory_pos] = tmp;
-	}
-
-	
-	bool in_time = micro_sec_wait_upto(start_cycle, time);
-	if (!in_time) {
-		kout << i << " " << taskStrings[task_id] << " took longer because of memory" << endl;
-	}
-
+	runTask(task_id::MS20_id);
 	TerminateTask();
 }
 
 TASK(MS50) {
-	
-	uint32_t start_cycle = arch::Perf::get_cycles();
 
-	const unsigned task_id = MS50_id;
-	// number of runs
-	const unsigned runs = RUNNABLES_PER100 * SHARE[task_id];
-	// calculation time
-	const unsigned time = runs * TIME[task_id];
-	// label size
-	const unsigned memory = runs * SIZE_PER_RUNNABLE;
-	
-	const unsigned reads = runs * READ_ACCESSES_PER_RUNNABLE;
-	const unsigned writes = runs * WRITE_ACCESSES_PER_RUNNABLE;
-	const unsigned read_writes = runs * RW_ACCESSES_PER_RUNNABLE;
-
-	// READS
-	uint8_t tmp = 1;
-	// compiler wegoptimiert das?
-	for (unsigned i = 0; i < reads; memory_pos++, i++) {
-		tmp += communication[memory_pos];
-	}
-
-	// WRITES
-	for (unsigned i = 0; i < writes; memory_pos++, i++) {
-		communication[memory_pos] = tmp;
-	}
-
-	// READ + WRITES
-	for (unsigned i = 0; i < read_writes; memory_pos++, i++) {
-		tmp = communication[memory_pos] + 1;
-		communication[memory_pos] = tmp;
-	}
-
-	
-	bool in_time = micro_sec_wait_upto(start_cycle, time);
-	if (!in_time) {
-		kout << i << " " << taskStrings[task_id] << " took longer because of memory" << endl;
-	}
-
+	runTask(task_id::MS50_id);
 	TerminateTask();
 }
 
 TASK(MS100) {
 
-	uint32_t start_cycle = arch::Perf::get_cycles();
-
-	const unsigned task_id = MS100_id;
-	// number of runs
-	const unsigned runs = RUNNABLES_PER100 * SHARE[task_id];
-	// calculation time
-	const unsigned time = runs * TIME[task_id];
-	// label size
-	const unsigned memory = runs * SIZE_PER_RUNNABLE;
-	
-	const unsigned reads = runs * READ_ACCESSES_PER_RUNNABLE;
-	const unsigned writes = runs * WRITE_ACCESSES_PER_RUNNABLE;
-	const unsigned read_writes = runs * RW_ACCESSES_PER_RUNNABLE;
-
-	// READS
-	uint8_t tmp = 1;
-	// compiler wegoptimiert das?
-	for (unsigned i = 0; i < reads; memory_pos++, i++) {
-		tmp += communication[memory_pos];
-	}
-
-	// WRITES
-	for (unsigned i = 0; i < writes; memory_pos++, i++) {
-		communication[memory_pos] = tmp;
-	}
-
-	// READ + WRITES
-	for (unsigned i = 0; i < read_writes; memory_pos++, i++) {
-		tmp = communication[memory_pos] + 1;
-		communication[memory_pos] = tmp;
-	}
-
-	
-	bool in_time = micro_sec_wait_upto(start_cycle, time);
-	if (!in_time) {
-		kout << i << " " << taskStrings[task_id] << " took longer because of memory" << endl;
-	}
-
+	runTask(task_id::MS100_id);
 	TerminateTask();
 }
 
 TASK(MS200) {
 
-	uint32_t start_cycle = arch::Perf::get_cycles();
-
-	const unsigned task_id = MS200_id;
-	// number of runs
-	const unsigned runs = RUNNABLES_PER100 * SHARE[task_id];
-	// calculation time
-	const unsigned time = runs * TIME[task_id];
-	// label size
-	const unsigned memory = runs * SIZE_PER_RUNNABLE;
-	
-	const unsigned reads = runs * READ_ACCESSES_PER_RUNNABLE;
-	const unsigned writes = runs * WRITE_ACCESSES_PER_RUNNABLE;
-	const unsigned read_writes = runs * RW_ACCESSES_PER_RUNNABLE;
-
-	// READS
-	uint8_t tmp = 1;
-	// compiler wegoptimiert das?
-	for (unsigned i = 0; i < reads; memory_pos++, i++) {
-		tmp += communication[memory_pos];
-	}
-
-	// WRITES
-	for (unsigned i = 0; i < writes; memory_pos++, i++) {
-		communication[memory_pos] = tmp;
-	}
-
-	// READ + WRITES
-	for (unsigned i = 0; i < read_writes; memory_pos++, i++) {
-		tmp = communication[memory_pos] + 1;
-		communication[memory_pos] = tmp;
-	}
-
-	
-	bool in_time = micro_sec_wait_upto(start_cycle, time);
-	if (!in_time) {
-		kout << i << " " << taskStrings[task_id] << " took longer because of memory" << endl;
-	}
-
+	runTask(task_id::MS200_id);
 	TerminateTask();
 }
 
 TASK(MS1000) {
 	
-	uint32_t start_cycle = arch::Perf::get_cycles();
-
-	const unsigned task_id = MS1000_id;
-	// number of runs
-	const unsigned runs = RUNNABLES_PER100 * SHARE[task_id];
-	// calculation time
-	const unsigned time = runs * TIME[task_id];
-	// label size
-	const unsigned memory = runs * SIZE_PER_RUNNABLE;
-	
-	const unsigned reads = runs * READ_ACCESSES_PER_RUNNABLE;
-	const unsigned writes = runs * WRITE_ACCESSES_PER_RUNNABLE;
-	const unsigned read_writes = runs * RW_ACCESSES_PER_RUNNABLE;
-
-	// READS
-	uint8_t tmp = 1;
-	// compiler wegoptimiert das?
-	for (unsigned i = 0; i < reads; memory_pos++, i++) {
-		tmp += communication[memory_pos];
-	}
-
-	// WRITES
-	for (unsigned i = 0; i < writes; memory_pos++, i++) {
-		communication[memory_pos] = tmp;
-	}
-
-	// READ + WRITES
-	for (unsigned i = 0; i < read_writes; memory_pos++, i++) {
-		tmp = communication[memory_pos] + 1;
-		communication[memory_pos] = tmp;
-	}
-
-	
-	bool in_time = micro_sec_wait_upto(start_cycle, time);
-	if (!in_time) {
-		kout << i << " " << taskStrings[task_id] << " took longer because of memory" << endl;
-	}
-
+	runTask(task_id::MS1000_id);
 	TerminateTask();
 }
 
 void PreIdleHook() {
 
-    kout << "\n END - V:" << VERSION << " - Label Test w " << NUMBER_OF_RUNNABLES << " Runnables + " << NUMBER_OF_LABELS << " Labels." << endl;
+    kout << "\n END - Label Test w " << NUMBER_OF_RUNNABLES << " Runnables + " << NUMBER_OF_LABELS << " Labels." << endl;
 	kout << "\nTASKPERIOD| NUMBER OF RUNNABLES | EXPECTED RUNTIME" << endl;
 	for (unsigned i = 0; i < sizeof(taskStrings) / sizeof(taskStrings[0]); i++) {
 		kout << taskStrings[i] << "\t\t| " << RUNNABLES_PER100 * SHARE[i] << "x \t\t| " << RUNNABLES_PER100 * SHARE[i] * TIME[i] << "us" << endl;
