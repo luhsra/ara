@@ -21,7 +21,8 @@ TEST_MAKE_OS_MAIN(StartOS(0))
  * FROM: REAL WORLD AUTOMOTIVE BENCHMARKS FOR FREE
  */
 
-const char* taskStrings[] = {"MS1", "MS2", "MS5", "MS10", "MS20", "MS50", "MS100", "MS200", "MS1000"};
+const unsigned NR_TASKS = 9;
+const char* taskStrings[NR_TASKS] = {"MS1", "MS2", "MS5", "MS10", "MS20", "MS50", "MS100", "MS200", "MS1000"};
 enum task_id {
 	MS1_id = 0,
 	MS2_id = 1,
@@ -44,29 +45,29 @@ const unsigned SCHEDUL_INTERVAL = 1000;
 const unsigned NUMBER_OF_RUNNABLES = 1000;
 // -> how many runnables are 1% of system
 const unsigned RUNNABLES_PER100 = NUMBER_OF_RUNNABLES / 100;
-
 // Predifined periods to trigger runnables (in ms)
-const unsigned PERIOD[] = {1, 2, 5, 10, 20, 50, 100, 200, 1000};
+const unsigned PERIOD[NR_TASKS] = {1, 2, 5, 10, 20, 50, 100, 200, 1000};
 // const unsigned PERIOD[] = {1, 2, 7, 11, 23, 51, 104, 199, 1003};
 // Share of these periods (in %)
-const unsigned SHARE[] = {3, 2, 2, 25, 25, 3, 20, 1, 4};
+const unsigned SHARE[NR_TASKS] = {3, 2, 2, 25, 25, 3, 20, 1, 4}; // !!! only up to 85% since angle-sync is missing
 // Average execution time in microseconds (in us)
-const unsigned TIME[] = {5, 5, 12, 11, 9, 18, 11, 3, 1};
+const unsigned TIME[NR_TASKS] = {5, 5, 12, 11, 9, 18, 11, 3, 1};
 
 
 // labels
-const unsigned NUMBER_OF_LABELS = 10000;
+const unsigned NUMBER_OF_LABELS = 12000;
 const unsigned LABELS_PER1000 = NUMBER_OF_LABELS/1000;
+/* alternative version to not use avarage label size
 // 1, 2, 4, (5-)8, (9-)16, (17-)32, (33-)64, >64 -> 128 	Bytes
-/*const unsigned LABEL_SIZE[] = 	{1, 	2, 	 4, 8,  16, 32, 64, 128};
+const unsigned LABEL_SIZE[] = 	{1, 	2, 	 4, 8,  16, 32, 64, 128};
 const unsigned LABEL_SHARE[] = 	{350, 490, 130, 8, 13,  5,  2, 2};
 const unsigned LABEL_AREA = LABELS_PER1000*LABEL_SHARE[0]*LABEL_SIZE[0] + LABELS_PER1000*LABEL_SHARE[1]*LABEL_SIZE[1]
 						 +  LABELS_PER1000*LABEL_SHARE[2]*LABEL_SIZE[2] + LABELS_PER1000*LABEL_SHARE[3]*LABEL_SIZE[3] 
 						 +  LABELS_PER1000*LABEL_SHARE[4]*LABEL_SIZE[4] + LABELS_PER1000*LABEL_SHARE[5]*LABEL_SIZE[5]
 						 +  LABELS_PER1000*LABEL_SHARE[6]*LABEL_SIZE[6] + LABELS_PER1000*LABEL_SHARE[7]*LABEL_SIZE[7];
 */
-// (35+2*49+4*13+8*0.8+16*1.3+32*0.5+64*0.2+128*0.2 )/ 100 -> 2.66 Byte
-const unsigned AVAERAGE_LABEL_SIZE = 3;
+// should be(35+2*49+4*13+8*0.8+16*1.3+32*0.5+64*0.2+128*0.2 )/ 100 -> 2.66 Byte
+const unsigned AVAERAGE_LABEL_SIZE = 30;
 // Of that: 40% read, 10% write, 50% read/write
 const unsigned READ_ACCESSES_PER_RUNNABLE = AVAERAGE_LABEL_SIZE * 40 * (NUMBER_OF_LABELS / NUMBER_OF_RUNNABLES) / 100;
 const unsigned WRITE_ACCESSES_PER_RUNNABLE = AVAERAGE_LABEL_SIZE* 10 * (NUMBER_OF_LABELS / NUMBER_OF_RUNNABLES) / 100;
@@ -85,7 +86,20 @@ enum memory_position {
 	MS100_mem = MS50_mem + RUNNABLES_PER100 * SHARE[MS50_id] * SIZE_PER_RUNNABLE,
 	MS200_mem = MS100_mem + RUNNABLES_PER100 * SHARE[MS100_id] * SIZE_PER_RUNNABLE,
 	MS1000_mem = MS200_mem + RUNNABLES_PER100 * SHARE[MS200_id] * SIZE_PER_RUNNABLE,
+	MS_END_mem = MS1000_mem + RUNNABLES_PER100 * SHARE[MS1000_id] * SIZE_PER_RUNNABLE,
 };
+// InterTask Communication Patter
+// with MS1 MS2 MS5 MS10 MS20 MS50 MS100 MS200 MS1000
+// 0 = 0, I = 5, II = 25, III = 75, IV = 250, V = 750, VI = 1250
+const unsigned INTER_TASK_RATIO_MS1[NR_TASKS][NR_TASKS] = {{25, 0, 0, 5, 5, 0, 5, 0, 0},
+										{0, 25, 0, 5, 5, 0, 5, 0, 0},
+										{0, 5, 250, 250, 25, 25, 5, 0, 0},
+										{25, 25, 25, 1250, 250, 25, 250, 25, 75},
+										{5, 5, 5, 250, 1250, 25, 250, 5, 25},
+										{0, 0, 25, 25, 25, 75, 5, 0, 0},
+										{0, 5, 5, 750, 250, 25, 1250, 25, 75},
+										{0, 0, 0, 5, 5, 0, 5, 5, 5},
+										{0, 0, 0, 75, 25, 0, 75, 5, 250} };
 
 /**
  ********************* SCHEDULER *********************
@@ -97,6 +111,7 @@ TASK(SCHED1) {
 	arch::Perf::start();
     kout << "********************" << endl;
 	kout << "Label Test w\t" << NUMBER_OF_RUNNABLES << "\tRunnables and\t" << NUMBER_OF_LABELS << "\tLabels." << endl;
+	kout << "\t\t" << AVAERAGE_LABEL_SIZE << "\tAvarage Labelsize" << endl;
     kout << "********************" << endl;
 
 	// optionaly wait
@@ -143,24 +158,13 @@ TASK(SCHED1) {
 			ActivateTask(MS1000);
 		}
 
-		/*
-		Wäre sehr viel schöner, der Name MSX wird oben bereits definiert
-		for (task_id id = MS1_id; id < MS_LAST_id; id = task_id(id+1)) {
-			if (cycle % PERIOD[id] == 0) {
-				memory_pos = memory_position(id);
-				kout << taskStrings[id] << endl;
-				ActivateTask(taskStrings[id]);
-				ActivateTask(id);	// geht nicht
-		}	
-		*/
-
 		uint32_t end_cycle = arch::Perf::get_cycles();
 
 		bool in_time = micro_sec_wait_upto(start_cycle, SCHEDUL_INTERVAL);
 		in_time ? test_trace('1') : test_trace('0');
 
 		if (!in_time) {
-			kout << "Cycle:\t" << cycle << "\tfailed overall timing" << endl;
+			// kout << "Cycle:\t" << cycle << "\tfailed overall timing" << endl;
 		}
 
 		/*
@@ -201,8 +205,13 @@ void workTask(task_id task) {
 
 	// READ + WRITES
 	for (unsigned i = 0; i < read_writes; memory_pos++, i++) {
+		// memory_pos = MS10_mem;
 		tmp = communication[memory_pos] + 1;
 		communication[memory_pos] = tmp;
+
+		// fallunterscheidung
+		// TODO
+		// memory_pos = MS1000_mem
 	}
 
 	
@@ -254,13 +263,22 @@ TASK(MS1000) {
 void PreIdleHook() {
     kout << "\n********************" << endl;
     kout << "END - Test w\t" << NUMBER_OF_RUNNABLES << "\tRunnables and\t" << NUMBER_OF_LABELS << "\tLabels." << endl;
+	kout << "\t\t" << AVAERAGE_LABEL_SIZE << "\tAvarage Labelsize" << endl;
     kout << "********************" << endl;
 	kout << "\n\nTASKPERIOD| NUMBER OF RUNNABLES | EXPECTED RUNTIME" << endl;
-	for (unsigned i = 0; i < sizeof(taskStrings) / sizeof(taskStrings[0]); i++) {
+	for (unsigned i = 0; i < NR_TASKS; i++) {
 		kout << taskStrings[i] << "\t\t| " << RUNNABLES_PER100 * SHARE[i] << "x \t\t| " << RUNNABLES_PER100 * SHARE[i] * TIME[i] << "us" << endl;
 	}
-	
 	kout << "\n# in Time: " << count_trace('1') << "\t|\tFailed: " << count_trace('0') << "\n" << endl;
+	
+	// Debug Print Inter-Task Communication
+	for (unsigned i = 0; i < NR_TASKS; i++) {
+		kout << taskStrings[i] << "\t";
+		for (unsigned j = 0; j < NR_TASKS; j++) {
+			kout << INTER_TASK_RATIO_MS1[i][j] << "\t";
+		}
+		kout << endl;
+	}
 	
 	// optionaly wait
 	// micro_sec_wait(30000000);
