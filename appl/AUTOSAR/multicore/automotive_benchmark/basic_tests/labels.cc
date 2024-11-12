@@ -106,13 +106,53 @@ TASK(SCHED1) {
 
 		uint32_t start_cycle = arch::Perf::get_cycles();
 
+		if (cycle % PERIOD[MS1_id] == 0) {
+			memory_pos = MS1_mem;
+			ActivateTask(MS1);
+		}	
+		if (cycle % PERIOD[MS2_id] == 0) {
+			memory_pos = MS2_mem;
+			ActivateTask(MS2);
+		}
+		if (cycle % PERIOD[MS5_id] == 0) {
+			memory_pos = MS5_mem;
+			ActivateTask(MS5);
+		}
+		if (cycle % PERIOD[MS10_id] == 0) {
+			memory_pos = MS10_mem;
+			ActivateTask(MS10);
+		}
+		if (cycle % PERIOD[MS20_id] == 0) {
+			memory_pos = MS20_mem;
+			ActivateTask(MS20);
+		}
+		if (cycle % PERIOD[MS50_id] == 0) {
+			memory_pos = MS50_mem;
+			ActivateTask(MS50);
+		}
+		if (cycle % PERIOD[MS100_id] == 0) {
+			memory_pos = MS100_mem;
+			ActivateTask(MS100);
+		}
+		if (cycle % PERIOD[MS200_id] == 0) {
+			memory_pos = MS200_mem;
+			ActivateTask(MS200);
+		}
+		if (cycle % PERIOD[MS1000_id] == 0) {
+			memory_pos = MS1000_mem;
+			ActivateTask(MS1000);
+		}
+
+		/*
+		Wäre sehr viel schöner, der Name MSX wird oben bereits definiert
 		for (task_id id = MS1_id; id < MS_LAST_id; id = task_id(id+1)) {
 			if (cycle % PERIOD[id] == 0) {
 				memory_pos = memory_position(id);
-				ActivateTask(MS1);
+				kout << taskStrings[id] << endl;
+				ActivateTask(taskStrings[id]);
+				ActivateTask(id);	// geht nicht
 		}	
-		}
-		
+		*/
 
 		uint32_t end_cycle = arch::Perf::get_cycles();
 
@@ -120,7 +160,7 @@ TASK(SCHED1) {
 		in_time ? test_trace('1') : test_trace('0');
 
 		if (!in_time) {
-			//kout << cycle << " " << " timing failed" << endl;
+			kout << "Cycle:\t" << cycle << "\tfailed overall timing" << endl;
 		}
 
 		/*
@@ -133,7 +173,7 @@ TASK(SCHED1) {
 	TerminateTask();
 }
 
-void runTask(task_id task) {
+void workTask(task_id task) {
 
 	uint32_t start_cycle = arch::Perf::get_cycles();
 
@@ -175,72 +215,54 @@ void runTask(task_id task) {
 
 
 TASK(MS1) {
-
-	runTask(task_id::MS1_id);
-	
+	workTask(task_id::MS1_id);
 	TerminateTask();
 }
-
 TASK(MS2) {
-
-	runTask(task_id::MS2_id);
-
+	workTask(task_id::MS2_id);
 	TerminateTask();
 }
-
-
 TASK(MS5) {
-
-	runTask(task_id::MS5_id);
+	workTask(task_id::MS5_id);
 	TerminateTask();
 }
-
 TASK(MS10) {
-
-	runTask(task_id::MS10_id);
+	workTask(task_id::MS10_id);
 	TerminateTask();
 }
-
 TASK(MS20) {
-	
-	runTask(task_id::MS20_id);
+	workTask(task_id::MS20_id);
 	TerminateTask();
 }
-
 TASK(MS50) {
-
-	runTask(task_id::MS50_id);
+	workTask(task_id::MS50_id);
 	TerminateTask();
 }
-
 TASK(MS100) {
-
-	runTask(task_id::MS100_id);
+	workTask(task_id::MS100_id);
 	TerminateTask();
 }
-
 TASK(MS200) {
-
-	runTask(task_id::MS200_id);
+	workTask(task_id::MS200_id);
 	TerminateTask();
 }
-
 TASK(MS1000) {
-	
-	runTask(task_id::MS1000_id);
+	workTask(task_id::MS1000_id);
 	TerminateTask();
 }
 
 void PreIdleHook() {
-
-    kout << "\n END - Label Test w " << NUMBER_OF_RUNNABLES << " Runnables + " << NUMBER_OF_LABELS << " Labels." << endl;
-	kout << "\nTASKPERIOD| NUMBER OF RUNNABLES | EXPECTED RUNTIME" << endl;
+    kout << "\n********************" << endl;
+    kout << "END - Test w\t" << NUMBER_OF_RUNNABLES << "\tRunnables and\t" << NUMBER_OF_LABELS << "\tLabels." << endl;
+    kout << "********************" << endl;
+	kout << "\n\nTASKPERIOD| NUMBER OF RUNNABLES | EXPECTED RUNTIME" << endl;
 	for (unsigned i = 0; i < sizeof(taskStrings) / sizeof(taskStrings[0]); i++) {
 		kout << taskStrings[i] << "\t\t| " << RUNNABLES_PER100 * SHARE[i] << "x \t\t| " << RUNNABLES_PER100 * SHARE[i] * TIME[i] << "us" << endl;
 	}
 	
 	kout << "\n# in Time: " << count_trace('1') << "\t|\tFailed: " << count_trace('0') << "\n" << endl;
 	
+	// optionaly wait
 	// micro_sec_wait(30000000);
 
 	test_finish();
