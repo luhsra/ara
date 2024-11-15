@@ -988,6 +988,9 @@ class Zephyr(OSBase):
         if isinstance(old_obj, ISR):
             #new_vertex = kernel.ready_q[0] # probably better to store this information in the ISR context instead of guessing here
             # ISR could change the ready queue, but for cooperative it should resume the interrupted thread
+
+            # handle user defined ISR
+
             new_vertex = cpu.analysis_context.interrupted_thread
             new_obj = state.instances.vp.obj[new_vertex]
             old_ctx: za.ISRContext = state.cur_context(cpu_id)
@@ -2377,9 +2380,11 @@ class Zephyr(OSBase):
         root_state = state
         if irq.name == 'sys_clock_announce':
             kernel = Zephyr.get_kernel_context(state)
-            for to in kernel.timeout_list: # since we dont have any time infomrmation we could trigger all combinartions and return a array
+            # currently: only the top most timeout triggers
+            for to in kernel.timeout_list: # since we dont have any time infomrmation we could trigger all "combinartions" and return an array
+                # TODO seperate timer and system sleep
                 state = root_state.copy()
-                callback_fn_name = za.InterpreterContext.sys_clock_announce(Zephyr.irx, state, cpu_id, to)
+                callback_fn_name = za.InterpreterContext.sys_clock_announce(Zephyr.irx, state, cpu_id, to) # TODO it is better to handle this in handle_exit since we can return multiple states
                 if callback_fn_name != None: # handle apllication callback ISR
                     cpu = state.cpus[cpu_id]
 
@@ -2419,32 +2424,25 @@ class Zephyr(OSBase):
                 return state
 
             # return states if len(states) > 0 else None
-            return None
+            # at this point sys_clock_announce must have handeled a sleep timeout or a sem timeout
+            return state
         if irq.name == 'z_time_slice': # "virtual ISR", sys_clock_announce would handle this normally
             # TODO maybe schedule in as an ISR ?
             state = root_state.copy()
             ic = za.InterpreterContext(Zephyr.irx, state, cpu_id)
             kernel = Zephyr.get_kernel_context(state)
-            # thread = ic.get_kobj_from_vertex(kernel.cache)
-            # ic.run_function_with_arch_swap("move_thread_to_end_of_prio_q", [thread.ptr], ['PTR'])
-            # ic.run_function_with_arch_swap("z_impl_k_yield", [thread.ptr], ['PTR'])
 
             # TODO check with thread_is_sliceable if we schould yield the thread
+            thread = ic.get_kobj_from_vertex(kernel.cache)
+            ret = ic.zi.run_function("thread_is_sliceable", [thread.ptr], ['PTR'], True)
 
-            # TODO update cache but do not reschedule in Zephyr.schedule
+            if ret['IntVal']['Z'] != 0:
+                # in the ISR update_cache() is executed but does not reschedule, but will reschedule on interrupt return
+                # this will just update the state.kernel.cache vertex
+                # ic.zi.irm.set_print_llvmir(True)
+                ic.run_function_with_arch_swap("move_thread_to_end_of_prio_q", [thread.ptr], ['PTR'])
+                # ic.run_function_with_arch_swap("z_impl_k_yield", [thread.ptr], ['PTR'])
+                return state
 
-            # TODO check if current/last syscall was rescheduling point and reschedule to next thread
-
-            if len(kernel.ready_q) >= 2:
-                if Zephyr.config['CONFIG_SCHED_DUMB']:
-                    # wrong implementation: see: z_priq_dumb_add, schould put at end of priority, but not of all threads (and use z_sched_prio_cmp)
-                    timedout = kernel.ready_q[0]
-                    kernel.ready_q = kernel.ready_q[1:]
-                    kernel.ready_q.append(timedout)
-                    #kernel.cache = kernel.ready_q[0]
-                    return state
-            else:
-                # TODO: could just use zephyrs kernel next_up() function
-                raise NotImplementedError
             return None
         raise NotImplementedError

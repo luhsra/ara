@@ -859,7 +859,7 @@ class InterpreterContext:
         timeout_list = zi.timeout_list
 
         for old in [idle_thread, _kernel, timeout_list] + threads:
-            print("\n", type(old), old.__ptr__)
+            print(type(old), old.__ptr__)
             new = type(old)()
             new.ptr = old.ptr
             proxy.get(new)
@@ -873,6 +873,9 @@ class InterpreterContext:
         # update timeout_list
         kernel.timeout_list.clear()
         for _timeout in zi.dlist_itr(timeout_list):
+            if _timeout.ptr == zi.slice_timeouts.ptr:
+                continue # ignore the timeout for time slicing, since separate ISR is used
+            
             container = self.find_container_object(_timeout.ptr)
             #v = self.kernel_object_to_vertex(container, timeout)
             v = None
@@ -1137,9 +1140,11 @@ class InterpreterContext:
         proxy.get(timeout_list)
         dotstr += f'{timeout_list.ptr} [label="timeout_list\\n{timeout_list.__ptr__} | {{ <waitq> dnode | {{ <prev> prev\\n={timeout_list.prev} | <next> next\\n={timeout_list.next} }} }}"];\n'
         dest_next = self.find_container_object(timeout_list.head.ptr)
+        if dest_next:
+            dotstr += f"{timeout_list.ptr}:next -> {dest_next.ptr}:waitq;\n"
         dest_prev = self.find_container_object(timeout_list.tail.ptr)
-        dotstr += f"{timeout_list.ptr}:next -> {dest_next.ptr}:waitq;\n"
-        dotstr += f"{timeout_list.ptr}:prev -> {dest_prev.ptr}:waitq;\n"
+        if dest_prev:
+            dotstr += f"{timeout_list.ptr}:prev -> {dest_prev.ptr}:waitq;\n"
 
         for t in self.kobjs[zephyr.k_timer]:
             proxy.get(t)

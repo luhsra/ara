@@ -36,6 +36,7 @@ class ZephyrInterpreter:
         self.z_main_thread = None
         self.z_idle_threads = None
         self.timeout_list = []
+        self.slice_timeouts = None
 
         self.curr_tick = None
 
@@ -83,6 +84,7 @@ class ZephyrInterpreter:
         self.z_main_thread = self.proxy.Global(zephyr.k_thread, 'z_main_thread')
         self.z_idle_threads = self.proxy.Global(Annotated[list[zephyr.k_thread], ArraySize(1)], 'z_idle_threads')
         self.timeout_list = self.proxy.Global(zephyr._dnode, 'timeout_list')
+        self.slice_timeouts = self.proxy.Global(zephyr._timeout, 'slice_timeouts')
 
         # self.curr_tick = proxy.Global(zephyr.UInt64, 'curr_tick')
         self.curr_tick = self.irm.irx_get_global_var('curr_tick')
@@ -92,6 +94,10 @@ class ZephyrInterpreter:
             raise RuntimeError(f"Failed to run LLVM Interpreter for function {function_name}")
         if finish:
             self.finish_function()
+        
+        ret = self.irm.getExitValue()
+
+        return ret
     
     def resume(self):
         if not self.irm.resume():
@@ -169,6 +175,8 @@ class ZephyrInterpreter:
         #self._kernel.ready_q.cache.ptr = self._thread_dummy.ptr
         #self._kernel.cpus[0].current.ptr = self._kernel.ready_q.cache.ptr
         #proxy.put(self._kernel)
+
+        # self.irm.irx_global_set('slice_ticks', struct.pack('i', 1000)) # enable time slicing for debugging 
 
     def bg_thread_main(self):
         self.run_function("z_init_static_threads", [], []) # currently does not work
