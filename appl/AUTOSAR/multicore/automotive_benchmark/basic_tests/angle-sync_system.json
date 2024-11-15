@@ -41,6 +41,16 @@
             "autostart": true,
             "cycletime": 10,
             "alarmtime": 1
+          },
+          "AMS2": {
+            "counter": "C1",
+            "action": {
+              "action": "activatetask",
+              "task": "MS1"
+            },
+            "autostart": true,
+            "cycletime": 10,
+            "alarmtime": 1
           }
         }
       }
