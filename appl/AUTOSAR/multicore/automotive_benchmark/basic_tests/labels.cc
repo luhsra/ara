@@ -1,6 +1,7 @@
 #include "os.h"
 #include "test/test.h"
 #include "arch/arm/platforms/raspberry/perf.cc"
+#include "parameters.h"
 
 DeclareTask(SCHED1);
 DeclareTask(MS1);
@@ -36,6 +37,8 @@ enum task_id {
 	MS_LAST_id = 9,
 };
 
+// TODO add parameters.h
+
 // how often the scheduler gets started
 const unsigned RUNS = 1000;
 // start new runnables each ms = 1000um
@@ -55,7 +58,7 @@ const unsigned TIME[NR_TASKS] = {5, 5, 12, 11, 9, 18, 11, 3, 1};
 
 
 // labels
-const unsigned NUMBER_OF_LABELS = 12000;
+const unsigned NUMBER_OF_LABELS = 10000;
 const unsigned LABELS_PER1000 = NUMBER_OF_LABELS/1000;
 /* alternative version to not use avarage label size
 // 1, 2, 4, (5-)8, (9-)16, (17-)32, (33-)64, >64 -> 128 	Bytes
@@ -76,6 +79,8 @@ const unsigned SIZE_PER_RUNNABLE = READ_ACCESSES_PER_RUNNABLE + WRITE_ACCESSES_P
 
 uint8_t communication[NUMBER_OF_LABELS * AVAERAGE_LABEL_SIZE];
 uint16_t memory_pos = 0;
+
+/*
 enum memory_position {
 	MS1_mem = 0,
 	MS2_mem = RUNNABLES_PER100 * SHARE[MS1_id] * SIZE_PER_RUNNABLE,
@@ -87,11 +92,26 @@ enum memory_position {
 	MS200_mem = MS100_mem + RUNNABLES_PER100 * SHARE[MS100_id] * SIZE_PER_RUNNABLE,
 	MS1000_mem = MS200_mem + RUNNABLES_PER100 * SHARE[MS200_id] * SIZE_PER_RUNNABLE,
 	MS_END_mem = MS1000_mem + RUNNABLES_PER100 * SHARE[MS1000_id] * SIZE_PER_RUNNABLE,
+};*/
+
+// Final one is end of memory -> cant write further
+const unsigned memory_positions[NR_TASKS + 1] = {
+	0,
+	RUNNABLES_PER100 * SHARE[MS1_id] * SIZE_PER_RUNNABLE,
+	memory_positions[1] + RUNNABLES_PER100 * SHARE[MS2_id] * SIZE_PER_RUNNABLE,
+	memory_positions[2] + RUNNABLES_PER100 * SHARE[MS5_id] * SIZE_PER_RUNNABLE,
+	memory_positions[3] + RUNNABLES_PER100 * SHARE[MS10_id] * SIZE_PER_RUNNABLE,
+	memory_positions[4] + RUNNABLES_PER100 * SHARE[MS20_id] * SIZE_PER_RUNNABLE,
+	memory_positions[5] + RUNNABLES_PER100 * SHARE[MS50_id] * SIZE_PER_RUNNABLE,
+	memory_positions[6] + RUNNABLES_PER100 * SHARE[MS100_id] * SIZE_PER_RUNNABLE,
+	memory_positions[7] + RUNNABLES_PER100 * SHARE[MS200_id] * SIZE_PER_RUNNABLE,
+	memory_positions[8] + RUNNABLES_PER100 * SHARE[MS1000_id] * SIZE_PER_RUNNABLE
 };
+
 // InterTask Communication Patter
 // with MS1 MS2 MS5 MS10 MS20 MS50 MS100 MS200 MS1000
 // 0 = 0, I = 5, II = 25, III = 75, IV = 250, V = 750, VI = 1250
-const unsigned INTER_TASK_RATIO_MS1[NR_TASKS][NR_TASKS] = {{25, 0, 0, 5, 5, 0, 5, 0, 0},
+const unsigned INTER_TASK_RATIO[NR_TASKS][NR_TASKS] = {{25, 0, 0, 5, 5, 0, 5, 0, 0},
 										{0, 25, 0, 5, 5, 0, 5, 0, 0},
 										{0, 5, 250, 250, 25, 25, 5, 0, 0},
 										{25, 25, 25, 1250, 250, 25, 250, 25, 75},
@@ -122,39 +142,39 @@ TASK(SCHED1) {
 		uint32_t start_cycle = arch::Perf::get_cycles();
 
 		if (cycle % PERIOD[MS1_id] == 0) {
-			memory_pos = MS1_mem;
+			memory_pos = memory_positions[MS1_id];
 			ActivateTask(MS1);
 		}	
 		if (cycle % PERIOD[MS2_id] == 0) {
-			memory_pos = MS2_mem;
+			memory_pos = memory_positions[MS2_id];
 			ActivateTask(MS2);
 		}
 		if (cycle % PERIOD[MS5_id] == 0) {
-			memory_pos = MS5_mem;
+			memory_pos = memory_positions[MS5_id];
 			ActivateTask(MS5);
 		}
 		if (cycle % PERIOD[MS10_id] == 0) {
-			memory_pos = MS10_mem;
+			memory_pos = memory_positions[MS10_id];
 			ActivateTask(MS10);
 		}
 		if (cycle % PERIOD[MS20_id] == 0) {
-			memory_pos = MS20_mem;
+			memory_pos = memory_positions[MS20_id];
 			ActivateTask(MS20);
 		}
 		if (cycle % PERIOD[MS50_id] == 0) {
-			memory_pos = MS50_mem;
+			memory_pos = memory_positions[MS50_id];
 			ActivateTask(MS50);
 		}
 		if (cycle % PERIOD[MS100_id] == 0) {
-			memory_pos = MS100_mem;
+			memory_pos = memory_positions[MS100_id];
 			ActivateTask(MS100);
 		}
 		if (cycle % PERIOD[MS200_id] == 0) {
-			memory_pos = MS200_mem;
+			memory_pos = memory_positions[MS200_id];
 			ActivateTask(MS200);
 		}
 		if (cycle % PERIOD[MS1000_id] == 0) {
-			memory_pos = MS1000_mem;
+			memory_pos = memory_positions[MS1000_id];
 			ActivateTask(MS1000);
 		}
 
@@ -204,21 +224,51 @@ void workTask(task_id task) {
 	}
 
 	// READ + WRITES
+
+	// first write into memory of the tasks of the first activation period
+	unsigned receiver_task = 0;
+	unsigned labels_send_to_receiver = 0;
+	unsigned receiver_memory_pos = memory_positions[receiver_task];
+
 	for (unsigned i = 0; i < read_writes; memory_pos++, i++) {
-		// memory_pos = MS10_mem;
-		tmp = communication[memory_pos] + 1;
-		communication[memory_pos] = tmp;
 
-		// fallunterscheidung
-		// TODO
-		// memory_pos = MS1000_mem
+		// Debugging help
+		// kout << "task: " << task << "rw: " << read_writes <<  " i: " << i << " receiver_task " << receiver_task << endl;
+		// kout << "memory_pos: " << memory_pos << "labels_send_to_receiver: " << labels_send_to_receiver <<  " receiver_memory_pos: " << receiver_memory_pos << endl;
+
+		// Interprocess communication, receiver_task == 9 means all remaining communication goes to intraprocess
+		if (receiver_task < NR_TASKS) {
+			// read from senders runnable memory, write to receiver runnable memory
+			tmp = communication[memory_pos] + 1;
+			communication[receiver_memory_pos] = tmp;
+
+			receiver_memory_pos++;
+			labels_send_to_receiver++;
+
+			if (labels_send_to_receiver >= INTER_TASK_RATIO[task][receiver_task]) {
+				receiver_task++;
+				labels_send_to_receiver = 0;
+				receiver_memory_pos = memory_positions[receiver_task];
+			}
+			// Debugging help
+			// kout << "Waiting!" <<  endl;
+			// micro_sec_wait(500000);
+
+		// Intraprocess communication
+		} else {
+			tmp = communication[memory_pos] + 1;
+			communication[memory_pos] = tmp;
+		}
+
 	}
-
 	
 	bool in_time = micro_sec_wait_upto(start_cycle, time);
 	if (!in_time) {
 		kout << "Cycle:\t" << cycle << "\t" << taskStrings[task] << "\ttook longer because of memory" << endl;
 	}
+	// Debugging
+	// kout << "Finished after Task: " << task << endl;
+	// micro_sec_wait(500000);
 	return;
 }
 
@@ -261,27 +311,45 @@ TASK(MS1000) {
 }
 
 void PreIdleHook() {
-    kout << "\n********************" << endl;
+    kout << "\n*******************" << endl;
     kout << "END - Test w\t" << NUMBER_OF_RUNNABLES << "\tRunnables and\t" << NUMBER_OF_LABELS << "\tLabels." << endl;
 	kout << "\t\t" << AVAERAGE_LABEL_SIZE << "\tAvarage Labelsize" << endl;
-    kout << "********************" << endl;
+    kout << "*******************" << endl;
+
+
+	// Debug Print Runnables Distribution and Runtime 
+    kout << "\n*******************" << endl;
 	kout << "\n\nTASKPERIOD| NUMBER OF RUNNABLES | EXPECTED RUNTIME" << endl;
+    kout << "*******************\n\t";
 	for (unsigned i = 0; i < NR_TASKS; i++) {
 		kout << taskStrings[i] << "\t\t| " << RUNNABLES_PER100 * SHARE[i] << "x \t\t| " << RUNNABLES_PER100 * SHARE[i] * TIME[i] << "us" << endl;
 	}
-	kout << "\n# in Time: " << count_trace('1') << "\t|\tFailed: " << count_trace('0') << "\n" << endl;
 	
 	// Debug Print Inter-Task Communication
+	/*
+    kout << "\n*******************" << endl;
+	kout << "Inter-Task Communication Matrix\nLeft column is sender, the others are receiving tasks" << endl;
+    kout << "*******************\n\t";
+	for (unsigned i = 0; i < NR_TASKS; i++) {
+		kout <<  taskStrings[i] << "\t";
+	}
+	kout << endl;
 	for (unsigned i = 0; i < NR_TASKS; i++) {
 		kout << taskStrings[i] << "\t";
 		for (unsigned j = 0; j < NR_TASKS; j++) {
-			kout << INTER_TASK_RATIO_MS1[i][j] << "\t";
+			kout << INTER_TASK_RATIO[i][j] << "\t";
 		}
 		kout << endl;
 	}
-	
-	// optionaly wait
-	// micro_sec_wait(30000000);
+	kout << endl;
+	*/
+
+#ifndef QEMU
+	// to better see results on PI wait at the end before rebooting
+	micro_sec_wait(50000000);
+#endif
+
+	kout << "\n# of runnables in Time: " << count_trace('1') << "\t| Failed: " << count_trace('0') << "\n" << endl;
 
 	test_finish();
 	ShutdownMachine();
