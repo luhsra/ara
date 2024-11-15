@@ -1,19 +1,17 @@
 import os
-import sys
 import copy
 from typing import Annotated
 import ara.os.zephyr_adapters as za
 from pyirinterpreter import PyIRModuleInterpreter
+import struct
+
 
 #sys.path.append("../subprojects/ara/subprojects/irx/")
 #sys.path.append("../subprojects/irx")
 
 import zephyr
-from diff import diff
 from proxy import StructProxy, ArraySize
-import ara.os.zephyr_adapters as za
 
-import os.path
 
 
 def try_find_file(paths):
@@ -25,55 +23,69 @@ def try_find_file(paths):
 
 class ZephyrInterpreter:
 
+    ALIASES_DISABLE=False
+
+
     def __init__(self, config):
-        self.irm = PyIRModuleInterpreter()
-        self.proxy = StructProxy(self.irm)
+        self.irm = None
         self.config = config
+        self.proxy = None
 
         self._thread_dummy = None
-        self._kernel = None
+        self._kernel: zephyr.z_kernel = None
         self.z_main_thread = None
         self.z_idle_threads = None
         self.timeout_list = []
 
         self.curr_tick = None
+
+        self.force_native_sim = True
     
-    def init(self, llvmirfile):
-        irm = self.irm
-        proxy = self.proxy
+    def init(self, llvmirfile, kernel_ll):
+        self.irm = PyIRModuleInterpreter()
 
         llvmir_dirpath = os.path.dirname(llvmirfile)
         basename = os.path.basename(llvmirfile)
         name = os.path.splitext(basename)[0]
+
+        if not kernel_ll:
+            kernel_ll = os.path.join(llvmir_dirpath, f"{name}-kernel.ll")
+
         paths = [
              os.path.join(llvmir_dirpath, f"{name}.ll"), # application + thread definitions
-             os.path.join(llvmir_dirpath, f"{name}-kernel.ll"), # load the full kernel code
+             kernel_ll, # load the full kernel code
         ]
-        build_native_sym = 'CONFIG_BOARD' in self.config and self.config['CONFIG_BOARD'] == 'native_sim'
+        build_native_sym = 'CONFIG_BOARD' in self.config and self.config['CONFIG_BOARD'] == 'native_sim' or True # force
         if build_native_sym:
             paths += [try_find_file([
                 'subprojects/ara/subprojects/irx/native_runner/runner.ll',
                 'subprojects/irx/native_runner/runner.ll'
             ])]
 
-        if not irm.parseIRFiles(paths):
+        if not self.irm.parseIRFiles(paths):
             raise FileNotFoundError(f"Failed to parse LLVM-IR file {str(paths)}")
         
         # if irm.hasExternal("nsi_simu_time"):
             # irm.setInitializer("nsi_simu_time", "i64 0")
-
-        if not irm.createInterpreter():
+        
+        if not self.irm.createInterpreter():
             raise RuntimeError("Failed to create interpreter")
         
-        self._thread_dummy = proxy.Global(zephyr.k_thread, '_thread_dummy')
-        self._kernel = proxy.Global(zephyr.z_kernel, '_kernel')
-        self.z_main_thread = proxy.Global(zephyr.k_thread, 'z_main_thread')
-        self.z_idle_threads = proxy.Global(Annotated[list[zephyr.k_thread], ArraySize(1)], 'z_idle_threads')
-        self.timeout_list = proxy.Global(zephyr._dnode, 'timeout_list')
+        
+        self.reset()
+
+    def reset(self):
+        self.irm.reset()
+        self.proxy = StructProxy(self.irm)
+
+        self._thread_dummy = self.proxy.Global(zephyr.k_thread, '_thread_dummy')
+        self._kernel = self.proxy.Global(zephyr.z_kernel, '_kernel')
+        self.z_main_thread = self.proxy.Global(zephyr.k_thread, 'z_main_thread')
+        self.z_idle_threads = self.proxy.Global(Annotated[list[zephyr.k_thread], ArraySize(1)], 'z_idle_threads')
+        self.timeout_list = self.proxy.Global(zephyr._dnode, 'timeout_list')
 
         # self.curr_tick = proxy.Global(zephyr.UInt64, 'curr_tick')
-        self.curr_tick = irm.irx_get_global_var('curr_tick')
-
+        self.curr_tick = self.irm.irx_get_global_var('curr_tick')
 
     def run_function(self, function_name, args, arg_type_hints, finish=False):
         if not self.irm.runFunction(function_name.encode("ascii"), args, arg_type_hints):
@@ -88,29 +100,42 @@ class ZephyrInterpreter:
     def finish_function(self):
         while self.irm.isRunnable():
             self.resume()
+    
+    def z_sys_init_run_level(self, level):
+            # does not work if ALIASES_DISABLE is set and sections are not created with data.
+        if ZephyrInterpreter.ALIASES_DISABLE:
+            if level == 0:
+                # emulate it
+                if self.config['CONFIG_BOARD'] == 'native_sim' or self.force_native_sim:
+                    self.run_function("set_realtime_default", [], [])
+        else:
+            self.run_function("z_sys_init_run_level", [level], ['APInt32'])
+
+    def sys_clock_driver_init(self):
+        if ZephyrInterpreter.ALIASES_DISABLE:
+            if self.config['CONFIG_BOARD'] == 'native_sim' or self.force_native_sim:
+                self.irm.irx_global_set('hw_counter_timer', struct.pack('Q', 1000))
+                self.irm.irx_global_set('nsi_simu_time', struct.pack('Q', 1000))
+                self.irm.irx_global_set('tick_period', struct.pack('Q', 1000))
+                self.irm.irx_global_set('last_tick_time', struct.pack('Q', 1000))
+        else:
+            self.run_function("sys_clock_driver_init", [], []) # require ALIASES_DISABLE unset
 
     def z_cstart(self):
         irm = self.irm
         proxy = self.proxy
 
-        self.run_function("z_sys_init_run_level", [0], ['APInt32'])
-        self.run_function("arch_kernel_init", [], [])
+        self.z_sys_init_run_level(0)
+        if self.config['CONFIG_BOARD'] == 'native_sim' or self.force_native_sim:
+            self.run_function("arch_kernel_init", [], [])
         self.run_function("z_dummy_thread_init", [self._thread_dummy.ptr], ['PTR'])
         self.run_function("z_device_state_init", [], [])
-        
-        print('initlevel: PTR: ', hex(irm.irx_get_global_addr('initlevel')))
-
-        # if not irm.runFunction(b"z_sys_init_run_level", [1], ['APInt32']):
-        #     raise RuntimeError("Failed to run LLVM Interpreter for function z_sys_init_run_level")
-        
-        self.run_function("posix_arch_console_init", [], [])
-        self.run_function("sys_clock_driver_init", [], [])
-        
-        #if not irm.runFunction(b"z_sys_init_run_level", [2], ['APInt32']):
-        #    raise RuntimeError("Failed to run LLVM Interpreter for function z_sys_init_run_level")
-        
+        # self.z_sys_init_run_level(1)
+        if self.config['CONFIG_BOARD'] == 'native_sim' or self.force_native_sim:
+            self.run_function("posix_arch_console_init", [], [])
+            self.sys_clock_driver_init()
+        # self.z_sys_init_run_level(2)
         irm.skip(['arch_new_thread'])
-
 
         #self.run_function("prepare_multithreading", [], [])
         # stack_ptr = irm.getExitValue()['PointerVal']
@@ -118,20 +143,23 @@ class ZephyrInterpreter:
         self.run_function("z_sched_init", [], [])
 
         # to simplify:
-        # we will not thread the main thread special and initialize it with all other threads
+        # we will not treat the main thread special and initialize it with all other threads
         #self.run_function('z_mark_thread_as_started', [self.z_main_thread.ptr], ['PTR'])
         #self.run_function('z_ready_thread', [self.z_main_thread.ptr], ['PTR'])
 
-        # z_init_cpu
         # self.irm.set_print_llvmir(True)
 
-        # self.irm.stop(["setup_thread_stack"])
+        self.irm.stop(["setup_thread_stack", "strncpy"])
         self.run_function("z_init_cpu", [0], ['APInt32'])
-        # if self.irm.getCurrentCallFunctionName() == "setup_thread_stack":
-        #     self.irm.putReturnValue(0, 'APInt32')
+
+        if self.irm.getCurrentCallFunctionName() == "strncpy":
+            self.irm.putReturnValue(0, 'PTR')
+
+        if self.irm.getCurrentCallFunctionName() == "setup_thread_stack":
+            self.irm.putReturnValue(0, 'APInt32')
         
-        # while self.irm.isRunnable():
-        #     self.resume()
+        while self.irm.isRunnable():
+            self.resume()
 
         # self.irm.set_print_llvmir(False)
 
@@ -155,9 +183,9 @@ class ZephyrInterpreter:
 
         self.run_function("z_setup_new_thread", [
               t.ptr,
-              0,
+              0x50000000, # stack (nonzero)
               4096,
-              0, # entry
+              0x50000000, # entry (nonzero)
               0,
               0,
               0,
@@ -182,6 +210,14 @@ class ZephyrInterpreter:
         
         while self.irm.isRunnable():
             self.resume()
+        
+        self.proxy.get(t)
+        self.proxy.get_member(t, ['join_queue'])
+        self.proxy.get_member(t, ['join_queue', 'waitq'])
+        self.proxy.get_member(t, ['base', 'qnode_dlist'])
+        self.run_function('z_waitq_init', [t.join_queue.ptr], ['PTR'], True)
+        # self.run_function('z_waitq_init', [t.base.qnode_dlist.ptr], ['PTR'], True)
+        self.proxy.get(t)
 
     def thread_schedule_new(self, t: zephyr.k_thread, delay: int):
         """ static inline void thread_schedule_new(struct k_thread *thread, k_timeout_t delay) """
@@ -253,7 +289,10 @@ class ZephyrInterpreter:
         self.run_function("unready_thread", [t.ptr], ['PTR'])
 
     def ready_thread(self, t: zephyr.k_thread):
-        self.run_function("ready_thread", [t.ptr], ['PTR'])
+        # ready_thread will resort the ready_q
+        # self.run_function("ready_thread", [t.ptr], ['PTR'])
+        # therefore force for the sorting as is
+        self.run_function("move_thread_to_end_of_prio_q", [t.ptr], ['PTR']) # work around
 
     def z_mark_thread_as_started(self, t: zephyr.k_thread):
         self.run_function("z_mark_thread_as_started", [t.ptr], ['PTR'])
@@ -301,6 +340,8 @@ class ZephyrInterpreter:
         for _ in range(0, 10000): # upper limit
             if current.head.ptr == node.ptr: # same as current.next
                 break
+            if current.head.ptr == 0 or node.tail.ptr == 0: # uninitialized?
+                break
             yield copy.copy(current.prev), copy.copy(current.head) # same as current.next
             current = self.proxy.deref_no_cache(current.head) # same as current.next
         else:
@@ -312,3 +353,26 @@ class ZephyrInterpreter:
             raise NotImplementedError
         else:
             return self.dlist_itr_ptr(obj, attrs)
+
+    def wait_q_t_itr(self, config, wait_q: zephyr._wait_q_t):
+        if 'CONFIG_WAITQ_SCALABLE' in config:
+            raise NotImplementedError
+        else:
+            # dnode = self.proxy.get_member(wait_q, ['waitq']) # _wait_q_t is not emitted to LLVM-IR
+            dnode = self.proxy.deref_no_cache(wait_q.__ptr__)
+            return self.dlist_itr(dnode)
+
+    def z_unpend1_no_timeout(self, wait_q: zephyr._wait_q_t) -> zephyr.k_thread:
+        """ get the next thread in queue.
+        warning: this operation is destructive, the thread will be removed from the queue """
+        
+        self.run_function("z_unpend1_no_timeout", [wait_q.ptr], ['PTR', True])
+
+    def k_timer_init(self, timer: zephyr.k_timer, expiry_fn, stop_fn):
+        expiry_addr = 0
+        stop_addr = 0
+        if expiry_fn:
+            expiry_addr = self.irm.find_function_named(expiry_fn)
+        if stop_fn:
+            stop_addr = self.irm.find_function_named(stop_fn)
+        self.run_function("k_timer_init", [timer.ptr, expiry_addr, stop_addr], ['PTR', 'PTR', 'PTR'], True)

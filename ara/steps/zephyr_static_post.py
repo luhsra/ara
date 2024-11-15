@@ -10,7 +10,7 @@ from ara.steps.util import current_step
 import pyllco
 from .step import Step
 from pydoc import locate
-from ara.os.zephyr import Queue, QueueType, ZephyrInstance, Thread, ZephyrKernel, Zephyr, ZephyrOptions
+from ara.os.zephyr import Queue, QueueType, ZephyrInstance, Thread, ZephyrKernel, Zephyr, ZephyrOptions, Timer, ISR, ZephyrIRQ
 from ara.os.os_base import ControlInstance
 from .option import Bool, Option, String
 from ara.util import KConfigFile, get_logger
@@ -95,6 +95,41 @@ class ZephyrStaticPost(Step):
 
                 inst.cfg = cfg
                 inst.function = function
+            if issubclass(instance_type, Timer):
+                inst.cfg = cfg
+                expiry_fn_name = inst.expiry_fn
+                stop_fn_name = inst.stop_fn
+
+                if expiry_fn_name:
+                    expiry_fn = cfg.get_function_by_name(inst.expiry_fn)
+                    expiry_instance = ISR(
+                        cpu_id=0,
+                        cfg=cfg,
+                        artificial=False,
+                        function=expiry_fn,
+                        irq_number=0,
+                        priority=0,
+                        entry_name=expiry_fn_name,
+                        handler_param=None,
+                        flags=0,
+                    )
+                    ZephyrStaticPost.create_static_instance(self._graph.instances, "ISR", expiry_instance, "ISR_" + expiry_fn_name, True)
+
+                if stop_fn_name:
+                    stop_fn = cfg.get_function_by_name(inst.stop_fn)
+                    stop_instance = ISR(
+                        cpu_id=0,
+                        cfg=cfg,
+                        artificial=False,
+                        function=stop_fn,
+                        irq_number=0,
+                        priority=0,
+                        entry_name=stop_fn_name,
+                        handler_param=None,
+                        flags=0,
+                    )
+                    ZephyrStaticPost.create_static_instance(self._graph.instances, "ISR", stop_instance, "ISR_" + stop_fn_name, True)
+
 
             # Mark the ids of all static instances as used. Since we use symbol names we know
             # them to be unique
@@ -158,3 +193,49 @@ class ZephyrStaticPost(Step):
                 start_in_init=False
             )
             Zephyr.idle_threads[cpu_id] = ZephyrStaticPost.create_static_instance(self._graph.instances, "Thread", idle_thread, idle_thread.name, True)
+
+
+        isr_sys_clock_announce = ISR(
+            cpu_id=-1,
+            cfg=cfg,
+            artificial=True,
+            function=None,
+            irq_number=0,
+            priority=0,
+            entry_name='sys_clock_announce',
+            handler_param=None,
+            flags=0,
+        )
+
+        ZephyrStaticPost.create_static_instance(self._graph.instances, "ISR", isr_sys_clock_announce, "ISR_sys_clock_announce", False)
+
+        irq_sys_clock_announce = ZephyrIRQ(
+            cpu_id=-1,
+            cfg=cfg,
+            artificial=True,
+            function=None,
+            id=0,
+            name='sys_clock_announce',
+            isr_handler=isr_sys_clock_announce,
+            active=True,
+        )
+
+        ZephyrStaticPost.create_static_instance(self._graph.instances, "IRQ", irq_sys_clock_announce, "IRQ_sys_clock_announce", False)
+
+
+        if 'CONFIG_TIMESLICING' in Zephyr.config:
+            # technically should be handeled by sys_clock_announce
+            # but we need to generate a additional state
+            # and timeslice does not have advancing time
+            irq_z_time_slice = ZephyrIRQ(
+                cpu_id=-1,
+                cfg=cfg,
+                artificial=True,
+                function=None,
+                id=0,
+                name='z_time_slice',
+                isr_handler=isr_sys_clock_announce,
+                active=True,
+            )
+
+            ZephyrStaticPost.create_static_instance(self._graph.instances, "IRQ", irq_z_time_slice, "IRQ_z_time_slicing", False)

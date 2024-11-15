@@ -73,12 +73,13 @@ def _sstg_state_as_dot(sstg, state_vert):
     # instances_id1 = id(obj.instances.vp.obj[obj.instances.vertex(Zephyr.kernel)])
     # instances_id2 = id(obj.instances.vp.obj[Zephyr.kernel])
     # print(instances_id1, instances_id2)
-    # kernel = obj.instances.vp.obj[Zephyr.kernel]
-    kernel = obj.context[Zephyr.kernel]
+    kernel_obj = obj.instances.vp.obj[Zephyr.kernel]
+    kernel = obj.context[kernel_obj]
 
 
     if cpu.control_instance:
         instance = obj.instances.vp.label[obj.instances.vertex(cpu.control_instance)]
+        #is_exit = cfg.vp.is_exit[cpu.abb]
         thread = obj.cur_control_inst(cpu.id)
 
         # FIXME this is zephyr specific code: move it into printer_zephyr
@@ -98,7 +99,9 @@ def _sstg_state_as_dot(sstg, state_vert):
             thread_info.append(("preempt", context.preempt))
             thread_info.append(("thread_state", bin(context.thread_state)))
             vertices = [str(obj.instances.vertex_index[v]) for v in context.join_queue]
+            timeouts = [str(obj.instances.vertex_index[to.v]) for to in kernel.timeout_list]
             thread_info.append(("join_queue", ", ".join(vertices)))
+            thread_info.append(("timeout_list", ", ".join(timeouts)))
 
     else:
         instance = "Idle"

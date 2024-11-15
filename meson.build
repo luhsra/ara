@@ -295,3 +295,10 @@ if get_option('enable_toplevel_tests')
        timeout: 30
     )
 endif
+
+
+
+
+
+arm_freertos_apps = []
+

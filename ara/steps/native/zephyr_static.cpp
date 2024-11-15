@@ -16,6 +16,7 @@
 #include <functional>
 #include <graph_filtering.hh>
 #include <graph_selectors.hh>
+#include <llvm/IR/Constants.h>
 #include <llvm/IR/Module.h>
 #include <object.h>
 #include <pyllco.h>
@@ -151,6 +152,10 @@ namespace ara::step {
 				/* FIXME: Zephyr 3.7.0 changed parameters for thread timeout
 				const llvm::ConstantInt* delay = 0; llvm::dyn_cast<llvm::ConstantInt>(
 				    get_element_checked(*context.initializer, 9, context.info_node, "init_delay"));*/
+				const llvm::Constant* delayStruct = llvm::dyn_cast<llvm::Constant>(
+				    get_element_checked(*context.initializer, 10, context.info_node, "init_delay"));
+				const llvm::ConstantInt* delay = llvm::dyn_cast<llvm::ConstantInt>(
+					safe_deref(delayStruct).getAggregateElement(0U));
 
 				PyObject* obj;
 				{
@@ -167,7 +172,7 @@ namespace ara::step {
 					    {"entry_params", py_none()},
 					    {"priority", py_int(safe_deref(priority).getValue())},
 					    {"options", py_int(safe_deref(options).getValue())},
-					    {"delay", py_int(0)}, //safe_deref(delay).getValue())},
+					    {"delay", py_int(safe_deref(delay).getValue())},
 						{"name", py_str(thread_name.str())},
 					});
 					Py_INCREF(Py_False);
@@ -355,6 +360,32 @@ namespace ara::step {
 				};
 			}
 
+			static Vertex parse_timer(const ZephyrStaticImpl& context) {
+				auto py_expiry = py_none();
+				auto py_stop = py_none();
+
+				llvm::Constant* expiry_fn_const = get_element_checked(*context.initializer, 2, context.info_node, "expiry_fn");
+				llvm::Constant* stop_fn_const = get_element_checked(*context.initializer, 3, context.info_node, "stop_fn");
+
+				if(!expiry_fn_const->isNullValue()) {
+					llvm::Function& expiry_fn = safe_deref(llvm::dyn_cast<llvm::Function>(expiry_fn_const));
+					py_expiry = py_str(expiry_fn.getName());
+				}
+				if(!stop_fn_const->isNullValue()) {
+					llvm::Function& stop_fn = safe_deref(llvm::dyn_cast<llvm::Function>(stop_fn_const));
+					py_stop = py_str(stop_fn.getName());
+				}
+
+				PyObject* obj;
+				{
+					TakeGIL gil;
+					obj = py_dict({{"symbol", get_obj_from_value(safe_deref(context.global))},
+					               {"expiry_fn", py_expiry},
+					               {"stop_fn", py_stop}});
+				}
+				return add_instance(context, "Timer", obj, safe_deref(context.global).getName().str());
+			}
+
 			std::unordered_map<std::string, ParserInfo> parsers{
 			    {"_static_thread_data", {true, parse_thread}},
 			    {"_isr_list", {true, parse_isr}},
@@ -368,6 +399,7 @@ namespace ara::step {
 			    {"k_pipe", {true, parse_pipe}},
 			    {"k_heap", {true, parse_heap}},
 			    {"k_msgq", {true, parse_msgq}},
+			    {"k_timer", {true, parse_timer}},
 			};
 
 		  public:
@@ -400,6 +432,10 @@ namespace ara::step {
 
 					if (type == nullptr) {
 						// No struct type, skipping this one
+						continue;
+					}
+
+					if (type->isLiteral()) {
 						continue;
 					}
 
