@@ -3,6 +3,46 @@
  * Only one variant can be active at the same time, set by meson.
  */
 
+/**
+ ******************** Variants ********************
+ CYCLES: Number of times the schedueler runs, each cycles represents once the SCHEDUL_INTERVAL
+ NUMBER_OF_RUNNABLES: Number of runnables that gets distributed acording to the percentages in RUNABLES_SHARE
+ NUMBER_OF_LABELS: Number of all labels on the system, each is AVAERAGE_LABEL_SIZE big
+ AVAERAGE_LABEL_SIZE: Size of a single label in Byte, calculated by (1*35+2*49+4*13+8*0.8+16*1.3+32*0.5+64*0.2+128*0.2)/ 100 -> 2.66 Byte
+ */
+
+// Upper border from paper
+#if defined(VARIANT_LARGE)
+    const unsigned CYCLES = 1000;
+    const unsigned NUMBER_OF_RUNNABLES = 1500;
+    const unsigned NUMBER_OF_LABELS = 25000;
+    const unsigned AVAERAGE_LABEL_SIZE = 30;
+
+
+// Lower border from paper
+#elif defined(VARIANT_SMALL)
+    const unsigned CYCLES = 1000;
+    const unsigned NUMBER_OF_RUNNABLES = 1000;
+    const unsigned NUMBER_OF_LABELS = 10000;
+    const unsigned AVAERAGE_LABEL_SIZE = 3;
+
+
+// same as small, but with longer runtime
+#elif defined(VARIANT_LONG)
+    const unsigned CYCLES = 2000;
+    const unsigned NUMBER_OF_RUNNABLES = 1000;
+    const unsigned NUMBER_OF_LABELS = 10000;
+    const unsigned AVAERAGE_LABEL_SIZE = 3;
+
+// to make linter happier
+#else
+    const unsigned CYCLES = 1000;
+    const unsigned NUMBER_OF_RUNNABLES = 1000;
+    const unsigned NUMBER_OF_LABELS = 10000;
+    const unsigned AVAERAGE_LABEL_SIZE = 3;
+
+#endif
+
 
 /**
  ******************** Static Variables ********************
@@ -14,7 +54,7 @@ const unsigned SCHEDUL_INTERVAL = 1000; //um -> 1000us = 1ms
 
 // 9 activation periods, which gets grouped into a task each. From 1ms to 1000ms, TODO add angly-sync period
 const unsigned NR_TASKS = 9;
-// Name of each 
+// Name of each task
 const char* taskStrings[NR_TASKS] = {"MS1", "MS2", "MS5", "MS10", "MS20", "MS50", "MS100", "MS200", "MS1000"};
 enum task_id { MS1_id = 0, MS2_id = 1, MS5_id = 2, MS10_id = 3, MS20_id = 4, MS50_id = 5, MS100_id = 6, MS200_id = 7, MS1000_id = 8, MS_LAST_id = 9};
 // Percentage share of each activation period of the total NUMBER_OF_RUNNABLES
@@ -24,36 +64,42 @@ const unsigned RUNABLES_PERIOD[NR_TASKS] = {1, 2, 5, 10, 20, 50, 100, 200, 1000}
 // Average execution time of a single runnables in a specific activation period (in microseconds/us)
 const unsigned TIME_PER_RUNNABLE[NR_TASKS] = {5, 5, 12, 11, 9, 18, 11, 3, 1};
 
-/**
- ******************** Variants ********************
- CYCLES: Number of times the schedueler runs, each cycles represents once the SCHEDUL_INTERVAL
- NUMBER_OF_RUNNABLES: Number of runnables that gets distributed acording to the percentages in RUNABLES_SHARE
- */
 
-// Upper border from paper
-#if VARIANT_LARGE
-const unsigned CYCLES = 1000;
-const unsigned NUMBER_OF_RUNNABLES = 1500;
-const unsigned NUMBER_OF_LABELS = 25000;
+// Of that: 40% read, 10% write, 50% read/write
+const unsigned READ_ACCESSES_PER_RUNNABLE = AVAERAGE_LABEL_SIZE * 40 * (NUMBER_OF_LABELS / NUMBER_OF_RUNNABLES) / 100;
+const unsigned WRITE_ACCESSES_PER_RUNNABLE = AVAERAGE_LABEL_SIZE* 10 * (NUMBER_OF_LABELS / NUMBER_OF_RUNNABLES) / 100;
+const unsigned RW_ACCESSES_PER_RUNNABLE = AVAERAGE_LABEL_SIZE * 50 * (NUMBER_OF_LABELS / NUMBER_OF_RUNNABLES) / 100;
+const unsigned MEMORY_PER_RUNNABLE = READ_ACCESSES_PER_RUNNABLE + WRITE_ACCESSES_PER_RUNNABLE + RW_ACCESSES_PER_RUNNABLE;
 
-// Lower border from paper
-#elif VARIANT_SMALL
-const unsigned CYCLES = 1000;
-const unsigned NUMBER_OF_RUNNABLES = 1000;
-const unsigned NUMBER_OF_LABELS = 10000;
+uint8_t communication[NUMBER_OF_LABELS * AVAERAGE_LABEL_SIZE];
+uint16_t memory_pos = 0;
 
-// same as small, but with longer runtime
-#elif VARIANT_LONG
-const unsigned CYCLES = 5000;
-const unsigned NUMBER_OF_RUNNABLES = 1000;
-const unsigned NUMBER_OF_LABELS = 10000;
+// Final one is end of memory -> cant write further
+const unsigned memory_positions[NR_TASKS + 1] = {
+	0,
+	(NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS1_id] * MEMORY_PER_RUNNABLE,
+	memory_positions[1] + (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS2_id] * MEMORY_PER_RUNNABLE,
+	memory_positions[2] + (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS5_id] * MEMORY_PER_RUNNABLE,
+	memory_positions[3] + (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS10_id] * MEMORY_PER_RUNNABLE,
+	memory_positions[4] + (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS20_id] * MEMORY_PER_RUNNABLE,
+	memory_positions[5] + (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS50_id] * MEMORY_PER_RUNNABLE,
+	memory_positions[6] + (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS100_id] * MEMORY_PER_RUNNABLE,
+	memory_positions[7] + (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS200_id] * MEMORY_PER_RUNNABLE,
+	memory_positions[8] + (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS1000_id] * MEMORY_PER_RUNNABLE
+};
 
-// Default fallback case
-#else
-const unsigned CYCLES = 1000;
-const unsigned NUMBER_OF_RUNNABLES = 1000;
-const unsigned NUMBER_OF_LABELS = 10000;
-#endif
+// InterTask Communication Patter
+// with MS1 MS2 MS5 MS10 MS20 MS50 MS100 MS200 MS1000
+// 0 = 0, I = 5, II = 25, III = 75, IV = 250, V = 750, VI = 1250
+const unsigned INTER_TASK_RATIO[NR_TASKS][NR_TASKS] = {{25, 0, 0, 5, 5, 0, 5, 0, 0},
+										{0, 25, 0, 5, 5, 0, 5, 0, 0},
+										{0, 5, 250, 250, 25, 25, 5, 0, 0},
+										{25, 25, 25, 1250, 250, 25, 250, 25, 75},
+										{5, 5, 5, 250, 1250, 25, 250, 5, 25},
+										{0, 0, 25, 25, 25, 75, 5, 0, 0},
+										{0, 5, 5, 750, 250, 25, 1250, 25, 75},
+										{0, 0, 0, 5, 5, 0, 5, 5, 5},
+										{0, 0, 0, 75, 25, 0, 75, 5, 250} };
 
 
 /**
@@ -64,16 +110,36 @@ void kout_run_info() {
 
     kout << "#CYCLES    : " << CYCLES << endl;
     kout << "#RUNNABLES : " << NUMBER_OF_RUNNABLES << endl;
-    kout << "#LABELS    : " << NUMBER_OF_LABELS << endl;
+    kout << "#LABELS    : " << NUMBER_OF_LABELS << " (if simulated)" << endl;
+    kout << "#La Size   : " << AVAERAGE_LABEL_SIZE << " (if simulated)" << endl;
     kout << "\n*******************\n" << endl;
 
 }
 
-void kout_static_data() {
+void kout_task_data() {
 
 	kout << "\n\nTASK     | NUMBER OF RUNNABLES | EXPECTED RUNTIME" << endl;
-	kout << "---------------------------------------------" << endl;
+	kout << "------------------------------------------------" << endl;
 	for (unsigned i = 0; i < NR_TASKS; i++) {
 		kout << taskStrings[i] << "\t\t| " << (NUMBER_OF_RUNNABLES / 100) * RUNABLES_SHARE[i] << "x \t\t| " << (NUMBER_OF_RUNNABLES / 100) * RUNABLES_SHARE[i] * TIME_PER_RUNNABLE[i] << " us" << endl;
 	}
 }
+
+void kout_intercom_data() {
+
+	kout << "\nInter-Task Communication Matrix\nLeft column is sender, the others are receiving tasks" << endl;
+	for (unsigned i = 0; i < NR_TASKS; i++) {
+		kout <<  taskStrings[i] << "\t";
+	}
+	kout << "\n-------------------------------------------------------------------------" << endl;
+	for (unsigned i = 0; i < NR_TASKS; i++) {
+		kout << taskStrings[i] << "\t";
+		for (unsigned j = 0; j < NR_TASKS; j++) {
+			kout << INTER_TASK_RATIO[i][j] << "\t";
+		}
+		kout << endl;
+	}
+	kout << endl;
+	
+}
+	

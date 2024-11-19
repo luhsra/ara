@@ -37,7 +37,7 @@ TASK(SCHED1) {
 	uint32_t start_cycle, end_cycle;
 	bool in_time;
 
-	for (unsigned cycle= 0; cycle< CYCLES; i++) {
+	for (unsigned cycle= 0; cycle < CYCLES; cycle++) {
 
 		start_cycle = arch::Perf::get_cycles();
 
@@ -74,8 +74,14 @@ TASK(SCHED1) {
 		in_time = micro_sec_wait_upto(start_cycle, SCHEDUL_INTERVAL);
 		in_time ? test_trace('1') : test_trace('0');
 		
-		/*
+		
 		// Debug help
+		/*
+		if (!in_time) {
+			// kout << "Cycle:\t" << cycle << "\tfailed its timing!" << endl;
+		}
+		*/
+		/*
 		kout << "Max_time: " << SCHEDUL_INTERVAL * WAIT_FREQUENCE << "\tused: " << end_cycle - start_cycle << endl;	
 		kout << "start_cycle: " << start_cycle << "\tend_cycle: " << end_cycle << endl;	
 		kout << "Cycle Nr:\t" << cycle << "\tIn time? " << in_time << "\n" << endl;
@@ -146,11 +152,14 @@ void PreIdleHook() {
 	kout << "Trace Dump:" << endl;
 	test_trace_dump();
 
-	kout_static_data();
+	kout_task_data();
 	
 	kout << "\n\nFrom: " << CYCLES << " Cycles are:" << endl;
-	kout << "\t# in Time: " << count_trace('1') << "\t\t| Failed: " << count_trace('0') << endl << endl;
-	micro_sec_wait(1000000);
+	kout << "\t# in Time: " << count_trace('1') << "\t\t| Failed: " << count_trace('0') << "\n" << endl;
+#ifndef QEMU
+	// to better see results on PI wait at the end before rebooting
+	micro_sec_wait(5000000);
+#endif
 
 	test_finish();
 	ShutdownMachine();
