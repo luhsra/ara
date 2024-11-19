@@ -178,11 +178,12 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'andreas'/ 'pmu',    'name': 'get_spinlock',           'oil': 'system_spinlock.json', 'synthesis_disabled': ['posix', 'riscv']},
   {'core': 'multicore',  'path': 'andreas'/ 'alarmmc','name': 'a',                     'oil': 'system_a.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'alarmmc','name': 'b',                     'oil': 'system_b.json'},
-  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'spinlock',     'oil': 'spinlock_system.json'},
-  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'waiting',     'oil': 'waiting_system.json'},
-  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'runnables',     'oil': 'runnables_system.json', 'variants': ['T11', 'T02', 'T01']},
-  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'labels',     'oil': 'labels_system.json'},
-  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'angle-sync',     'oil': 'angle-sync_system.json'},
+  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'spinlock',                  'oil': 'spinlock_system.json'},
+  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'counter',                   'oil': 'counter_system.json'},
+  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'waiting',                   'oil': 'waiting_system.json'},
+  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'runnables',      'oil': 'runnables_system.json',   'variants': ['VARIANT_SMALL', 'VARIANT_LARGE', 'VARIANT_LONG']},
+  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'labels',         'oil': 'labels_system.json',      'variants': ['VARIANT_SMALL', 'VARIANT_LARGE', 'VARIANT_LONG']},
+  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'intercom',       'oil': 'intercom_system.json',    'variants': ['VARIANT_SMALL', 'VARIANT_LARGE', 'VARIANT_LONG']},
 ]
 subdir('multicore' / 'trampoline')
 

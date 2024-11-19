@@ -3,19 +3,19 @@
       {
         "id": 0,
         "tasks": {
-          "W1": {
+          "S1": {
             "activation": 1,
             "autostart": true,
             "priority": 5,
             "schedule": true
           },
-          "P1": {
+          "MS1": {
             "activation": 1,
             "autostart": false,
             "priority": 3,
             "schedule": true
           },
-          "MS1": {
+          "MS2": {
             "activation": 1,
             "autostart": false,
             "priority": 4,
@@ -46,10 +46,10 @@
             "counter": "C1",
             "action": {
               "action": "activatetask",
-              "task": "MS1"
+              "task": "MS2"
             },
             "autostart": true,
-            "cycletime": 10,
+            "cycletime": 100,
             "alarmtime": 1
           }
         }

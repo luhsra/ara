@@ -10,7 +10,7 @@ DeclareSpinlock(S1);
 DeclareSpinlock(S2);
 
 /**
- * First testcase copied from andreas, testing Tasks and system.json
+ * First testcase copied from andreas, testing Tasks, system.json and a spinlock.
  */
 
 void start() {

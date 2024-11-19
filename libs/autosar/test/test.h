@@ -71,7 +71,7 @@
 #include <stdint.h>
 
 #define EXPECTED_VALUES_MAX 10
-#define TRACE_LENGTH 1024
+#define TRACE_LENGTH 2048
 
 typedef unsigned int expected_value_t;
 
