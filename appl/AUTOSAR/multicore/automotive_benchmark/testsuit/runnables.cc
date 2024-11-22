@@ -13,6 +13,7 @@ DeclareTask(MS50);
 DeclareTask(MS100);
 DeclareTask(MS200);
 DeclareTask(MS1000);
+DeclareTask(MSANGLE);
 
 TEST_MAKE_OS_MAIN(StartOS(0))
 
@@ -32,7 +33,10 @@ TASK(SCHED1) {
 
 	kout << "\nRunnables Testcase" << endl;
 	kout_run_info();
-	micro_sec_wait(1000000);
+
+	#ifndef QEMU
+	micro_sec_wait(3000000);
+	#endif
 
 	uint32_t start_cycle, end_cycle;
 	bool in_time;
@@ -68,6 +72,9 @@ TASK(SCHED1) {
 		if (cycle% RUNABLES_PERIOD[MS1000_id] == 0) {
 			ActivateTask(MS1000);
 		}
+		if (cycle% RUNABLES_PERIOD[MSANGLE_id] == 0) {
+			ActivateTask(MSANGLE);
+		}
 
 		end_cycle = arch::Perf::get_cycles();
 
@@ -76,11 +83,11 @@ TASK(SCHED1) {
 		
 		
 		// Debug help
-		/*
+		
 		if (!in_time) {
-			// kout << "Cycle:\t" << cycle << "\tfailed its timing!" << endl;
+			kout << "Cycle:\t" << cycle << "\tfailed its timing!" << endl;
 		}
-		*/
+		
 		/*
 		kout << "Max_time: " << SCHEDUL_INTERVAL * WAIT_FREQUENCE << "\tused: " << end_cycle - start_cycle << endl;	
 		kout << "start_cycle: " << start_cycle << "\tend_cycle: " << end_cycle << endl;	
@@ -143,6 +150,11 @@ TASK(MS200) {
 TASK(MS1000) {
 	workTask(MS1000_id);
 	//test_trace('F');
+	TerminateTask();
+}
+TASK(MSANGLE) {
+	workTask(MSANGLE_id);
+	//test_trace('G');
 	TerminateTask();
 }
 

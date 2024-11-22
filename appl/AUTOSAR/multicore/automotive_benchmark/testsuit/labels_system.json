@@ -62,6 +62,12 @@
             "autostart": false,
             "priority": 2,
             "schedule": true
+          },
+          "MSANGLE": {
+            "activation": 1,
+            "autostart": false,
+            "priority": 11,
+            "schedule": true
           }
         },
         "resources": {},

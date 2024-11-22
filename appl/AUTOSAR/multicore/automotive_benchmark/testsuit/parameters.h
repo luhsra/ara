@@ -11,35 +11,36 @@
  AVAERAGE_LABEL_SIZE: Size of a single label in Byte, calculated by (1*35+2*49+4*13+8*0.8+16*1.3+32*0.5+64*0.2+128*0.2)/ 100 -> 2.66 Byte
  */
 
-// Upper border from paper
-#if defined(VARIANT_LARGE)
-    const unsigned CYCLES = 1000;
-    const unsigned NUMBER_OF_RUNNABLES = 1500;
-    const unsigned NUMBER_OF_LABELS = 25000;
-    const unsigned AVAERAGE_LABEL_SIZE = 30;
-
 
 // Lower border from paper
-#elif defined(VARIANT_SMALL)
+#if defined(VARIANT_BASIC)
     const unsigned CYCLES = 1000;
     const unsigned NUMBER_OF_RUNNABLES = 1000;
     const unsigned NUMBER_OF_LABELS = 10000;
-    const unsigned AVAERAGE_LABEL_SIZE = 3;
 
+// Upper border from paper
+#elif defined(VARIANT_LARGE)
+    const unsigned CYCLES = 1000;
+    const unsigned NUMBER_OF_RUNNABLES = 2750;
+    const unsigned NUMBER_OF_LABELS = 25000;
 
-// same as small, but with longer runtime
+// to match our systems size
+#elif defined(VARIANT_TINY)
+    const unsigned CYCLES = 1000;
+    const unsigned NUMBER_OF_RUNNABLES = 200;
+    const unsigned NUMBER_OF_LABELS = 10000;
+
+// same as baisc, but with longer runtime
 #elif defined(VARIANT_LONG)
     const unsigned CYCLES = 2000;
     const unsigned NUMBER_OF_RUNNABLES = 1000;
     const unsigned NUMBER_OF_LABELS = 10000;
-    const unsigned AVAERAGE_LABEL_SIZE = 3;
 
 // to make linter happier
 #else
     const unsigned CYCLES = 1000;
     const unsigned NUMBER_OF_RUNNABLES = 1000;
     const unsigned NUMBER_OF_LABELS = 10000;
-    const unsigned AVAERAGE_LABEL_SIZE = 3;
 
 #endif
 
@@ -52,18 +53,26 @@
 // How long the software scheduler takes at least, before starting the next round of runnables
 const unsigned SCHEDUL_INTERVAL = 1000; //um -> 1000us = 1ms
 
-// 9 activation periods, which gets grouped into a task each. From 1ms to 1000ms, TODO add angly-sync period
-const unsigned NR_TASKS = 9;
-// Name of each task
-const char* taskStrings[NR_TASKS] = {"MS1", "MS2", "MS5", "MS10", "MS20", "MS50", "MS100", "MS200", "MS1000"};
-enum task_id { MS1_id = 0, MS2_id = 1, MS5_id = 2, MS10_id = 3, MS20_id = 4, MS50_id = 5, MS100_id = 6, MS200_id = 7, MS1000_id = 8, MS_LAST_id = 9};
-// Percentage share of each activation period of the total NUMBER_OF_RUNNABLES
-const unsigned RUNABLES_SHARE[NR_TASKS] = {3, 2, 2, 25, 25, 3, 20, 1, 4};
-// Given activation periods in which runnables get triggered (in millisecond/ms)
-const unsigned RUNABLES_PERIOD[NR_TASKS] = {1, 2, 5, 10, 20, 50, 100, 200, 1000};   // TODO could modify slightly to decrease spike at multiples
-// Average execution time of a single runnables in a specific activation period (in microseconds/us)
-const unsigned TIME_PER_RUNNABLE[NR_TASKS] = {5, 5, 12, 11, 9, 18, 11, 3, 1};
+// 10 activation periods, which gets grouped into a task each. From 1ms to 1000ms
+const unsigned NR_TASKS = 10;
+// Angle Sync Values, assume the worst case, so the shortest period. So a bit car with 8 Cylinders and 5000 rpm
+const unsigned CYLINDERS = 8;
+const unsigned RPM = 5000;
+// Formular is 60/(CYLINDERS*RPM) -> then convert into s (*60) -> then into milliseconds * 1000
+const unsigned ANGLE_SYNC_PERIOD = (1000*60*60)/(CYLINDERS * RPM);
 
+// Name of each task
+const char* taskStrings[NR_TASKS] = {"MS1", "MS2", "MS5", "MS10", "MS20", "MS50", "MS100", "MS200", "MS1000", "MSANGLE"};
+enum task_id { MS1_id = 0, MS2_id = 1, MS5_id = 2, MS10_id = 3, MS20_id = 4, MS50_id = 5, MS100_id = 6, MS200_id = 7, MS1000_id = 8, MSANGLE_id = 9, MS_LAST_id = 10};
+// Percentage share of each activation period of the total NUMBER_OF_RUNNABLES
+const unsigned RUNABLES_SHARE[NR_TASKS] = {3, 2, 2, 25, 25, 3, 20, 1, 4, 15};
+// Given activation periods in which runnables get triggered (in millisecond/ms)
+const unsigned RUNABLES_PERIOD[NR_TASKS] = {1, 2, 5, 10, 20, 50, 100, 200, 1000, ANGLE_SYNC_PERIOD};   // TODO could modify slightly to decrease spike at multiples
+// Average execution time of a single runnables in a specific activation period (in microseconds/us)
+const unsigned TIME_PER_RUNNABLE[NR_TASKS] = {5, 5, 12, 11, 9, 18, 11, 3, 1, 7};
+
+// 90% of Labels are 1,2,4 Bytes, calculated average was 3 Bytes
+const unsigned AVAERAGE_LABEL_SIZE = 3;
 
 // Of that: 40% read, 10% write, 50% read/write
 const unsigned READ_ACCESSES_PER_RUNNABLE = AVAERAGE_LABEL_SIZE * 40 * (NUMBER_OF_LABELS / NUMBER_OF_RUNNABLES) / 100;
@@ -85,21 +94,25 @@ const unsigned memory_positions[NR_TASKS + 1] = {
 	memory_positions[5] + (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS50_id] * MEMORY_PER_RUNNABLE,
 	memory_positions[6] + (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS100_id] * MEMORY_PER_RUNNABLE,
 	memory_positions[7] + (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS200_id] * MEMORY_PER_RUNNABLE,
-	memory_positions[8] + (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS1000_id] * MEMORY_PER_RUNNABLE
+	memory_positions[8] + (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS1000_id] * MEMORY_PER_RUNNABLE,
+	memory_positions[9] + (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MSANGLE_id] * MEMORY_PER_RUNNABLE
 };
 
 // InterTask Communication Patter
 // with MS1 MS2 MS5 MS10 MS20 MS50 MS100 MS200 MS1000
 // 0 = 0, I = 5, II = 25, III = 75, IV = 250, V = 750, VI = 1250
-const unsigned INTER_TASK_RATIO[NR_TASKS][NR_TASKS] = {{25, 0, 0, 5, 5, 0, 5, 0, 0},
-										{0, 25, 0, 5, 5, 0, 5, 0, 0},
-										{0, 5, 250, 250, 25, 25, 5, 0, 0},
-										{25, 25, 25, 1250, 250, 25, 250, 25, 75},
-										{5, 5, 5, 250, 1250, 25, 250, 5, 25},
-										{0, 0, 25, 25, 25, 75, 5, 0, 0},
-										{0, 5, 5, 750, 250, 25, 1250, 25, 75},
-										{0, 0, 0, 5, 5, 0, 5, 5, 5},
-										{0, 0, 0, 75, 25, 0, 75, 5, 250} };
+const unsigned INTER_TASK_RATIO[NR_TASKS][NR_TASKS] = {
+										{25, 0, 0, 5, 5, 0, 5, 0, 0, 5},
+										{0, 25, 0, 5, 5, 0, 5, 0, 0, 0},
+										{0, 5, 250, 250, 25, 25, 5, 0, 0, 0},
+										{25, 25, 25, 1250, 250, 25, 250, 25, 75, 250},
+										{5, 5, 5, 250, 1250, 25, 250, 5, 25, 250},
+										{0, 0, 25, 25, 25, 75, 5, 0, 0, 0},
+										{0, 5, 5, 750, 250, 25, 1250, 25, 75, 250},
+										{0, 0, 0, 5, 5, 0, 5, 5, 5, 0},
+										{0, 0, 0, 75, 25, 0, 75, 5, 250, 5},
+										{5, 5, 5, 250, 250, 5, 75, 5, 5, 750}
+										};
 
 
 /**
@@ -108,10 +121,21 @@ const unsigned INTER_TASK_RATIO[NR_TASKS][NR_TASKS] = {{25, 0, 0, 5, 5, 0, 5, 0,
 
 void kout_run_info() {
 
+	#if defined(VARIANT_BASIC)
+		kout << "VARIANT_BASIC" << endl;
+	#elif defined(VARIANT_LARGE)
+		kout << "VARIANT_LARGE" << endl;
+	#elif defined(VARIANT_TINY)
+		kout << "VARIANT_TINY" << endl;
+	#elif defined(VARIANT_LONG)
+		kout << "VARIANT_LONG" << endl;
+	#else
+		kout << "VARIANT_UNKNOWN" << endl;
+	#endif
+
     kout << "#CYCLES    : " << CYCLES << endl;
     kout << "#RUNNABLES : " << NUMBER_OF_RUNNABLES << endl;
     kout << "#LABELS    : " << NUMBER_OF_LABELS << " (if simulated)" << endl;
-    kout << "#La Size   : " << AVAERAGE_LABEL_SIZE << " (if simulated)" << endl;
     kout << "\n*******************\n" << endl;
 
 }

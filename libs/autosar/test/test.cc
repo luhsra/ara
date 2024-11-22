@@ -39,6 +39,7 @@ noinline void test_trace_dump(void) {
 	for (unsigned i = 0; i < trace_table_idx; i++) {
 		kout << trace_table[i];
 	}
+	kout << endl;
 }
 
 noinline void test_trace_assert(const char* expected) {

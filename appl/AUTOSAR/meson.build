@@ -181,9 +181,9 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'spinlock',                  'oil': 'spinlock_system.json'},
   {'core': 'multicore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'counter',                   'oil': 'counter_system.json'},
   {'core': 'multicore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'waiting',                   'oil': 'waiting_system.json'},
-  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'runnables',      'oil': 'runnables_system.json',   'variants': ['SMALL', 'LARGE', 'LONG']},
-  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'labels',         'oil': 'labels_system.json',      'variants': ['SMALL', 'LARGE', 'LONG']},
-  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'intercom',       'oil': 'intercom_system.json',    'variants': ['SMALL', 'LARGE', 'LONG']},
+  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'runnables',      'oil': 'runnables_system.json',   'variants': ['BASIC', 'LARGE', 'TINY', 'LONG']},
+  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'labels',         'oil': 'labels_system.json',      'variants': ['BASIC', 'LARGE', 'TINY','LONG']},
+  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'intercom',       'oil': 'intercom_system.json',    'variants': ['BASIC', 'LARGE', 'TINY', 'LONG']},
 ]
 subdir('multicore' / 'trampoline')
 
