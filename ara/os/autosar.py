@@ -211,6 +211,7 @@ class Alarm(AUTOSARInstance):
     autostart: bool = False
     cycletime: int = 0
     alarmtime: int = 0
+    counter: Counter = None
 
 
 @dataclass(unsafe_hash=True)
@@ -438,6 +439,8 @@ class AUTOSAR(OSBase):
         instances = state.instances
         obj = instances.vp.obj[irq.isr_handler]
 
+
+        trigger = edge_types(instances, instances.ep.type, InstanceEdge.trigger)
         activates = edge_types(instances, instances.ep.type, InstanceEdge.activate)
         event_tgt = edge_types(instances, instances.ep.type, InstanceEdge.have)
 
@@ -445,42 +448,52 @@ class AUTOSAR(OSBase):
             # false CPU
             return
 
-        if isinstance(obj, Alarm):
+        if isinstance(obj, Counter):
             # do not trigger alarms, if an interrupt is handled
             if isinstance(state.cur_control_inst(cpu_id), ISR):
                 return
             # the current control instance must be a task
 
-            alarm_ctx = state.context.get(obj, False)
-            # TODO interarrival times
-            if alarm_ctx and alarm_ctx.active:
-                acty_vertex = single_check(activates.vertex(irq.isr_handler).out_neighbors())
-                acty = instances.vp.obj[acty_vertex]
-                if isinstance(acty, Task):
-                    # do not trigger alarms, if in handling task or taskgroup
-                    if acty.cpu_id == cpu_id:
-                        ctl_inst = state.cpus[cpu_id].control_instance
-                        if ctl_inst is not None:
-                            all_tasks = AUTOSAR._get_all_tasks_of_taskgroup(
-                                instances,
-                                AUTOSAR._get_taskgroup_for_task(instances, ctl_inst),
+            # new states for all activations by this counter
+            new_states = []
+
+            for alarm_vertex in trigger.vertex(irq.isr_handler).out_neighbors():
+                alarm_obj = instances.vp.obj[alarm_vertex]
+                alarm_ctx = state.context.get(alarm_obj, False)
+
+                # TODO interarrival times
+                if alarm_ctx and alarm_ctx.active:
+                    acty_vertex = single_check(activates.vertex(alarm_vertex).out_neighbors())
+                    acty = instances.vp.obj[acty_vertex]
+                    if isinstance(acty, Task):
+                        # do not trigger alarms, if in handling task or taskgroup
+                        if acty.cpu_id == cpu_id:
+                            ctl_inst = state.cpus[cpu_id].control_instance
+                            if ctl_inst is not None:
+                                all_tasks = AUTOSAR._get_all_tasks_of_taskgroup(
+                                    instances,
+                                    AUTOSAR._get_taskgroup_for_task(instances, ctl_inst),
+                                )
+                                if acty_vertex in all_tasks:
+                                    return
+                        logger.debug(f"Interrupt: Counter {obj.name} triggers Alarm {alarm_obj.name} activates {acty.name}.")
+                        new_state = state.copy()
+                        new_states.append(AUTOSAR.ActivateTask(new_state, cpu_id, acty))
+                    elif isinstance(acty, Event):
+                        logger.debug(f"Interrupt: Counter {obj.name} triggers Alarm {alarm_obj.name} sets {acty.name}.")
+                        new_state = state.copy()
+                        for t in event_tgt.vertex(acty_vertex).in_neighbors():
+                            task = instances.vp.obj[instances.vertex(t)]
+                            new_state = AUTOSAR.SetEvent(
+                                new_state, cpu_id, task, acty.index
                             )
-                            if acty_vertex in all_tasks:
-                                return
-                    logger.debug(f"Interrupt: Alarm {obj.name} activates {acty.name}.")
-                    new_state = state.copy()
-                    return AUTOSAR.ActivateTask(new_state, cpu_id, acty)
-                if isinstance(acty, Event):
-                    logger.debug(f"Interrupt: Alarm {obj.name} sets {acty.name}.")
-                    new_state = state.copy()
-                    for t in event_tgt.vertex(acty_vertex).in_neighbors():
-                        task = instances.vp.obj[instances.vertex(t)]
-                        new_state = AUTOSAR.SetEvent(
-                            new_state, cpu_id, task, acty.index
-                        )
-                    return new_state
-                assert False, f"Edge to false object {acty}"
-            return None
+                        new_states.append(new_state)
+                    else:
+                        assert False, f"Edge to false object {acty}"
+                else:
+                    return None
+            return new_states
+
         elif isinstance(obj, ISR):
             # do not trigger same interrupt again
             cur_inst = state.cur_control_inst(cpu_id)
@@ -492,7 +505,7 @@ class AUTOSAR(OSBase):
             logger.debug(f"Interrupt: Activate {obj.name}")
             new_state = state.copy()
             new_state.context[obj].status = TaskStatus.ready
-            return new_state
+            return [new_state]
 
         raise NotImplementedError
 
@@ -570,6 +583,8 @@ class AUTOSAR(OSBase):
     def schedule(state, cpus=None):
         if cpus is None:
             cpus = [cpu.id for cpu in state.cpus]
+
+        assert isinstance(state, OSState), f"not a state {state}"
 
         logger.debug(f"Scheduling state {state} on CPUs: {cpus}")
 
@@ -720,7 +735,9 @@ class AUTOSAR(OSBase):
         assert isinstance(args.alarm, Alarm)
 
         alarm_v = state.instances.get_node(args.alarm)
-        irq_ctx = AUTOSAR.check_and_get_irq_ctx(state, alarm_v)
+        trigger = edge_types(state.instances, state.instances.ep.type, InstanceEdge.trigger)
+        counter_v = single_check(trigger.vertex(alarm_v).in_neighbors())
+        irq_ctx = AUTOSAR.check_and_get_irq_ctx(state, counter_v)
 
         irq_ctx.status = TaskStatus.suspended
         if args.alarm in state.context:
@@ -1096,7 +1113,9 @@ class AUTOSAR(OSBase):
         assert isinstance(args.cycle, int)
 
         alarm_v = state.instances.get_node(args.alarm)
-        irq_ctx = AUTOSAR.check_and_get_irq_ctx(state, alarm_v)
+        trigger = edge_types(state.instances, state.instances.ep.type, InstanceEdge.trigger)
+        counter_v = single_check(trigger.vertex(alarm_v).in_neighbors())
+        irq_ctx = AUTOSAR.check_and_get_irq_ctx(state, counter_v)
 
         state.context[args.alarm] = AlarmContext(
             increment=args.increment, cycle=args.cycle, active=True

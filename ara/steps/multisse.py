@@ -1167,17 +1167,18 @@ class MultiSSE(StatsStep):
                     if isinstance(sc_cpu, IRQCPU):
                         try:
                             os = self._graph.os
-                            irq_exit_state = os.handle_irq(self._graph,
+                            irq_exit_states = os.handle_irq(self._graph,
                                                            multi_state,
                                                            sc_cpu.reference_cpu_id,
                                                            sc_cpu.irq)
-                            if irq_exit_state is None:
+                            if irq_exit_states is None:
                                 self._log.info("IRQ %s cannot be handled.",
                                                sc_cpu.irq.id)
                                 continue
+                            for irq_exit_state in irq_exit_states:
                             # advance the virtual interrupt CPU
-                            set_next_abb(irq_exit_state, sc_cpu.id)
-                            self._schedule(irq_exit_state)
+                                set_next_abb(irq_exit_state, sc_cpu.id)
+                                self._schedule(irq_exit_state)
                         except CrossCoreAction as cca:
                             # we need other pairing partners
                             ccm = self._mstg.cross_core_map

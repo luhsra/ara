@@ -261,11 +261,13 @@ class LoadOIL(Step):
                     obj.cycletime = alarm["cycletime"]
                 if "alarmtime" in alarm:
                     obj.alarmtime = alarm["alarmtime"]
+                if "counter" in alarm:
+                    obj.counter = alarm["counter"]
                 instances.vp.obj[a] = obj
                 instances.vp.label[a] = a_name
 
                 # link to Counter
-                c_v = find_instance_by_name(alarm["counter"], _autosar.Counter)
+                c_v = find_instance_by_name(obj.counter, _autosar.Counter)
                 e = self._add_edge(instances, c_v, a)
                 instances.ep.label[e] = "trigger"
                 instances.ep.type[e] = _autosar.InstanceEdge.trigger
@@ -334,12 +336,20 @@ class LoadOIL(Step):
                                                "entry_point": i_function_name})
 
         # artificial IRQ objects
-        for v, obj in chain(instances.get(_autosar.Alarm),
+        for v, obj in chain(instances.get(_autosar.Counter),
                             instances.get(_autosar.ISR)):
             func_v = fake_interrupt_function(cfg, callgraph, os, obj.name)
             active = True
-            if isinstance(obj, _autosar.Alarm):
-                active = obj.autostart
+            if isinstance(obj, _autosar.Counter):
+                active = False
+                #if no alarm is triggered, the Counter IRQ can be ignored
+                for a_v, a_obj in instances.get(_autosar.Alarm):
+                    if str(a_obj.counter) == str(obj.name):
+                        active = True
+
+                if active == False:
+                    continue
+
             irq = IRQ(
                 id=v,
                 name=f"IRQ {obj.name}",

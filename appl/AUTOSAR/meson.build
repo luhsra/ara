@@ -565,6 +565,8 @@ foreach app: autosar_targets
           py3_inst, ara_py, '@INPUT@',
           '--os', 'AUTOSAR',
           '--oilfile', app['oil'],
+          #'--dump',
+          #'--log-level', 'debug',
           '--ir_output', '@OUTPUT0@',
           '--step-settings', files('../../settings/autosar_generator_riscv.json'),
           '--generator_output', '@OUTPUT1@',
