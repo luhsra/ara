@@ -15,9 +15,11 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 project('ara', 'cpp',
-    default_options : ['warning_level=3',
-                       'cpp_std=c++17',
-                       'buildtype=debugoptimized'])
+  default_options : ['warning_level=3',
+                     'cpp_std=c++17',
+                     'buildtype=debugoptimized'],
+  meson_version: '>=1.4.0',
+)
 
 add_project_arguments('-Werror=return-type', language: ['c', 'cpp'])
 # c-linkage is not correct, see https://github.com/cython/cython/issues/1839
@@ -177,7 +179,7 @@ ara_py = custom_target('ara-py',
     input: [],
     output: 'ara.py',
     depends: [step_mod, graph_data_mod],
-    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_py_content.format(py3_inst.path()+python_opt_arg, conv_wrapper_formatted)],
+    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_py_content.format(py3_inst.full_path()+python_opt_arg, conv_wrapper_formatted)],
     build_by_default: true
 )
 
@@ -204,7 +206,7 @@ ara_gui_py = custom_target('ara-gui-py',
     input: [],
     output: 'ara-gui.py',
     depends: [step_mod, graph_data_mod],
-    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_gui_py_content.format(py3_inst.path()+python_opt_arg, conv_wrapper_formatted)],
+    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_gui_py_content.format(py3_inst.full_path()+python_opt_arg, conv_wrapper_formatted)],
     build_by_default: true
 )
 

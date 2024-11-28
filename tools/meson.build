@@ -27,6 +27,6 @@ if arm_enabled
   endif
 endif
 
-meson.add_install_script('post_meson_install.sh', py3_inst.path(),
+meson.add_install_script('post_meson_install.sh', py3_inst.full_path(),
                          py3_inst.get_install_dir() / 'ara',
                          get_option('datadir'))

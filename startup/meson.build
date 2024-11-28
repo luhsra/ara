@@ -25,7 +25,7 @@ ara_py_installed = custom_target('ara-py-installed',
     input: [],
     output: 'ara',
     depends: [step_mod, graph_data_mod],
-    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_py_content.format(py3_inst.path()+python_opt_arg, ara_startup.format(''))],
+    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_py_content.format(py3_inst.full_path()+python_opt_arg, ara_startup.format(''))],
     install: true,
     install_dir: get_option('bindir')
 )
@@ -39,7 +39,7 @@ ara_gui_py_installed = custom_target('ara-gui-py-installed',
     input: [],
     output: 'ara-gui',
     depends: [step_mod, graph_data_mod],
-    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_gui_py_content.format(py3_inst.path()+python_opt_arg, ara_startup_formatted)],
+    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_gui_py_content.format(py3_inst.full_path()+python_opt_arg, ara_startup_formatted)],
     install: true,
     install_dir: get_option('bindir')
 )
@@ -61,7 +61,7 @@ PYTHONPATH="${PYTHONPATH}:@1@" LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:@2@" @3@ "@4@
 ara_wrapper_formatted = ara_wrapper_content.format(get_option('prefix') / get_option('datadir') / 'svf' / 'ExtAPI.json',
                                                    py3_inst.get_install_dir(), 
                                                    get_option('prefix') / get_option('libdir'),
-                                                   py3_inst.path()+python_opt_arg,
+                                                   py3_inst.full_path()+python_opt_arg,
                                                    get_option('prefix') / get_option('bindir') / '@0@')
 
 ara_wrapper = custom_target('ara-wrapper',
