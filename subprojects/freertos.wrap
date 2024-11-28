@@ -1,4 +1,4 @@
 [wrap-git]
-url = ssh://git@scm.sra.uni-hannover.de/research/parrot-projects/freertos.git
-revision = ara
+url = https://github.com/luhsra/FreeRTOS.git
+revision = github
 depth = 1
