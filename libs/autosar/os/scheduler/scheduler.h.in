@@ -135,6 +135,13 @@ struct Scheduler {
         return tlist.isReady(task.id);
     }
 
+    forceinline StatusType activationLimit(const Task &task) {
+        if (tlist.isReady(task.id) > 0) {
+            return E_OS_LIMIT;
+        }
+        return E_OK;
+    }
+
     forceinline uint32_t getCurrent_TaskID(void) const {
         Task::id_t id = tlist.decode_task_id(current_task);
         return (uint32_t) id;
