@@ -13,6 +13,7 @@ DeclareTask(MS50);
 DeclareTask(MS100);
 DeclareTask(MS200);
 DeclareTask(MS1000);
+DeclareTask(MSANGLE);
 
 TEST_MAKE_OS_MAIN(StartOS(0))
 
@@ -32,9 +33,12 @@ unsigned cycle = 0;
 TASK(SCHED1) {
 	arch::Perf::start();
 
-	kout << "\nRunnables Testcase" << endl;
+	kout << "\nLabels Testcase" << endl;
 	kout_run_info();
-	micro_sec_wait(1000000);
+
+	#ifndef QEMU
+	micro_sec_wait(3000000);
+	#endif
 
 	uint32_t start_cycle, end_cycle;
 	bool in_time;
@@ -79,6 +83,9 @@ TASK(SCHED1) {
 			memory_pos = memory_positions[MS1000_id];
 			ActivateTask(MS1000);
 		}
+		if (cycle% RUNABLES_PERIOD[MSANGLE_id] == 0) {
+			ActivateTask(MSANGLE);
+		}
 
 		end_cycle = arch::Perf::get_cycles();
 
@@ -86,11 +93,11 @@ TASK(SCHED1) {
 		in_time ? test_trace('1') : test_trace('0');
 
 		// Debug help
-		/*
+		
 		if (!in_time) {
-			// kout << "Cycle:\t" << cycle << "\tfailed its timing!" << endl;
+			kout << "Cycle:\t" << cycle << "\tfailed its timing!" << endl;
 		}
-		*/
+		
 		/*
 		kout << "Max_time: " << SCHEDUL_INTERVAL * WAIT_FREQUENCE << "\tused: " << end_cycle - start_cycle << endl;	
 		kout << "start_cycle: " << start_cycle << "\tend_cycle: " << end_cycle << endl;	
@@ -105,19 +112,15 @@ void workTask(task_id task) {
 
 	uint32_t start_cycle = arch::Perf::get_cycles();
 
-	const unsigned runnables = (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[task];
-	// calculation time
-	const unsigned time = runnables * TIME_PER_RUNNABLE[task];
-	// label size
-	const unsigned memory = runnables * MEMORY_PER_RUNNABLE;
+	const unsigned number_of_runnables_in_task = (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[task];
+	const unsigned time_for_whole_task = number_of_runnables_in_task * TIME_PER_RUNNABLE[task];
 	
-	const unsigned reads = runnables * READ_ACCESSES_PER_RUNNABLE;
-	const unsigned writes = runnables * WRITE_ACCESSES_PER_RUNNABLE;
-	const unsigned read_writes = runnables * RW_ACCESSES_PER_RUNNABLE;
+	const unsigned reads = number_of_runnables_in_task * READ_ACCESSES_PER_RUNNABLE;
+	const unsigned writes = number_of_runnables_in_task * WRITE_ACCESSES_PER_RUNNABLE;
+	const unsigned read_writes = number_of_runnables_in_task * RW_ACCESSES_PER_RUNNABLE;
 
-	// READS
 	uint8_t tmp = 1;
-	// compiler wegoptimiert das?
+	// READS
 	for (unsigned i = 0; i < reads; memory_pos++, i++) {
 		tmp += communication[memory_pos];
 	}
@@ -128,50 +131,16 @@ void workTask(task_id task) {
 	}
 
 	// READ + WRITES
-
-	// first write into memory of the tasks of the first activation period
-	unsigned receiver_task = 0;
-	unsigned labels_send_to_receiver = 0;
-	unsigned receiver_memory_pos = memory_positions[receiver_task];
-
 	for (unsigned i = 0; i < read_writes; memory_pos++, i++) {
 
-		// Debugging help
-		// kout << "task: " << task << "rw: " << read_writes <<  " i: " << i << " receiver_task " << receiver_task << endl;
-		// kout << "memory_pos: " << memory_pos << "labels_send_to_receiver: " << labels_send_to_receiver <<  " receiver_memory_pos: " << receiver_memory_pos << endl;
-
-		// Interprocess communication, receiver_task == 9 means all remaining communication goes to intraprocess
-		if (receiver_task < NR_TASKS) {
-			// read from senders runnable memory, write to receiver runnable memory
-			tmp = communication[memory_pos] + 1;
-			communication[receiver_memory_pos] = tmp;
-
-			receiver_memory_pos++;
-			labels_send_to_receiver++;
-
-			if (labels_send_to_receiver >= INTER_TASK_RATIO[task][receiver_task]) {
-				receiver_task++;
-				labels_send_to_receiver = 0;
-				receiver_memory_pos = memory_positions[receiver_task];
-			}
-			// Debugging help
-			// kout << "Waiting!" <<  endl;
-			// micro_sec_wait(500000);
-
-		// Intraprocess communication
-		} else {
-			tmp = communication[memory_pos] + 1;
-			communication[memory_pos] = tmp;
-		}
-
+		tmp = communication[memory_pos] + 1;
+		communication[memory_pos] = tmp;
 	}
 	
-	bool in_time = micro_sec_wait_upto(start_cycle, time);
+	bool in_time = micro_sec_wait_upto(start_cycle, time_for_whole_task);
 	if (!in_time) {
 		kout << "Task: " << taskStrings[task] << "\t in Cycle: " << cycle << "\ttook longer because of memory." << endl;
 	}
-	
-	return;
 }
 
 
@@ -209,6 +178,10 @@ TASK(MS200) {
 }
 TASK(MS1000) {
 	workTask(task_id::MS1000_id);
+	TerminateTask();
+}
+TASK(MSANGLE) {
+	workTask(MSANGLE_id);
 	TerminateTask();
 }
 

@@ -29,7 +29,6 @@ TEST_MAKE_OS_MAIN(StartOS(0))
 
 TASK(SCHED1) {
 	arch::Perf::start();
-	test_trace('S');
 
 	kout << "\nRunnables Testcase" << endl;
 	kout_run_info();
