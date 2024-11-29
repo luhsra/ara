@@ -96,7 +96,7 @@ class GenericArch(BaseCoder):
         system = Block(arguments=args)
         post_hook = Hook("SystemLeaveHook", arguments=args)
 
-        pre_hook.add(Statement("result = E_OK"))
+        pre_hook.add(Statement("*result = E_OK"))
 
         syscall_name = self.ara_graph.cfg.get_syscall_name(abb)[8:]
 
@@ -135,15 +135,15 @@ class GenericArch(BaseCoder):
         system = Block(arguments=args)
         post_hook = Hook("SystemLeaveHook", arguments=args)
 
-        pre_hook.add(Statement("result = E_OK"))
+        pre_hook.add(Statement("*result = E_OK"))
         userspace.attributes.append("inlinehint")
 
         # Generate a function, that will be executed in system mode,
         # but is specific for this systemcall
         syscall_name = self.ara_graph.cfg.get_syscall_name(abb)
 
-        argstypes = ["StatusType&"]
-        args = ["result"]
+        argstypes = ["StatusType*"]
+        args = ["&result"]
         signature = self.generator.syscall_rules.AUTOSAR_SYSCALLS[syscall_name]
         if len(signature) > 2:  # additional pointer argument
             argstypes += ["void*"]
