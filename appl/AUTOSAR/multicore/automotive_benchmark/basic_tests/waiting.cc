@@ -16,6 +16,9 @@ TASK(H1) {
 
 	kout << "Starting Waiting Test!" <<  endl;
 
+	StatusType res = ActivateTask(H1);
+	kout << res << endl;
+
 	for (unsigned i = 0; i < 10; i++) {
 		
 		// test wait_upto

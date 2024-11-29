@@ -13,6 +13,10 @@ Getrennt ARA analyse und optimieren durch MultiSSE, später generierung. sind ve
 use `-v` at end for more output /
 use `ARA_LOGLEVEL=debug` at the beginning -> show individual cmds
 
+## Error with missing ninja file
+Run this to "reset" ninja build enviroment 
+`meson setup build --native-file native-debian.ini --reconfigure`, happend after CTRL-C a ninja cmd.
+
 ## subprojects
 Code of all repos is found there :) or in gitlab. /
 ### Parrot: Sammelrepo
@@ -34,6 +38,14 @@ list of steps + properties of each step, enable logging or dumping to `build/dum
 - `ara/libs/autosar/os.h`
 
 ### ara-libplatforms: automotive_appl nicht mehr in use
+
+## Generator
+Creates the template for the .cc files, by setting the syntax up in python. Uses fixed wrapper for that.
+Pfad: `subprojects/ara/ara/generator/coder/autosar`, use self.call(syscall) um im generierten Code den Syscall aufzurufen
+- os_generic.py 
+- syscall_generic.py
+- arch_generic.py
+Außerdem in `subprojects/ara/libs/autosar/os`, define syscall there.
 
 
 ## Git
