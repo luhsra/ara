@@ -214,8 +214,8 @@ class LockElision(StatsStep):
                 self._log.warn(f"Deadlock detected {deadlock}")
 
         step_data = [
-            StatData(key="spin_stats", value=lock_count, prefix_key=False),
-            StatData(key='DEADLOCK', value=deadlock),
+            StatData(key="spin_states", value=lock_count, prefix_key=False),
+            StatData(key='DEADLOCK', value=deadlock, prefix_key=False),
             StatData(key='callsites', value=details, prefix_key=False),
             StatData(key="locks", value=len(lock_count)),
             StatData(key="unneeded_locks",
