@@ -303,7 +303,7 @@ if get_option('enable_step_tests')
         env: [python_path],
         depends: ara_py,
         is_parallel: false,
-        suite: ['autosar_generator_posix']
+        suite: ['autosar_generator', 'autosar_generator_posix']
       )
     endforeach
   endif
@@ -316,7 +316,7 @@ if get_option('enable_step_tests')
         env: [python_path],
         depends: ara_py,
         is_parallel: false,
-        suite: ['autosar_generator_pi4']
+        suite: ['autosar_generator', 'autosar_generator_pi4']
       )
     endforeach
   endif
@@ -329,7 +329,7 @@ if get_option('enable_step_tests')
         env: [python_path],
         depends: ara_py,
         is_parallel: false,
-        suite: ['autosar_generator_riscv']
+        suite: ['autosar_generator', 'autosar_generator_riscv']
       )
     endforeach
   endif

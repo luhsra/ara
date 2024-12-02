@@ -25,7 +25,7 @@ TEST_MAKE_OS_MAIN(start())
 TASK(T00) {
 	GetSpinlock(S1);
 	ActivateTask(T10);
-	ara_timing_info(1,2);
+	//ara_timing_info(1,2);
 	test_trace('1');
 	ReleaseSpinlock(S1);
 	ShutdownOS(E_OK);
@@ -34,7 +34,7 @@ TASK(T00) {
 TASK(T01) { TerminateTask(); }
 
 TASK(T10) {
-	ara_timing_info(10,20);
+	//ara_timing_info(10,20);
 	GetSpinlock(S1);
 	test_trace('2');
 	ReleaseSpinlock(S1);

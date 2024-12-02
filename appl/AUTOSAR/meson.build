@@ -24,7 +24,7 @@ autosar_apps = [
   {'core': 'singlecore', 'path': 'bcc1' / 'complex1',  'name': 'a',                     'oil': 'system.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'complex1',  'name': 'b',                     'oil': 'system.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'complex1',  'name': 'c',                     'oil': 'system.json'},
-  {'core': 'singlecore', 'path': 'bcc1' / 'complex1',  'name': 'd',                     'oil': 'system.json'},
+  {'core': 'singlecore', 'path': 'bcc1' / 'complex1',  'name': 'd',                     'oil': 'system.json', 'synthesis_disabled': ['posix']},
   {'core': 'singlecore', 'path': 'bcc1' / 'complex2',  'name': 'a',                     'oil': 'system.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'counter1',  'name': 'a',                     'oil': 'system.json'},
 # {'core': 'singlecore', 'path': 'bcc1' / 'depsvc',    'name': 'depsvc',                'oil': 'system.json'},
@@ -33,7 +33,7 @@ autosar_apps = [
   {'core': 'singlecore', 'path': 'bcc1' / 'isr2',      'name': 'b',                     'oil': 'system.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'isr2',      'name': 'c',                     'oil': 'system.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'isr2',      'name': 'd',                     'oil': 'system.json'},
-  {'core': 'singlecore', 'path': 'bcc1' / 'isr2',      'name': 'e',                     'oil': 'system.json'},
+  {'core': 'singlecore', 'path': 'bcc1' / 'isr2',      'name': 'e',                     'oil': 'system.json', 'synthesis_disabled': ['posix']},
   {'core': 'singlecore', 'path': 'bcc1' / 'lukas',     'name': 'alarmstress',           'oil': 'alarmstress.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'singlecore', 'path': 'bcc1' / 'lukas',     'name': 'dispatch',              'oil': 'dispatch.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'singlecore', 'path': 'bcc1' / 'lukas',     'name': 'isr2',                  'oil': 'isr2.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
@@ -84,7 +84,7 @@ autosar_apps = [
   {'core': 'singlecore', 'path': 'ecc1' / 'event1',    'name': 'g',                     'oil': 'system.json', 'mtrace': 'g.trace.json'},
   {'core': 'singlecore', 'path': 'ecc1' / 'eventisr1', 'name': 'a',                     'oil': 'system.json', 'mtrace': 'a.trace.json'},
   {'core': 'singlecore', 'path': 'ecc1' / 'eventisr1', 'name': 'b',                     'oil': 'system.json', 'mtrace': 'b.trace.json'},
-  {'core': 'singlecore', 'path': 'ecc1' / 'eventisr1', 'name': 'c',                     'oil': 'system.json', 'mtrace': 'c.trace.json'},
+  {'core': 'singlecore', 'path': 'ecc1' / 'eventisr1', 'name': 'c',                     'oil': 'system.json', 'mtrace': 'c.trace.json', 'synthesis_disabled': ['posix']},
   {'core': 'singlecore', 'path': 'ecc1' / 'eventisr1', 'name': 'd',                     'oil': 'system.json', 'mtrace': 'd.trace.json'},
   {'core': 'singlecore', 'path': 'ecc1' / 'eventisr1', 'name': 'e',                     'oil': 'system.json', 'mtrace': 'e.trace.json'},
   {'core': 'singlecore', 'path': 'ecc1' / 'eventisr1', 'name': 'f',                     'oil': 'system.json', 'mtrace': 'f.trace.json'},
@@ -129,7 +129,7 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'timing',             'name': 'a',                     'oil': 'system_a.json', 'timing': 'a_timing.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'timing',             'name': 'b',                     'oil': 'system_b.json', 'timing': 'b_timing.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'timing',             'name': 'c',                     'oil': 'system_c.json', 'timing': 'c_timing.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
-  {'core': 'multicore',  'path': 'timing',             'name': 'artificial_delay',      'oil': 'artificial_delay.json', 'timing': 'BB', 'short_delay': 'artificial_delay.short.trace.json', 'long_delay': 'artificial_delay.long.trace.json', 'synthesis_disabled': ['posix', 'pi4']},
+  {'core': 'multicore',  'path': 'timing',             'name': 'artificial_delay',      'oil': 'artificial_delay.json', 'timing': 'BB', 'short_delay': 'artificial_delay.short.trace.json', 'long_delay': 'artificial_delay.long.trace.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'paper',              'name': 'running',               'oil': 'system_running.json', 'mtrace': 'running.trace.json', 'locks': 'EXTRACT', 'timing': 'BB', 'ttrace': 'running.timing.trace.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv'], 'use_in_parrot': true},
   {'core': 'multicore',  'path': 'paper',              'name': 'running_pmu',           'oil': 'system_running.json', 'mtrace': 'running.pmu.trace.json', 'locks': 'EXTRACT', 'timing': 'BB', 'ttrace': 'running.pmu.timing.trace.json', 'synthesis_disabled': ['posix', 'riscv'], 'opt': true, 'variants': ['T11', 'T02', 'T01']},
   {'core': 'multicore',  'path': 'paper',              'name': 'running_long11',        'oil': 'system_running.json', 'locks': 'EXTRACT', 'timing': 'BB', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
@@ -154,10 +154,10 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'andreas'/ 'ipi',     'name': 'e',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'ipi',     'name': 'f',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'ipi',     'name': 'g',                     'oil': 'system.json'},
-  {'core': 'multicore',  'path': 'andreas'/ 'ipi2',    'name': 'a',                     'oil': 'system_a.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'ipi2',    'name': 'a',                     'oil': 'system_a.json', 'synthesis_disabled': ['posix']},
   {'core': 'multicore',  'path': 'andreas'/ 'ipi2',    'name': 'b',                     'oil': 'system_b.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'ipi2',    'name': 'c',                     'oil': 'system_c.json'},
-  {'core': 'multicore',  'path': 'andreas'/ 'ipi2',    'name': 'd',                     'oil': 'system_d.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'ipi2',    'name': 'd',                     'oil': 'system_d.json', 'synthesis_disabled': ['posix']},
   {'core': 'multicore',  'path': 'andreas'/ 'ipi2',    'name': 'e',                     'oil': 'system_e.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'ipi2',    'name': 'f',                     'oil': 'system_f.json', 'synthesis_disabled': ['pi4', 'riscv']},
   {'core': 'multicore',  'path': 'andreas'/ 'ipi2',    'name': 'g',                     'oil': 'system_f.json', 'synthesis_disabled': ['pi4', 'riscv']},
@@ -451,6 +451,12 @@ foreach app: autosar_targets
       'opt': autosar_generator_arm_opt,
       'noopt': autosar_generator_arm_noopt
     }
+    if app.has_key('timing')
+      ara_timing_settings = ['--timing', app['sys_timings']]
+    else
+      ara_timing_settings = []
+    endif
+
     opt_targets = ['noopt']
     if app.has_key('opt') and app['opt']
       opt_targets += ['opt']
@@ -474,7 +480,7 @@ foreach app: autosar_targets
             '--ir_output', '@OUTPUT0@',
             '--step-settings', ara_opt_settings[opt],
             '--generator_output', '@OUTPUT1@',
-            '--timings', app['sys_timings']
+            ara_timing_settings
           ]
         )
       else
