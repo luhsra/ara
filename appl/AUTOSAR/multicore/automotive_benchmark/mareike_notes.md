@@ -11,7 +11,10 @@ Getrennt ARA analyse und optimieren durch MultiSSE, später generierung. sind ve
     1. ninja -t targets 
     2. ninja ara@@run_autosar_multicore_andreas_pmu_get_spinlock_pi4
 use `-v` at end for more output /
-use `ARA_LOGLEVEL=debug` at the beginning -> show individual cmds
+use `ARA_LOGLEVEL=debug` at the beginning -> show individual cmds. (klappt nicht mehr, bzw wie ging das?)
+
+### Debug
+comment `-DDEBUG` in `subprojects/ara/libs/autosar/meson.build` for the respective architecture.
 
 ## Error with missing ninja file
 Run this to "reset" ninja build enviroment 

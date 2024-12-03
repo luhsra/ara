@@ -20,7 +20,12 @@ TASK(S1) {
 	arch::Perf::start();
 
 	kout << "Starting activateTask return value Test!" <<  endl;
-
+    
+    #ifndef QEMU
+	// to better see results on PI wait at the end before rebooting
+	micro_sec_wait(3000000);
+    #endif
+    
     StatusType res;
 	for (unsigned i = 0; i < 10; i++) {
 		
@@ -69,7 +74,11 @@ TASK(H2) {
 void PreIdleHook() {
 
     kout << "\n\nDone - #H1_runs: " << count_trace('1') << " and #H2_runs: " << count_trace('2') << endl;
-
+    
+    #ifndef QEMU
+	// to better see results on PI wait at the end before rebooting
+	micro_sec_wait(3000000);
+    #endif
 	test_finish();
 	ShutdownMachine();
 }
