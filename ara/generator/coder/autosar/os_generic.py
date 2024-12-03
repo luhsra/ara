@@ -52,8 +52,8 @@ class GenericOS(BaseCoder):
             Statement("debug_core << __FUNCTION__ << endl"))
 
         if ret_type != "void":
-            check_error = If("*result != E_OK")
-            check_error.add(Statement("CALL_HOOK(ErrorHook, *result)"))
+            check_error = If("*p_result != E_OK")
+            check_error.add(Statement("CALL_HOOK(ErrorHook, *p_result)"))
             kernelspace.post_hook.prepend(check_error)
 
             userspace.return_statement("result")

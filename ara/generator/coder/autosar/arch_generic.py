@@ -96,7 +96,7 @@ class GenericArch(BaseCoder):
         system = Block(arguments=args)
         post_hook = Hook("SystemLeaveHook", arguments=args)
 
-        pre_hook.add(Statement("*result = E_OK"))
+        pre_hook.add(Statement("*p_result = E_OK"))
 
         syscall_name = self.ara_graph.cfg.get_syscall_name(abb)[8:]
 
@@ -135,7 +135,7 @@ class GenericArch(BaseCoder):
         system = Block(arguments=args)
         post_hook = Hook("SystemLeaveHook", arguments=args)
 
-        pre_hook.add(Statement("*result = E_OK"))
+        pre_hook.add(Statement("*p_result = E_OK"))
         userspace.attributes.append("inlinehint")
 
         # Generate a function, that will be executed in system mode,
@@ -153,7 +153,7 @@ class GenericArch(BaseCoder):
                            "void",
                            argstypes,
                            extern_c=True)
-        syscall.argsname[0] = "result"
+        syscall.argsname[0] = "p_result"
         syscall.argsname += ["arg1"]
 
         self.generator.source_file.function_manager.add(syscall)
