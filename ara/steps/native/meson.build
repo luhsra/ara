@@ -87,6 +87,7 @@ step_mod = py3_inst.extension_module('step',
         'svf_transformation.cpp',
         'value_analyzer_corrections.cpp',
         'zephyr_static.cpp',
+        'merge_structs.cpp',
         # additional C++ entities
         'value_analyzer.cpp',
         'py_util.cpp',

@@ -273,16 +273,17 @@ class ZephyrInterpreter:
         # self.k_sched_lock()
         # self.irm.skip(["z_reschedule"])
         for t in threads:
-
-            self.z_mark_thread_as_started(t)
+            # if t.base.thread_state & za.ThreadStateAdapter._THREAD_PRESTART:
+            #     continue
 
             if self.z_idle_threads[0].ptr == t.ptr:
                 continue
 
             # self.queue_thread(t) # is inlined
             # self.thread_schedule_new(t, delay) # does not add thread if queued bit is set
-            if t.base.thread_status & za.ThreadStateAdapter._THREAD_QUEUED:
-                print("trying to add a thread that has the queued bit set. this will not work!")
+            #if t.base.thread_state & za.ThreadStateAdapter._THREAD_QUEUED:
+            #    print("trying to add a thread that has the queued bit set. this will not work!")
+            self.z_mark_thread_as_started(t)
             self.ready_thread(t)
     
     def helper_threads_ready(self, threads):
@@ -297,8 +298,8 @@ class ZephyrInterpreter:
         self.run_function("unready_thread", [t.ptr], ['PTR'])
 
     def ready_thread(self, t: zephyr.k_thread):
-        # ready_thread will resort the ready_q
         # self.run_function("ready_thread", [t.ptr], ['PTR'])
+        # ready_thread will resort the ready_q
         # therefore force for the sorting as is
         self.run_function("move_thread_to_end_of_prio_q", [t.ptr], ['PTR']) # work around
 

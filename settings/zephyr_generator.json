@@ -1,0 +1,41 @@
+{
+	"steps": [
+		"ZephyrThreadEntry",
+		"SIA",
+		"InteractionAnalysis",
+		"SSE",
+        "Printer",
+        "Generator"
+	],
+	
+    "Generator": {
+        "arch": "generic",
+        "passthrough": true,
+        "os": "zephyr"
+    },
+    "IRReader": {
+        "no_sysfunc_body": true
+    },
+    "RemoveSysfuncBody": {
+        "drop_llvm_suffix": true
+    },
+	"LLVMMap": {
+		"log_level": "info",
+		"dump": false
+	},
+    "CallGraph": {
+        "dump": false
+    },
+    "SysFuncts": {
+        "dump": false
+    },
+	"InteractionAnalysis": {
+		"dump": true
+	},
+    "Printer": {
+        "dot": "./dumps/instances.dot",
+        "name": "Instances",
+        "subgraph": "instances"
+    }
+}
+

@@ -3,7 +3,8 @@
 		"ZephyrThreadEntry",
 		"SIA",
 		"InteractionAnalysis",
-        "Printer"
+		"SSE",
+        "Printer",
 	],
 
     "IRReader": {
@@ -23,7 +24,7 @@
         "dump": false
     },
 	"InteractionAnalysis": {
-		"dump": false
+		"dump": true
 	},
     "Printer": {
         "dot": "./dumps/instances.dot",

@@ -43,6 +43,8 @@ class TimerContext:
 class ZephyrKernelContext:
     """Kernel Object Representation"""
 
+    # cpus are found in state.cpus[].analysis_context
+
     # Zephyr: .kernel.ready_q.runq (_dnode)
     ready_q: List[Vertex] = field(default_factory=lambda: []) # list of thread vertices
 
@@ -114,6 +116,7 @@ class ThreadContext(ControlContext):
     thread_state: int = 0
     preempt: int = 0
     order_key: int = 0
+    sched_locked: int = 0
 
     def __hash__(self):
         return hash(
@@ -127,6 +130,7 @@ class ThreadContext(ControlContext):
                 self.thread_state,
                 self.preempt,
                 self.order_key,
+                self.sched_locked,
             )
         )
 
@@ -141,6 +145,7 @@ class ThreadContext(ControlContext):
             thread_state=self.thread_state,
             preempt=self.preempt,
             order_key=self.order_key,
+            sched_locked=self.sched_locked,
         )
 
 @dataclass
@@ -264,6 +269,8 @@ class ThreadStateAdapter(enum.IntFlag):
 
 
 def to_timeout_value(timeout):
+    if not isinstance(timeout, int): # test for unknown value
+        return 1000 # return some value
     if timeout == -1:
         if InterpreterContext.Zephyr.config['CONFIG_TIMEOUT_64BIT']:
             timeout = 0xFFFFFFFFFFFFFFFF
@@ -542,8 +549,23 @@ class InterpreterContext:
         self.kobj_maps[cls][kobj.ptr] = KObjectMapEntry(kobj, ctx, v)
         self.vertex_maps[cls][v] = kobj.ptr
 
+    def get_threads(self):
+        from .zephyr import Thread
+        state = self.state
+        for v, obj in state.instances.get(Thread):
+            if obj.artificial:
+                continue
+            # ctx = ThreadContext(TaskStatus.ready, None, None, []) # dummy context
+            # if v in state.instances.vp.obj:
+            if obj not in state.context:
+                continue
+
+            ctx = state.context[obj]
+
+            yield v, obj, ctx
+
     def _prepare(self):
-        from .zephyr import Thread, Semaphore, Zephyr, Timer, Mutex, MSGQ
+        from .zephyr import Thread, Semaphore, Zephyr, Timer, Mutex, MSGQ, ISR
         zi = self.zi
         state = self.state
         cpu_id = self.cpu_id
@@ -606,6 +628,7 @@ class InterpreterContext:
         self.add_kobj(idle_thread, state.context[obj], v)
 
         for v, obj in state.instances.get(Thread):
+        # for v, obj, ctx in self.get_threads(): # can't do this since k_thread_Create would need to resolve not yet existing threads to pointers
             if obj.artificial:
                 continue
             ctx = ThreadContext(TaskStatus.ready, None, None, []) # dummy context
@@ -625,7 +648,8 @@ class InterpreterContext:
 
             self.add_kobj(t, ctx, v)
 
-        for v, obj in state.instances.get(Thread):
+        # for v, obj in state.instances.get(Thread):
+        for v, obj, ctx in self.get_threads():
             t = self.thread_vertex_2_ptr(v)
 
             wait_q = proxy.get_member(t, ['join_queue', 'waitq'])
@@ -668,23 +692,34 @@ class InterpreterContext:
         for v in kernel.ready_q:
             t = self.thread_vertex_2_ptr(v)
             threads_ready.append(t)
-            index = state.instances.vertex_index[v]
-            print(f"ready thread: vertex idx: {index}")
+            # index = state.instances.vertex_index[v]
+            # print(f"ready thread: vertex idx: {index}")
 
 
         # get current thread
         current_thread = zi.z_idle_threads[cpu_id]
         #current_thread = _kernel.cpus[cpu_id].idle_thread
 
-        if len(kernel.ready_q) > 0:
-            # TODO: this should be the kernel.cache thread, but they are equal, aren't they?
-            current_thread = threads_ready[0]
+        # if state.cpus[cpu_id].analysis_context.current:
+        #     current_thread = self.get_kobj_from_vertex(state.cpus[cpu_id].analysis_context.current)
+
+        # TODO: confirm that ISR, that have an empty ready queue still work
+        cache = kernel.cache
+        cache_obj = state.instances.vp.obj[cache]
+        if isinstance(cache_obj, ISR): # maybe dont set the cache variable to the ISR vertex
+            cache_ctx = state.context[cache_obj]
+            if isinstance(cache_ctx, ISRContext):
+                # if state.cpus[cpu_id].analysis_context.interrupted_thread:
+                cache = state.instances.get_node(state.cpus[cpu_id].analysis_context.interrupted_thread)
+            # TODO: else we should fall back to the idle thread
+
+        current_thread = self.get_kobj_from_vertex(cache)
 
         _kernel.cpus[cpu_id].current.ptr = current_thread.ptr
 
-        zi.run_function('z_mark_thread_as_started', [current_thread.ptr], ['PTR'])
-        if len(kernel.ready_q) > 0: # if not idle thread  # only if SMP is anabled
-            zi.ready_thread(current_thread)
+        #zi.run_function('z_mark_thread_as_started', [current_thread.ptr], ['PTR'])
+        #if len(kernel.ready_q) > 0: # if not idle thread  # only if SMP is anabled
+        #    zi.ready_thread(current_thread)
 
         proxy.get(_kernel)
 
@@ -712,7 +747,7 @@ class InterpreterContext:
 
 
         # print("current:     ", _kernel.cpus[cpu_id].current)
-        InterpreterContext.Zephyr.debug_print_threads(state, self)
+        # InterpreterContext.Zephyr.debug_print_threads(state, self)
 
         for v, obj in state.instances.get(Timer):
             timer = self._create_timer(v, obj)
@@ -765,16 +800,14 @@ class InterpreterContext:
 
         # finalize threads
 
-        for v, obj in state.instances.get(Thread):
+        for v, obj, ctx in self.get_threads():
             t = self.thread_vertex_2_ptr(v)
-            ctx = ThreadContext(TaskStatus.ready, None, None, []) # dummy context
-            if obj in state.context:
-                ctx = state.context[obj]
 
             proxy.get(t)
-            t.base.thread_status = ctx.thread_state & ~ThreadStateAdapter._THREAD_QUEUED
+            t.base.thread_state = int(ctx.thread_state & ~ThreadStateAdapter._THREAD_QUEUED)
             t.base.preempt = ctx.preempt
             t.base.order_key = ctx.order_key
+            t.base.sched_locked = ctx.sched_locked
             proxy.put(t)
             proxy.get(t)
 
@@ -788,7 +821,7 @@ class InterpreterContext:
                     if isinstance(pended_on_kobj, zephyr.k_thread):
                         waitq = proxy.get_member(pended_on_kobj, ['join_queue', 'waitq'])
                         t.pended_on = waitq.ptr
-                    elif type(pended_on_kobj) in [zephyr.k_sem, zephyr.k_mutex]:
+                    elif type(pended_on_kobj) in [zephyr.k_sem, zephyr.k_mutex, zephyr.k_msgq]:
                         waitq = proxy.get_member(pended_on_kobj, ['wait_q', 'waitq'])
                         t.pended_on = waitq.ptr
                     else:
@@ -822,14 +855,10 @@ class InterpreterContext:
                 t1 = self.proxy.container_of_ptr(child, zephyr.k_thread, 'join_queue', 'waitq')
                 return self.kobj_maps[zephyr.k_thread][t1.ptr].v
             return self.kobj_maps[zephyr.k_thread][kobj.ptr].v
-        elif isinstance(kobj, zephyr.k_sem):
-            return self.kobj_maps[zephyr.k_sem][kobj.ptr].v
-        elif isinstance(kobj, zephyr.k_mutex):
-            return self.kobj_maps[zephyr.k_mutex][kobj.ptr].v
-        elif isinstance(kobj, zephyr.k_timer):
-            return self.kobj_maps[zephyr.k_timer][kobj.ptr].v
+        elif type(kobj) in [zephyr.k_sem, zephyr.k_mutex, zephyr.k_timer, zephyr.k_msgq]:
+            return self.kobj_maps[type(kobj)][kobj.ptr].v
         else:
-            raise RuntimeError("No object is associated with PTR {ptr}")
+            raise RuntimeError(f"No object is associated with PTR {kobj.ptr}")
 
     def find_container_object(self, ptr: int):
         for cls, kmap in self.kobjs.items():
@@ -873,7 +902,7 @@ class InterpreterContext:
         # update timeout_list
         kernel.timeout_list.clear()
         for _timeout in zi.dlist_itr(timeout_list):
-            if _timeout.ptr == zi.slice_timeouts.ptr:
+            if zi.slice_timeouts and _timeout.ptr == zi.slice_timeouts.ptr:
                 continue # ignore the timeout for time slicing, since separate ISR is used
             
             container = self.find_container_object(_timeout.ptr)
@@ -934,7 +963,7 @@ class InterpreterContext:
                 threads_map[t.ptr].status = TaskStatus.blocked
                 #raise RuntimeError("Unknown state returned")
 
-            threads_map[t.ptr].thread_state = int(t.base.thread_state)
+            threads_map[t.ptr].thread_state = ThreadStateAdapter(t.base.thread_state)
             threads_map[t.ptr].preempt = int(t.base.preempt)
 
             join_queue = threads_map[t.ptr].join_queue
@@ -948,7 +977,7 @@ class InterpreterContext:
             ptr = t.base.pended_on
             if ptr.ptr != 0:
                 container = self.find_container_object(ptr.ptr)
-                if type(container) in [zephyr.k_thread, zephyr.k_mutex, zephyr.k_sem]:
+                if type(container) in [zephyr.k_thread, zephyr.k_mutex, zephyr.k_sem, zephyr.k_msgq]:
                     # x = zi.irm.get_global_value_at_address(ptr.ptr)
                     waitq = proxy.deref(ptr)
                     container = self.find_container_object(waitq.ptr)
@@ -1015,7 +1044,8 @@ class InterpreterContext:
 
     def update_wait_q(self, wait_q: zephyr._wait_q_t):
         pass
-
+    
+    
     @dataclass
     class DotObject:
         kobj: any
@@ -1048,6 +1078,15 @@ class InterpreterContext:
             rankdir=TB;
             node [shape=record];
         """
+        disabled = False
+        fn = ''
+        if self.state.cpus.one().abb:
+            fn = self.state.cfg.get_syscall_name(self.state.cpus.one().abb)
+        if fn == '':
+            disabled = True
+        if disabled:
+            return
+        
         proxy = self.proxy
 
         for t in self.kobjs[zephyr.k_thread]:
@@ -1061,6 +1100,8 @@ class InterpreterContext:
             join_queue = self.proxy.get_member(t, ['join_queue', 'waitq'])
 
             z_status = ThreadStateAdapter(t.base.thread_state).name
+            if z_status:
+                z_status = z_status.replace("|", "\\|")
 
             is_current = self.zi._kernel.cpus[self.cpu_id].current.ptr == t.ptr
             is_cache = self.zi._kernel.ready_q.cache.ptr == t.ptr
@@ -1074,6 +1115,7 @@ class InterpreterContext:
             texts.append(f"v:{index} current:{is_current} cache:{is_cache}")
             texts.append(f"{bin(t.base.thread_state)}")
             texts.append(f"{z_status}")
+            texts.append(f"preempt: {t.base.preempt}")
 
             node = self.proxy.get_member(t, ['join_queue', 'waitq'])
             self.proxy.get(node)
@@ -1173,12 +1215,17 @@ class InterpreterContext:
                 dot.extras.append(f"v: {index}")
                 dotstr += str(dot)
         
-        dotstr += f'{self.state.id} [label="self.state.id\\nid: {self.state.id}"];\n'
+        dotstr += f'{self.state.id} [label="self.state.id\\nid: {InterpreterContext.last_state_id:05d} to {self.state.id:05d}"];\n'
 
         dotstr += "}\n"
         with open(f"/tmp/zephyr-kernel-{postfix}.dot", "w", -1, 'utf-8') as f:
             f.write(dotstr)
             f.flush()
+        
+        create_dir("/tmp/kernel_states")
+
+        with open(f"/tmp/kernel_states/{InterpreterContext.last_state_id:05d}-{postfix}.dot", "w", -1, 'utf-8') as f:
+            f.write(dotstr)
 
         return dotstr
 
@@ -1186,6 +1233,12 @@ class InterpreterContext:
     def remap(x, in_min=0.0, in_max=1.0, out_min=0.0, out_max=1.0):
         '''remap taken from https://stackoverflow.com/a/43567380'''
         return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+
+    last_state_id = 0
+
+    @staticmethod
+    def set_last_state_id(state_id):
+        InterpreterContext.last_state_id = state_id
 
     def sem_dot(self, sem):
         from .zephyr import Semaphore
@@ -1201,6 +1254,7 @@ class InterpreterContext:
         texts.append(f"{sem.ptr}")
         texts.append(f"limit: {sem.limit}")
         texts.append(f"count: {sem.count}")
+        texts.append(f"name: {obj.symbol.get_name()}")
 
         attrs = []
         attrs.append("\\n".join(texts))
@@ -1213,3 +1267,9 @@ class InterpreterContext:
         con = f"{sem.ptr}:qnode_dlist_next -> {sem.wait_q.waitq.tail.ptr}:qnode_dlist_prev [color=\"0.5 1 1\"];\n"
 
         return f'{sem.ptr} [label="{label}"];\n{con}\n'
+
+
+def create_dir(dir):
+    import os
+    if not os.path.exists(dir):
+        os.makedirs(dir)

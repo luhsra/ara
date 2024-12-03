@@ -44,6 +44,8 @@ import zephyr # irx.zephyr (in future: generated)
 import ara.os.zephyr_adapters as za
 from ara.os.zephyr_adapters import ThreadContext
 
+from ara.graph.mix import CFType
+
 
 logger = get_logger("Zephyr")
 ValueAnalyzer = get_native_component("ValueAnalyzer")
@@ -663,7 +665,7 @@ class Zephyr(OSBase):
             raise RuntimeError("First starting thread not found")
 
 
-        # threads = [(v, obj) for v, obj in instances.get(Thread) if obj.start_in_init]
+        threads = [(v, obj) for v, obj in instances.get(Thread) if obj.start_in_init and not obj.artificial]
 
 
         entry_abb = cfg.get_entry_abb(prio_thread.function)
@@ -680,12 +682,9 @@ class Zephyr(OSBase):
                 abb=entry_abb,
                 call_path=CallPath(),
                 exec_state=ExecState.from_abbtype(cfg.vp.type[entry_abb]),
-                analysis_context=za.ZephyrCPUAnalysisContext(),
+                analysis_context=za.ZephyrCPUAnalysisContext(), # current=prio_vert
             )
         ]
-
-        # cpu = state.cpus[self.cpu_id]
-        # cpu.analysis_context = ZephyrCPUAnalysisContext()
 
         running_tasks.append(prio_thread)
 
@@ -693,7 +692,7 @@ class Zephyr(OSBase):
         #     f"Initial: Choose {instances.vp.obj[instances.vertex(prio_vert)]} for CPU {cpu_id}."
         # )
 
-        logger.debug(f"CFG: {cfg}")
+        # logger.debug(f"CFG: {cfg}")
 
         state = OSState(cpus=CPUList(cpus), instances=instances, cfg=cfg)
 
@@ -711,15 +710,28 @@ class Zephyr(OSBase):
             # z_thread_entry = cfg.get_function_by_name("__ara_mock_z_thread_entry") # "z_thread_entry"
             # entry = obj.z_thread_entry
             entry = obj.function
+            skip = True
+            edges = cfg.vertex(entry).out_edges()
+            for e in edges:
+                is_entry = cfg.ep.is_entry[e]
+                f2a = cfg.ep.type[e] == CFType.f2a
+                if is_entry and f2a:
+                    skip = False
+            if skip:
+                continue
             abb = cfg.get_entry_abb(entry)
             # if cfg.has_abbs(entry):
             #     abb = cfg.get_entry_abb(entry)
 
-            logger.debug(f"instances: cpu_id:{v} obj:{obj}")
-            logger.debug(f"instances: function:{obj.function}")
+            # logger.debug(f"instances: cpu_id:{v} obj:{obj}")
+            # logger.debug(f"instances: function:{obj.function}")
             prio = obj.priority
 
+            thread_state = za.ThreadStateAdapter._THREAD_QUEUED
             status = TaskStatus.ready
+            if obj.delay != 0:
+                thread_state = za.ThreadStateAdapter._THREAD_PRESTART
+                status = TaskStatus.terminated
 
             state.context[obj] = ThreadContext(
                 status=status,
@@ -727,13 +739,15 @@ class Zephyr(OSBase):
                 call_path=CallPath(),
                 dyn_prio=[prio],
                 # thread_state=za.ThreadStateAdapter(0)
-                preempt=(prio & 0x00FF) | ((0 << 8) & 0xFF00)
+                preempt=(prio & 0x00FF) | ((0 << 8) & 0xFF00),
+                thread_state=thread_state,
             )
 
             if obj.artificial:
                 continue
-
-            kernel.ready_q.append(v)
+            
+            if obj.delay == 0:
+                kernel.ready_q.append(v)
 
             obj.cpu_id = 0 # put everything on the first cpu
 
@@ -773,9 +787,6 @@ class Zephyr(OSBase):
                 max_msgs=obj.max_msgs,
             )
 
-        Zephyr.debug_print_threads(state)
-
-
         for v, obj in instances.get(Timer):
             state.context[obj] = za.TimerContext(
                 obj.expiry_fn,
@@ -785,6 +796,7 @@ class Zephyr(OSBase):
         za.InterpreterContext.Zephyr = Zephyr
         za.InterpreterContext.config = Zephyr.config
 
+        # Zephyr.debug_print_threads(state)
 
         # TODO add ISR for timeout list
         # Zephyr.create_instance(cfg, state, cpu_id, va, "ISR", instance, args.symbol, "sys_clock_announce")
@@ -835,6 +847,7 @@ class Zephyr(OSBase):
 
         if Zephyr.syscall_in_category(syscall, categories):
             logger.info(f"Interpreting syscall: {syscall_name}")
+            za.InterpreterContext.set_last_state_id(state.id)
             new_states = syscall(graph, state, cpu_id)
             if isinstance(new_states, Iterable):
                 return new_states
@@ -850,11 +863,11 @@ class Zephyr(OSBase):
         if cpus is None:
             cpus = [cpu.id for cpu in state.cpus]
 
-        logger.debug(f"Scheduling state {state} on CPUs: {cpus}")
+        # logger.debug(f"Scheduling state {state} on CPUs: {cpus}")
         # logger.warn(f"state: {state}")
         # logger.warn(f"context: {state.context}")
 
-        Zephyr.debug_print_threads(state)
+        # Zephyr.debug_print_threads(state)
 
         kernel = Zephyr.get_kernel_context(state)
 
@@ -880,23 +893,23 @@ class Zephyr(OSBase):
 
         new_vertex = kernel.cache # todo use _current instead of cache
 
-        for cpu_id in cpus:
-            cpu_ctx = state.cpus[cpu_id].analysis_context
-            if cpu_ctx:
-                logger.debug(f"cpu {cpu_id}: interpreter _kernel.cpus[{cpu_id}].current ->"
-                             f" {cpu_ctx.current}")
+        # for cpu_id in cpus:
+        #     cpu_ctx = state.cpus[cpu_id].analysis_context
+        #     if cpu_ctx:
+        #         logger.debug(f"cpu {cpu_id}: interpreter _kernel.cpus[{cpu_id}].current ->"
+        #                      f" {cpu_ctx.current}")
 
         for cpu in filter(lambda cpu: cpu.id in cpus, state.cpus):
-            logger.warning(f"cpu.id: {cpu.id}")
+            # logger.debug(f"cpu.id: {cpu.id}")
 
             assert cpu.id == 0 # only support one cpu
 
-            # if the idle thread is active (new_vertex = idle_thread) -> activate next timeout in queue
-            if new_vertex == Zephyr.idle_threads[cpu.id]:
-                logger.debug("no threads in ready list -> fire timeout")
+            # # if the idle thread is active (new_vertex = idle_thread) -> activate next timeout in queue
+            # if new_vertex == Zephyr.idle_threads[cpu.id]:
+            #     logger.warning("no threads in ready list -> fire timeout")
 
-                if len(kernel.timeout_list) > 0:
-                    logger.debug("found queued timeout")
+            #     if len(kernel.timeout_list) > 0:
+            #         logger.debug("found queued timeout")
 
             new_vertex = state.instances.vertex(new_vertex)
             new_label = state.instances.vp.label[new_vertex]
@@ -904,8 +917,8 @@ class Zephyr(OSBase):
             new_entry_name = new_obj.entry_name
             new_ctx = state.context[new_obj]
 
-            if isinstance(new_obj, ISR):
-                print("ISR", new_obj)
+            # if isinstance(new_obj, ISR):
+                # print("ISR", new_obj)
 
             # not coming from idle
             if cpu.control_instance:
@@ -953,13 +966,15 @@ class Zephyr(OSBase):
 
                 cpu.control_instance = state.instances.vertex(new_vertex)
                 cpu.exec_state = ExecState.from_abbtype(state.cfg.vp.type[cpu.abb])
+
+                # cpu.analysis_context.current = cpu.control_instance
             else:
                 cpu.abb = None
                 cpu.call_path = CallPath()
                 cpu.control_instance = None
                 cpu.exec_state = ExecState.idle
 
-        Zephyr.debug_print_threads(state)
+        # Zephyr.debug_print_threads(state)
 
 
     @staticmethod
@@ -986,12 +1001,13 @@ class Zephyr(OSBase):
         old_obj = state.instances.vp.obj[v]
 
         if isinstance(old_obj, ISR):
-            #new_vertex = kernel.ready_q[0] # probably better to store this information in the ISR context instead of guessing here
-            # ISR could change the ready queue, but for cooperative it should resume the interrupted thread
-
             # handle user defined ISR
 
-            new_vertex = cpu.analysis_context.interrupted_thread
+            # ISR could change the ready queue, but for cooperative it should resume the interrupted thread
+            new_vertex = kernel.ready_q[0] # probably better to store this information in the ISR context instead of guessing here
+            new_obj = cpu.analysis_context.interrupted_thread
+            if new_obj:
+                new_vertex = state.instances.get_node(new_obj)
             new_obj = state.instances.vp.obj[new_vertex]
             old_ctx: za.ISRContext = state.cur_context(cpu_id)
 
@@ -1487,7 +1503,8 @@ class Zephyr(OSBase):
 
         if Zephyr.enable_sse:
             ic = za.InterpreterContext(Zephyr.irx, state, cpu_id)
-            ic.run_function_with_arch_swap("z_impl_k_sleep", [args.ms], ['APInt64'])
+            timeout = za.to_timeout_value(args.timeout)
+            ic.run_function_with_arch_swap("z_impl_k_sleep", [timeout], ['APInt64'])
 
         add_self_edge(state, cpu_id, "k_sleep", ty=ZephyrEdgeType.interaction)
         return state
@@ -1530,7 +1547,10 @@ class Zephyr(OSBase):
             # CONFIG_TIMEOUT_64BIT, todo fix k_timeout_t, load into struct, but llvm is i64
             # TODO: check the function signature in ir code, and remove the args_hints
             # irm.set_print_llvmir(True)
-            ic.zi.run_function("z_impl_k_sleep", [args.ms], ['APInt64'])
+
+            ms = za.to_timeout_value(args.ms)
+
+            ic.zi.run_function("z_impl_k_sleep", [ms], ['APInt64'])
 
             # arm kernel / non native_sim
             # if irm.getCurrentCallFunctionName() == "elapsed":
@@ -1544,7 +1564,7 @@ class Zephyr(OSBase):
 
             ic.update()
 
-        Zephyr.debug_print_threads(state, ic)
+        # Zephyr.debug_print_threads(state, ic)
 
 
         add_self_edge(state, cpu_id, "k_msleep", ty=ZephyrEdgeType.interaction)
@@ -1571,14 +1591,29 @@ class Zephyr(OSBase):
 
         add_self_edge(state, cpu_id, "k_busy_wait", ty=ZephyrEdgeType.interaction)
         return state
+    
+    @staticmethod
+    @syscall(categories={SyscallCategory.comm},
+             signature=(Arg("symbol", hint=SigType.instance, ty=Thread),))
+    def k_thread_start(graph, state, cpu_id, args, va):
+        state = state.copy()
+
+        if Zephyr.enable_sse:
+            ic = za.InterpreterContext(Zephyr.irx, state, cpu_id)
+            thread = ic.thread_sym_2_ptr(args.symbol)
+            ic.run_function_with_arch_swap("z_impl_k_thread_start", [thread.ptr], ['PTR'])
+
+        add_self_edge(state, cpu_id, "k_thread_start", ty=ZephyrEdgeType.interaction)
+        return state
 
     # void k_yield(void)
     @syscall(categories={SyscallCategory.comm})
     def k_yield(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ic = za.InterpreterContext(Zephyr.irx, state, cpu_id)
-        ic.run_function_with_arch_swap("z_impl_k_yield", [], [])
+        if Zephyr.enable_sse:
+            ic = za.InterpreterContext(Zephyr.irx, state, cpu_id)
+            ic.run_function_with_arch_swap("z_impl_k_yield", [], [])
 
         add_self_edge(state, cpu_id, "k_yield", ty=ZephyrEdgeType.interaction)
         return state
@@ -1645,6 +1680,9 @@ class Zephyr(OSBase):
     def k_sched_lock(graph, state, cpu_id, args, va):
         state = state.copy()
 
+        ic = za.InterpreterContext(Zephyr.irx, state, cpu_id)
+        ic.run_function_with_arch_swap("k_sched_lock", [], [])
+
         Zephyr.add_kernel_comm(state, cpu_id, "k_sched_lock")
         return state
 
@@ -1652,6 +1690,9 @@ class Zephyr(OSBase):
     @syscall(categories={SyscallCategory.comm})
     def k_sched_unlock(graph, state, cpu_id, args, va):
         state = state.copy()
+
+        ic = za.InterpreterContext(Zephyr.irx, state, cpu_id)
+        ic.run_function_with_arch_swap("k_sched_unlock", [], [])
 
         Zephyr.add_kernel_comm(state, cpu_id, "k_sched_unlock")
         return state
@@ -1822,13 +1863,14 @@ class Zephyr(OSBase):
     def k_mutex_lock(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ic = za.InterpreterContext(Zephyr.irx, state, cpu_id)
-        timeout = za.to_timeout_value(args.timeout)
-        v = state.instances.get_node(args.symbol)
-        kobj_mutex = ic.get_kobj_from_vertex(v)
-        # ic.zi.irm.set_print_llvmir(True)
-        ic.run_function_with_arch_swap("z_impl_k_mutex_lock", [kobj_mutex.ptr, timeout], ['PTR', 'APInt64'])
-        # ic.zi.irm.set_print_llvmir(False)
+        if Zephyr.enable_sse:
+            ic = za.InterpreterContext(Zephyr.irx, state, cpu_id)
+            timeout = za.to_timeout_value(args.timeout)
+            v = state.instances.get_node(args.symbol)
+            kobj_mutex = ic.get_kobj_from_vertex(v)
+            # ic.zi.irm.set_print_llvmir(True)
+            ic.run_function_with_arch_swap("z_impl_k_mutex_lock", [kobj_mutex.ptr, timeout], ['PTR', 'APInt64'])
+            # ic.zi.irm.set_print_llvmir(False)
 
         Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_mutex_lock", "Mutex")
         return state
@@ -1840,10 +1882,11 @@ class Zephyr(OSBase):
     def k_mutex_unlock(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ic = za.InterpreterContext(Zephyr.irx, state, cpu_id)
-        v = state.instances.get_node(args.symbol)
-        kobj_mutex = ic.get_kobj_from_vertex(v)
-        ic.run_function_with_arch_swap("z_impl_k_mutex_unlock", [kobj_mutex.ptr], ['PTR'])
+        if Zephyr.enable_sse:
+            ic = za.InterpreterContext(Zephyr.irx, state, cpu_id)
+            v = state.instances.get_node(args.symbol)
+            kobj_mutex = ic.get_kobj_from_vertex(v)
+            ic.run_function_with_arch_swap("z_impl_k_mutex_unlock", [kobj_mutex.ptr], ['PTR'])
 
         Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_mutex_unlock", "Mutex")
         return state
@@ -2174,12 +2217,13 @@ class Zephyr(OSBase):
     def k_msgq_put(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ic = za.InterpreterContext(Zephyr.irx, state, cpu_id)
-        timeout = za.to_timeout_value(args.timeout)
-        v = state.instances.get_node(args.symbol)
-        kobj_msgq = ic.get_kobj_from_vertex(v)
-        ic.zi.irm.skip(["memcpy"])
-        ic.run_function_with_arch_swap("z_impl_k_msgq_put", [kobj_msgq.ptr, 0x00, timeout], ['PTR', 'PTR', 'APInt64'])
+        if Zephyr.enable_sse:
+            ic = za.InterpreterContext(Zephyr.irx, state, cpu_id)
+            timeout = za.to_timeout_value(args.timeout)
+            v = state.instances.get_node(args.symbol)
+            kobj_msgq = ic.get_kobj_from_vertex(v)
+            ic.zi.irm.skip(["memcpy"])
+            ic.run_function_with_arch_swap("z_impl_k_msgq_put", [kobj_msgq.ptr, 0x00, timeout], ['PTR', 'PTR', 'APInt64'])
 
         Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_msgq_put", "MSGQ")
         return state
@@ -2191,6 +2235,14 @@ class Zephyr(OSBase):
                         Arg("timeout", hint=SigType.value)))
     def k_msgq_get(graph, state, cpu_id, args, va):
         state = state.copy()
+
+        if Zephyr.enable_sse:
+            ic = za.InterpreterContext(Zephyr.irx, state, cpu_id)
+            timeout = za.to_timeout_value(args.timeout)
+            v = state.instances.get_node(args.symbol)
+            kobj_msgq = ic.get_kobj_from_vertex(v)
+            ic.zi.irm.skip(["memcpy"])
+            ic.run_function_with_arch_swap("z_impl_k_msgq_get", [kobj_msgq.ptr, 0x00, timeout], ['PTR', 'PTR', 'APInt64'])
 
         Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_msgq_get", "MSGQ")
         return state
@@ -2210,6 +2262,12 @@ class Zephyr(OSBase):
              signature=(Arg("symbol", hint=SigType.instance, ty=MSGQ),))
     def k_msgq_purge(graph, state, cpu_id, args, va):
         state = state.copy()
+
+        if Zephyr.enable_sse:
+            ic = za.InterpreterContext(Zephyr.irx, state, cpu_id)
+            v = state.instances.get_node(args.symbol)
+            kobj_msgq = ic.get_kobj_from_vertex(v)
+            ic.run_function_with_arch_swap("z_impl_k_msgq_purge", [kobj_msgq.ptr], ['PTR'])
 
         Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_msgq_purge", "MSGQ")
         return state
@@ -2337,12 +2395,14 @@ class Zephyr(OSBase):
         state = state.copy()
         cfg = graph.cfg
 
+        # FIXME: value analyzer fails to get a value for args.period of the type %struct.k_timeout_t { u64 } = K_NO_WAIT
+
         timer = state.context[args.symbol.value]
         v = state.instances.get_node(args.symbol.value)
         
-        timer.period = int(args.period)
+        timer.period = za.to_timeout_value(args.period)
         timer.status = 0
-        timer.timeout = za.Timeout(v, 'z_timer_expiration_handler', int(args.duration))
+        timer.timeout = za.Timeout(v, 'z_timer_expiration_handler', za.to_timeout_value(args.duration))
 
         kernel = Zephyr.get_kernel_context(state)
         kernel.timeout_list.append(timer.timeout)
@@ -2381,9 +2441,10 @@ class Zephyr(OSBase):
         if irq.name == 'sys_clock_announce':
             kernel = Zephyr.get_kernel_context(state)
             # currently: only the top most timeout triggers
-            for to in kernel.timeout_list: # since we dont have any time infomrmation we could trigger all "combinartions" and return an array
+            for to in kernel.timeout_list: # since we dont have any time infomrmation we could trigger all "combinations" and return an array
                 # TODO seperate timer and system sleep
                 state = root_state.copy()
+                interrupted_thread = state.cur_control_inst(cpu_id)
                 callback_fn_name = za.InterpreterContext.sys_clock_announce(Zephyr.irx, state, cpu_id, to) # TODO it is better to handle this in handle_exit since we can return multiple states
                 if callback_fn_name != None: # handle apllication callback ISR
                     cpu = state.cpus[cpu_id]
@@ -2414,7 +2475,9 @@ class Zephyr(OSBase):
                     cpu.control_instance = state.instances.vertex(new_vertex)
                     cpu.exec_state = ExecState.from_abbtype(state.cfg.vp.type[cpu.abb])
                     cpu.analysis_context.nested += 1
-                    cpu.analysis_context.interrupted_thread = state.cur_control_inst(cpu_id)
+                    # cpu.analysis_context.interrupted_thread = state.cur_control_inst(cpu_id)
+                    if isinstance(interrupted_thread, Thread):
+                        cpu.analysis_context.interrupted_thread = interrupted_thread
                     cpu.irq_on = False
 
                     kernel = Zephyr.get_kernel_context(state)

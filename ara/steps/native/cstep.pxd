@@ -126,3 +126,7 @@ cdef extern from "zephyr_static.h" namespace "ara::step":
 cdef extern from "zephyr_thread_entry.h" namespace "ara::step":
     cdef cppclass ZephyrThreadEntry:
         pass
+
+cdef extern from "merge_structs.h" namespace "ara::step":
+    cdef cppclass MergeStructs:
+        pass

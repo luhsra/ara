@@ -19,8 +19,10 @@ from ara.generator.Generator import Generator as GenImpl
 
 from ara.os.freertos import FreeRTOS
 from ara.os.autosar import AUTOSAR
+from ara.os.zephyr import Zephyr
 from ara.generator.coder.freertos import FreeRTOSGenericOS
 from ara.generator.coder.autosar import AUTOSARGenericOS
+from ara.generator.coder.zephyr import ZephyrGenericOS
 
 
 
@@ -28,7 +30,8 @@ class Generator(Step):
     """Generate whole OS code based on the previous analyses."""
 
     os_choices = {FreeRTOS: FreeRTOSGenericOS,
-                  AUTOSAR:  AUTOSARGenericOS}
+                  AUTOSAR:  AUTOSARGenericOS,
+                  Zephyr:  ZephyrGenericOS}
 
     arch_choices = []
     for os in os_choices.values():
