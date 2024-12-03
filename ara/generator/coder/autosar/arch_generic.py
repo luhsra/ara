@@ -143,7 +143,7 @@ class GenericArch(BaseCoder):
         syscall_name = self.ara_graph.cfg.get_syscall_name(abb)
 
         argstypes = ["StatusType*"]
-        args = ["&result"]
+        args = ["p_result"]
         signature = self.generator.syscall_rules.AUTOSAR_SYSCALLS[syscall_name]
         if len(signature) > 2:  # additional pointer argument
             argstypes += ["void*"]

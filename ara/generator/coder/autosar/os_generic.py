@@ -37,6 +37,7 @@ class GenericOS(BaseCoder):
                                                        syscall_name][0]
         if ret_type != "void":
             userspace.add(Statement("StatusType result = E_OK"))
+            userspace.add(Statement("StatusType *p_result = &result"))
 
         kernelspace = self.arch_rules.generate_kernelspace(
             userspace, abb, args)
