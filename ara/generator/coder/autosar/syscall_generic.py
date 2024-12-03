@@ -236,7 +236,7 @@ class GenericSystemCalls(BaseCoder):
             
         )
         self.call(ifblock, "Dispatcher::ResumeToTask", "void",
-                    [self.generator.syscall_rules.task_desc(task)])
+                    [self.generator.syscall_rules.task_desc(curr_task)])
 
         kernelspace.add(ifblock)
         
