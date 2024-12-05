@@ -235,8 +235,11 @@ class GenericSystemCalls(BaseCoder):
             "*p_result == E_OS_LIMIT"
             
         )
-        self.call(ifblock, "Dispatcher::ResumeToTask", "void",
-                    [self.generator.syscall_rules.task_desc(curr_task)])
+        if not userspace.is_isr:
+            self.call(ifblock, "Dispatcher::ResumeToTask", "void",
+                        [self.generator.syscall_rules.task_desc(curr_task)])
+        else:
+            ifblock.add(Statement("return result"))
 
         kernelspace.add(ifblock)
         
