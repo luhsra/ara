@@ -51,6 +51,7 @@
  */
 
 // How long the software scheduler takes at least, before starting the next round of runnables
+// Needs to match cycletime inside system.json alarm!
 const unsigned SCHEDUL_INTERVAL = 1000; //um -> 1000us = 1ms
 
 // 10 activation periods, which gets grouped into a task each. From 1ms to 1000ms

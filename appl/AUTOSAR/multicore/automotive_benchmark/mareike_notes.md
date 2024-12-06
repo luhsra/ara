@@ -31,6 +31,10 @@ ara/ara/setps/printer.py convertieren von Graphstrukturen
 (! alles in /build ordner) Ara wird in Steps ausgeführt, auflistbar mit `/usr/bin/python3 subprojects/ara/ara.py -l`, welche wird festgelegt durch .json file. Example here:
 ```bash
 /usr/bin/python3 subprojects/ara/ara.py subprojects/ara/appl/AUTOSAR/autosar_multicore_automotive_benchmark_hello_world_auto.pi4.ll --os AUTOSAR --oilfile ../subprojects/ara/appl/AUTOSAR/multicore/automotive_benchmark/hello_world/auto_system.json --step-settings ../subprojects/ara/appl/AUTOSAR/multicore/automotive_benchmark/hello_world/custom_ara_config_testing.json
+
+# another example
+/usr/bin/python3 subprojects/ara/ara.py subprojects/ara/appl/AUTOSAR/autosar_multicore_automotive_benchmark_testsuit_runnables_BASIC.pi4.ll --os AUTOSAR --oilfile ../subprojects/ara/appl/AUTOSAR/multicore/automotive_benchmark/testsuit/runnables_system.json --ir_output subprojects/ara/appl/AUTOSAR/autosar_multicore_automotive_benchmark_testsuit_runnables_BASIC_noopt_mod.pi4.ll --step-settings ../subprojects/ara/appl/AUTOSAR/multicore/automotive_benchmark/custom_ara_config_testing.json --generator_output subprojects/ara/appl/AUTOSAR/autosar_multicore_automotive_benchmark_testsuit_runnables_BASIC_noopt_autosar.pi4.cc
+
 ```
 list of steps + properties of each step, enable logging or dumping to `build/dump`. \
 "DumpCFG", "DumpCallgraph", "DumpInstances".

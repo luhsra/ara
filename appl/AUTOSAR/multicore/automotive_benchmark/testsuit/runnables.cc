@@ -3,7 +3,8 @@
 #include "arch/arm/platforms/raspberry/perf.cc"
 #include "parameters.h"
 
-DeclareTask(SCHED1);
+DeclareTask(INIT);
+DeclareTask(SCHED);
 DeclareTask(MS1);
 DeclareTask(MS2);
 DeclareTask(MS5);
@@ -26,83 +27,129 @@ TEST_MAKE_OS_MAIN(StartOS(0))
  ******************** SCHEDULER ********************
  startup + control Task, lowest scheduling priority
  */
-
-TASK(SCHED1) {
+// small init task
+TASK(INIT) {
 	arch::Perf::start();
 
 	kout << "\nRunnables Testcase" << endl;
 	kout_run_info();
 
-	#ifndef QEMU
-	micro_sec_wait(3000000);
-	#endif
+	TerminateTask();	
+}
 
-	uint32_t start_cycle, end_cycle;
-	bool in_time;
+unsigned cycle = 0;
 
-	for (unsigned cycle= 0; cycle < CYCLES; cycle++) {
+StatusType res;
+unsigned blocked_counter[NR_TASKS] = {0};
 
-		start_cycle = arch::Perf::get_cycles();
+// main scheduler
+TASK(SCHED) {
 
-		if (cycle% RUNABLES_PERIOD[MS1_id] == 0) {
-			ActivateTask(MS1);
-		}
-		if (cycle% RUNABLES_PERIOD[MS2_id] == 0) {
-			ActivateTask(MS2);
-		}
-		if (cycle% RUNABLES_PERIOD[MS5_id] == 0) {
-			ActivateTask(MS5);
-		}
-		if (cycle% RUNABLES_PERIOD[MS10_id] == 0) {
-			ActivateTask(MS10);
-		}
-		if (cycle% RUNABLES_PERIOD[MS20_id] == 0) {
-			ActivateTask(MS20);
-		}
-		if (cycle% RUNABLES_PERIOD[MS50_id] == 0) {
-			ActivateTask(MS50);
-		}
-		if (cycle% RUNABLES_PERIOD[MS100_id] == 0) {
-			ActivateTask(MS100);
-		}
-		if (cycle% RUNABLES_PERIOD[MS200_id] == 0) {
-			ActivateTask(MS200);
-		}
-		if (cycle% RUNABLES_PERIOD[MS1000_id] == 0) {
-			ActivateTask(MS1000);
-		}
-		if (cycle% RUNABLES_PERIOD[MSANGLE_id] == 0) {
-			ActivateTask(MSANGLE);
-		}
 
-		end_cycle = arch::Perf::get_cycles();
+    cycle++;
+    if (cycle > CYCLES) {
+        
+		kout << "\n*******************" << endl;
+		kout << "Trace Dump:" << endl;
+		test_trace_dump();
 
-		in_time = micro_sec_wait_upto(start_cycle, SCHEDUL_INTERVAL);
-		in_time ? test_trace('1') : test_trace('0');
-		
-		
-		// Debug help
-		
-		if (!in_time) {
-			kout << "Cycle:\t" << cycle << "\tfailed its timing!" << endl;
+		kout_task_data();
+
+		kout << "\n" << endl;
+ 		for (unsigned i = 0; i < NR_TASKS; i++) {
+			kout << taskStrings[i] << "\tblocked: " << blocked_counter[i] << "\tof #runs: " << CYCLES / RUNABLES_PERIOD[i] << endl;
 		}
-		
-		/*
-		kout << "Max_time: " << SCHEDUL_INTERVAL * WAIT_FREQUENCE << "\tused: " << end_cycle - start_cycle << endl;	
-		kout << "start_cycle: " << start_cycle << "\tend_cycle: " << end_cycle << endl;	
-		kout << "Cycle Nr:\t" << cycle << "\tIn time? " << in_time << "\n" << endl;
-		*/
+		kout << "\n" << endl;
+		#ifndef QEMU
+			// to better see results on PI wait at the end before rebooting
+			micro_sec_wait(5000000);
+		#endif
+
+		test_finish();
+		ShutdownMachine();
+    }
+
+    kout << "\nSchedule round:" << cycle << endl;
+
+	if (cycle % RUNABLES_PERIOD[MS1_id] == 0) {
+		res = ActivateTask(MS1);
+		if (res == StatusType::E_OS_LIMIT) {
+			kout << taskStrings[MS1_id] << " still runnning!" << endl;
+			blocked_counter[MS1_id]++;
+		}
 	}
+	if (cycle % RUNABLES_PERIOD[MS2_id] == 0) {
+		res = ActivateTask(MS2);
+		if (res == StatusType::E_OS_LIMIT) {
+			kout << taskStrings[MS2_id] << " still runnning!" << endl;
+			blocked_counter[MS2_id]++;
+		}
+	}
+	if (cycle % RUNABLES_PERIOD[MS5_id] == 0) {
+		res = ActivateTask(MS5);
+		if (res == StatusType::E_OS_LIMIT) {
+			kout << taskStrings[MS5_id] << " still runnning!" << endl;
+			blocked_counter[MS5_id]++;
+		}
+	}
+	if (cycle % RUNABLES_PERIOD[MS10_id] == 0) {
+		res = ActivateTask(MS10);
+		if (res == StatusType::E_OS_LIMIT) {
+			kout << taskStrings[MS10_id] << " still runnning!" << endl;
+			blocked_counter[MS10_id]++;
+		}
+	}
+	if (cycle % RUNABLES_PERIOD[MS20_id] == 0) {
+		res = ActivateTask(MS20);
+		if (res == StatusType::E_OS_LIMIT) {
+			kout << taskStrings[MS20_id] << " still runnning!" << endl;
+			blocked_counter[MS20_id]++;
+		}
+	}
+	if (cycle % RUNABLES_PERIOD[MS50_id] == 0) {
+		res = ActivateTask(MS50);
+		if (res == StatusType::E_OS_LIMIT) {
+			kout << taskStrings[MS50_id] << " still runnning!" << endl;
+			blocked_counter[MS50_id]++;
+		}
+	}
+	/*
+	if (cycle % RUNABLES_PERIOD[MS100_id] == 0) {
+		res = ActivateTask(MS100);
+		if (res == StatusType::E_OS_LIMIT) {
+			kout << taskStrings[MS100_id] << " still runnning!" << endl;
+			blocked_counter[MS100_id]++;
+		}
+	}
+	if (cycle % RUNABLES_PERIOD[MS200_id] == 0) {
+		res = ActivateTask(MS200);
+		if (res == StatusType::E_OS_LIMIT) {
+			kout << taskStrings[MS200_id] << " still runnning!" << endl;
+			blocked_counter[MS200_id]++;
+		}
+	}
+	if (cycle % RUNABLES_PERIOD[MS1000_id] == 0) {
+		res = ActivateTask(MS1000);
+		if (res == StatusType::E_OS_LIMIT) {
+			kout << taskStrings[MS1000_id] << " still runnning!" << endl;
+			blocked_counter[MS1000_id]++;
+		}
+	}
+	if (cycle % RUNABLES_PERIOD[MSANGLE_id] == 0) {
+		res = ActivateTask(MSANGLE);
+		if (res == StatusType::E_OS_LIMIT) {
+			kout << taskStrings[MSANGLE_id] << " still runnning!" << endl;
+			blocked_counter[MSANGLE_id]++;
+		}
+	}*/
 
 	TerminateTask();
 }
-
 
 /**
  ******************** Tasks ********************
  */
 void workTask(task_id task) {
-
 	micro_sec_wait((NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[task] * TIME_PER_RUNNABLE[task]);
 }
 
@@ -155,24 +202,4 @@ TASK(MSANGLE) {
 	workTask(MSANGLE_id);
 	//test_trace('G');
 	TerminateTask();
-}
-
-void PreIdleHook() {
-
-    kout << "\n*******************" << endl;
-	kout << "Trace Dump:" << endl;
-	test_trace_dump();
-
-	kout_task_data();
-	
-	kout << "\n\nFrom: " << CYCLES << " Cycles are:" << endl;
-	kout << "\t# in Time: " << count_trace('1') << "\t\t| Failed: " << count_trace('0') << "\n" << endl;
-#ifndef QEMU
-	// to better see results on PI wait at the end before rebooting
-	micro_sec_wait(5000000);
-#endif
-
-	test_finish();
-	ShutdownMachine();
-
 }
