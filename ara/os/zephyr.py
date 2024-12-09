@@ -107,6 +107,8 @@ class ZephyrKernel(ZephyrInstance):
 class ZephyrIRQ(IRQ):
     symbol: object = None
 
+    wanted_attrs = ["symbol"]
+
 
 @dataclass
 class Timer(ZephyrInstance):
