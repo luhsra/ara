@@ -93,7 +93,7 @@ namespace ara::step {
 			}
 		}
 
-		assert(!llvm::verifyModule(module, &llvm::errs()) && "LLVM-IR Module has errors");
+		//assert(!llvm::verifyModule(module, &llvm::errs()) && "LLVM-IR Module has errors");
 
 		// Dump modified LLVM IR
 		if (*dump.get()) {

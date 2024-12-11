@@ -56,7 +56,7 @@ class ZephyrInterpreter:
              os.path.join(llvmir_dirpath, f"{name}.ll"), # application + thread definitions
              kernel_ll, # load the full kernel code
         ]
-        build_native_sym = 'CONFIG_BOARD' in self.config and self.config['CONFIG_BOARD'] == 'native_sim' or True # force
+        build_native_sym = 'CONFIG_BOARD' in self.config and self.config['CONFIG_BOARD'] == 'native_sim' or self.force_native_sim
         if build_native_sym:
             paths += [try_find_file([
                 'subprojects/ara/subprojects/irx/native_runner/runner.ll',

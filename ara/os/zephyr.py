@@ -431,7 +431,7 @@ class Zephyr(OSBase):
 
     @staticmethod
     def get_special_steps():
-        return ["ZephyrStaticPost", "LoadKernelLL"]
+        return ["ZephyrStaticPost"] # "LoadKernelLL" not required for INA/SIA
 
     @staticmethod
     def has_dynamic_instances():
@@ -1682,8 +1682,9 @@ class Zephyr(OSBase):
     def k_sched_lock(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ic = za.InterpreterContext(Zephyr.irx, state, cpu_id)
-        ic.run_function_with_arch_swap("k_sched_lock", [], [])
+        if Zephyr.enable_sse:
+            ic = za.InterpreterContext(Zephyr.irx, state, cpu_id)
+            ic.run_function_with_arch_swap("k_sched_lock", [], [])
 
         Zephyr.add_kernel_comm(state, cpu_id, "k_sched_lock")
         return state
@@ -1693,8 +1694,9 @@ class Zephyr(OSBase):
     def k_sched_unlock(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        ic = za.InterpreterContext(Zephyr.irx, state, cpu_id)
-        ic.run_function_with_arch_swap("k_sched_unlock", [], [])
+        if Zephyr.enable_sse:
+            ic = za.InterpreterContext(Zephyr.irx, state, cpu_id)
+            ic.run_function_with_arch_swap("k_sched_unlock", [], [])
 
         Zephyr.add_kernel_comm(state, cpu_id, "k_sched_unlock")
         return state
@@ -2356,7 +2358,7 @@ class Zephyr(OSBase):
 
         cur = state.cpus[cpu_id].control_instance
         connect_from_here(
-            state, cpu_id, cur, "k_thread_abort", ty=Zephyr.InstanceEdge.terminate
+            state, cpu_id, cur, "k_thread_abort", ty=ZephyrEdgeType.interaction
         )
         return state
 
