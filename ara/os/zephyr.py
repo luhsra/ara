@@ -2400,16 +2400,16 @@ class Zephyr(OSBase):
         cfg = graph.cfg
 
         # FIXME: value analyzer fails to get a value for args.period of the type %struct.k_timeout_t { u64 } = K_NO_WAIT
+        if Zephyr.enable_sse:
+            timer = state.context[args.symbol.value]
+            v = state.instances.get_node(args.symbol.value)
 
-        timer = state.context[args.symbol.value]
-        v = state.instances.get_node(args.symbol.value)
-        
-        timer.period = za.to_timeout_value(args.period)
-        timer.status = 0
-        timer.timeout = za.Timeout(v, 'z_timer_expiration_handler', za.to_timeout_value(args.duration))
+            timer.period = za.to_timeout_value(args.period)
+            timer.status = 0
+            timer.timeout = za.Timeout(v, 'z_timer_expiration_handler', za.to_timeout_value(args.duration))
 
-        kernel = Zephyr.get_kernel_context(state)
-        kernel.timeout_list.append(timer.timeout)
+            kernel = Zephyr.get_kernel_context(state)
+            kernel.timeout_list.append(timer.timeout)
 
         Zephyr.add_instance_comm(state, cpu_id, args.symbol, "z_impl_k_timer_start", "Timer")
         return state
