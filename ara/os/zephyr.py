@@ -431,7 +431,7 @@ class Zephyr(OSBase):
 
     @staticmethod
     def get_special_steps():
-        return ["ZephyrStaticPost"] # "LoadKernelLL" not required for INA/SIA
+        return ["ZephyrStaticPost"] # "LoadKernelLL" not required for INA/SIA, enable via config
 
     @staticmethod
     def has_dynamic_instances():
@@ -645,23 +645,15 @@ class Zephyr(OSBase):
 
         prio_vert, prio_thread = None, None
 
-        if Zephyr.config['CONFIG_SCHED_DUMB']:
-            # start with main thread, because it is the first one spawnig
-            threads = [x for x in filter(lambda t: t[1].delay == 0, all_threads)]
-            threads.sort(key=lambda t: int(t[1].entry_name != "main")) # move main to front
-            threads.sort(key=lambda t: t[1].priority)
-            
-            prio_vert, prio_thread = threads[0]
-            # ready_q_iter = ready_q_dumb_iter() # no need for special iterators, as kernel will decide (restores sorting on requeue)
-        elif Zephyr.config['CONFIG_SCHED_SCALABLE']:
-            raise NotImplementedError
-        elif Zephyr.config['CONFIG_SCHED_MULTIQ']:
-            # ready_q_iter = ready_q_multiq_iter() # no need for special iterators, as kernel will decide (restores sorting on requeue)
-            raise NotImplementedError
-        else:
-            prio_vert, prio_thread = max(threads, key=lambda t: t[1].priority)
-            # raise RuntimeError("no scheduler configured")
-            logger.warning("no scheduler configured in kconfig")
+        if not 'CONFIG_SCHED_DUMB' in Zephyr.config:
+            logger.warning("CONFIG_SCHED_DUMB not set. SSE might be incorrect!")
+
+        # start with main thread, because it is the first one spawnig
+        threads = [x for x in filter(lambda t: t[1].delay == 0, all_threads)]
+        threads.sort(key=lambda t: int(t[1].entry_name != "main")) # move main to front
+        threads.sort(key=lambda t: t[1].priority)
+        
+        prio_vert, prio_thread = threads[0]
 
         if prio_vert == None or prio_thread == None:
             raise RuntimeError("First starting thread not found")
