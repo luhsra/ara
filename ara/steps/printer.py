@@ -59,7 +59,11 @@ def with_color(value, color, min=0.0, max=1.0):
     '''Picks a color and wraps the value in a XML tag with the color attribute'''
     return f"<font color='{remap(color, float(min), float(max))} 0.700 0.800'>\"{value}\"</font>"
 
-def _sstg_state_as_dot(sstg, state_vert):
+
+from ara.os.zephyr import Zephyr
+from ara.os.autosar import AUTOSAR
+
+def _sstg_state_as_dot(sstg, state_vert, os=AUTOSAR):
     attrs = {"fontsize": 14}
     size = 12
 
@@ -69,21 +73,18 @@ def _sstg_state_as_dot(sstg, state_vert):
     cpu = obj.cpus.one()
     thread_info = []
 
-    from ara.os.zephyr import Zephyr
-    # instances_id1 = id(obj.instances.vp.obj[obj.instances.vertex(Zephyr.kernel)])
-    # instances_id2 = id(obj.instances.vp.obj[Zephyr.kernel])
-    # print(instances_id1, instances_id2)
-    kernel_obj = obj.instances.vp.obj[Zephyr.kernel]
-    kernel = obj.context[kernel_obj]
-
+    if isinstance(os, Zephyr):
+        kernel_obj = obj.instances.vp.obj[Zephyr.kernel]
+        kernel = obj.context[kernel_obj]
+    else:
+        kernel = None
 
     if cpu.control_instance:
         instance = obj.instances.vp.label[obj.instances.vertex(cpu.control_instance)]
         #is_exit = cfg.vp.is_exit[cpu.abb]
         thread = obj.cur_control_inst(cpu.id)
 
-        # FIXME this is zephyr specific code: move it into printer_zephyr
-        if hasattr(thread, 'name'):
+        if isinstance(os, Zephyr) and hasattr(thread, 'name'):
             thread_list = [(v, obj) for v, obj in obj.instances.get(ZephyrThread)]
             thread_names = list(map(lambda x: x[1].name, thread_list))
             thread_count = len(thread_list)
@@ -153,12 +154,12 @@ def _sstg_state_as_dot(sstg, state_vert):
     return attrs
 
 
-def sstg_to_dot(sstg, label="SSTG", reduced=False):
+def sstg_to_dot(sstg, label="SSTG", reduced=False, os=AUTOSAR):
     dot_graph = pydot.Dot(graph_type="digraph", label=label)
 
     for state_vert in sstg.vertices():
         attrs = _sstg_state_as_dot(
-            sstg, state_vert
+            sstg, state_vert, os
         )
         dot_state = pydot.Node(str(state_vert), **attrs)
         dot_graph.add_node(dot_state)
@@ -771,13 +772,14 @@ class Printer(Step):
 
     def print_sstg(self, reduced=False):
         name = self._print_init()
+        os = self._graph.os
 
         if reduced:
             sstg = self._graph.reduced_sstg
         else:
             sstg = self._graph.sstg
 
-        dot_graph = sstg_to_dot(sstg, name, reduced)
+        dot_graph = sstg_to_dot(sstg, name, reduced, os)
         self._write_dot(dot_graph)
 
     def print_mstg(self):
