@@ -7,6 +7,7 @@ DeclareTask(INIT);
 DeclareTask(SCHED);
 DeclareTask(MS1);
 DeclareTask(MS2);
+/*
 DeclareTask(MS5);
 DeclareTask(MS10);
 DeclareTask(MS20);
@@ -15,7 +16,7 @@ DeclareTask(MS100);
 DeclareTask(MS200);
 DeclareTask(MS1000);
 DeclareTask(MSANGLE);
-
+*/
 TEST_MAKE_OS_MAIN(StartOS(0))
 
 /**
@@ -31,9 +32,10 @@ TEST_MAKE_OS_MAIN(StartOS(0))
 TASK(INIT) {
 	arch::Perf::start();
 
-	kout << "\nRunnables Testcase" << endl;
-	kout_run_info();
+	//kout << "\nRunnables Testcase" << endl;
+	//kout_run_info();
 
+	ara_timing_info(100, 200);
 	TerminateTask();	
 }
 
@@ -46,12 +48,15 @@ unsigned blocked_counter[NR_TASKS] = {0};
 TASK(SCHED) {
 
 
+	ara_timing_info(10, 20);
     cycle++;
     if (cycle > CYCLES) {
         
-		kout << "\n*******************" << endl;
+		kout << "\nEND" << endl;
+		// kout << "\n*******************" << endl;
+		/*
 		kout << "Trace Dump:" << endl;
-		test_trace_dump();
+		# test_trace_dump();
 
 		kout_task_data();
 
@@ -64,13 +69,14 @@ TASK(SCHED) {
 			// to better see results on PI wait at the end before rebooting
 			micro_sec_wait(5000000);
 		#endif
-
+		*/
 		test_finish();
 		ShutdownMachine();
     }
 
-    kout << "\nSchedule round:" << cycle << endl;
+    // kout << "\nSchedule round:" << cycle << endl;
 
+	ara_timing_info(100, 200);
 	if (cycle % RUNABLES_PERIOD[MS1_id] == 0) {
 		res = ActivateTask(MS1);
 		if (res == StatusType::E_OS_LIMIT) {
@@ -79,13 +85,16 @@ TASK(SCHED) {
 		}
 	}
 	if (cycle % RUNABLES_PERIOD[MS2_id] == 0) {
+		ara_timing_info(1, 2);
 		res = ActivateTask(MS2);
 		if (res == StatusType::E_OS_LIMIT) {
 			kout << taskStrings[MS2_id] << " still runnning!" << endl;
 			blocked_counter[MS2_id]++;
 		}
 	}
+	/*
 	if (cycle % RUNABLES_PERIOD[MS5_id] == 0) {
+		ara_timing_info(1, 2);
 		res = ActivateTask(MS5);
 		if (res == StatusType::E_OS_LIMIT) {
 			kout << taskStrings[MS5_id] << " still runnning!" << endl;
@@ -99,6 +108,7 @@ TASK(SCHED) {
 			blocked_counter[MS10_id]++;
 		}
 	}
+	
 	if (cycle % RUNABLES_PERIOD[MS20_id] == 0) {
 		res = ActivateTask(MS20);
 		if (res == StatusType::E_OS_LIMIT) {
@@ -113,7 +123,6 @@ TASK(SCHED) {
 			blocked_counter[MS50_id]++;
 		}
 	}
-	/*
 	if (cycle % RUNABLES_PERIOD[MS100_id] == 0) {
 		res = ActivateTask(MS100);
 		if (res == StatusType::E_OS_LIMIT) {
@@ -142,7 +151,7 @@ TASK(SCHED) {
 			blocked_counter[MSANGLE_id]++;
 		}
 	}*/
-
+	ara_timing_info(10, 202);
 	TerminateTask();
 }
 
@@ -150,56 +159,69 @@ TASK(SCHED) {
  ******************** Tasks ********************
  */
 void workTask(task_id task) {
+	ara_timing_info(1337, 1338);
 	micro_sec_wait((NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[task] * TIME_PER_RUNNABLE[task]);
 }
 
 TASK(MS1) {
+	ara_timing_info(1, 2);
 	workTask(MS1_id);
 	//test_trace('1');
 	TerminateTask();
 }
 TASK(MS2) {
+	ara_timing_info(2, 3);
 	workTask(MS2_id);
 	//test_trace('2');
 	TerminateTask();
 }
+/*
 TASK(MS5) {
+	ara_timing_info(1, 2);
 	workTask(MS5_id);
 	//test_trace('5');
 	TerminateTask();
 }
 TASK(MS10) {
+	ara_timing_info(1, 2);
 	workTask(MS10_id);
 	//test_trace('A');
 	TerminateTask();
 }
 TASK(MS20) {
+	ara_timing_info(1, 2);
 	workTask(MS20_id);
 	//test_trace('B');
 	TerminateTask();
 }
 TASK(MS50) {
+	ara_timing_info(1, 2);
 	workTask(MS50_id);
 	//test_trace('C');
 	TerminateTask();
 }
 TASK(MS100) {
+	ara_timing_info(1, 2);
 	workTask(MS100_id);
 	//test_trace('D');
 	TerminateTask();
 }
 TASK(MS200) {
+	ara_timing_info(10, 20);
 	workTask(MS200_id);
 	//test_trace('E');
 	TerminateTask();
 }
 TASK(MS1000) {
+	ara_timing_info(100, 200);
 	workTask(MS1000_id);
 	//test_trace('F');
 	TerminateTask();
 }
 TASK(MSANGLE) {
+	ara_timing_info(1, 2);
 	workTask(MSANGLE_id);
 	//test_trace('G');
 	TerminateTask();
 }
+*/

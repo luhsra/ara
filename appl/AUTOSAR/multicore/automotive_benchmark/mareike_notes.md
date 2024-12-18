@@ -35,6 +35,8 @@ ara/ara/setps/printer.py convertieren von Graphstrukturen
 # another example
 /usr/bin/python3 subprojects/ara/ara.py subprojects/ara/appl/AUTOSAR/autosar_multicore_automotive_benchmark_testsuit_runnables_BASIC.pi4.ll --os AUTOSAR --oilfile ../subprojects/ara/appl/AUTOSAR/multicore/automotive_benchmark/testsuit/runnables_system.json --ir_output subprojects/ara/appl/AUTOSAR/autosar_multicore_automotive_benchmark_testsuit_runnables_BASIC_noopt_mod.pi4.ll --step-settings ../subprojects/ara/appl/AUTOSAR/multicore/automotive_benchmark/custom_ara_config_testing.json --generator_output subprojects/ara/appl/AUTOSAR/autosar_multicore_automotive_benchmark_testsuit_runnables_BASIC_noopt_autosar.pi4.cc
 
+# ll neu bauen
+ninja subprojects/ara/appl/AUTOSAR/autosar_multicore_automotive_benchmark_testsuit_runnables_BASIC.pi4.ll
 ```
 list of steps + properties of each step, enable logging or dumping to `build/dump`. \
 "DumpCFG", "DumpCallgraph", "DumpInstances".
