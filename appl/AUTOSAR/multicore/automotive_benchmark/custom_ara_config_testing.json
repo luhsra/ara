@@ -1,5 +1,6 @@
 {
 	"steps": [
+		"ApplyTimings",
         "LoadOIL",
         "DumpCFG", 
         "DumpCallgraph",
@@ -21,7 +22,7 @@
 		"fail_on_deadlock": true
 	},
 	"MultiSSE": {
-		"with_times": false,
+		"with_times": true,
 		"log_level": "info",
         "dump" : true,
         "per_round_dump" : true

@@ -69,7 +69,6 @@ git push
 Graphviewer: xdot (via apt)
 graph-tool: Python Library für graphen
 
-
 \
 \
 \ 
@@ -110,3 +109,20 @@ follow manual and setup tftp-hpa server, confige dnsmasq.conf. Then no sd card i
 '''ninja ara@@tftp_autosar_multicore_automotive_benchmark_hello_world_base_pi4''' to create test.img in /srv/tftp/test.img
 copy to lab-pc00 /proj/tftp/research/rpi4: '''scp /srv/tftp/test.img mar.burg@lab-pc00:/proj/tftp/research/rpi4/base.img''' and change config.txt to match image
 then start pi and it continuesly netboots the image.
+
+
+
+\
+\
+\
+
+### Python print all elements of generator in gdb
+`print(*(element for element in instances.vp.obj), sep='\n')`
+
+### Noch ein Ara Befehl mit Timings
+```bash
+/usr/bin/python3 subprojects/ara/ara.py subprojects/ara/appl/AUTOSAR/autosar_multicore_automotive_benchmark_testsuit_runnables_BASIC.pi4.ll --os AUTOSAR --oilfile ../subprojects/ara/appl/AUTOSAR/multicore/automotive_benchmark/testsuit/runnables_system.json --ir_output subprojects/ara/appl/AUTOSAR/autosar_multicore_automotive_benchmark_testsuit_runnables_BASIC_noopt_mod.pi4.ll --step-settings ../subprojects/ara/appl/AUTOSAR/multicore/automotive_benchmark/custom_ara_config_testing.json --generator_output subprojects/ara/appl/AUTOSAR/autosar_multicore_automotive_benchmark_testsuit_runnables_BASIC_noopt_autosar.pi4.cc --timings BB
+```
+
+### Ara.py .json config für alle runs located here, 1x opt, 1x nonopt
+`subprojects/ara/settings/autosar_generator_arm_opt.json`

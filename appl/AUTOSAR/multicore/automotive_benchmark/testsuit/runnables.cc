@@ -7,11 +7,13 @@ DeclareTask(INIT);
 DeclareTask(SCHED);
 DeclareTask(MS1);
 DeclareTask(MS2);
-/*
+DeclareCounter(C1);
+DeclareAlarm(A1);
 DeclareTask(MS5);
 DeclareTask(MS10);
 DeclareTask(MS20);
 DeclareTask(MS50);
+/*
 DeclareTask(MS100);
 DeclareTask(MS200);
 DeclareTask(MS1000);
@@ -92,7 +94,6 @@ TASK(SCHED) {
 			blocked_counter[MS2_id]++;
 		}
 	}
-	/*
 	if (cycle % RUNABLES_PERIOD[MS5_id] == 0) {
 		ara_timing_info(1, 2);
 		res = ActivateTask(MS5);
@@ -116,6 +117,7 @@ TASK(SCHED) {
 			blocked_counter[MS20_id]++;
 		}
 	}
+	/*
 	if (cycle % RUNABLES_PERIOD[MS50_id] == 0) {
 		res = ActivateTask(MS50);
 		if (res == StatusType::E_OS_LIMIT) {
@@ -175,7 +177,6 @@ TASK(MS2) {
 	//test_trace('2');
 	TerminateTask();
 }
-/*
 TASK(MS5) {
 	ara_timing_info(1, 2);
 	workTask(MS5_id);
@@ -194,6 +195,7 @@ TASK(MS20) {
 	//test_trace('B');
 	TerminateTask();
 }
+/*
 TASK(MS50) {
 	ara_timing_info(1, 2);
 	workTask(MS50_id);

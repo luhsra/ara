@@ -437,7 +437,8 @@ class AUTOSAR(OSBase):
         # we handle alarms and ISRs
         instances: graph_tool.Graph = state.instances
         
-        # instances.vp: graph_tool.PropertyDict
+        # instances.vp: graph_tool.VertexPropertyMap
+        # obj ist nur eine Dataclass mit bool und 2 int
         obj = instances.vp.obj[irq.isr_handler]
 
         activates = edge_types(instances, instances.ep.type, InstanceEdge.activate)
@@ -454,7 +455,7 @@ class AUTOSAR(OSBase):
             # the current control instance must be a task
 
             alarm_ctx = state.context.get(obj, False)
-            # breakpoint()
+            breakpoint()
             # TODO interarrival times
             if alarm_ctx and alarm_ctx.active:
                 acty_vertex = single_check(activates.vertex(irq.isr_handler).out_neighbors())
