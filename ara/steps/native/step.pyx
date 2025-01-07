@@ -397,7 +397,9 @@ def provide_steps():
             _native_step_fac(make_step_fac[cstep.SVFAnalyses]()),
             _native_step_fac(make_step_fac[cstep.SVFTransformation]()),
             _native_step_fac(make_step_fac[cstep.ValueAnalyzerCorrections]()),
-            _native_step_fac(make_step_fac[cstep.ZephyrStatic]())]
+            _native_step_fac(make_step_fac[cstep.ZephyrStatic]()),
+            _native_step_fac(make_step_fac[cstep.ZephyrThreadEntry]()),
+            _native_step_fac(make_step_fac[cstep.MergeStructs]())]
 
 
 def provide_test_steps():

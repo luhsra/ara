@@ -12,7 +12,7 @@ ara_dir = meson.current_source_dir()
 # Install python modules
 # If this code leads to problems on your system and you do need to install ARA
 # just comment out this code. It is only used for installation.
-all_ara_files = run_command([py3_inst.path(), get_all_ara_python_files],
+all_ara_files = run_command([py3_inst.full_path(), get_all_ara_python_files],
                             capture: true,
                             check: true)
 foreach module_info : all_ara_files.stdout().split()

@@ -25,6 +25,7 @@ DeclareTask(FlightControlAttitudeTask);
 DeclareTask(FlightControlActuateTask);
 DeclareTask(MavlinkSendTask);
 DeclareTask(CopterControlTask);
+DeclareTask(ControlTask);
 DeclareTask(MavlinkRecvHandler);
 
 DeclareResource(SPIBus);
@@ -43,7 +44,7 @@ TASK(ControlTask) {
 	ara_timing_info(1, 2);
 	ActivateTask(FlightControlTask);
 	ara_timing_info(1, 2);
-	TerminateTask();
+	ChainTask(ControlTask);
 }
 	
 

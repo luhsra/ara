@@ -197,8 +197,6 @@ TASK(MavlinkSendTask) {
 	kout << "MLS" << endl;
 	arch::Perf::print_cycles();
 
-	ShutdownAllCores(E_OK);
-
 	TerminateTask();
 }
 
@@ -246,6 +244,13 @@ TASK(CopterControlWatchdogTask) {
 
 void PreIdleHook() {
 	//kout << "I" << round << endl;
+
+	if (GetCoreID() == 0 && round == 1) {
+		test_start();
+		test_eq(trace_table_idx, 24);
+		test_finish();
+		ShutdownAllCores(E_OK);
+	}
 }
 
 #if LOCKS_JSON

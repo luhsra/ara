@@ -180,6 +180,7 @@ namespace ara::step {
 			}
 		}
 
+	public:
 		ConfStep(PyObject* py_logger, graph::Graph graph, PyObject* py_step_manager)
 		    : Step(py_logger, std::move(graph), py_step_manager) {
 			log_level = log_level_template.instantiate(SubStep::get_name());

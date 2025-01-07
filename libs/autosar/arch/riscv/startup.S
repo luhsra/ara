@@ -1,3 +1,5 @@
+#include "boot_cpu.h"
+
 .option norvc
 .section .text.init,"ax",@progbits
 .globl _start
@@ -57,13 +59,16 @@ do_reset:
 	la sp, os_stack + 4096 - 16
 	add sp, sp, a1 // offset to correct stack
 
-	bnez a0, ap
+
+	li a2, BOOT_CORE // master hart shall be 1 (zero is e51)
+
+	bne a0, a2, ap
 	jal main
 
 .size do_reset, . - do_reset
 
 ap:
-    jal mainAP
+	jal mainAP
 
 .global idle_entry
 idle_entry:

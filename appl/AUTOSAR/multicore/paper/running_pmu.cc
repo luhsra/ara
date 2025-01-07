@@ -53,11 +53,10 @@ TEST_MAKE_OS_MAIN( start() )
  * CPU0
  */
 TASK(T01) {
-	// arch::Perf::start();
+	test_trace('H');
 #ifdef VARIANT_T01
 	arch::Perf::trace_cycles();
 #endif
-	//test_trace('6');
 	ara_timing_info(20, 25);
 	GetSpinlock(S1);
 	ara_timing_info(5, 10);
@@ -65,19 +64,20 @@ TASK(T01) {
 	ReleaseSpinlock(S1);
 	ara_timing_info(2, 4);
 
-	//test_trace_assert("123456");
-	//test_finish();
 #ifdef VARIANT_T01
 	arch::Perf::trace_cycles();
 #endif
 	arch::Perf::print_cycles();
+
+	test_trace_assert("1LH");
+	test_finish();
 
 	ShutdownMachine();
 }
 
 TASK(T02) {
 	arch::Perf::start();
-	//test_trace('3');
+	test_trace('L');
 #ifdef VARIANT_T02
 	arch::Perf::trace_cycles();
 #endif
@@ -85,7 +85,6 @@ TASK(T02) {
 	ara_timing_info(60, 80);
 #ifdef VARIANT_T02
 	arch::Perf::trace_cycles();
-	//test_trace('5');
 #endif
 	TerminateTask();
 }
@@ -96,7 +95,7 @@ TASK(T02) {
 
 
 TASK(T11) {
-	//test_trace('1');
+	test_trace('1');
 	arch::Perf::start();
 	// heat up measurement caching
 	ara_timing_info(1, 1);

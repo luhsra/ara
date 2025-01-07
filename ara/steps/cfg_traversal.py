@@ -183,7 +183,10 @@ class _SSERunner:
         for _, irq in state.instances.get(IRQ):
             try:
                 i_st = self._os.handle_irq(self._graph, state, cpu.id, irq)
-                if i_st is not None:
+                if isinstance(i_st, list):
+                    for s in i_st:
+                        irq_states.append(s)
+                elif i_st is not None:
                     irq_states.append(i_st)
             except CrossCoreAction as cca:
                 self._log.error(f"Cross core action for IRQ {irq} (CPUs. "
@@ -231,7 +234,12 @@ class _SSERunner:
                     self._graph, state, cpu.id,
                     categories=self._visitor.SYSCALL_CATEGORIES
                 )
-                assert isinstance(new_states, Iterable)
+
+                # do the same as in os_util.py
+                # some syscalls may return multiple states in a list other don't
+                if not isinstance(new_states, Iterable):
+                    new_states = [new_states]
+                
                 return new_states
             except CrossCoreAction as cca:
                 self._log.debug(f"Got cross core action (CPUs: {cca.cpu_ids}).")

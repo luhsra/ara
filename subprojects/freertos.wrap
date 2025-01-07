@@ -1,4 +1,4 @@
 [wrap-git]
-url = ssh://git@scm.sra.uni-hannover.de/research/freertos.git
+url = ssh://git@scm.sra.uni-hannover.de/research/parrot-projects/freertos.git
 revision = ara
 depth = 1

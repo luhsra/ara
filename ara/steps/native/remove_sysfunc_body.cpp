@@ -11,6 +11,8 @@
 #include <pyllco.h>
 #include <vector>
 
+#include <llvm/IR/Verifier.h>
+
 namespace ara::step {
 	using namespace llvm;
 
@@ -90,6 +92,8 @@ namespace ara::step {
 				}
 			}
 		}
+
+		//assert(!llvm::verifyModule(module, &llvm::errs()) && "LLVM-IR Module has errors");
 
 		// Dump modified LLVM IR
 		if (*dump.get()) {

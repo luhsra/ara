@@ -100,7 +100,7 @@ def main():
     if len(sys.argv) == 6:
         syscall_delay = int(sys.argv[5])
     if with_timings:
-        config = {"steps": ["ApplyTimings", "LockElision"],
+        config = {"steps": ["ApplyTimings", "LockElision", "IPIAvoidance"],
                   "MultiSSE": {"with_times": True,
                                "syscall_delay": syscall_delay}}
         inp["timings"] = lambda argv: argv[4]

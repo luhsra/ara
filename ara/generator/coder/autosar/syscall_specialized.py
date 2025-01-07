@@ -68,7 +68,7 @@ class SpecializedSystemCalls(GenericSystemCalls):
         if not self.generator.ara_step.ipi_avoidance.get():
             return
 
-        step_data = self.ara_graph.step_data["IPIAvoidance"]
+        step_data = self.ara_graph.step_data["IPIAvoidance"]["places"]
         for ipi in step_data:  # check results
             if ipi["abb"] != abb:
                 continue

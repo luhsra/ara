@@ -22,24 +22,41 @@ from graph_tool.topology import all_paths
 
 from ara.graph import MSTGraph, StateType, MSTType, single_check, edge_types
 from ara.util import has_path
-from ara.os.os_base import (OSState, CPUList, IRQ, CrossCoreAction,
-                            TaskStatus, IRQCPU, ExecState)
+from ara.os.os_base import (
+    OSState,
+    CPUList,
+    IRQ,
+    CrossCoreAction,
+    TaskStatus,
+    IRQCPU
+)
 from ara.os.os_util import set_next_abb
 from ara.os.interrupts import irq_schedule
 
 from .option import Option, String, Bool, Integer
-from .step import Step
+from .stats import StatsStep, StatData
 from .util import open_with_dirs
 from .printer import mstg_to_dot, sp_mstg_to_dot, reduced_mstg_to_dot
 from .cfg_traversal import Visitor, run_sse
-from .multisse_helper.common import (CrossExecState, FakeEdge,
-                                     find_cross_syscalls, get_reachable_states)
+from .multisse_helper.common import (
+    CrossExecState,
+    FakeEdge,
+    find_cross_syscalls,
+    get_reachable_states
+)
 from .multisse_helper.constrained_sps import get_constrained_sps
 from .multisse_helper.equations import TimeRange
 from .multisse_helper.pairing_partner_search import (
-    search_for_pairing_partners, Range, TimeCandidateSet)
-from .multisse_helper.wcet_calculation import (TimingCalculator,
-                                               set_time)
+    search_for_pairing_partners,
+    Range,
+    TimeCandidateSet
+)
+from .multisse_helper.wcet_calculation import (
+    TimingCalculator,
+    set_time
+)
+
+AMOUNT_OF_EMPTY_REEVALS_PER_SP = 2
 
 
 @dataclass(frozen=True)
@@ -48,11 +65,22 @@ class NewNodeReevaluation:
     from_sp: graph_tool.Vertex
     cores: Set[int]
 
+    def __str__(self):
+        return f"NewNodeReevaluation(from_sp={int(self.from_sp)}, cores={self.cores})"
+
 
 @dataclass(frozen=True)
 class NewEdgeReevaluation:
     """Store necessary data for the reevaluation of a new edge."""
     root: graph_tool.Vertex  # the root sync point
+
+    def __str__(self):
+        return f"NewEdgeReevaluation(root={int(self.root)})"
+
+
+class GenericReevaluation:
+    """Reevaluate an existing sync point without further info."""
+    pass
 
 
 @dataclass
@@ -199,7 +227,7 @@ class Statistics:
         return ''.join(ret)
 
 
-class MultiSSE(Step):
+class MultiSSE(StatsStep):
     """Run the MultiCore SSE."""
 
     entry_point = Option(name="entry_point",
@@ -778,8 +806,15 @@ class MultiSSE(Step):
                                                  only_root=only_root)
 
         combinations = set()
-        self._log.info("New pairing partner search over %d paths",
-                       len(root_paths))
+        c_state = mstg.vp.state[cross_state]
+        self._log.info(
+            "New pairing partner search over %d paths (State %s, ABB %s, Core %s, affected %s)",
+            len(root_paths),
+            int(cross_state),
+            c_state.cfg.vp.name[c_state.cpus.one().abb],
+            current_core,
+            list(affected_cores),
+        )
         # self._log.debug(f"Cur core {current_core}")
         # self._log.debug(f"Affected cores {list(affected_cores)}")
         # for path in root_paths:
@@ -1132,17 +1167,18 @@ class MultiSSE(Step):
                     if isinstance(sc_cpu, IRQCPU):
                         try:
                             os = self._graph.os
-                            irq_exit_state = os.handle_irq(self._graph,
+                            irq_exit_states = os.handle_irq(self._graph,
                                                            multi_state,
                                                            sc_cpu.reference_cpu_id,
                                                            sc_cpu.irq)
-                            if irq_exit_state is None:
+                            if irq_exit_states is None:
                                 self._log.info("IRQ %s cannot be handled.",
                                                sc_cpu.irq.id)
                                 continue
+                            for irq_exit_state in irq_exit_states:
                             # advance the virtual interrupt CPU
-                            set_next_abb(irq_exit_state, sc_cpu.id)
-                            self._schedule(irq_exit_state)
+                                set_next_abb(irq_exit_state, sc_cpu.id)
+                                self._schedule(irq_exit_state)
                         except CrossCoreAction as cca:
                             # we need other pairing partners
                             ccm = self._mstg.cross_core_map
@@ -1222,18 +1258,26 @@ class MultiSSE(Step):
 
         reeval_info gives additional hints why the reevaluation is needed.
         """
-        if isinstance(reeval_info, NewNodeReevaluation):
-            start_from = reeval_info.from_sp
-            cores = reeval_info.cores
-            kwargs = {"start_from": start_from}
-            debug = f"starting from {int(start_from)}"
-            excluded_cores = set(self._mstg.sync_point_map[start_from])
-        else:
-            root = reeval_info.root
-            cores = self._mstg.sync_point_map[sp]
-            kwargs = {"only_root": root}
-            debug = f"evaluating only {int(root)}"
-            excluded_cores = False
+        match reeval_info:
+            case NewNodeReevaluation():
+                start_from = reeval_info.from_sp
+                cores = reeval_info.cores
+                kwargs = {"start_from": start_from}
+                debug = f"starting from {int(start_from)}"
+                excluded_cores = set(self._mstg.sync_point_map[start_from])
+            case NewEdgeReevaluation():
+                root = reeval_info.root
+                cores = self._mstg.sync_point_map[sp]
+                kwargs = {"only_root": root}
+                debug = f"evaluating only {int(root)}"
+                excluded_cores = False
+            case GenericReevaluation():
+                cores = self._mstg.sync_point_map[sp]
+                debug = "generic reevaluation"
+                excluded_cores = False
+                kwargs = {}
+            case _:
+                assert False, "invalid reeval type"
 
         self._log.debug(
             f"Node {int(sp)} is already evaluated but some new "
@@ -1256,16 +1300,16 @@ class MultiSSE(Step):
         for cpu_id in cores:
             sts = graph_tool.GraphView(st2sy,
                                        efilt=st2sy.ep.cpu_id.fa == cpu_id)
-            # If an reevaluation happens it does not only affect the (root) SP
+            # If a reevaluation happens it does not only affect the (root) SP
             # but also all follow up SPs that do not share a core with the
             # causing (start_from) SP. Therefore we iterate all of them.
             for reeval_sp in get_reachable_states(sps, sps.vertex(sp)).vertices():
                 entries = list(sts.vertex(reeval_sp).out_neighbors())
                 if not entries:
                     continue
+                entry = single_check(entries)
                 self._log.debug("Reevaluate SP %s, as follow up to SP %s",
                                 int(reeval_sp), int(sp))
-                entry = single_check(entries)
                 to_stack, reeval = self._find_new_sps(
                     reeval_sp,
                     Metastate(state=self._mstg.g.get_metastate(entry),
@@ -1305,19 +1349,18 @@ class MultiSSE(Step):
 
         return metastates
 
-    def _handle_stats(self, zero_rounds):
-        self._log.debug("Added this round: %s, (%d zero rounds)",
-                        self._stats, zero_rounds["amount"])
+    def _handle_stats(self, zero_rounds, zero_rounds_per_sp, sp):
+        lim = f"/{self._limit}" if self._limit != -1 else ""
+        self._log.debug("Added this round: %s, (%d%s zero rounds)",
+                        self._stats, zero_rounds, lim)
         if self._stats.get_entity_amount() == 0:
-            if zero_rounds["last_round_zero"]:
-                zero_rounds["amount"] += 1
-            else:
-                zero_rounds["last_round_zero"] = True
-                zero_rounds["amount"] += 1
-        else:
-            zero_rounds["last_round_zero"] = False
-
-        return self._limit != -1 and zero_rounds["amount"] >= self._limit
+            zero_rounds_per_sp[sp]["amount"] += 1
+            should_stop = self._limit != -1 and zero_rounds >= self._limit
+            if should_stop:
+                self._log.warn("Terminate analysis, too much zero rounds.")
+            return zero_rounds + 1, should_stop
+        zero_rounds_per_sp.clear()
+        return 0, False
 
     def run(self):
         entry_label = self.entry_point.get()
@@ -1349,9 +1392,9 @@ class MultiSSE(Step):
 
         already_handled_sps = set()
 
-        # make this a dict to be able to pass it by reference
-        zero_rounds = {"last_round_zero": False, "amount": 0}
-
+        zero_rounds = 0
+        zero_rounds_per_sp = defaultdict(lambda: {"amount": 0,
+                                                  "relocated": False})
         self._log.debug("Start state stats: %s", self._stats)
 
         # actual algorithm
@@ -1363,11 +1406,23 @@ class MultiSSE(Step):
             sp, reeval_info = stack.pop(0)
             # new statistics for every round
             self._stats = Statistics()
-            if (sp, reeval_info) in reevaluates:
+            if any([(sp, x) in reevaluates for x in [reeval_info,
+                                                     GenericReevaluation()]]):
                 # we don't need to analyse sync points that are reevaluated
                 # later on anyway.
                 self._log.debug(f"Skip {int(sp)}. It is already marked for "
                                 "reevaluation.")
+                continue
+
+            skippable = False
+            for osp, _ in stack:
+                if sp == osp:
+                    reevaluates.add((sp, GenericReevaluation()))
+                    self._log.debug("Found same SP again in stack. "
+                                    "Queuing in a generic version.")
+                    skippable = True
+                    break
+            if skippable:
                 continue
 
             # if counter == 4:
@@ -1382,13 +1437,38 @@ class MultiSSE(Step):
             counter += 1
 
             if reeval_info:
+                reeval = zero_rounds_per_sp[sp]
+                if reeval["amount"] > AMOUNT_OF_EMPTY_REEVALS_PER_SP:
+                    # skip node entirely
+                    self._log.debug("Skip %d, a zero node for multiple times.",
+                                    int(sp))
+                    reeval["amount"] = 0
+                    continue
+                if reeval["amount"] > 0 and not reeval["relocated"]:
+                    self._log.debug("Relocate %d. It is a zero node.",
+                                    int(sp))
+                    reeval["relocated"] = True
+                    if reeval_info is None:
+                        reeval_info = GenericReevaluation()
+                    reevaluates.add((sp, reeval_info))
+                    continue
+                reeval["relocated"] = False
+
+                # this is costly and potentially adds other SPs
                 t_stack, reevals = self._reevaluate_sync_point(sp,
                                                                reeval_info)
                 stack.extend([(x, None) for x in t_stack])
                 reevaluates.update(reevals)
-                if self._handle_stats(zero_rounds):
+
+                zero_rounds, should_stop = self._handle_stats(zero_rounds,
+                                                              zero_rounds_per_sp,
+                                                              sp)
+                if should_stop:
                     break
                 continue
+
+            # no reevaluation, we doing a costly operation here and certainly
+            # add nodes and edges to the graph
 
             # handle current sync point
             metastates = self._calculate_new_metastates(sp)
@@ -1431,17 +1511,23 @@ class MultiSSE(Step):
 
             # The stack is empty. Copy the sync points that need a
             # reevaluation back to the stack and perform the next round.
-            if not stack:
+            if len(stack) == 0:
                 self._log.info("Stack empty. Beginning with reevaluations")
                 stack.extend(list(set(reevaluates)))
                 reevaluates.clear()
 
-            if self._handle_stats(zero_rounds):
+            zero_rounds, should_stop = self._handle_stats(zero_rounds,
+                                                          zero_rounds_per_sp,
+                                                          sp)
+            if should_stop:
                 break
 
         self._log.info(f"Analysis needed {counter} iterations.")
 
         self._graph.mstg = mstg
+
+        step_data = [StatData(key="rounds", value=counter)]
+        self._print_and_store(step_data)
 
         if self.dump.get():
             self._step_manager.chain_step({
@@ -1462,8 +1548,3 @@ class MultiSSE(Step):
                 "graph_name": "SP MSTG",
                 "subgraph": "sp_mstg",
             })
-        step_data = {"rounds": counter,
-                     "vertices": len(list(mstg.vertices())),
-                     "edges": len(list(mstg.edges())),
-                     }
-        self._set_step_data(step_data)

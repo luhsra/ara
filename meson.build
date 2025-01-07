@@ -15,9 +15,11 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 project('ara', 'cpp',
-    default_options : ['warning_level=3',
-                       'cpp_std=c++17',
-                       'buildtype=debugoptimized'])
+  default_options : ['warning_level=3',
+                     'cpp_std=c++17',
+                     'buildtype=debugoptimized'],
+  meson_version: '>=1.4.0',
+)
 
 add_project_arguments('-Werror=return-type', language: ['c', 'cpp'])
 # c-linkage is not correct, see https://github.com/cython/cython/issues/1839
@@ -63,7 +65,9 @@ llc = toolchains.get_variable('llc')
 llvm_dis = toolchains.get_variable('llvm_dis')
 llvm_opt = toolchains.get_variable('llvm_opt')
 
-boost_dep = dependency('boost', include_type: 'system', modules: ['graph', 'python' + py3_inst.language_version().replace('.', '')])
+distro_id = run_command('lsb_release', '-is', check: true).stdout().strip().to_lower()
+boost_python = 'python' + (distro_id == 'opensuse' ? '3' : py3_inst.language_version().replace('.', ''))
+boost_dep = dependency('boost', include_type: 'system', modules: ['graph', boost_python])
 graph_tool_dep = dependency('graph-tool-py' + py3_inst.language_version(), include_type: 'system', version: '>=2.68')
 
 # Workaround for https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1070676
@@ -117,6 +121,12 @@ nop = find_program('true')
 st_flash = find_program('st-flash', required: false, disabler: true)
 sed = find_program('sed')
 
+# irx
+irx = subproject('irx')
+irx_dir = irx.get_variable('irx_dir')
+irx_mod = irx.get_variable('irx_tgt')
+
+
 # all dependencies found, build the actual program
 
 build_dir = meson.current_build_dir()
@@ -169,7 +179,7 @@ main = Main()
 sys.exit(main.main())
 '''
 
-python_dirs = [source_dir, pyllco_dir, step_dir, graph_data_dir]
+python_dirs = [source_dir, pyllco_dir, step_dir, graph_data_dir, irx_dir]
 python_path = 'PYTHONPATH=' + ':'.join(python_dirs)
 conv_wrapper_formatted = conv_wrapper.format('"' + '", "'.join(python_dirs) + '"', '')
 
@@ -177,6 +187,8 @@ ara_py = custom_target('ara-py',
     input: [],
     output: 'ara.py',
     depends: [step_mod, graph_data_mod],
+    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_py_content.format(py3_inst.full_path()+python_opt_arg, conv_wrapper_formatted)],
+    depends: [step_mod, graph_data_mod, irx_mod],
     command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_py_content.format(py3_inst.path()+python_opt_arg, conv_wrapper_formatted)],
     build_by_default: true
 )
@@ -204,7 +216,7 @@ ara_gui_py = custom_target('ara-gui-py',
     input: [],
     output: 'ara-gui.py',
     depends: [step_mod, graph_data_mod],
-    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_gui_py_content.format(py3_inst.path()+python_opt_arg, conv_wrapper_formatted)],
+    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_gui_py_content.format(py3_inst.full_path()+python_opt_arg, conv_wrapper_formatted)],
     build_by_default: true
 )
 
@@ -283,3 +295,10 @@ if get_option('enable_toplevel_tests')
        timeout: 30
     )
 endif
+
+
+
+
+
+arm_freertos_apps = []
+

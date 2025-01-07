@@ -25,6 +25,7 @@ import os.path
 
 from itertools import chain
 
+from ..os.zephyr import Thread as ZephyrThread # TODO remove this...
 
 _sysshort = {
     "AUTOSAR_GetSpinlock": "GL",
@@ -50,8 +51,19 @@ def _abb_name(cfg, abb):
         return 'None'
     return cfg.vp.name[abb]
 
+def remap(x, in_min=0.0, in_max=1.0, out_min=0.0, out_max=1.0):
+    '''remap taken from https://stackoverflow.com/a/43567380'''
+    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
-def _sstg_state_as_dot(sstg, state_vert):
+def with_color(value, color, min=0.0, max=1.0):
+    '''Picks a color and wraps the value in a XML tag with the color attribute'''
+    return f"<font color='{remap(color, float(min), float(max))} 0.700 0.800'>\"{value}\"</font>"
+
+
+from ara.os.zephyr import Zephyr
+from ara.os.autosar import AUTOSAR
+
+def _sstg_state_as_dot(sstg, state_vert, os=AUTOSAR):
     attrs = {"fontsize": 14}
     size = 12
 
@@ -59,8 +71,39 @@ def _sstg_state_as_dot(sstg, state_vert):
     cfg = obj.cfg
     label = f"State {obj.id}"
     cpu = obj.cpus.one()
+    thread_info = []
+
+    if isinstance(os, Zephyr):
+        kernel_obj = obj.instances.vp.obj[Zephyr.kernel]
+        kernel = obj.context[kernel_obj]
+    else:
+        kernel = None
+
     if cpu.control_instance:
         instance = obj.instances.vp.label[obj.instances.vertex(cpu.control_instance)]
+        #is_exit = cfg.vp.is_exit[cpu.abb]
+        thread = obj.cur_control_inst(cpu.id)
+
+        if isinstance(os, Zephyr) and hasattr(thread, 'name'):
+            thread_list = [(v, obj) for v, obj in obj.instances.get(ZephyrThread)]
+            thread_names = list(map(lambda x: x[1].name, thread_list))
+            thread_count = len(thread_list)
+            thread_idx = -1
+            idstr = ""
+            if thread.name in thread_names:
+                thread_idx = thread_names.index(thread.name)
+                v = thread_list[thread_idx][0]
+                idstr = f"{str(v)}"
+            thread_info.append(("thread", with_color(thread.name, thread_idx, -1, thread_count) + " " + idstr))
+
+            context = obj.context[thread]
+            thread_info.append(("preempt", context.preempt))
+            thread_info.append(("thread_state", bin(context.thread_state)))
+            vertices = [str(obj.instances.vertex_index[v]) for v in context.join_queue]
+            timeouts = [str(obj.instances.vertex_index[to.v]) for to in kernel.timeout_list]
+            thread_info.append(("join_queue", ", ".join(vertices)))
+            thread_info.append(("timeout_list", ", ".join(timeouts)))
+
     else:
         instance = "Idle"
     if cpu.abb:
@@ -78,14 +121,17 @@ def _sstg_state_as_dot(sstg, state_vert):
             f"<i>{k}</i>: {html.escape(str(v))}"
             for k, v in [
                 ("irq_on", cpu.irq_on),
-                (
-                    "instance",
-                    instance,
-                ),
+                ("instance", instance),
                 ("call_path", cpu.call_path),
-                ("type", str(cpu.exec_state)),
+                ("type", ExecState(cpu.exec_state).name),
                 ("abb", abb),
+                ("kernel", str(kernel)),
             ] + xcet
+        ] + [
+            f"<i>{k}</i>: {str(v)}"
+            for k, v in [
+                # attr that should not be escaped
+            ] + thread_info
         ]
     )
     graph_attrs = f"<font point-size='{size}'>{graph_attrs}</font>"
@@ -108,12 +154,12 @@ def _sstg_state_as_dot(sstg, state_vert):
     return attrs
 
 
-def sstg_to_dot(sstg, label="SSTG", reduced=False):
+def sstg_to_dot(sstg, label="SSTG", reduced=False, os=AUTOSAR):
     dot_graph = pydot.Dot(graph_type="digraph", label=label)
 
     for state_vert in sstg.vertices():
         attrs = _sstg_state_as_dot(
-            sstg, state_vert
+            sstg, state_vert, os
         )
         dot_state = pydot.Node(str(state_vert), **attrs)
         dot_graph.add_node(dot_state)
@@ -431,7 +477,7 @@ def sp_mstg_to_dot(mstg, cfg, label="SyncPoints MSTG"):
         entry_abbs = mstg.get_synchronized_abbs(sync_point)
         entry_lbl = "en: " + _prettify_abbs(entry_abbs)
         label = f"c{core}, s{int(sys_state)}"
-        if irq > 0:
+        if irq >= 0:
             irq_name = mstg.vp.state[sys_state].instances.vp.obj[irq].name
             label += " (\u26A1" + f"{irq_name})"
         else:
@@ -726,13 +772,14 @@ class Printer(Step):
 
     def print_sstg(self, reduced=False):
         name = self._print_init()
+        os = self._graph.os
 
         if reduced:
             sstg = self._graph.reduced_sstg
         else:
             sstg = self._graph.sstg
 
-        dot_graph = sstg_to_dot(sstg, name, reduced)
+        dot_graph = sstg_to_dot(sstg, name, reduced, os)
         self._write_dot(dot_graph)
 
     def print_mstg(self):

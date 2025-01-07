@@ -14,6 +14,7 @@ from .cfg_traversal import Visitor, run_sse
 
 import graph_tool
 import os
+from ara.os.zephyr import Zephyr
 
 from .printer import sstg_to_dot
 from .util import open_with_dirs
@@ -52,6 +53,7 @@ class SSE(Step):
         sstg.edge_properties["syscall"] = sstg.new_ep("object")
         sstg.edge_properties["bcet"] = sstg.new_ep("int64_t", val=-1)
         sstg.edge_properties["wcet"] = sstg.new_ep("int64_t", val=-1)
+        sstg.edge_properties["thread"] = sstg.new_ep("string", val='thread_?')
 
         os_state = self._graph.os.get_initial_state(
             self._graph.cfg, self._graph.instances
@@ -98,6 +100,8 @@ class SSE(Step):
             def next_step(counter):
                 if self.detailed_dump.get():
                     self.dump_sstg(sstg, extra=counter)
+        
+        Zephyr.enable_sse = True
 
         run_sse(
             self._graph,
