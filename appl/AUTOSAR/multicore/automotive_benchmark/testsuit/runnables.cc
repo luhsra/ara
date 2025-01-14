@@ -5,11 +5,11 @@
 
 DeclareTask(INIT);
 DeclareTask(SCHED);
-DeclareTask(MS1);
-DeclareTask(MS2);
 DeclareCounter(C1);
 DeclareAlarm(A1);
-DeclareTask(MS5);
+DeclareTask(MS1);
+DeclareTask(MS2);
+/*DeclareTask(MS5);
 DeclareTask(MS10);
 DeclareTask(MS20);
 DeclareTask(MS50);
@@ -37,7 +37,7 @@ TASK(INIT) {
 	//kout << "\nRunnables Testcase" << endl;
 	//kout_run_info();
 
-	ara_timing_info(100, 200);
+	//ara_timing_info(100, 200);
 	TerminateTask();	
 }
 
@@ -51,30 +51,30 @@ TASK(SCHED) {
 
 
 	ara_timing_info(10, 20);
-    cycle++;
-    if (cycle > CYCLES) {
-        
-		kout << "\nEND" << endl;
-		// kout << "\n*******************" << endl;
-		/*
-		kout << "Trace Dump:" << endl;
-		# test_trace_dump();
+  cycle++;
+  kout << cycle << " " << CYCLES << endl;
+  if (cycle > CYCLES) {
+    // kout << "\nEND" << endl;
+    // kout << "\n*******************" << endl;
+    /*
+    kout << "Trace Dump:" << endl;
+    # test_trace_dump();
 
-		kout_task_data();
+    kout_task_data();
 
-		kout << "\n" << endl;
- 		for (unsigned i = 0; i < NR_TASKS; i++) {
-			kout << taskStrings[i] << "\tblocked: " << blocked_counter[i] << "\tof #runs: " << CYCLES / RUNABLES_PERIOD[i] << endl;
-		}
-		kout << "\n" << endl;
-		#ifndef QEMU
-			// to better see results on PI wait at the end before rebooting
-			micro_sec_wait(5000000);
-		#endif
-		*/
-		test_finish();
-		ShutdownMachine();
+    kout << "\n" << endl;
+    for (unsigned i = 0; i < NR_TASKS; i++) {
+      kout << taskStrings[i] << "\tblocked: " << blocked_counter[i] << "\tof #runs: " << CYCLES / RUNABLES_PERIOD[i] << endl;
     }
+    kout << "\n" << endl;
+    #ifndef QEMU
+      // to better see results on PI wait at the end before rebooting
+      micro_sec_wait(5000000);
+    #endif
+    */
+    test_finish();
+    ShutdownMachine();
+  }
 
     // kout << "\nSchedule round:" << cycle << endl;
 
@@ -86,6 +86,7 @@ TASK(SCHED) {
 			blocked_counter[MS1_id]++;
 		}
 	}
+  
 	if (cycle % RUNABLES_PERIOD[MS2_id] == 0) {
 		ara_timing_info(1, 2);
 		res = ActivateTask(MS2);
@@ -94,8 +95,9 @@ TASK(SCHED) {
 			blocked_counter[MS2_id]++;
 		}
 	}
+  /*
 	if (cycle % RUNABLES_PERIOD[MS5_id] == 0) {
-		ara_timing_info(1, 2);
+		ara_timing_info(1, 020);
 		res = ActivateTask(MS5);
 		if (res == StatusType::E_OS_LIMIT) {
 			kout << taskStrings[MS5_id] << " still runnning!" << endl;
@@ -161,22 +163,21 @@ TASK(SCHED) {
  ******************** Tasks ********************
  */
 void workTask(task_id task) {
-	ara_timing_info(1337, 1338);
 	micro_sec_wait((NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[task] * TIME_PER_RUNNABLE[task]);
 }
 
 TASK(MS1) {
-	ara_timing_info(1, 2);
 	workTask(MS1_id);
 	//test_trace('1');
 	TerminateTask();
 }
+
 TASK(MS2) {
-	ara_timing_info(2, 3);
 	workTask(MS2_id);
 	//test_trace('2');
 	TerminateTask();
 }
+/*
 TASK(MS5) {
 	ara_timing_info(1, 2);
 	workTask(MS5_id);

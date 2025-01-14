@@ -1,43 +1,51 @@
-# Useful stuff
-Getrennt ARA analyse und optimieren durch MultiSSE, später generierung. sind verschieden
+# File locations
+## Parrot - Meta repository with buildchain + tools
+docker/run_docker.sh - Starts Docker enviroment with all tools installed\
+
+## ara - Analyse + Generator
+### Mycode
+appl/AUTOSAR/multicore/automotive_benchmark/* - My test cases\
+### Analyse
+ara/ara/os/interrupts.py - fake_interrupt_function (In der ARA Analyse wird durch die MultiSEE eine Graph erstellt, dort für jeden Counter ein fake Interrupt Kern\
+ara/ara/setps/printer.py - Konvertieren von Graphstrukturen\
+### Meson
+appl/AUTOSAR/meson.build - einzelnen appl\
+libs/autosar/meson.build - Flags für Architekturen (DDEBUG, DQEMU)\
+
+## ara-libplatforms
 
 
-## Setup
-1. setup Docker (after update: `docker build -t scm.sra.uni-hannover.de:5050/research/parrot .`)
-    1. run_docker.sh
-2. build (only one time)
-    1. meson setup build --native-file native-debian.ini
-3. cd build/
-    1. ninja -t targets 
-    2. ninja ara@@run_autosar_multicore_andreas_pmu_get_spinlock_pi4
-use `-v` at end for more output /
-use `ARA_LOGLEVEL=debug` at the beginning -> show individual cmds. (klappt nicht mehr, bzw wie ging das?)
+# Setup/Run
+1. setup Docker (after update rebuild: `docker build -t scm.sra.uni-hannover.de:5050/research/parrot .`)
+    1. `run_docker.sh`
+2. build (only one time, after update reload all other repos: `meson subprojects update --reset`)
+    1. `meson setup build --native-file native-debian.ini`
 
-### Debug
-comment `-DDEBUG` in `subprojects/ara/libs/autosar/meson.build` for the respective architecture.
+    X. To "reset" ninja build enviroment run `meson setup build --native-file native-debian.ini --reconfigure`, happend after CTRL-C a ninja cmd.
+3. `cd build/`
+    1. `ninja -t targets`
+    2. `ninja ara@@run_autosar_multicore_andreas_pmu_get_spinlock_pi4`
+   
+## Debug
+- add `-v` to ninja, to show the run cmds
+- activate `-DDEBUG` in `subprojects/ara/libs/autosar/meson.build` to change loglevelfor the respective architecture.
+- (use `ARA_LOGLEVEL=debug` at the beginning -> show individual cmds.(klappt nicht mehr, bzw wie ging das?))
+- Ara step list: `/usr/bin/python3 subprojects/ara/ara.py -l` (or `-l`)
 
-## Error with missing ninja file
-Run this to "reset" ninja build enviroment 
-`meson setup build --native-file native-debian.ini --reconfigure`, happend after CTRL-C a ninja cmd.
 
-## subprojects
-Code of all repos is found there :) or in gitlab. /
-### Parrot: Sammelrepo
-### ARA: eigene Branch automotive_appl
-ara/ara/os/interrupts.py fake_interrupt_function -> In der ARA Analyse wird durch die MultiSEE eine Graph erstellt, dort für jeden Alarm einen eigenen Interrupt Kern, sollte aber besser nur für jeden Counter einen Interrupt kern erzeugen
-\
-ara/ara/setps/printer.py convertieren von Graphstrukturen
-\
-(! alles in /build ordner) Ara wird in Steps ausgeführt, auflistbar mit `/usr/bin/python3 subprojects/ara/ara.py -l`, welche wird festgelegt durch .json file. Example here:
+## Example Code
 ```bash
+# Run ara with custom step json:
 /usr/bin/python3 subprojects/ara/ara.py subprojects/ara/appl/AUTOSAR/autosar_multicore_automotive_benchmark_hello_world_auto.pi4.ll --os AUTOSAR --oilfile ../subprojects/ara/appl/AUTOSAR/multicore/automotive_benchmark/hello_world/auto_system.json --step-settings ../subprojects/ara/appl/AUTOSAR/multicore/automotive_benchmark/hello_world/custom_ara_config_testing.json
-
-# another example
+# another example:
 /usr/bin/python3 subprojects/ara/ara.py subprojects/ara/appl/AUTOSAR/autosar_multicore_automotive_benchmark_testsuit_runnables_BASIC.pi4.ll --os AUTOSAR --oilfile ../subprojects/ara/appl/AUTOSAR/multicore/automotive_benchmark/testsuit/runnables_system.json --ir_output subprojects/ara/appl/AUTOSAR/autosar_multicore_automotive_benchmark_testsuit_runnables_BASIC_noopt_mod.pi4.ll --step-settings ../subprojects/ara/appl/AUTOSAR/multicore/automotive_benchmark/custom_ara_config_testing.json --generator_output subprojects/ara/appl/AUTOSAR/autosar_multicore_automotive_benchmark_testsuit_runnables_BASIC_noopt_autosar.pi4.cc
-
-# ll neu bauen
+# !!!This above cmd does not rebuild the .ll file, done with:
 ninja subprojects/ara/appl/AUTOSAR/autosar_multicore_automotive_benchmark_testsuit_runnables_BASIC.pi4.ll
 ```
+
+
+
+
 list of steps + properties of each step, enable logging or dumping to `build/dump`. \
 "DumpCFG", "DumpCallgraph", "DumpInstances".
 
@@ -46,7 +54,6 @@ list of steps + properties of each step, enable logging or dumping to `build/dum
 - `ara/ara/steps/load_oil.py`
 - `ara/libs/autosar/os.h`
 
-### ara-libplatforms: automotive_appl nicht mehr in use
 
 ## Generator
 Creates the template for the .cc files, by setting the syntax up in python. Uses fixed wrapper for that.

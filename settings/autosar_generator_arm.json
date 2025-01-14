@@ -1,6 +1,10 @@
 {
 	"steps": [
 		"ApplyTimings",
+        "LoadOIL",
+        "DumpCFG", 
+        "DumpCallgraph",
+        "DumpInstances",
 		"IPIAvoidance",
 		"LockElision",
 		"AutosarGeneratorIR",
@@ -22,6 +26,8 @@
 		"fail_on_deadlock": true
 	},
 	"MultiSSE": {
-		"with_times": false
+		"with_times": true,
+        "dump" : true
 	}
+
 }

@@ -338,6 +338,8 @@ class LoadOIL(Step):
         # artificial IRQ objects
         for v, obj in chain(instances.get(_autosar.Counter),
                             instances.get(_autosar.ISR)):
+            # TODO add iit here
+            # starten einfach, verifikation prüfen auwendiger!
             func_v = fake_interrupt_function(cfg, callgraph, os, obj.name)
             active = True
             if isinstance(obj, _autosar.Counter):
