@@ -338,9 +338,14 @@ class LoadOIL(Step):
         # artificial IRQ objects
         for v, obj in chain(instances.get(_autosar.Counter),
                             instances.get(_autosar.ISR)):
-            # TODO add iit here
-            # starten einfach, verifikation prüfen auwendiger!
+
+            # TODO Interarival Times - iit
+            # not yet verified!
+            self._log.warning(f"Added fake_interrupt_function for Counter {obj}")
+            # could this be moved below check for no alarm counters?
+            # func_v = fake_interrupt_function(cfg, callgraph, os, obj.name, iit_bcet=10, iit_wcet=20)
             func_v = fake_interrupt_function(cfg, callgraph, os, obj.name)
+
             active = True
             if isinstance(obj, _autosar.Counter):
                 active = False

@@ -16,7 +16,7 @@ class IntrSyscall:
     is_stub = True
 
 
-def fake_interrupt_function(cfg, callgraph, os, name, iit=0):
+def fake_interrupt_function(cfg, callgraph, os, name, iit_bcet=0, iit_wcet=math.inf):
     """Fake an interrupt control flow.
 
     Apply the interrupt interarrival time (iit) if given.
@@ -35,8 +35,8 @@ def fake_interrupt_function(cfg, callgraph, os, name, iit=0):
     cfg.vp.is_exit_loop_head[iit_v] = True
     cfg.vp.part_of_loop[iit_v] = True
     cfg.vp.loop_head[iit_v] = True
-    cfg.set_bcet(iit_v, iit)
-    cfg.set_wcet(iit_v, math.inf)
+    cfg.set_bcet(iit_v, iit_bcet)
+    cfg.set_wcet(iit_v, iit_wcet)
 
     sc_v = cfg.add_vertex()
     cfg.vp.artificial[sc_v] = True

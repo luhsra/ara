@@ -132,12 +132,14 @@ class TimingCalculator():
                                      g.vertex(entry_state),
                                      g.vertex(exit_sp))
 
+            self._log.warn(f"shortest_path elist: {elist}")
             # sanity handling
             if len(elist) > 2:
                 # the state was somewhere blocked and is now resumed
                 # currently not supported
                 self._log.warn("Found a previously resumed state that is "
                                "continued. This is not supported. Aborting...")
+                self._log.warn(f"default range set to {default_range}")
                 eqs.add_range(entry_edge, default_range)
                 return
 

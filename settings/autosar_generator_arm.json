@@ -1,10 +1,10 @@
 {
 	"steps": [
 		"ApplyTimings",
-        "LoadOIL",
-        "DumpCFG", 
-        "DumpCallgraph",
-        "DumpInstances",
+    "LoadOIL",
+    "DumpCFG", 
+    "DumpCallgraph",
+    "DumpInstances",
 		"IPIAvoidance",
 		"LockElision",
 		"AutosarGeneratorIR",
@@ -27,7 +27,7 @@
 	},
 	"MultiSSE": {
 		"with_times": true,
-        "dump" : true
+    "dump" : true
 	}
 
 }

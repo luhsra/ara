@@ -9,16 +9,8 @@ DeclareCounter(C1);
 DeclareAlarm(A1);
 DeclareTask(MS1);
 DeclareTask(MS2);
-/*DeclareTask(MS5);
-DeclareTask(MS10);
-DeclareTask(MS20);
-DeclareTask(MS50);
-/*
-DeclareTask(MS100);
-DeclareTask(MS200);
-DeclareTask(MS1000);
-DeclareTask(MSANGLE);
-*/
+DeclareTask(MS5);
+
 TEST_MAKE_OS_MAIN(StartOS(0))
 
 /**
@@ -28,27 +20,23 @@ TEST_MAKE_OS_MAIN(StartOS(0))
 
 /**
  ******************** SCHEDULER ********************
- startup + control Task, lowest scheduling priority
  */
 // small init task
 TASK(INIT) {
 	arch::Perf::start();
 
-	//kout << "\nRunnables Testcase" << endl;
-	//kout_run_info();
+	kout << "\nRun minimal Testcase" << endl;
 
-	//ara_timing_info(100, 200);
+	ara_timing_info(0, 10);
 	TerminateTask();	
 }
 
 unsigned cycle = 0;
-
 StatusType res;
 unsigned blocked_counter[NR_TASKS] = {0};
 
 // main scheduler
 TASK(SCHED) {
-
 
 	ara_timing_info(10, 20);
   cycle++;
