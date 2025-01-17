@@ -16,19 +16,19 @@ static bool first = true;
 static int cycle_count = 0;
 
 TASK(MS1) {
-	ara_timing_info(0,5);
+	ara_timing_info(2,50);
 	TerminateTask();
 }
 
 void PreIdleHook() {
-	ara_timing_info(0,3);
+	ara_timing_info(0,1);
 	
 	if (first) {
 		arch::Perf::start();
 		first = false;
 	}
 
-	ara_timing_info(0,4);
+	ara_timing_info(3,5);
   cycle_count++;
 	if (cycle_count > 10) {
 		ShutdownMachine();

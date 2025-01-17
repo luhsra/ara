@@ -339,13 +339,17 @@ class LoadOIL(Step):
         for v, obj in chain(instances.get(_autosar.Counter),
                             instances.get(_autosar.ISR)):
 
+            self._log.warning(f"Added fake_interrupt_function for Counter {obj}")
             # TODO Interarival Times - iit
             # not yet verified!
-            self._log.warning(f"Added fake_interrupt_function for Counter {obj}")
             # could this be moved below check for no alarm counters?
-            # func_v = fake_interrupt_function(cfg, callgraph, os, obj.name, iit_bcet=10, iit_wcet=20)
-            func_v = fake_interrupt_function(cfg, callgraph, os, obj.name)
-
+            # need to get alarms from counter to extract wcet and bcet
+            # not sure how to map this, we have first alarm activation: alarmtime and recuring invterval: cycletime
+            # TODO - Hardcoded for now
+            func_v = fake_interrupt_function(
+                cfg, callgraph, os, obj.name, iit_bcet=100, iit_wcet=200
+            )
+            # breakpoint()
             active = True
             if isinstance(obj, _autosar.Counter):
                 active = False
