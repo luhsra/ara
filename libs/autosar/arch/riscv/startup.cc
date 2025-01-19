@@ -27,19 +27,41 @@ extern "C" {
 
 	void arch_startup(uintptr_t hartid, uintptr_t dtb) {
 		
-		if (arch::get_cpuid() == BOOT_CORE) {
+		//arch::init_cpuid();
+
+		uint32_t x;
+		asm volatile("csrr %0, mhartid" : "=r" (x) );
+
+		if (x == BOOT_CORE) {
 		
 			run_constructors();
 
-			core_is_ready[0] = true;
-			
+			core_is_ready[arch::get_cpuid()] = true;
+			// kout <<"BLABLAcore is ready[0] " << core_is_ready[0] << endl;
+
+			// kout <<"core is ready[1] " << core_is_ready[1] << endl;
+			// kout <<"core is ready[2] " << core_is_ready[2] << endl;
+			// kout <<"core is ready[3] " << core_is_ready[3] << endl;
+			// kout <<"core is ready[4] " << core_is_ready[4] << endl;
+
+			int hartid_offset = BOOT_CORE; // This offset assumes that the bootcore is always the lowest available hartid e.g hart 1 on beaglev
 			// Initialize the hart local storage (in machine.h)
 			for (int i = 0; i < MAX_CPUS; i++) {
-				arch::hart_local_storage[i].ipi = (uint32_t *) (CLINT_BASE + (4 * i));
-				arch::hart_local_storage[i].timecmp = (uint64_t *) (CLINT_BASE + MTIMECMP_BASE + (8 * i));
+				arch::hart_local_storage[i].ipi = (uint32_t *) (CLINT_BASE + (4 * i) + (4 * hartid_offset));
+				arch::hart_local_storage[i].timecmp = (uint64_t *) (CLINT_BASE + MTIMECMP_BASE + (8 * i) +  (8 * hartid_offset));
 			}
 		}
 		debug_core << __FUNCTION__ << endl;
+
+
+		//debug_core << "Main CPUID: " << arch::get_cpuid() << endl;
+
+		// debug_core <<"BLABLAcore is ready[0] " << core_is_ready[0] << endl;
+
+		// debug_core <<"core is ready[1] " << core_is_ready[1] << endl;
+		// debug_core <<"core is ready[2] " << core_is_ready[2] << endl;
+		// debug_core <<"core is ready[3] " << core_is_ready[3] << endl;
+		// debug_core <<"core is ready[4] " << core_is_ready[4] << endl;
 
 		// Enable soft interrupt source
 		clear_csr(CSR_MIP, MIP_MSIP);
@@ -53,11 +75,18 @@ extern "C" {
 		arch::Timer::init(1000);
 #endif
 		init_generic();
-	}
+	}	
 }
 
 extern "C" void mainAP() {
+	bool coreIsReady = core_is_ready[2];
+	while (!core_is_ready[arch::get_cpuid()])
+		;
 
-	while (!core_is_ready[arch::get_cpuid()]); // wait for wakeup
+	//kout << "COREISREADY: " << coreIsReady << endl;
+	// wait for wakeup
+	//debug_core << "HARTID: "<< arch::get_cpuid() <<", Counter: " << endl;
 	main();
+	//debug_core << "HHHHHHHHHHHHHHHHHHH" << endl;
+	while(true);
 }
