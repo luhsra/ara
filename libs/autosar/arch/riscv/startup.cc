@@ -27,41 +27,35 @@ extern "C" {
 
 	void arch_startup(uintptr_t hartid, uintptr_t dtb) {
 		
-		//arch::init_cpuid();
+		
+		// hartid from parameter is not dependable 
+		// TODO: find out why
+		uint32_t mhartid; 
+		asm volatile("csrr %0, mhartid" : "=r" (mhartid) ); 
 
-		uint32_t x;
-		asm volatile("csrr %0, mhartid" : "=r" (x) );
-
-		if (x == BOOT_CORE) {
+		if (mhartid == BOOT_CORE) {
 		
 			run_constructors();
 
 			core_is_ready[arch::get_cpuid()] = true;
-			// kout <<"BLABLAcore is ready[0] " << core_is_ready[0] << endl;
 
-			// kout <<"core is ready[1] " << core_is_ready[1] << endl;
-			// kout <<"core is ready[2] " << core_is_ready[2] << endl;
-			// kout <<"core is ready[3] " << core_is_ready[3] << endl;
-			// kout <<"core is ready[4] " << core_is_ready[4] << endl;
+			// We assume that the bootcore is always the lowest available hartid e.g hart 1 on beaglev
+			int hartid_offset = BOOT_CORE;
 
-			int hartid_offset = BOOT_CORE; // This offset assumes that the bootcore is always the lowest available hartid e.g hart 1 on beaglev
 			// Initialize the hart local storage (in machine.h)
 			for (int i = 0; i < MAX_CPUS; i++) {
-				arch::hart_local_storage[i].ipi = (uint32_t *) (CLINT_BASE + (4 * i) + (4 * hartid_offset));
+				arch::hart_local_storage[i].ipi = (uint32_t *) (CLINT_BASE + (4 * i) + (4 * hartid_offset)) ;
 				arch::hart_local_storage[i].timecmp = (uint64_t *) (CLINT_BASE + MTIMECMP_BASE + (8 * i) +  (8 * hartid_offset));
 			}
+
+			// Wake other harts from wfi after environment is set up
+			for (int i = 1; i < MAX_HARTS; i++) { // No need to ipi ourselfs
+				*(arch::hart_local_storage[i].ipi) = 1;
+			}
+
 		}
+
 		debug_core << __FUNCTION__ << endl;
-
-
-		//debug_core << "Main CPUID: " << arch::get_cpuid() << endl;
-
-		// debug_core <<"BLABLAcore is ready[0] " << core_is_ready[0] << endl;
-
-		// debug_core <<"core is ready[1] " << core_is_ready[1] << endl;
-		// debug_core <<"core is ready[2] " << core_is_ready[2] << endl;
-		// debug_core <<"core is ready[3] " << core_is_ready[3] << endl;
-		// debug_core <<"core is ready[4] " << core_is_ready[4] << endl;
 
 		// Enable soft interrupt source
 		clear_csr(CSR_MIP, MIP_MSIP);
@@ -79,14 +73,10 @@ extern "C" {
 }
 
 extern "C" void mainAP() {
-	bool coreIsReady = core_is_ready[2];
-	while (!core_is_ready[arch::get_cpuid()])
-		;
+	*(arch::hart_local_storage[arch::get_cpuid()].ipi) = 0; // acknowlege the "ipi" that woke us up from wfi
 
-	//kout << "COREISREADY: " << coreIsReady << endl;
-	// wait for wakeup
-	//debug_core << "HARTID: "<< arch::get_cpuid() <<", Counter: " << endl;
+	while (!core_is_ready[arch::get_cpuid()]) // wait for core start
+		;	
+
 	main();
-	//debug_core << "HHHHHHHHHHHHHHHHHHH" << endl;
-	while(true);
 }

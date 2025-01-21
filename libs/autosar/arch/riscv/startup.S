@@ -1,4 +1,5 @@
 #include "boot_cpu.h"
+#include "csr.h"
 
 .option norvc
 .section .text.init,"ax",@progbits
@@ -68,6 +69,17 @@ do_reset:
 .size do_reset, . - do_reset
 
 ap:
+	// Set ipi in CLINT for respective hart to 0 
+	li t1, 4 // offset per hart
+	mul t1, t1, a0 // a0 is hartid
+	li t0, CLINT_BASE
+	add t0, t0, t1
+    li t1, 0
+    sw t1, 0(t0)
+
+	// Put hart to sleep until boot hart finished setting up environment
+	wfi 
+
 	jal mainAP
 
 .global idle_entry
