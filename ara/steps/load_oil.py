@@ -13,6 +13,7 @@
 import json
 import functools
 import pyllco
+import math
 
 from itertools import chain
 
@@ -346,20 +347,25 @@ class LoadOIL(Step):
             # need to get alarms from counter to extract wcet and bcet
             # not sure how to map this, we have first alarm activation: alarmtime and recuring invterval: cycletime
             # TODO - Hardcoded for now
-            func_v = fake_interrupt_function(
-                cfg, callgraph, os, obj.name, iit_bcet=100, iit_wcet=200
-            )
-            # breakpoint()
+
             active = True
+            lowest_bcet = math.inf
+            highest_wcet = 0
             if isinstance(obj, _autosar.Counter):
                 active = False
                 #if no alarm is triggered, the Counter IRQ can be ignored
                 for a_v, a_obj in instances.get(_autosar.Alarm):
                     if str(a_obj.counter) == str(obj.name):
                         active = True
+                        self._log.warning(f"Alarm here: {a_obj}")
+                        lowest_bcet = min(lowest_bcet, a_obj.cycletime)
+                        highest_wcet = max(highest_wcet, a_obj.cycletime + a_obj.alarmtime)
 
                 if active == False:
                     continue
+
+            # only add counter if there is any alarm attached
+            func_v = fake_interrupt_function(cfg, callgraph, os, obj.name, iit_bcet=lowest_bcet, iit_wcet=highest_wcet)
 
             irq = IRQ(
                 id=v,
