@@ -119,7 +119,7 @@ namespace ara::step {
 		Module& mod = graph.get_module();
 		graph::CFG cfg = graph.get_cfg();
 		graph_tool::gt_dispatch<>()([&](auto& g) { test_map(g, cfg, mod, logger); },
-		                            graph_tool::always_directed())(cfg.graph.get_graph_view());
+		                            graph_tool::always_directed)(cfg.graph.get_graph_view());
 	}
 
 	std::vector<std::string> LLVMMapTest::get_single_dependencies() { return {"LLVMMap"}; }

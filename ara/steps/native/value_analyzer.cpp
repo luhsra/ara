@@ -1258,7 +1258,7 @@ namespace ara::step {
 			    ValueAnalyzerImpl impl{g, *this};
 			    res = py_repack(impl.get_memory_value(intermediate_value, callgraph));
 		    },
-		    graph_tool::always_directed())(svfg->graph.get_graph_view());
+		    graph_tool::always_directed)(svfg->graph.get_graph_view());
 		tracer.clear();
 		return res;
 	}
@@ -1313,7 +1313,7 @@ namespace ara::step {
 			    ValueAnalyzerImpl impl{g, *this};
 			    values = impl.get_assignments(value, gep, callpath);
 		    },
-		    graph_tool::always_directed())(svfg->graph.get_graph_view());
+		    graph_tool::always_directed)(svfg->graph.get_graph_view());
 
 		PyObject* py_values = PyTuple_New(values.size());
 		for (const auto& indexed_val : values | boost::adaptors::indexed()) {
@@ -1341,7 +1341,7 @@ namespace ara::step {
 
 		llvm::CallBase* ll_callsite;
 		graph_tool::gt_dispatch<>()([&](auto& g) { get_llvm_callsite(g, &ll_callsite, callsite); },
-		                            graph_tool::always_directed())(cfg.graph.get_graph_view());
+		                            graph_tool::always_directed)(cfg.graph.get_graph_view());
 
 		PyObject* res;
 		graph_tool::gt_dispatch<>()(
@@ -1350,7 +1350,7 @@ namespace ara::step {
 			    res = py_repack(impl.get_argument_value(safe_deref(ll_callsite), callpath, argument_nr,
 			                                            static_cast<graph::SigType>(hint), type));
 		    },
-		    graph_tool::always_directed())(svfg->graph.get_graph_view());
+		    graph_tool::always_directed)(svfg->graph.get_graph_view());
 
 		tracer.clear();
 		return res;
@@ -1359,7 +1359,7 @@ namespace ara::step {
 	PyObject* ValueAnalyzer::py_get_return_value(PyObject* callsite, graph::CallPath callpath) {
 		llvm::CallBase* ll_callsite;
 		graph_tool::gt_dispatch<>()([&](auto& g) { get_llvm_callsite(g, &ll_callsite, callsite); },
-		                            graph_tool::always_directed())(cfg.graph.get_graph_view());
+		                            graph_tool::always_directed)(cfg.graph.get_graph_view());
 
 		llvm::Value* val;
 		graph_tool::gt_dispatch<>()(
@@ -1367,7 +1367,7 @@ namespace ara::step {
 			    ValueAnalyzerImpl impl{g, *this};
 			    val = const_cast<llvm::Value*>(impl.get_return_value(safe_deref(ll_callsite), callpath));
 		    },
-		    graph_tool::always_directed())(svfg->graph.get_graph_view());
+		    graph_tool::always_directed)(svfg->graph.get_graph_view());
 		assert(val != nullptr);
 		PyObject* res = get_obj_from_value(safe_deref(val));
 		tracer.clear();
@@ -1382,7 +1382,7 @@ namespace ara::step {
 			    ValueAnalyzerImpl impl{g, *this};
 			    impl.assign_system_object(value, obj_index, offsets, callpath);
 		    },
-		    graph_tool::always_directed())(svfg->graph.get_graph_view());
+		    graph_tool::always_directed)(svfg->graph.get_graph_view());
 		tracer.clear();
 	}
 
@@ -1390,7 +1390,7 @@ namespace ara::step {
 	                                      OSObject obj_index) {
 		llvm::CallBase* ll_callsite;
 		graph_tool::gt_dispatch<>()([&](auto& g) { get_llvm_callsite(g, &ll_callsite, callsite); },
-		                            graph_tool::always_directed())(cfg.graph.get_graph_view());
+		                            graph_tool::always_directed)(cfg.graph.get_graph_view());
 
 		bool ret;
 		graph_tool::gt_dispatch<>()(
@@ -1398,7 +1398,7 @@ namespace ara::step {
 			    ValueAnalyzerImpl impl{g, *this};
 			    ret = impl.has_connection(safe_deref(ll_callsite), callpath, argument_nr, obj_index);
 		    },
-		    graph_tool::always_directed())(svfg->graph.get_graph_view());
+		    graph_tool::always_directed)(svfg->graph.get_graph_view());
 		tracer.clear();
 		return ret;
 	}

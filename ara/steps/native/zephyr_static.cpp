@@ -467,6 +467,6 @@ namespace ara::step {
 		graph::InstanceGraph instances = graph.get_instances();
 		graph::CFG cfg = graph.get_cfg();
 		graph_tool::gt_dispatch<>()([&](auto& g) { ZephyrStaticImpl(g, instances, logger, graph.get_module(), cfg); },
-		                            graph_tool::always_directed())(instances.graph.get_graph_view());
+		                            graph_tool::always_directed)(instances.graph.get_graph_view());
 	}
 } // namespace ara::step

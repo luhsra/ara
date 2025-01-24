@@ -74,7 +74,7 @@ namespace ara::step {
 	void BBTimings::run() {
 		graph::CFG cfg = graph.get_cfg();
 		graph_tool::gt_dispatch<>()([&](auto& g) { do_stuff(g, cfg, logger); },
-		                            graph_tool::always_directed())(cfg.graph.get_graph_view());
+		                            graph_tool::always_directed)(cfg.graph.get_graph_view());
 		logger.debug() << "finished" << std::endl;
 	}
 
