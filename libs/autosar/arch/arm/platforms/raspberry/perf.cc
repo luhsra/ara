@@ -150,7 +150,6 @@ extern "C" void bcet_micro_sec_wait(int bcet, int wcet) {
 
 		if (bcet == 0)
 			return;
-		kout << "num:" << bcet << "|" << wcet << endl;
 		micro_sec_wait(bcet);
 }
 
@@ -161,7 +160,6 @@ extern "C" void bcet_micro_sec_wait(int bcet, int wcet) {
 */
 extern "C" void micro_sec_wait(uint32_t wait_time) {
 	
-	kout << "Found:" << wait_time << endl;
 	cycles_wait(WAIT_FREQUENCE * wait_time);
 }
 

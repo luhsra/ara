@@ -107,7 +107,8 @@ class ApplyTimings(Step):
                 continue
             self._log.debug("abb: %s", cfg.vp.name[abb])
             # also include wcet/bcet on the abb itself
-            wcet, bcet = cfg.vp.wcet[abb], cfg.vp.bcet[abb]
+            wcet, bcet = 0,0
+            #wcet, bcet = cfg.vp.wcet[abb], cfg.vp.bcet[abb]
             for bb in cfg.get_bbs(abb):
                 bb_wcet = cfg.vp.wcet[bb]
                 bb_bcet = cfg.vp.bcet[bb]

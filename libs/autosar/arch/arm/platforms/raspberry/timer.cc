@@ -64,6 +64,7 @@ namespace arch {
 	uint32_t Timer::cntfrq = 0;
 
 	void Timer::init() {
+		// TODO might need to change 1000 to 100000 to allow for Mikroseconds instead of Miliseconds!
 		cntfrq = read_cntfrq() / 1000;
 		write_cntv_tval(cntfrq); // clear cntv interrupt and set 1 kHz timer.
 		enable_cntv();

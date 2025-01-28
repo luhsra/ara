@@ -59,7 +59,7 @@
               "task": "SCHED"
             },
             "autostart": true,
-            "cycletime": 5,
+            "cycletime": 10,
             "alarmtime": 1000
           }
         }

@@ -27,7 +27,7 @@ TASK(INIT) {
 
 	kout << "\nRun minimal Testcase" << endl;
 
-	ara_timing_info(0, 10);
+	ara_timing_info(0, 1);
 	TerminateTask();	
 }
 
@@ -38,7 +38,7 @@ unsigned blocked_counter[NR_TASKS] = {0};
 // main scheduler
 TASK(SCHED) {
 
-	ara_timing_info(10, 20);
+	ara_timing_info(2, 3);
   cycle++;
   kout << cycle << " " << CYCLES << endl;
   if (cycle > CYCLES) {
@@ -47,6 +47,7 @@ TASK(SCHED) {
     /*
     kout << "Trace Dump:" << endl;
     # test_trace_dump();
+
 
     kout_task_data();
 
@@ -66,7 +67,7 @@ TASK(SCHED) {
 
     // kout << "\nSchedule round:" << cycle << endl;
 
-	ara_timing_info(100, 200);
+	ara_timing_info(4, 5);
 	if (cycle % RUNABLES_PERIOD[MS1_id] == 0) {
 		res = ActivateTask(MS1);
 		if (res == StatusType::E_OS_LIMIT) {
@@ -76,7 +77,6 @@ TASK(SCHED) {
 	}
   
 	if (cycle % RUNABLES_PERIOD[MS2_id] == 0) {
-		ara_timing_info(1, 2);
 		res = ActivateTask(MS2);
 		if (res == StatusType::E_OS_LIMIT) {
 			kout << taskStrings[MS2_id] << " still runnning!" << endl;
@@ -143,7 +143,7 @@ TASK(SCHED) {
 			blocked_counter[MSANGLE_id]++;
 		}
 	}*/
-	ara_timing_info(10, 202);
+	ara_timing_info(6, 7);
 	TerminateTask();
 }
 
@@ -151,6 +151,7 @@ TASK(SCHED) {
  ******************** Tasks ********************
  */
 void workTask(task_id task) {
+	ara_timing_info(100,200);
 	micro_sec_wait((NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[task] * TIME_PER_RUNNABLE[task]);
 }
 
