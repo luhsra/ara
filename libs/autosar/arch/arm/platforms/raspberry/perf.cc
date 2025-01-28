@@ -74,7 +74,7 @@ extern "C" void cycles_wait(uint32_t wait_time) {
 
 }
 
-
+// think there is a bug with small numbers! TODO
 extern "C" bool cycles_wait_starttime(uint32_t starttime, uint32_t wait_time) {
 	
 	uint32_t endtime = starttime + wait_time;
@@ -142,6 +142,17 @@ extern "C" bool micro_sec_wait_upto(uint32_t start_time, uint32_t wait_time) {
 
 }
 
+/**
+ * Wrapper for micro_sec_wait to be included by ara_timing_info.
+ * ALWAYS uses the bcet!
+ * */
+extern "C" void bcet_micro_sec_wait(int bcet, int wcet) {
+
+		if (bcet == 0)
+			return;
+		kout << "num:" << bcet << "|" << wcet << endl;
+		micro_sec_wait(bcet);
+}
 
 /*
 * Wait for wait_time microseconds, 
@@ -150,6 +161,7 @@ extern "C" bool micro_sec_wait_upto(uint32_t start_time, uint32_t wait_time) {
 */
 extern "C" void micro_sec_wait(uint32_t wait_time) {
 	
+	kout << "Found:" << wait_time << endl;
 	cycles_wait(WAIT_FREQUENCE * wait_time);
 }
 

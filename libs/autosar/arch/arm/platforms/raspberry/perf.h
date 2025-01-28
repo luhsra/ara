@@ -23,6 +23,9 @@
 
 extern "C" void wait(int a, int b);
 
+extern "C" void micro_sec_wait(uint32_t wait_time);
+extern "C" void bcet_micro_sec_wait(int bcet, int wcet);
+
 namespace arch {
 	class Perf {
 		static int cycles[MAX_TRACES];
