@@ -607,7 +607,7 @@ foreach app: autosar_targets
 
     app += {'run_cmd_riscv': run_cmd}
     rt = 'run_' + full_name + '_riscv'
-    run_target(rt, command: run_cmd)
+    run_target(rt, command: run_cmd, depends: app_image_riscv)
     summary('Run @0@ on RISC-V Qemu'.format(full_name), 'meson compile ' + rt, bool_yn: true, section: 'MACAW, AUTOSAR synthesis')
 
     riscv_bin = custom_target(full_name + '_riscv_bin',

@@ -327,7 +327,7 @@ if get_option('enable_step_tests')
         py3_inst,
         args: [files('autosar_generator.py'), app['run_cmd_riscv']],
         env: [python_path],
-        depends: ara_py,
+        depends: [ara_py, app['app_image_riscv']],
         is_parallel: false,
         suite: ['autosar_generator', 'autosar_generator_riscv']
       )
