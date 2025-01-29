@@ -603,7 +603,7 @@ foreach app: autosar_targets
 
     app += {'app_image_riscv': app_image_riscv}
 
-    run_cmd = ['qemu-system-riscv64', '-M', 'virt', '-smp', '16', '-no-reboot', '-nographic', '-serial','mon:stdio', '-bios'] + app_image_riscv
+    run_cmd = ['qemu-system-riscv64', '-M', 'virt', '-smp', '16', '-no-reboot', '-nographic', '-serial','mon:stdio', '-device', 'loader,addr=0x80000000,file='+app_image_riscv.full_path()]
 
     app += {'run_cmd_riscv': run_cmd}
     rt = 'run_' + full_name + '_riscv'
