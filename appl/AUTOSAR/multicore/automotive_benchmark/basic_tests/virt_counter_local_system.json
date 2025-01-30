@@ -4,22 +4,16 @@
 		{
 			"id": 0,
 			"tasks": {
-				"S1": {
+				"COUNTER": {
 					"activation": 1,
 					"autostart": true,
 					"priority": 3,
 					"schedule": true
-				}, 
-				"C1": {
-					"activation": 1,
-					"autostart": false,
-					"priority": 2,
-					"schedule": true
 				},
-				"D1": {
+				"WORKER": {
 					"activation": 1,
 					"autostart": false,
-					"priority": 1,
+					"priority": 5,
 					"schedule": true
 				}
 			},

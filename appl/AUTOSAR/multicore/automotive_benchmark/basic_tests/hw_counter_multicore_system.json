@@ -1,0 +1,37 @@
+{
+	"cpus": [
+		{
+			"id": 0,
+			"tasks": {
+				"WORKER": {
+					"activation": 1,
+					"autostart": false,
+					"priority": 1,
+					"schedule": true
+				}
+			},
+			"resources": {},
+			"events": {},
+			"counters": {
+          "COUNTER": {
+            "maxallowedvalue": 10000,
+            "ticksperbase": 1,
+            "mincycle": 1
+          }
+        },
+        "alarms": {
+          "ALARM": {
+            "counter": "COUNTER",
+            "action": {
+              "action": "activatetask",
+              "task": "WORKER"
+            },
+            "autostart": true,
+            "cycletime":10,
+            "alarmtime": 100
+          }
+        }
+		}	
+	]
+}
+  

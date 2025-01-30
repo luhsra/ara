@@ -2,9 +2,8 @@
 #include "test/test.h"
 #include "arch/arm/platforms/raspberry/perf.cc"
 
-DeclareTask(S1);
-DeclareTask(C2);
-DeclareTask(D1);
+DeclareTask(COUNTER);
+DeclareTask(WORKER);
 
 void start() {
 	StatusType rv;
@@ -19,47 +18,37 @@ void start() {
 TEST_MAKE_OS_MAIN(start())
 
 /**
- * Build a counter with a single task, to see if mstg is correct.
+ * Build a virt counter with a single task, to see if mstg is correct.
  */
-// setup task at the beginning
-TASK(S1) {
-	ara_timing_info(0,1);
-	arch::Perf::start();
-  kout << "S C2" << endl;
-	ara_timing_info(11,12);
-  ActivateTask(C2);
-
-	while (1 == 1) {
-		ara_timing_info(8,9);
-		kout << "1 sleep." << endl;
-		micro_sec_wait(1000000);
-	}
-	TerminateTask();
-
-}
 
 // Our "counter", runs on 2nd core
-TASK(C2) {
-	ara_timing_info(0, 2);
+TASK(COUNTER) {
 	arch::Perf::start();
-	kout << "C2!" << endl;
+	ara_timing_info(100, 120);
+	debug_core << "Counter started" << endl;
 	int c = 0;
 	
+
 	while (1 == 1) {
-		kout << "A: " << c << endl;
+		debug_core << "Counter running in loop " << c << endl;
 		c++;
-		ara_timing_info(6,7);
+		ara_timing_info(10,20);
 		micro_sec_wait(1000000);
-		ActivateTask(D1);
+		ActivateTask(WORKER);
 	}
-	
-	//ActivateTask(D1);
 	TerminateTask();
 }
 
-TASK(D1) {
-	ara_timing_info(3,4);
-	kout << "Never called!" << endl;
+TASK(WORKER) {
+	arch::Perf::start();
+	// VAR A: Worker always slower
+	ara_timing_info(5,6);
+
+
+
+	// VAR B: Worker could be faster or slower
+	//ara_timing_info(5,15);
+	debug_core << "Worker working!" << endl;
 	TerminateTask();
 }
 
