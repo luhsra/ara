@@ -9,6 +9,7 @@ from ara.graph import NodeLevel, ABBType, CFType, SyscallCategory
 from ara.util import get_child_logger_or_none
 
 from .os_base import IRQCPU, TaskStatus, ExecState
+from ara.steps.printer import Printer
 
 
 class IntrSyscall:
@@ -21,12 +22,48 @@ def fake_interrupt_function(cfg, callgraph, os, name, iit_bcet=0, iit_wcet=math.
 
     Apply the interrupt interarrival time (iit) if given.
     """
-    # add the nodes
+
+    # Block of this fake interrupt control flow
     func_v = cfg.add_vertex()
     cfg.vp.artificial[func_v] = True
     cfg.vp.name[func_v] = name
     cfg.vp.level[func_v] = NodeLevel.function
 
+    
+    alarmtime = 100
+    cycletime = 10
+
+    # Add a vertex as startpoint, its time is defined by "alarmtime", the time before the alarm is first triggered
+    alarmtime_v = cfg.add_vertex()
+    cfg.vp.artificial[alarmtime_v] = True
+    cfg.vp.name[alarmtime_v] = "Alarmtime"
+    cfg.vp.level[alarmtime_v] = NodeLevel.abb
+    cfg.vp.type[alarmtime_v] = ABBType.computation
+    cfg.set_bcet(alarmtime_v, alarmtime)
+    cfg.set_wcet(alarmtime_v, alarmtime)
+    # add edge to func
+    fa = cfg.add_edge(func_v, alarmtime_v)
+    cfg.ep.type[fa] = CFType.f2a
+    cfg.ep.is_entry[fa] = True
+    
+
+    # Add a vertex that starts the loop
+    loop_v = cfg.add_vertex()
+    cfg.vp.artificial[loop_v] = True
+    cfg.vp.name[loop_v] = "Loop"
+    cfg.vp.level[loop_v] = NodeLevel.abb
+    cfg.vp.type[loop_v] = ABBType.computation
+    # add edge to func
+    fl = cfg.add_edge(func_v, loop_v)
+    cfg.ep.type[fl] = CFType.f2a
+    # connect first two nodes
+    l_is_l = cfg.add_edge(alarmtime_v, loop_v)
+    cfg.ep.type[l_is_l] = CFType.lcf
+    l_is_i = cfg.add_edge(alarmtime_v, loop_v)
+    cfg.ep.type[l_is_i] = CFType.icf
+    
+
+    # Add a vertex that adds the iit inside the loop
     iit_v = cfg.add_vertex()
     cfg.vp.artificial[iit_v] = True
     cfg.vp.name[iit_v] = name + '.iit'
@@ -38,6 +75,7 @@ def fake_interrupt_function(cfg, callgraph, os, name, iit_bcet=0, iit_wcet=math.
     cfg.set_bcet(iit_v, iit_bcet)
     cfg.set_wcet(iit_v, iit_wcet)
 
+    # Add the green syscall box
     sc_v = cfg.add_vertex()
     cfg.vp.artificial[sc_v] = True
     syscall_name = name + '.sc'
@@ -46,6 +84,7 @@ def fake_interrupt_function(cfg, callgraph, os, name, iit_bcet=0, iit_wcet=math.
     cfg.vp.type[sc_v] = ABBType.syscall
     cfg.vp.part_of_loop[iit_v] = True
 
+    # Add the grey Box
     sys_func = cfg.add_vertex()
     cfg.vp.artificial[sys_func] = True
     cfg.vp.name[sys_func] = syscall_name
@@ -53,6 +92,7 @@ def fake_interrupt_function(cfg, callgraph, os, name, iit_bcet=0, iit_wcet=math.
     cfg.vp.implemented[sys_func] = False
     cfg.vp.sysfunc[sys_func] = True
 
+    # Add the node inside the grey box
     empty_sys_func = cfg.add_vertex()
     cfg.vp.artificial[empty_sys_func] = True
     cfg.vp.name[empty_sys_func] = 'empty'
@@ -62,9 +102,17 @@ def fake_interrupt_function(cfg, callgraph, os, name, iit_bcet=0, iit_wcet=math.
     os.syscalls[syscall_name] = IntrSyscall()
 
     # link them
+    
+    
+    a_is_l = cfg.add_edge(loop_v, iit_v)
+    cfg.ep.type[a_is_l] = CFType.lcf
+    a_is_i = cfg.add_edge(loop_v, iit_v)
+    cfg.ep.type[a_is_i] = CFType.icf
+    
+    
     fi = cfg.add_edge(func_v, iit_v)
     cfg.ep.type[fi] = CFType.f2a
-    cfg.ep.is_entry[fi] = True
+    #cfg.ep.is_entry[fi] = True
 
     fs = cfg.add_edge(func_v, sc_v)
     cfg.ep.type[fs] = CFType.f2a

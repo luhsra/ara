@@ -17,8 +17,6 @@ TASK(WORKER) {
 	// VAR A: Worker always slower
 	ara_timing_info(5,6);
 
-
-
 	// VAR B: Worker could be faster or slower
 	//ara_timing_info(5,15);
 
