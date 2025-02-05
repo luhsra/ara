@@ -6,6 +6,8 @@
 #include "os/spinlock.h"
 #include "boot_cpu.h"
 
+#include "perf.h"
+
 #include "hardware_threads.h"
 
 extern "C" int main(void);
@@ -47,6 +49,38 @@ extern "C" {
 				arch::hart_local_storage[i].ipi = (uint32_t *) (CLINT_BASE + (4 * i) + (4 * hartid_offset)) ;
 				arch::hart_local_storage[i].timecmp = (uint64_t *) (CLINT_BASE + MTIMECMP_BASE + (8 * i) +  (8 * hartid_offset));
 			}
+
+
+
+			arch::Perf::start();
+
+			unsigned int cycles = arch::Perf::get_cycles();
+			debug_core << "Cycles: " << cycles << endl;
+
+			arch::Perf::trace_cycles();
+
+			int counter = 0;
+			for (int i = 0; i < 10000000; i++)
+			{
+				counter++;
+				if(counter >= 9999999) {
+					debug_core << "Alsdfmost end kent1" << endl;
+				}
+			}
+			arch::Perf::trace_cycles();
+			arch::Perf::print_cycles();
+
+
+			arch::Perf::reset();
+
+			arch::Perf::stop();
+			unsigned int cycles2 = arch::Perf::get_cycles();
+			debug_core << "After stop 1: " << cycles2 << endl;
+			unsigned int cycles3 = arch::Perf::get_cycles();
+			debug_core << "After stop 2: " << cycles3 << endl;
+			arch::Perf::reset();
+			unsigned int cycles4 = arch::Perf::get_cycles();
+			debug_core << "After reset and stop 1: " << cycles4 << endl;
 
 			// Wake other harts from wfi after environment is set up
 			for (int i = 1; i < MAX_HARTS; i++) { // No need to ipi ourselfs

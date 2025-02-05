@@ -1,5 +1,6 @@
 riscv_autosar_includes = ['-I', meson.current_source_dir()]
 # riscv_autosar_includes += ['-I', meson.current_source_dir() / 'platforms' / 'r5']
+riscv_autosar_includes += ['-I', meson.current_source_dir() / 'platforms' / 'beaglev']
 # Wenn maschinenabhängige Dateien hinzugefügt werden, müssen sie hier eingebunden werden
 
 src_files = [
@@ -14,6 +15,8 @@ src_files = [
   'startup.S',
   'timer.cc',
   'spinlock.cc'
+  # 'spinlock.cc',
+  # 'platforms/beaglev/perf.cc'
 ]
 
 obj_targets = []
