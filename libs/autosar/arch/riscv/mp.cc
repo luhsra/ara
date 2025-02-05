@@ -13,7 +13,7 @@ extern "C" int main(void);
 _Atomic(int) cores = 1;
 _Atomic(int) syncing_cores[arch::SYNC_MAX] = {0};
 _Atomic(bool) ipi_cleared[MAX_CPUS];
-_Atomic(bool) core_is_ready[MAX_CPUS] = {false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false};
+_Atomic(bool) core_is_ready[MAX_CPUS] = {false};
 
 
 namespace arch {
