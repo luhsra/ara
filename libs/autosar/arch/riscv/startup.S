@@ -77,8 +77,15 @@ ap:
     li t1, 0
     sw t1, 0(t0)
 
+1:
 	// Put hart to sleep until boot hart finished setting up environment
-	wfi 
+	//wfi
+
+	// make loop and check for ipi signal 
+	lw t1, 0(t0)
+	
+	beq t1, x0, 1b
+	//beq x0, x0, 1b
 
 	jal mainAP
 
