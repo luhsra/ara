@@ -74,7 +74,7 @@ class ApplyTimings(Step):
         if timings:
             # TODO avoid duplicate assignments if step is executed multiple
             # times
-            self._log.debug("Assign times.")
+            self._log.info("Assign times.")
             if timings == 'BB':
                 self.timings_from_bbs(cfg, abbs)
             else:
@@ -101,15 +101,15 @@ class ApplyTimings(Step):
                 abbs.vp.wcet[abb] = attrs["wcet"]
 
 
+    # Only take times from BB, not from ABB itself!
+    # TODO could be called multiple times
     def timings_from_bbs(self, cfg, abbs):
         for abb in abbs.vertices():
             if abbs.vp.type[abb] != ABBType.computation:
                 continue
             self._log.warning("abb: %s bcet: %s wcet: %s", cfg.vp.name[abb], cfg.vp.bcet[abb], cfg.vp.wcet[abb])
-            #breakpoint()
-            # also include wcet/bcet on the abb itself
+
             wcet, bcet = 0,0
-            #wcet, bcet = cfg.vp.wcet[abb], cfg.vp.bcet[abb]
             for bb in cfg.get_bbs(abb):
                 bb_wcet = cfg.vp.wcet[bb]
                 bb_bcet = cfg.vp.bcet[bb]

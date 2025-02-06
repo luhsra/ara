@@ -24,7 +24,7 @@ TEST_MAKE_OS_MAIN(start())
 // Our "counter", runs on 2nd core
 TASK(COUNTER) {
 	arch::Perf::start();
-	ara_timing_info(100, 120);
+	ara_timing_info(90, 90);
 	debug_core << "Counter started" << endl;
 	int c = 0;
 	
@@ -32,7 +32,7 @@ TASK(COUNTER) {
 	while (1 == 1) {
 		debug_core << "Counter running in loop " << c << endl;
 		c++;
-		ara_timing_info(10,20);
+		ara_timing_info(10,10);
 		micro_sec_wait(1000000);
 		ActivateTask(WORKER);
 	}

@@ -26,6 +26,7 @@ import ara.os.autosar as _autosar
 
 from ara.os.os_base import IRQ
 from ara.os.interrupts import fake_interrupt_function
+from ara.steps.printer import Printer
 
 
 class LoadOIL(Step):
@@ -349,8 +350,8 @@ class LoadOIL(Step):
             # TODO - Hardcoded for now
 
             active = True
-            lowest_bcet = math.inf
-            highest_wcet = 0
+            first_activation = math.inf
+            shortest_cycletime = math.inf
             if isinstance(obj, _autosar.Counter):
                 active = False
                 #if no alarm is triggered, the Counter IRQ can be ignored
@@ -358,14 +359,17 @@ class LoadOIL(Step):
                     if str(a_obj.counter) == str(obj.name):
                         active = True
                         self._log.warning(f"Alarm here: {a_obj}")
-                        lowest_bcet = min(lowest_bcet, a_obj.cycletime)
-                        highest_wcet = max(highest_wcet, a_obj.cycletime + a_obj.alarmtime)
+                        first_activation = min(first_activation, a_obj.alarmtime)
+                        shortest_cycletime = min(shortest_cycletime, a_obj.cycletime)
 
                 if active == False:
                     continue
 
             # only add counter if there is any alarm attached
-            func_v = fake_interrupt_function(cfg, callgraph, os, obj.name, iit_bcet=lowest_bcet, iit_wcet=highest_wcet)
+            # breakpoint()
+            # TODO only temporary for debugging
+            temp_printer = Printer(self._graph, self._step_manager)
+            func_v = fake_interrupt_function(temp_printer, cfg, callgraph, os, obj.name, alarmtime=first_activation, cycletime=shortest_cycletime)
 
             irq = IRQ(
                 id=v,

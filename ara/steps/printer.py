@@ -572,10 +572,15 @@ class Printer(Step):
                             ty=Bool(),
                             default_value=True)
 
+    # fallback dot path, for manuall creating a printer
+    _testing_dot_path = "dumps/testing.dot"
+
     def _print_init(self):
         dot = self.dot.get()
         if not dot:
-            self._fail("dot file path must be given.")
+            # fallback case
+            dot = self._testing_dot_path
+            # self._fail("dot file path must be given.")
 
         name = self.graph_name.get()
         if not name:
@@ -584,7 +589,10 @@ class Printer(Step):
 
     def _write_dot(self, dot):
         dot_path = self.dot.get()
-        assert dot_path
+        if not dot_path:
+            # fallback case
+            dot_path = self._testing_dot_path
+        # assert dot_path
         dot_path = os.path.abspath(dot_path)
         with open_with_dirs(dot_path):
             dot.write(dot_path)
