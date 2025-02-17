@@ -45,7 +45,7 @@
               "task": "S1"
             },
             "autostart": true,
-            "cycletime": 1000,
+            "cycletime": 1,
             "alarmtime": 3000
           }
         }

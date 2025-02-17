@@ -25,12 +25,14 @@ TASK(S0) {
 
 	TerminateTask();
 }
-const unsigned ROUNDS = 10;
+const unsigned ROUNDS = 20;
 static unsigned round_counter = 0;
+
+// find maximum time
+const unsigned T2_WORKTIME = 1950;
 
 // main scheduler
 TASK(S1) {
-
 
     round_counter++;
     if (round_counter > ROUNDS) {
@@ -45,39 +47,42 @@ TASK(S1) {
         ShutdownMachine();
     }
 
-    kout << "\nSchedule round:" << round_counter << endl;
+    //kout << "\nSchedule round:" << round_counter << endl;
 
     StatusType res;
     res = ActivateTask(H1);
+		/*
     if (res == StatusType::E_OK)  {
         kout << "Go H1" << endl;
     } else if (res == StatusType::E_OS_LIMIT) {
         kout << "H1 blocked" << endl;
-    }
+    }*/
 
-    res = ActivateTask(H2);
-    if (res == StatusType::E_OK)  {
-        kout << "Go H2" << endl;
-    } else if (res == StatusType::E_OS_LIMIT) {
-        kout << "H2 blocked" << endl;
-    }
-
+		if (round_counter % 2 == 0) {
+			res = ActivateTask(H2);
+			/*
+			if (res == StatusType::E_OK)  {
+					kout << "Go H2" << endl;
+			} else if (res == StatusType::E_OS_LIMIT) {
+					kout << "H2 blocked" << endl;
+			}*/
+		}
 	TerminateTask();
 }
 
 TASK(H1) {
-    kout << "\tStart H1" << endl;
+  // kout << "H1" << endl;
 	test_trace('1');
-	micro_sec_wait(100000);
-    kout << "\tEnd H1" << endl;
+	micro_sec_wait(5);
+  //kout << "\tEnd H1" << endl;
 	TerminateTask();
 }
 
 TASK(H2) {
-    kout << "\tStart H2" << endl;
+	//kout << "H2" << endl;
 	test_trace('2');
-	micro_sec_wait(2600000);
-    kout << "\tEnd H2" << endl;
+	micro_sec_wait(T2_WORKTIME);
+  // kout << "\tEnd H2" << endl;
 	TerminateTask();
 }
 
