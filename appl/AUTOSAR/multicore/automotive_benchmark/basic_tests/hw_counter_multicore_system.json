@@ -27,8 +27,8 @@
               "task": "WORKER"
             },
             "autostart": true,
-            "cycletime":10,
-            "alarmtime": 90
+            "cycletime":1000,
+            "alarmtime": 10
           }
         }
 		}	

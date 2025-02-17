@@ -47,8 +47,8 @@
               "task": "MS1"
             },
             "autostart": true,
-            "cycletime": 100,
-            "alarmtime": 1000
+            "cycletime": 1000,
+            "alarmtime": 3000
           }
         }
       }

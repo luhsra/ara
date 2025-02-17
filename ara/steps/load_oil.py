@@ -341,24 +341,24 @@ class LoadOIL(Step):
         for v, obj in chain(instances.get(_autosar.Counter),
                             instances.get(_autosar.ISR)):
 
-            self._log.warning(f"Added fake_interrupt_function for Counter {obj}")
-            # TODO Interarival Times - iit
-            # not yet verified!
-            # could this be moved below check for no alarm counters?
-            # need to get alarms from counter to extract wcet and bcet
-            # not sure how to map this, we have first alarm activation: alarmtime and recuring invterval: cycletime
-            # TODO - Hardcoded for now
+            self._log.info(f"Added fake_interrupt_function for Counter {obj}")
 
             active = True
+
+            # Interarival Times - iit, not fully verified!
+            # could this be moved below check for no alarm counters?
+            # need to get alarms from counter to extract wcet and bcet
+            # alarmtime=first alarm activation, cycletime=recuring invterval 
             first_activation = math.inf
             shortest_cycletime = math.inf
+            # TODO what happens with multiple alarms that are on different intervals
             if isinstance(obj, _autosar.Counter):
                 active = False
                 #if no alarm is triggered, the Counter IRQ can be ignored
                 for a_v, a_obj in instances.get(_autosar.Alarm):
                     if str(a_obj.counter) == str(obj.name):
                         active = True
-                        self._log.warning(f"Alarm here: {a_obj}")
+                        self._log.debug(f"Found alarm here: {a_obj}")
                         first_activation = min(first_activation, a_obj.alarmtime)
                         shortest_cycletime = min(shortest_cycletime, a_obj.cycletime)
 
@@ -367,9 +367,9 @@ class LoadOIL(Step):
 
             # only add counter if there is any alarm attached
             # breakpoint()
-            # TODO only temporary for debugging
-            temp_printer = Printer(self._graph, self._step_manager)
-            func_v = fake_interrupt_function(temp_printer, cfg, callgraph, os, obj.name, alarmtime=first_activation, cycletime=shortest_cycletime)
+            # temp_printer = Printer(self._graph, self._step_manager)
+            # func_v = fake_interrupt_function(temp_printer, cfg, callgraph, os, obj.name, alarmtime=first_activation, cycletime=shortest_cycletime)
+            func_v = fake_interrupt_function(cfg, callgraph, os, obj.name, alarmtime_ms=first_activation, cycletime_ms=shortest_cycletime)
 
             irq = IRQ(
                 id=v,

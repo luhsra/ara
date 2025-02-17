@@ -15,11 +15,16 @@ class IntrSyscall:
     is_stub = True
 
 
-def fake_interrupt_function(temp_printer, cfg, callgraph, os, name, alarmtime, cycletime):
+# def fake_interrupt_function(temp_printer, cfg, callgraph, os, name, alarmtime, cycletime):
+def fake_interrupt_function(cfg, callgraph, os, name, alarmtime_ms, cycletime_ms):
     """Fake an interrupt control flow.
 
     Apply the interrupt interarrival time (iit) if given.
     """
+
+    # Autosar increments counter with a 1 kHz Timer, but other timing measurement is done with us precision
+    alarmtime_us = alarmtime_ms * 1000
+    cycletime_us = cycletime_ms * 1000
 
     syscall_name = name + '.sc'
 
@@ -47,8 +52,8 @@ def fake_interrupt_function(temp_printer, cfg, callgraph, os, name, alarmtime, c
     cfg.vp.artificial[alarmtime_bb] = True
     cfg.vp.name[alarmtime_bb] = "alarmtime_bb"
     cfg.vp.level[alarmtime_bb] = NodeLevel.bb
-    cfg.set_bcet(alarmtime_bb, alarmtime)
-    cfg.set_wcet(alarmtime_bb, alarmtime)
+    cfg.set_bcet(alarmtime_bb, alarmtime_us)
+    cfg.set_wcet(alarmtime_bb, alarmtime_us)
     fl = cfg.add_edge(startup_v, alarmtime_bb)
     cfg.ep.type[fl] = CFType.a2b
 
@@ -96,8 +101,8 @@ def fake_interrupt_function(temp_printer, cfg, callgraph, os, name, alarmtime, c
     cfg.vp.artificial[cycletime_bb] = True
     cfg.vp.name[cycletime_bb] = "alarmtime_bb"
     cfg.vp.level[cycletime_bb] = NodeLevel.bb
-    cfg.set_bcet(cycletime_bb, cycletime)
-    cfg.set_wcet(cycletime_bb, cycletime)
+    cfg.set_bcet(cycletime_bb, cycletime_us)
+    cfg.set_wcet(cycletime_bb, cycletime_us)
     fl = cfg.add_edge(cycletime_v, cycletime_bb)
     cfg.ep.type[fl] = CFType.a2b
     
@@ -150,8 +155,8 @@ def fake_interrupt_function(temp_printer, cfg, callgraph, os, name, alarmtime, c
     # set as entry
     cfg.ep.is_entry[sfsa] = True
 
-    # TODO temp printing
-    temp_printer.print_xbbs(False)
+    # Temp print the graph
+    # temp_printer.print_xbbs(False)
 
     # call graph
     icn_v = callgraph.add_vertex()
