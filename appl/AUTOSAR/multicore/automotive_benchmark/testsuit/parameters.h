@@ -35,6 +35,10 @@
     const unsigned CYCLES = 2000;
     const unsigned NUMBER_OF_RUNNABLES = 1000;
     const unsigned NUMBER_OF_LABELS = 10000;
+#elif defined(VARIANT_CUSTOM)
+    const unsigned CYCLES = 1000;
+    const unsigned NUMBER_OF_RUNNABLES = 1000;
+    const unsigned NUMBER_OF_LABELS = 10000;
 
 // to make linter happier
 #else

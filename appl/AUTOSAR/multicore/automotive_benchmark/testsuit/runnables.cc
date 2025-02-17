@@ -10,6 +10,12 @@ DeclareAlarm(A1);
 DeclareTask(MS1);
 DeclareTask(MS2);
 DeclareTask(MS5);
+DeclareTask(MS10);
+DeclareTask(MS20);
+DeclareTask(MS50);
+DeclareTask(MS100);
+DeclareTask(MS200);
+DeclareTask(MS1000);
 
 TEST_MAKE_OS_MAIN(StartOS(0))
 
