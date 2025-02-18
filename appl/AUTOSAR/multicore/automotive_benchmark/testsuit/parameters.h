@@ -48,7 +48,6 @@
 
 #endif
 
-
 /**
  ******************** Static Variables ********************
  from Paper: REAL WORLD AUTOMOTIVE BENCHMARKS FOR FREE
@@ -120,6 +119,11 @@ const unsigned INTER_TASK_RATIO[NR_TASKS][NR_TASKS] = {
 										};
 
 
+// Used the reduce the number o task, removing the ones with the longest scheduling intervals
+// With all tasks the analysis might take very long!
+const unsigned TASK_COUNT = 5;
+static_assert(TASK_COUNT <= NR_TASKS);
+
 /**
  ******************** Debug Helpers ********************
  */
@@ -145,13 +149,41 @@ void kout_run_info() {
 
 }
 
-void kout_task_data() {
+/*
+TASK     | NUMBER OF RUNNABLES | EXPECTED RUNTIME | EXPECTED RUNTIME per SCHEDUL_INTERVAL
+------------------------------------------------
+MS1             | 30x           | 150 us          | 150 us
+MS2             | 20x           | 100 us
+MS5             | 20x           | 240 us
+MS10            | 250x          | 2750 us
+MS20            | 250x          | 2250 us
+MS50            | 30x           | 540 us
+MS100           | 200x          | 2200 us
+MS200           | 10x           | 30 us
+MS1000          | 40x           | 40 us
+MSANGLE         | 150x          | 1050 us
+Total number of runnables = 1000				
+Avarage runtime per Scheduling interval = 600 us -> 60%
 
-	kout << "\n\nTASK     | NUMBER OF RUNNABLES | EXPECTED RUNTIME" << endl;
+EXPECTED RUNTIME / RUNABLES_PERIOD[NR_TASKS]
+Cylcles
+*/
+void kout_task_data() {
+	unsigned exp_runtime = 0;
+	unsigned runables = 0;
+	unsigned rt_si = 0;
+	kout << "Runnables + Runtime Table with " << TASK_COUNT << " tasks:" << endl;
+	kout << "TASK     | NUMBER OF RUNNABLES | EXPECTED RUNTIME | EXPECTED RUNTIME per SCHEDUL_INTERVAL" << endl;
 	kout << "------------------------------------------------" << endl;
-	for (unsigned i = 0; i < NR_TASKS; i++) {
-		kout << taskStrings[i] << "\t\t| " << (NUMBER_OF_RUNNABLES / 100) * RUNABLES_SHARE[i] << "x \t\t| " << (NUMBER_OF_RUNNABLES / 100) * RUNABLES_SHARE[i] * TIME_PER_RUNNABLE[i] << " us" << endl;
+	for (unsigned i = 0; i < TASK_COUNT; i++) {
+		runables += (NUMBER_OF_RUNNABLES / 100) * RUNABLES_SHARE[i];
+		exp_runtime = (NUMBER_OF_RUNNABLES / 100) * RUNABLES_SHARE[i] * TIME_PER_RUNNABLE[i];
+		rt_si += exp_runtime / RUNABLES_PERIOD[i];
+		kout << taskStrings[i] << "\t | " << (NUMBER_OF_RUNNABLES / 100) * RUNABLES_SHARE[i] << "\t\t\t| ";
+		kout << exp_runtime << "\tus";
+		kout << "\t  | " << exp_runtime / RUNABLES_PERIOD[i] << "\tus" << endl;
 	}
+	kout << "Active number of runnables=" << runables << "  |  Total runtime per interval=" << rt_si << endl;
 }
 
 void kout_intercom_data() {

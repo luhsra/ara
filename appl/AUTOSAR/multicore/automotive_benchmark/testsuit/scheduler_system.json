@@ -102,7 +102,7 @@
             },
             "autostart": true,
             "cycletime": 1,
-            "alarmtime": 3000
+            "alarmtime": 100
           }
         }
       }
