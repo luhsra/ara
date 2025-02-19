@@ -82,6 +82,26 @@ extern "C" {
 			unsigned int cycles4 = arch::Perf::get_cycles();
 			debug_core << "After reset and stop 1: " << cycles4 << endl;
 
+			debug_core << "Trace0" << endl;
+			arch::Perf::trace_counter0();
+
+			volatile unsigned int a = 4;
+			volatile unsigned int b = 5;
+			arch::Perf::trace_counter0();			
+			volatile unsigned int c = a * b;
+			arch::Perf::trace_counter0();
+			volatile unsigned int d = c / b;
+			// debug_core << "Multiplication: " << c << endl;
+			// debug_core << "Division: " << d << endl;
+
+			// debug_core << "Trace1" << endl;
+			arch::Perf::trace_counter0();
+			// debug_core << "Trace3" << endl;
+			arch::Perf::trace_counter0();
+			debug_core << "Printing" << endl;
+			arch::Perf::print_counter0();
+
+
 			// Wake other harts from wfi after environment is set up
 			for (int i = 1; i < MAX_HARTS; i++) { // No need to ipi ourselfs
 				*(arch::hart_local_storage[i].ipi) = 1;

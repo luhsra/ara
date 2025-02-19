@@ -6,13 +6,70 @@
 
 #define MAX_TRACES 64
 
-extern "C" void wait(int a, int b);
-
-
 #define CSR_MCOUNTINHIBIT 0x320
+#define MCOUNTINHIBIT_CYCLE (1 << 0)
+#define MCOUNTINHIBIT_HPM3 (1 << 3)
 
-#define MCOUNTINHIBIT_CYCLE 1 << 0
+// #define CSR_MHPMCOUNTER3 0xB03
+// #define CSR_MHPMEVENT3 0x323
 
+
+// Specific to U54 cores (beaglv) see:
+// https://static.dev.sifive.com/U54-MC-RVCoreIP.pdf
+
+/**************EVENT classes************/
+#define INSTRUCTION_COMMIT_EVENTS 0x0
+#define MICROARCHITECTURAL_EVENTS 0x1
+#define MEMORY_SYSTEM_EVENTS 0x2
+
+
+
+// TODO Fix bits
+
+#define NO_EVENTS (0 << 0)
+
+/***********INSTRUCTION_COMMIT_EVENTS***************/
+#define EXCEPTION_TAKEN                     (1 << 8)
+#define INTEGER_LOAD_INSTR_RETIRED          (1 << 9)
+#define INTEGER_STORE_INSTR_RETIRED         (1 << 10)
+#define ATOMIC_MEMORY_OP_RETIRED            (1 << 11)
+#define SYSTEM_INSTR_RETIRED                (1 << 12)
+#define INTEGER_ARITHMETIC_INSTR_RETIRED    (1 << 13)
+#define CONDITIONAL_BRANCH_RETIRED          (1 << 14)
+#define JAL_INSTR_RETIRED                   (1 << 15)
+#define JALR_INSTR_RETIRED                  (1 << 16)
+#define INTEGER_MULTIPLICATION_RETIRED      (1 << 17)
+#define INTEGER_DIVISION_RETIRED            (1 << 18)
+#define FP_LOAD_INSTR_RETIRED               (1 << 19)
+#define FP_STORE_INSTR_RETIRED              (1 << 20)
+#define FP_ADDITION_RETIRED                 (1 << 21)
+#define FP_MULTIPLICATION_RETIRED           (1 << 22)
+#define FP_FUSED_MADD_RETIRED               (1 << 23)
+#define FP_DIV_SQRT_RETIRED                 (1 << 24)
+#define FP_OTHER_INSTR_RETIRED              (1 << 25)
+
+/***********MICROARCHITECTURAL_EVENTS***************/
+#define LOAD_USE_INTERLOCK                  (1 << 8)
+#define LONG_LATENCY_INTERLOCK              (1 << 9)
+#define CSR_READ_INTERLOCK                  (1 << 10)
+#define INSTRUCTION_CACHE_BUSY              (1 << 11)
+#define DATA_CACHE_BUSY                     (1 << 12)
+#define BRANCH_DIRECTION_MISPREDICTION      (1 << 13)
+#define BRANCH_TARGET_MISPREDICTION         (1 << 14)
+#define PIPELINE_FLUSH_CSR_WRITE            (1 << 15)
+#define PIPELINE_FLUSH_OTHER_EVENT          (1 << 16)
+#define INTEGER_MULTIPLICATION_INTERLOCK    (1 << 17)
+#define FLOATING_POINT_INTERLOCK            (1 << 18)
+
+/***********MEMORY_SYSTEM_EVENTS***************/
+#define INSTRUCTION_CACHE_MISS             (1 << 8)
+#define DATA_CACHE_MISS_OR_MMIO_ACCESS     (1 << 9)
+#define DATA_CACHE_WRITE_BACK              (1 << 10)
+#define INSTRUCTION_TLB_MISS               (1 << 11)
+#define DATA_TLB_MISS                      (1 << 12)
+#define UTLB_MISS                          (1 << 13)
+
+extern "C" void wait(int a, int b);
 
 namespace arch {
 	class Perf {
@@ -32,18 +89,66 @@ namespace arch {
 		};
 
 		static forceinline void start() {
-            // General setup
             debug_core << "Starting performance setup" << endl;
 
-            clear_csr(CSR_MCOUNTINHIBIT, MCOUNTINHIBIT_CYCLE); // enable cycles
-
+#ifndef MCOUNTINHIBIT_NOT_IMPLEMENTED
+            clear_csr(CSR_MCOUNTINHIBIT, MCOUNTINHIBIT_CYCLE); // enable cycles counter
+            clear_csr(CSR_MCOUNTINHIBIT, MCOUNTINHIBIT_HPM3); // enable event counter
+#endif
+            // General cycle counter
             write_csr(CSR_MCYCLE, 0); // reset cycles
+
+            // Specific event counter
+            unsigned int event_mask = INSTRUCTION_COMMIT_EVENTS | NO_EVENTS | INTEGER_MULTIPLICATION_RETIRED;
+            // unsigned int event_mask = 0;
+            debug_core <<"Mask: "<< event_mask << endl;
+            write_csr(CSR_MHPMEVENT3, event_mask);
+            
+            unsigned int output = read_csr(CSR_MHPMEVENT3);
+            debug_core << "EVENT OUTPUT: " << output << endl;
+
+
+            // event_mask = 1;
+            // debug_core <<"Mask: "<< event_mask << endl;
+            // write_csr(CSR_MHPMEVENT3, event_mask);
+            
+            // output = read_csr(CSR_MHPMEVENT3);
+            // debug_core << "EVENT OUTPUT: " << output << endl;
+
+
+            // event_mask = 2;
+            // debug_core <<"Mask: "<< event_mask << endl;
+            // write_csr(CSR_MHPMEVENT3, event_mask);
+            
+            // output = read_csr(CSR_MHPMEVENT3);
+            // debug_core << "EVENT OUTPUT: " << output << endl;
+
+
+            // event_mask = 3;
+            // debug_core <<"Mask: "<< event_mask << endl;
+            // write_csr(CSR_MHPMEVENT3, event_mask);
+            
+            // output = read_csr(CSR_MHPMEVENT3);
+            // debug_core << "EVENT OUTPUT: " << output << endl;
+
+
+            // event_mask = 4;
+            // debug_core <<"Mask: "<< event_mask << endl;
+            // write_csr(CSR_MHPMEVENT3, event_mask);
+            
+            // output = read_csr(CSR_MHPMEVENT3);
+            // debug_core << "EVENT OUTPUT: " << output << endl;
+
+            write_csr(CSR_MHPMCOUNTER3, 0);
         }
 
 		static forceinline void reset() {
             // Setzt state auf start state
             debug_core << "Reseting performance register" << endl;
-            write_csr(CSR_MCYCLE, 0);
+
+            write_csr(CSR_MCYCLE, 0); // General cycle counter
+
+            write_csr(CSR_MHPMCOUNTER3, 0); // Specific event counter
         }
 
 		static forceinline void trace_cycles() {
@@ -62,14 +167,11 @@ namespace arch {
 			return output;
         }
 
-
-        // TODO
 		static forceinline void trace_counter0() {
             // same as trace but with counter
-            debug_core << "Tracing counter0" << endl;
+            //debug_core << "Tracing counter0" << endl;
 
-            unsigned int output;
-			//asm volatile("MRC p15, 0, %0, c9, c13, 2 \t\n" : "=r"(output));
+            unsigned int output = read_csr(CSR_MHPMCOUNTER3);
 			counter0[counter0_nr++] = output;
         }
 
@@ -77,7 +179,10 @@ namespace arch {
             // Stops the counter from counting ( registers enable)
             debug_core << "Stopping performance monitor" << endl;
 
-            set_csr(CSR_MCOUNTINHIBIT, MCOUNTINHIBIT_CYCLE); // Yes, setting the bit disables counter
+#ifndef MCOUNTINHIBIT_NOT_IMPLEMENTED
+            set_csr(CSR_MCOUNTINHIBIT, MCOUNTINHIBIT_CYCLE); // disable counter incrementing
+            //set_csr(CSR_MCOUNTINHIBIT, MCOUNTINHIBIT_HPM3);
+#endif
         }
 
 		static forceinline void reset_counters() {
