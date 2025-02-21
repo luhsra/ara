@@ -21,7 +21,7 @@
 // Upper border from paper
 #elif defined(VARIANT_LARGE)
     const unsigned CYCLES = 1000;
-    const unsigned NUMBER_OF_RUNNABLES = 2750;
+    const unsigned NUMBER_OF_RUNNABLES = 2000;
     const unsigned NUMBER_OF_LABELS = 25000;
 
 // to match our systems size
@@ -37,7 +37,7 @@
     const unsigned NUMBER_OF_LABELS = 10000;
 #elif defined(VARIANT_CUSTOM)
     const unsigned CYCLES = 1000;
-    const unsigned NUMBER_OF_RUNNABLES = 1000;
+    const unsigned NUMBER_OF_RUNNABLES = 3000;
     const unsigned NUMBER_OF_LABELS = 10000;
 
 // to make linter happier
@@ -56,6 +56,8 @@
 // How long the software scheduler takes at least, before starting the next round of runnables
 // Needs to match cycletime inside system.json alarm!
 const unsigned SCHEDUL_INTERVAL = 1000; //um -> 1000us = 1ms
+// TODO TMP
+//const unsigned SCHEDUL_INTERVAL = 10000; //um -> 1000us = 1ms
 
 // 10 activation periods, which gets grouped into a task each. From 1ms to 1000ms
 const unsigned NR_TASKS = 10;
@@ -121,7 +123,7 @@ const unsigned INTER_TASK_RATIO[NR_TASKS][NR_TASKS] = {
 
 // Used the reduce the number o task, removing the ones with the longest scheduling intervals
 // With all tasks the analysis might take very long!
-const unsigned TASK_COUNT = 5;
+const unsigned TASK_COUNT = 4;
 static_assert(TASK_COUNT <= NR_TASKS);
 
 /**

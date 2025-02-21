@@ -26,6 +26,10 @@ def fake_interrupt_function(cfg, callgraph, os, name, alarmtime_ms, cycletime_ms
     alarmtime_us = alarmtime_ms * 1000
     cycletime_us = cycletime_ms * 1000
 
+    # TODO testing
+    # alarmtime_us = 0
+    # cycletime_us = 0
+
     syscall_name = name + '.sc'
 
     # Block of this fake interrupt control flow
