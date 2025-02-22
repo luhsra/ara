@@ -10,10 +10,6 @@
 #define MCOUNTINHIBIT_CYCLE (1 << 0)
 #define MCOUNTINHIBIT_HPM3 (1 << 3)
 
-// #define CSR_MHPMCOUNTER3 0xB03
-// #define CSR_MHPMEVENT3 0x323
-
-
 // Specific to U54 cores (beaglv) see:
 // https://static.dev.sifive.com/U54-MC-RVCoreIP.pdf
 
@@ -22,10 +18,7 @@
 #define MICROARCHITECTURAL_EVENTS 0x1
 #define MEMORY_SYSTEM_EVENTS 0x2
 
-
-
-// TODO Fix bits
-
+//********FILLER************/
 #define NO_EVENTS (0 << 0)
 
 /***********INSTRUCTION_COMMIT_EVENTS***************/
@@ -89,110 +82,61 @@ namespace arch {
 		};
 
 		static forceinline void start() {
-            debug_core << "Starting performance setup" << endl;
-
+            //debug_core << "Starting performance setup" << endl;
 #ifndef MCOUNTINHIBIT_NOT_IMPLEMENTED
             clear_csr(CSR_MCOUNTINHIBIT, MCOUNTINHIBIT_CYCLE); // enable cycles counter
             clear_csr(CSR_MCOUNTINHIBIT, MCOUNTINHIBIT_HPM3); // enable event counter
 #endif
             // General cycle counter
-            write_csr(CSR_MCYCLE, 0); // reset cycles
+            write_csr(CSR_MCYCLE, 0); // counter reset
 
             // Specific event counter
-            unsigned int event_mask = INSTRUCTION_COMMIT_EVENTS | NO_EVENTS | INTEGER_MULTIPLICATION_RETIRED;
-            // unsigned int event_mask = 0;
-            debug_core <<"Mask: "<< event_mask << endl;
-            write_csr(CSR_MHPMEVENT3, event_mask);
-            
-            unsigned int output = read_csr(CSR_MHPMEVENT3);
-            debug_core << "EVENT OUTPUT: " << output << endl;
-
-
-            // event_mask = 1;
-            // debug_core <<"Mask: "<< event_mask << endl;
-            // write_csr(CSR_MHPMEVENT3, event_mask);
-            
-            // output = read_csr(CSR_MHPMEVENT3);
-            // debug_core << "EVENT OUTPUT: " << output << endl;
-
-
-            // event_mask = 2;
-            // debug_core <<"Mask: "<< event_mask << endl;
-            // write_csr(CSR_MHPMEVENT3, event_mask);
-            
-            // output = read_csr(CSR_MHPMEVENT3);
-            // debug_core << "EVENT OUTPUT: " << output << endl;
-
-
-            // event_mask = 3;
-            // debug_core <<"Mask: "<< event_mask << endl;
-            // write_csr(CSR_MHPMEVENT3, event_mask);
-            
-            // output = read_csr(CSR_MHPMEVENT3);
-            // debug_core << "EVENT OUTPUT: " << output << endl;
-
-
-            // event_mask = 4;
-            // debug_core <<"Mask: "<< event_mask << endl;
-            // write_csr(CSR_MHPMEVENT3, event_mask);
-            
-            // output = read_csr(CSR_MHPMEVENT3);
-            // debug_core << "EVENT OUTPUT: " << output << endl;
-
-            write_csr(CSR_MHPMCOUNTER3, 0);
+            unsigned int event_mask = INSTRUCTION_COMMIT_EVENTS | NO_EVENTS;
+            write_csr(CSR_MHPMEVENT3, event_mask); // configuration
+            write_csr(CSR_MHPMCOUNTER3, 0); // counter reset
         }
 
 		static forceinline void reset() {
-            // Setzt state auf start state
-            debug_core << "Reseting performance register" << endl;
-
-            write_csr(CSR_MCYCLE, 0); // General cycle counter
-
-            write_csr(CSR_MHPMCOUNTER3, 0); // Specific event counter
+            //debug_core << "Reseting performance register" << endl;
+            write_csr(CSR_MCYCLE, 0);
+            write_csr(CSR_MHPMCOUNTER3, 0); 
         }
 
 		static forceinline void trace_cycles() {
-            // Basically snapshot of current cycles in cycles
-            debug_core << "Tracing cycles" << endl;
-
+            //debug_core << "Tracing cycles" << endl;
             unsigned int output = read_csr(CSR_MCYCLE);
 			cycles[cycles_nr++] = output;
         }
 
 		static forceinline unsigned int get_cycles() { 
-            // returns the current cycles
-            debug_core << "Getting cycles" << endl;
-            // TODO adjust for 32 bit architecture (MCYCLEH)
+            //debug_core << "Getting cycles" << endl;
             unsigned int output = read_csr(CSR_MCYCLE);
 			return output;
         }
 
 		static forceinline void trace_counter0() {
-            // same as trace but with counter
             //debug_core << "Tracing counter0" << endl;
-
             unsigned int output = read_csr(CSR_MHPMCOUNTER3);
 			counter0[counter0_nr++] = output;
         }
 
+#ifndef MCOUNTINHIBIT_NOT_IMPLEMENTED
 		static forceinline void stop() { 
             // Stops the counter from counting ( registers enable)
-            debug_core << "Stopping performance monitor" << endl;
-
-#ifndef MCOUNTINHIBIT_NOT_IMPLEMENTED
+            //debug_core << "Stopping performance monitor" << endl;
             set_csr(CSR_MCOUNTINHIBIT, MCOUNTINHIBIT_CYCLE); // disable counter incrementing
-            //set_csr(CSR_MCOUNTINHIBIT, MCOUNTINHIBIT_HPM3);
-#endif
+            set_csr(CSR_MCOUNTINHIBIT, MCOUNTINHIBIT_HPM3);
         }
+#endif
 
 		static forceinline void reset_counters() {
-            debug_core << "Resetting counters" << endl;
+            //debug_core << "Resetting counters" << endl;
             cycles_nr = 0;
 			counter0_nr = 0;
         }
 
 		static forceinline void print_cycles() {
-            debug_core << "Printing cycles" << endl;
+            //debug_core << "Printing cycles" << endl;
 
             for (int i = 0; i < cycles_nr; i++) {
 				// print cycles
@@ -205,7 +149,7 @@ namespace arch {
         }
 
 		static forceinline void print_counter0() {
-            debug_core << "Printing counter0" << endl;
+            //debug_core << "Printing counter0" << endl;
 
             for (int i = 0; i < counter0_nr; i++) {
 				// print cycles
