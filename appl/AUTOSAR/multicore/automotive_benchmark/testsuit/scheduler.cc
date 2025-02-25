@@ -55,7 +55,7 @@ static unsigned real_run_counter[NR_TASKS] = {0};
 // main scheduler
 TASK(SCHED) {
 
-    ara_timing_info(1, 2);
+    ara_timing_info(10, 20);
     cycle++;
 
     if (cycle > CYCLES) {

@@ -107,13 +107,14 @@ class ApplyTimings(Step):
         for abb in abbs.vertices():
             if abbs.vp.type[abb] != ABBType.computation:
                 continue
-            self._log.warning("abb: %s bcet: %s wcet: %s", cfg.vp.name[abb], cfg.vp.bcet[abb], cfg.vp.wcet[abb])
+            self._log.info("abb: %s bcet: %s wcet: %s", cfg.vp.name[abb], cfg.vp.bcet[abb], cfg.vp.wcet[abb])
 
             wcet, bcet = 0,0
             for bb in cfg.get_bbs(abb):
                 bb_wcet = cfg.vp.wcet[bb]
                 bb_bcet = cfg.vp.bcet[bb]
-                self._log.warning(" bb: %s   %s / %s", cfg.vp.name[bb], bb_bcet, bb_wcet)
+                self._log.info(" bb: %s   %s / %s", cfg.vp.name[bb], bb_bcet, bb_wcet)
+                # Care if bcet is 0 then the wcet is ignored!
                 if bb_wcet and bb_bcet:
                     wcet += bb_wcet
                     bcet += bb_bcet

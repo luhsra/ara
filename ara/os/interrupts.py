@@ -22,13 +22,12 @@ def fake_interrupt_function(cfg, callgraph, os, name, alarmtime_ms, cycletime_ms
     Apply the interrupt interarrival time (iit) if given.
     """
 
+    # TODO
+    do_iit = True
+
     # Autosar increments counter with a 1 kHz Timer, but other timing measurement is done with us precision
     alarmtime_us = alarmtime_ms * 1000
     cycletime_us = cycletime_ms * 1000
-
-    # TODO testing
-    # alarmtime_us = 0
-    # cycletime_us = 0
 
     syscall_name = name + '.sc'
 
@@ -56,8 +55,14 @@ def fake_interrupt_function(cfg, callgraph, os, name, alarmtime_ms, cycletime_ms
     cfg.vp.artificial[alarmtime_bb] = True
     cfg.vp.name[alarmtime_bb] = "alarmtime_bb"
     cfg.vp.level[alarmtime_bb] = NodeLevel.bb
-    cfg.set_bcet(alarmtime_bb, alarmtime_us)
-    cfg.set_wcet(alarmtime_bb, alarmtime_us)
+    if do_iit:
+        cfg.set_bcet(alarmtime_bb, alarmtime_us)
+        cfg.set_wcet(alarmtime_bb, alarmtime_us)
+    else:
+        cfg.set_bcet(alarmtime_bb, 1)
+        cfg.set_wcet(alarmtime_bb, 1)
+
+    # cfg.set_wcet(alarmtime_bb, math.inf)
     fl = cfg.add_edge(startup_v, alarmtime_bb)
     cfg.ep.type[fl] = CFType.a2b
 
@@ -105,8 +110,14 @@ def fake_interrupt_function(cfg, callgraph, os, name, alarmtime_ms, cycletime_ms
     cfg.vp.artificial[cycletime_bb] = True
     cfg.vp.name[cycletime_bb] = "alarmtime_bb"
     cfg.vp.level[cycletime_bb] = NodeLevel.bb
-    cfg.set_bcet(cycletime_bb, cycletime_us)
-    cfg.set_wcet(cycletime_bb, cycletime_us)
+
+    if do_iit:
+        cfg.set_bcet(cycletime_bb, cycletime_us)
+        cfg.set_wcet(cycletime_bb, cycletime_us)
+    else:
+        cfg.set_bcet(cycletime_bb, 1)
+        cfg.set_wcet(cycletime_bb, 1)
+    # cfg.set_wcet(cycletime_bb, math.inf)
     fl = cfg.add_edge(cycletime_v, cycletime_bb)
     cfg.ep.type[fl] = CFType.a2b
     

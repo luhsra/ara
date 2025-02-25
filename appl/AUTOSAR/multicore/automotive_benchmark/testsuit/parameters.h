@@ -27,7 +27,7 @@
 // to match our systems size
 #elif defined(VARIANT_TINY)
     const unsigned CYCLES = 1000;
-    const unsigned NUMBER_OF_RUNNABLES = 200;
+    const unsigned NUMBER_OF_RUNNABLES = 100;
     const unsigned NUMBER_OF_LABELS = 10000;
 
 // same as baisc, but with longer runtime
@@ -123,7 +123,7 @@ const unsigned INTER_TASK_RATIO[NR_TASKS][NR_TASKS] = {
 
 // Used the reduce the number o task, removing the ones with the longest scheduling intervals
 // With all tasks the analysis might take very long!
-const unsigned TASK_COUNT = 4;
+const unsigned TASK_COUNT = 6;
 static_assert(TASK_COUNT <= NR_TASKS);
 
 /**
