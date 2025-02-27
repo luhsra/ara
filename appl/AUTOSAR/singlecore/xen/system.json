@@ -1,0 +1,24 @@
+{
+  "cpus": [
+    {
+      "id": 0,
+      "task_groups": {
+        "H1Group": {
+          "promises": [],
+          "tasks": {
+            "H1": {
+              "activation": 1,
+              "autostart": true,
+              "priority": 5,
+              "schedule": true
+            }
+          }
+        }
+      },
+      "resources": {},
+      "events": {},
+      "counters": {},
+      "alarms": {}
+    }
+  ]
+}
