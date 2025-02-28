@@ -979,18 +979,26 @@ namespace ara::step {
 		if (corr.find(key) != corr.end()) {
 			auto hint = corr.at(key);
 			std::visit(
-			    overloaded{
-			        [&](value_analyzer::FunctionPointerHint f) {
-				        const llvm::Function* func = va.graph.get_module().getFunction(f.name);
-				        if (func == nullptr) {
-					        va.logger.error() << "Function " << f.name << "could not be found" << std::endl;
-					        return;
-				        }
-				        va.logger.debug() << "Set function " << func->getName().str() << " as result." << std::endl;
-				        ret = Result{func, {}, std::nullopt, std::nullopt, Statistics()};
-			        },
-			    },
-			    hint);
+				overloaded{
+					[&](value_analyzer::FunctionPointerHint f) {
+						const llvm::Function* func = va.graph.get_module().getFunction(f.name);
+						if (func == nullptr) {
+							va.logger.error() << "Function " << f.name << "could not be found" << std::endl;
+							return;
+						}
+						va.logger.debug() << "Set function " << func->getName().str() << " as result." << std::endl;
+						ret = Result{func, {}, std::nullopt, std::nullopt, Statistics()};
+					},
+					[&](value_analyzer::ValueHint v) {
+						int value = std::stoi(v.value);
+						auto& context = va.graph.get_module().getContext();
+						llvm::Value* const_int = llvm::ConstantInt::get(context, llvm::APInt(32, value));
+
+						va.logger.debug() << "Set value " << value << " as result." << std::endl;
+						ret = Result{const_int, {}, std::nullopt, std::nullopt, Statistics()};
+					}
+				},
+				hint);
 		}
 
 		return ret;

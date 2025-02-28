@@ -270,7 +270,8 @@ class ThreadStateAdapter(enum.IntFlag):
 
 def to_timeout_value(timeout):
     if not isinstance(timeout, int): # test for unknown value
-        return 1000 # return some value
+        raise ValueError("Unknown timeout cannot be SSEd")
+    # return MAX-1 aka K_FOREVER
     if timeout == -1:
         if InterpreterContext.Zephyr.config['CONFIG_TIMEOUT_64BIT']:
             timeout = 0xFFFFFFFFFFFFFFFF
