@@ -36,14 +36,14 @@
     const unsigned NUMBER_OF_RUNNABLES = 1000;
     const unsigned NUMBER_OF_LABELS = 10000;
 #elif defined(VARIANT_CUSTOM)
-    const unsigned CYCLES = 1000;
+    const unsigned CYCLES = 10;
     const unsigned NUMBER_OF_RUNNABLES = 3000;
     const unsigned NUMBER_OF_LABELS = 10000;
 
 // to make linter happier
 #else
-    const unsigned CYCLES = 1000;
-    const unsigned NUMBER_OF_RUNNABLES = 1000;
+    const unsigned CYCLES = 10;
+    const unsigned NUMBER_OF_RUNNABLES = 3000;
     const unsigned NUMBER_OF_LABELS = 10000;
 
 #endif
@@ -123,7 +123,7 @@ const unsigned INTER_TASK_RATIO[NR_TASKS][NR_TASKS] = {
 
 // Used the reduce the number o task, removing the ones with the longest scheduling intervals
 // With all tasks the analysis might take very long!
-const unsigned TASK_COUNT = 6;
+const unsigned TASK_COUNT = 1;
 static_assert(TASK_COUNT <= NR_TASKS);
 
 /**

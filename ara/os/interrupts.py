@@ -22,7 +22,7 @@ def fake_interrupt_function(cfg, callgraph, os, name, alarmtime_ms, cycletime_ms
     Apply the interrupt interarrival time (iit) if given.
     """
 
-    # TODO
+    # TODO if true use given iit, else set range to (0, inf)
     do_iit = True
 
     # Autosar increments counter with a 1 kHz Timer, but other timing measurement is done with us precision
@@ -60,7 +60,7 @@ def fake_interrupt_function(cfg, callgraph, os, name, alarmtime_ms, cycletime_ms
         cfg.set_wcet(alarmtime_bb, alarmtime_us)
     else:
         cfg.set_bcet(alarmtime_bb, 1)
-        cfg.set_wcet(alarmtime_bb, 1)
+        cfg.set_wcet(alarmtime_bb, math.inf)
 
     # cfg.set_wcet(alarmtime_bb, math.inf)
     fl = cfg.add_edge(startup_v, alarmtime_bb)
@@ -116,7 +116,7 @@ def fake_interrupt_function(cfg, callgraph, os, name, alarmtime_ms, cycletime_ms
         cfg.set_wcet(cycletime_bb, cycletime_us)
     else:
         cfg.set_bcet(cycletime_bb, 1)
-        cfg.set_wcet(cycletime_bb, 1)
+        cfg.set_wcet(cycletime_bb, math.inf)
     # cfg.set_wcet(cycletime_bb, math.inf)
     fl = cfg.add_edge(cycletime_v, cycletime_bb)
     cfg.ep.type[fl] = CFType.a2b

@@ -32,7 +32,7 @@ TEST_MAKE_OS_MAIN(StartOS(0))
 TASK(INIT) {
     arch::Perf::start();
 
-    kout << "\nRun new Scheduler Testcase with " << TASK_COUNT << " tasks" << endl;
+    kout << "\nRun new Scheduler Testcase" << endl;
 	kout_task_data();
 
 	#ifndef QEMU
@@ -41,8 +41,13 @@ TASK(INIT) {
 	#endif
 
     ara_timing_info(0, 1);
+	kout << "\n*******************" << endl;
+	kout << "Start" << endl;
     TerminateTask();	
 }
+
+
+
 
 const bool debug_print = false;
 
@@ -55,14 +60,15 @@ static unsigned real_run_counter[NR_TASKS] = {0};
 // main scheduler
 TASK(SCHED) {
 
+	kout << "C: " << arch::Perf::get_cycles() << endl;
+
     ara_timing_info(10, 20);
     cycle++;
 
     if (cycle > CYCLES) {
 		ara_timing_info(1, 2);
 
-		kout << "\n*******************" << endl;
-		kout << "Done" << endl;
+		kout << "End" << endl;
 		kout << "*******************\n" << endl;
 
         kout << "\nResults for " << CYCLES << " scheduling cycles, each cycle " << SCHEDUL_INTERVAL << "us long:" << endl;
@@ -236,12 +242,57 @@ TASK(SCHED) {
 	TerminateTask();
 }
 
+/*
+void PreTaskHook() {
+
+	TaskRefType a;
+	uint32_t id = 1337;
+	a = &id;
+	GetTaskID(a);
+	kout << arch::Perf::get_cycles() << endl;
+	if (id == 1) {
+		kout << "P Init" << endl;
+	 } else if (id == 2) {
+		kout << "P Sched" << endl;
+	 } else if (id == 3) {
+		kout << "P MS1" << endl;
+	 } else if (id == 4) {
+		kout << "P MS2" << endl;
+	 } else if (id == 5) {
+		kout << "P MS5" << endl;
+	 } else if (id == 6) {
+		kout << "P MS10" << endl;
+	 } else if (id == 7) {
+		kout << "P MS20" << endl;
+	 } else if (id == 8) {
+		kout << "P MS50" << endl;
+	 } else if (id == 9) {
+		kout << "P MS100" << endl;
+	 } else if (id == 10) {
+		kout << "P MS200" << endl;
+	 } else if (id == 11) {
+		kout << "P MS1000" << endl;
+	 } else      {
+		kout << "P unknown??" << endl;
+	 }
+	
+}
+*/
+
+
+
+
+
+
+
+
+
+
 TASK(MS1) {
     unsigned const t = (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS1_id] * TIME_PER_RUNNABLE[MS1_id];
 	if (debug_print) {
 		kout << "1g" << endl;
 	}
-	
 	ara_timing_info(t,t + 1);
 	micro_sec_wait(t);
 	real_run_counter[MS1_id]++;

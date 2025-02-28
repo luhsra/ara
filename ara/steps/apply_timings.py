@@ -114,10 +114,9 @@ class ApplyTimings(Step):
                 bb_wcet = cfg.vp.wcet[bb]
                 bb_bcet = cfg.vp.bcet[bb]
                 self._log.info(" bb: %s   %s / %s", cfg.vp.name[bb], bb_bcet, bb_wcet)
-                # Care if bcet is 0 then the wcet is ignored!
-                if bb_wcet and bb_bcet:
-                    wcet += bb_wcet
-                    bcet += bb_bcet
+                # Changed to add each time seperatly (before only applied times if both != 0)
+                wcet += bb_wcet
+                bcet += bb_bcet
             cfg.vp.bcet[abb] = bcet
             cfg.vp.wcet[abb] = wcet
             self._log.info("result: %s   %s / %s", cfg.vp.name[abb], bcet, wcet)
