@@ -106,7 +106,7 @@ class ZephyrStaticPost(Step):
                     id=inst.irq_number,
                     name="IRQCONNECT_"+inst.entry_name,
                     isr_handler=inst,
-                    active=True,
+                    active=False, # the IRQ_CONNECT emits an arch dependent irq registration. irq_enable is then used afterwards
                 )
 
                 ZephyrStaticPost.create_static_instance(self._graph.instances, "IRQ", irq, "IRQCONNECT_"+inst.entry_name, False)

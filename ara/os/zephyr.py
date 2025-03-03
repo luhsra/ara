@@ -2431,8 +2431,31 @@ class Zephyr(OSBase):
         return None
 
     @staticmethod
+    def _find_irq_by_id(state, id):
+        for v, isr_obj in state.instances.get(IRQ):
+            if id == isr_obj.id:
+                return v, isr_obj
+        return None
+
+    # void arch_irq_enable(unsigned int irq)
+    # irq_enable is just a macro to the arch_ function
+    @syscall(categories={SyscallCategory.comm},
+             signature=(Arg("irq", hint=SigType.value),))
+    def arch_irq_enable(graph, state, cpu_id, args, va):
+        state = state.copy()
+        cfg = graph.cfg
+
+        v, obj = Zephyr._find_irq_by_id(state, args.irq)
+        obj.active = True
+
+        return state
+
+    @staticmethod
     def handle_irq(graph, state, cpu_id, irq):
         # states=[]
+        if irq.active == False:
+            return None
+
         root_state = state
         if irq.name == 'sys_clock_announce':
             kernel = Zephyr.get_kernel_context(state)
