@@ -1,0 +1,12 @@
+{
+	"steps": [
+		"MultiSSE",
+		"DumpCFG"
+	],
+
+	"MultiSSE": {
+		"with_times": false,
+		"dump": true,
+		"log_level": "debug"
+	}
+}
