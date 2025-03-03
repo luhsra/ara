@@ -1,0 +1,18 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: ARA XEN",
+            "type": "debugpy",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/build/",
+            "program": "subprojects/ara/ara.py",
+            "justMyCode": false,
+            "console": "integratedTerminal",
+            "args": [
+                "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_a.pi4.ll", "--os", "AUTOSAR", "--log-level", "debug", "--oilfile", "../subprojects/ara/appl/AUTOSAR/singlecore/xen/system.json",
+                "--step-settings", "../subprojects/ara/settings/hypersse.json"
+            ]
+        }
+    ]
+}
