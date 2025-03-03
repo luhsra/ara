@@ -7,6 +7,7 @@
 
 #include "callpath.h"
 #include "common/exceptions.h"
+#include <string>
 
 namespace ara::value_analyzer {
 	std::string get_function_name(const llvm::CallBase& callsite) {
@@ -57,8 +58,10 @@ namespace ara::value_analyzer {
 	}
 
 	bool ValueLocation::operator<(const ValueLocation& other) const {
-		return this->callsite < other.callsite || this->function < other.function || this->callpath < other.callpath ||
-		       this->arg_nr < other.arg_nr;
+		std::stringstream a, b;
+		a << this->callsite << this->function << this->callpath << this->arg_nr;
+		b << other.callsite << other.function << other.callpath << other.arg_nr;
+		return  a.str() < b.str();
 	}
 
 	std::string ValueLocation::as_json() const {

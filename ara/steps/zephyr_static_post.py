@@ -95,6 +95,22 @@ class ZephyrStaticPost(Step):
 
                 inst.cfg = cfg
                 inst.function = function
+            if issubclass(instance_type, ISR): # user defined ISRs from .intList
+
+                # create the missing IRQ for analysis
+                irq = ZephyrIRQ(
+                    cpu_id=-1,
+                    cfg=cfg,
+                    artificial=True,
+                    function=None,
+                    id=inst.irq_number,
+                    name="IRQCONNECT_"+inst.entry_name,
+                    isr_handler=inst,
+                    active=True,
+                )
+
+                ZephyrStaticPost.create_static_instance(self._graph.instances, "IRQ", irq, "IRQCONNECT_"+inst.entry_name, False)
+
             if issubclass(instance_type, Timer):
                 inst.cfg = cfg
                 expiry_fn_name = inst.expiry_fn

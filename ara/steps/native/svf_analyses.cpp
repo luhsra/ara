@@ -177,7 +177,7 @@ namespace ara::step {
 		graph::SVFG svfg_graphtool = graph.get_svfg_graphtool();
 		graph::GraphData& graph_data = graph.get_graph_data();
 		graph_tool::gt_dispatch<>()([&](auto& g) { map_svfg(g, svfg_graphtool, graph.get_svfg(), logger, graph_data); },
-		                            graph_tool::always_directed())(svfg_graphtool.graph.get_graph_view());
+		                            graph_tool::always_directed)(svfg_graphtool.graph.get_graph_view());
 
 		if (*dump.get()) {
 			icfg->dump(*dump_prefix.get() + "svf-icfg");

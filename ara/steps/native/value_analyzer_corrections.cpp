@@ -54,7 +54,13 @@ namespace ara::step {
 					fail_if_empty(name, json, "No name for functionpointer found.");
 					logger.debug() << "Load correction for " << key.as_json() << std::endl;
 					corrections.insert(std::pair(std::move(key), value_analyzer::FunctionPointerHint(name->str())));
-				} else {
+				} else if (*type == "value") {
+					const auto name = value->getString("name");
+					fail_if_empty(name, json, "No name for value found.");
+					logger.debug() << "Load correction for " << key.as_json() << std::endl;
+					corrections.insert(std::pair(std::move(key), value_analyzer::ValueHint(name->str())));
+				}
+				else {
 					fail("Value type not known.");
 				}
 			} catch (JSONError& j) {

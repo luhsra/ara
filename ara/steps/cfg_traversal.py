@@ -347,7 +347,7 @@ class _SSERunner:
 
         counter = 0
         while stack:
-            self._log.debug(f"Local SSE (CPU {cpu.id}): Round {counter:3d}, "
+            self._log.info(f"Local SSE (CPU {cpu.id}): Round {counter:3d}, "
                             f"Stack with {len(stack)} state(s)")
             state = stack.pop(0)
             for new_state in self._system_semantic(state):

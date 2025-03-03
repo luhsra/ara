@@ -107,7 +107,7 @@ namespace ara::step {
 			    }
 			    create_bb_dispatched(g, cfg, abb, ret_bb);
 		    },
-		    graph_tool::always_directed())(cfg.graph.get_graph_view());
+		    graph_tool::always_directed)(cfg.graph.get_graph_view());
 		return ret_bb;
 	}
 
@@ -431,7 +431,7 @@ namespace ara::step {
 			    }
 			    taskFN = cfg.get_llvm_function<Graph>(func);
 		    },
-		    graph_tool::always_directed())(cfg.graph.get_graph_view());
+		    graph_tool::always_directed)(cfg.graph.get_graph_view());
 
 		if (!taskFN->hasExternalLinkage()) {
 			taskFN->setLinkage(GlobalValue::ExternalLinkage);
@@ -571,6 +571,6 @@ namespace ara::step {
 				    }
 			    }
 		    },
-		    graph_tool::always_directed())(instances.graph.get_graph_view());
+		    graph_tool::always_directed)(instances.graph.get_graph_view());
 	}
 } // namespace ara::step

@@ -55,20 +55,28 @@ namespace ara::graph {
 			    edge = const_cast<SVF::PTACallGraphEdge*>(
 			        call_graph->get_svf_elink<typename std::remove_reference<decltype(g)>::type>(this->at(index)));
 		    },
-		    graph_tool::always_directed())(call_graph->graph.get_graph_view());
+		    graph_tool::always_directed)(call_graph->graph.get_graph_view());
 		return edge;
 	}
+
 
 	PyObject* CallPath::py_at(size_t index) {
 		if (is_empty()) {
 			throw std::out_of_range("CallPath has no elements.");
 		}
 		assert(call_graph != nullptr && "call graph is not initialized");
+
 		auto gi = call_graph->graph;
 		boost::python::object new_e;
-		graph_tool::run_action<>()(gi, [&](auto&& graph) {
-			return get_call_site_dispatched(std::forward<decltype(graph)>(graph), gi, index, new_e);
-		})();
+
+		graph_tool::gt_dispatch<>(false)(
+			[&](auto& g) {
+				return get_call_site_dispatched(g, index, new_e);
+			},
+			graph_tool::always_directed)(call_graph->graph.get_graph_view()
+		);
+		
+
 		return boost::python::incref(new_e.ptr());
 	}
 
@@ -81,7 +89,7 @@ namespace ara::graph {
 		// do not release the GIL here, more save and performance not relevant
 		graph_tool::gt_dispatch<>(false)(
 		    [&](auto& g) { print_dispatched(g, *call_graph, call_site, instruction, functions, ss); },
-		    graph_tool::always_directed())(call_graph->graph.get_graph_view());
+		    graph_tool::always_directed)(call_graph->graph.get_graph_view());
 		return ss.str();
 	}
 
@@ -119,7 +127,7 @@ namespace ara::graph {
 		bool ret_value = false;
 		// do not change the GIL here, short function but nested GIL may fail
 		graph_tool::gt_dispatch<>(false)([&](auto& g) { is_recursive_dispatched(g, ret_value); },
-		                                 graph_tool::always_directed())(call_graph->graph.get_graph_view());
+		                                 graph_tool::always_directed)(call_graph->graph.get_graph_view());
 		return ret_value;
 	}
 

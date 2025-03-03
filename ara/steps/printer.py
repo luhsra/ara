@@ -73,7 +73,7 @@ def _sstg_state_as_dot(sstg, state_vert, os=AUTOSAR):
     cpu = obj.cpus.one()
     thread_info = []
 
-    if isinstance(os, Zephyr):
+    if os == Zephyr:
         kernel_obj = obj.instances.vp.obj[Zephyr.kernel]
         kernel = obj.context[kernel_obj]
     else:
@@ -84,7 +84,7 @@ def _sstg_state_as_dot(sstg, state_vert, os=AUTOSAR):
         #is_exit = cfg.vp.is_exit[cpu.abb]
         thread = obj.cur_control_inst(cpu.id)
 
-        if isinstance(os, Zephyr) and hasattr(thread, 'name'):
+        if os == Zephyr and hasattr(thread, 'name'):
             thread_list = [(v, obj) for v, obj in obj.instances.get(ZephyrThread)]
             thread_names = list(map(lambda x: x[1].name, thread_list))
             thread_count = len(thread_list)

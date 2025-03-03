@@ -223,8 +223,8 @@ namespace ara::step {
 			    CallGraphImpl(cfg_obj, cfg, cg_obj, callgraph, svf_callgraph, mod, logger, step_manager,
 			                  *entry_point_name);
 		    },
-		    graph_tool::always_directed(),
-		    graph_tool::always_directed())(cfg.graph.get_graph_view(), callgraph.graph.get_graph_view());
+		    graph_tool::always_directed,
+		    graph_tool::always_directed)(cfg.graph.get_graph_view(), callgraph.graph.get_graph_view());
 
 		if (*dump.get()) {
 			std::string dot_file = *dump_prefix.get() + *entry_point_name;

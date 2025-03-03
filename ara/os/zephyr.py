@@ -865,9 +865,9 @@ class Zephyr(OSBase):
 
         kernel = Zephyr.get_kernel_context(state)
 
-        # if len(kernel.ready_q) <= 0:
-        #     logger.warning(f"no thread in ready list")
-        #     return
+        if len(kernel.ready_q) <= 0:
+            logger.warning(f"no thread in ready list")
+            return
         # new_vertex = kernel.ready_q[0]
 
         if kernel.cache is None:
@@ -2504,4 +2504,50 @@ class Zephyr(OSBase):
                 return state
 
             return None
+
+        if irq.name.startswith('IRQCONNECT'): # user declared ISRs, # mostly same as sys_clock_announce
+            kernel = Zephyr.get_kernel_context(state)
+            state = root_state.copy()
+
+            interrupted_thread = state.cur_control_inst(cpu_id)
+
+            isr_fn_name = irq.isr_handler.entry_name
+            if isr_fn_name != None: # handle application ISR
+                cpu = state.cpus[cpu_id]
+
+                new_vertex, new_obj = Zephyr._find_isr_by_entry_name(state, isr_fn_name)
+                old_ctx = state.cur_context(cpu_id)
+
+                if old_ctx:
+                    old_ctx.abb = state.cfg.vertex(cpu.abb)
+                    old_ctx.call_path = cpu.call_path
+
+                isr_function = graph.cfg.get_function_by_name(new_obj.entry_name)
+                abb = graph.cfg.get_entry_abb(isr_function)
+
+                new_ctx = za.ISRContext(
+                    status=TaskStatus.running,
+                    abb=abb,
+                    call_path=CallPath(),
+                    dyn_prio=[],
+                )
+
+                state.context[new_obj] = new_ctx
+
+                cpu.abb = state.cfg.vertex(new_ctx.abb)
+                cpu.call_path = new_ctx.call_path
+                cpu.control_instance = state.instances.vertex(new_vertex)
+                cpu.exec_state = ExecState.from_abbtype(state.cfg.vp.type[cpu.abb])
+                cpu.analysis_context.nested += 1
+                # cpu.analysis_context.interrupted_thread = state.cur_control_inst(cpu_id)
+                if isinstance(interrupted_thread, Thread):
+                    cpu.analysis_context.interrupted_thread = interrupted_thread
+                cpu.irq_on = False
+
+                kernel = Zephyr.get_kernel_context(state)
+                kernel.cache = new_vertex
+
+                # states.append(state)
+                return state
+
         raise NotImplementedError

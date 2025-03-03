@@ -179,7 +179,7 @@ namespace ara::step {
 		graph::CFG cfg = graph.get_cfg();
 		graph_tool::gt_dispatch<>()(
 		    [&](auto& g) { LLVMMapImpl(g, cfg, graph_data, logger, dopt && *dopt, *prefix_opt, *s_loc); },
-		    graph_tool::always_directed())(cfg.graph.get_graph_view());
+		    graph_tool::always_directed)(cfg.graph.get_graph_view());
 
 		if (*dump.get()) {
 			std::string dot_file = *dump_prefix.get() + "dot";

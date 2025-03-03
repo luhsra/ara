@@ -54,13 +54,13 @@ namespace ara::step {
 		// 1. Non-class template function that gets all arguments
 		graph::CFG cfg = graph.get_cfg();
 		graph_tool::gt_dispatch<>()([&](auto& g) { do_cfg_stuff(g, cfg, logger); },
-		                            graph_tool::always_directed())(cfg.graph.get_graph_view());
+		                            graph_tool::always_directed)(cfg.graph.get_graph_view());
 
 		// 2. Class template function that gets only the graph
 		// Note, that this must be implemented in the header. Suitable for short wrapper functions.
 		graph::CallGraph cg = graph.get_callgraph();
 		graph_tool::gt_dispatch<>()([&](auto& g) { this->do_cg_stuff(g, cg); },
-		                            graph_tool::always_directed())(cg.graph.get_graph_view());
+		                            graph_tool::always_directed)(cg.graph.get_graph_view());
 
 		// 3. Direct implementation within the lambda function.
 		// Suitable for short inline code.
@@ -74,6 +74,6 @@ namespace ara::step {
 				    logger.debug() << "Instance: " << instances.label[v] << std::endl;
 			    }
 		    },
-		    graph_tool::always_directed())(instances.graph.get_graph_view());
+		    graph_tool::always_directed)(instances.graph.get_graph_view());
 	}
 } // namespace ara::step

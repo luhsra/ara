@@ -613,7 +613,7 @@ namespace ara::step {
 		//                              int argument_nr) {
 		// 	llvm::CallBase* ll_callsite;
 		// 	graph_tool::gt_dispatch<>()([&](auto& g) { get_callsite(g, &ll_callsite, callsite); },
-		// 	                            graph_tool::always_directed())(cfg.graph.get_graph_view());
+		// 	                            graph_tool::always_directed)(cfg.graph.get_graph_view());
 
 		// 	assign_system_object(safe_deref(ll_callsite), obj_index, callpath, argument_nr);
 		// }
