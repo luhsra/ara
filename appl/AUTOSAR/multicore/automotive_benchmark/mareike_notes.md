@@ -133,3 +133,30 @@ then start pi and it continuesly netboots the image.
 
 ### Ara.py .json config für alle runs located here, 1x opt, 1x nonopt
 `subprojects/ara/settings/autosar_generator_arm_opt.json`
+
+
+# working vscode launch.json
+```json
+{
+    "version": "0.2.0",
+    "configurations": [
+        
+        {
+            "name": "Python Debugger: ARA local",
+            "type": "debugpy",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/build",
+            "program": "subprojects/ara/ara.py",
+            "justMyCode": false,
+            "console": "integratedTerminal",
+            "args": [
+                "subprojects/ara/appl/AUTOSAR/autosar_multicore_automotive_benchmark_testsuit_scheduler_BASIC.pi4.ll",
+                "--os", "AUTOSAR","--oilfile", "../subprojects/ara/appl/AUTOSAR/multicore/automotive_benchmark/testsuit/scheduler_system.json",
+                "--ir_output", "subprojects/ara/appl/AUTOSAR/autosar_multicore_automotive_benchmark_testsuit_scheduler_BASIC_noopt_mod.pi4.ll",
+                "--step-settings", "../subprojects/ara/settings/autosar_generator_arm.json", "--generator_output", "subprojects/ara/appl/AUTOSAR/autosar_multicore_automotive_benchmark_testsuit_scheduler_BASIC_noopt_autosar.pi4.cc",
+                "--timing", "BB"
+            ]
+        }
+    ]
+}
+```
