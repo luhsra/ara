@@ -8,6 +8,7 @@
 #include "callpath.h"
 #include "common/exceptions.h"
 #include <string>
+#include <iostream>
 
 namespace ara::value_analyzer {
 	std::string get_function_name(const llvm::CallBase& callsite) {
@@ -29,7 +30,23 @@ namespace ara::value_analyzer {
 	ValueLocation::ValueLocation(const llvm::CallBase& callsite, const graph::CallPath& callpath,
 	                             const unsigned argument_nr)
 	    : callsite(callsite.getName().str()), function(get_function_name(callsite)),
-	      callpath(callpath.print(/* call_site = */ true, /* instruction = */ false, true)), arg_nr(argument_nr) {}
+	      callpath(callpath.print(/* call_site = */ false, /* instruction = */ false, true)), arg_nr(argument_nr) {
+
+		// if the callgraph is empty, try getting the caller
+		if (this->callpath.compare("CallPath()") == 0) {
+			std::stringstream cp;
+			cp << "Callpath(" << callsite.getCaller()->getName().str() << ")";
+			this->callpath = cp.str();
+		}
+
+		// if the callsite is empty, we could try getting the line number
+		//if (this->callsite.compare("") == 0) {
+		//	this->callsite = std::to_string(callsite.getDebugLoc()->getLine());
+		//}
+
+
+		std::cout << "Callpath: " << this->callpath << std::endl;
+	}
 
 	ValueLocation::ValueLocation(const llvm::json::Object& obj) {
 		const auto callsite = obj.getString("inst");
