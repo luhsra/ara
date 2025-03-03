@@ -131,7 +131,7 @@ namespace ara::step {
 	void POSIXStatic::run() {
 		graph::InstanceGraph instances = graph.get_instances();
 		graph_tool::gt_dispatch<>()([&](auto& g) { POSIXStaticImpl(g, instances, logger, graph.get_module()); },
-		                            graph_tool::always_directed())(instances.graph.get_graph_view());
+		                            graph_tool::always_directed)(instances.graph.get_graph_view());
 	}
 
 } // namespace ara::step

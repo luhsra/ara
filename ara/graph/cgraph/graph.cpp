@@ -69,12 +69,12 @@ namespace ara::graph {
 		PyObject* prop_any = PyObject_CallMethod(prop, "_get_any", nullptr);
 		assert(prop_any != nullptr);
 
-		boost::python::extract<boost::any> get_property(prop_any);
+		boost::python::extract<std::any> get_property(prop_any);
 		assert(get_property.check());
 
 		try {
-			return boost::any_cast<Property>(get_property());
-		} catch (boost::bad_any_cast& e) {
+			return std::any_cast<Property>(get_property());
+		} catch (std::bad_any_cast& e) {
 			std::cerr << "Bad any cast for attribute '" << key << "'" << std::endl;
 			throw e;
 		}

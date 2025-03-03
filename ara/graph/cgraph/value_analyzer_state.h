@@ -42,6 +42,11 @@ namespace ara::value_analyzer {
 		FunctionPointerHint(const std::string& name) : name(name) {}
 	};
 
+	struct ValueHint {
+		std::string value;
+		ValueHint(const std::string& value) : value(value) {}
+	};
+
 	/**
 	 * hold the state of a ValueAnalyzer (the actual ValueAnalzer is constructed everytime due to the need of a Python
 	 * object)
@@ -57,7 +62,7 @@ namespace ara::value_analyzer {
 		using ObjMap = boost::bimap<std::tuple<uint64_t, std::vector<int64_t>, std::size_t>, uint64_t>;
 		ObjMap obj_map;
 
-		std::map<ValueLocation, std::variant<FunctionPointerHint>> corrections;
+		std::map<ValueLocation, std::variant<FunctionPointerHint, ValueHint>> corrections;
 	};
 
 } // namespace ara::value_analyzer

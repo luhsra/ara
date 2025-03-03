@@ -29,13 +29,9 @@ namespace ara::graph {
 		}
 
 		template <typename Graph>
-		void get_call_site_dispatched(Graph& g, graph_tool::GraphInterface& gi, size_t index,
-		                              boost::python::object& new_e) {
-			auto gp = graph_tool::retrieve_graph_view<Graph>(gi, g);
-			{
-				TakeGIL gil;
-				new_e = boost::python::object(graph_tool::PythonEdge<Graph>(gp, edges.at(index)));
-			}
+		void get_call_site_dispatched(Graph& g, size_t index, boost::python::object& new_e) {
+			auto g_ptr = std::make_shared<Graph>(g);
+			new_e = boost::python::object(graph_tool::PythonEdge<Graph>(g_ptr, edges.at(index)));
 		}
 
 		template <typename Graph>
@@ -94,7 +90,7 @@ namespace ara::graph {
 			check_and_assign(call_graph);
 			// nested GIL may fail
 			graph_tool::gt_dispatch<>(false)([&](auto& g) { add_call_site_dispatched(g, *call_graph, call_site); },
-			                                 graph_tool::always_directed())(call_graph->graph.get_graph_view());
+			                                 graph_tool::always_directed)(call_graph->graph.get_graph_view());
 		}
 
 		void add_call_site(PyObject* call_graph, PyObject* edge);
