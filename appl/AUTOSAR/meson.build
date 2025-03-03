@@ -621,10 +621,10 @@ foreach app: autosar_targets
                                   '@INPUT@',
                                   '@OUTPUT@'])
 
+    app += {'app_image_riscv_bin' : riscv_bin}
+
     rt = 'tftp_' + full_name + '_riscv'
-    riscv_bin_tftp = run_target(rt,
-                        depends : [riscv_bin],
-                        command : [
+    tftp_cmd = [
                           py3_inst,
                           tftp_deploy,
                           riscv_bin.full_path(),
@@ -633,10 +633,17 @@ foreach app: autosar_targets
                           '--ssh', ssh.full_path(),
                           '--path', '/proj/tftp/research/beaglev',
                           '--beaglev',
-                        ])
-      summary('Flash @0@ on BeagleV with TFTP'.format(full_name), 'meson compile ' + rt, bool_yn: true, section: 'MACAW, AUTOSAR synthesis')
+                        ]
+
+    app += {'tftp_cmd_riscv' : tftp_cmd}
+    riscv_bin_tftp = run_target(rt,
+                        depends : [riscv_bin],
+                        command : tftp_cmd)
+    app +={'riscv_bin_tftp' : riscv_bin_tftp }
+    summary('Flash @0@ on BeagleV with TFTP'.format(full_name), 'meson compile ' + rt, bool_yn: true, section: 'MACAW, AUTOSAR synthesis')
 
 
+    
     autosar_generated_targets_riscv += app
   endif
 
