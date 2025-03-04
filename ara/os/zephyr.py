@@ -2450,6 +2450,17 @@ class Zephyr(OSBase):
 
         return state
 
+    @syscall(categories={SyscallCategory.comm},
+             signature=(Arg("irq", hint=SigType.value),))
+    def arch_irq_disable(graph, state, cpu_id, args, va):
+        state = state.copy()
+        cfg = graph.cfg
+
+        v, obj = Zephyr._find_irq_by_id(state, args.irq)
+        obj.active = False
+
+        return state
+
     @staticmethod
     def handle_irq(graph, state, cpu_id, irq):
         # states=[]
