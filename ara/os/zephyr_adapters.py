@@ -726,7 +726,7 @@ class InterpreterContext:
 
         for ptr in zi.dlist_itr_ptr(_kernel, ["ready_q", "runq"]): # only for CONFIG_SCHED_DUMB
             ptr.cls = zephyr.k_thread # "cast" *dlist to *k_thread" (shortcut)
-            print("dlist_itr ready_q", ptr)
+            #print("dlist_itr ready_q", ptr)
 
         # irm.set_print_llvmir(True)
         # zi.unready_thread(threads[0])
@@ -889,13 +889,13 @@ class InterpreterContext:
         timeout_list = zi.timeout_list
 
         for old in [idle_thread, _kernel, timeout_list] + threads:
-            print(type(old), old.__ptr__)
+            #print(type(old), old.__ptr__)
             new = type(old)()
             new.ptr = old.ptr
             proxy.get(new)
             changes = diff(old, new)
-            for x in changes:
-                print(f"{x.path_str():30s}: {x.obj1} => {x.obj2}")
+            #for x in changes:
+            #    print(f"{x.path_str():30s}: {x.obj1} => {x.obj2}")
 
         proxy.get(timeout_list)
         proxy.get(_kernel)
@@ -914,7 +914,7 @@ class InterpreterContext:
             if isinstance(container, zephyr.k_thread):
                 timeout_base_thread = proxy.container_of_ptr(_timeout, zephyr._thread_base, 'timeout')
                 timeout_thread = proxy.container_of(timeout_base_thread, zephyr.k_thread, 'base')
-                print("timeout_thread: ", timeout_thread.__ptr__)
+                #print("timeout_thread: ", timeout_thread.__ptr__)
                 timeout = proxy.get_member(timeout_base_thread, ['timeout'])
                 assert _timeout.ptr == timeout.ptr
 
@@ -935,7 +935,7 @@ class InterpreterContext:
         kernel.ready_q.clear()
         for ptr in zi.dlist_itr_ptr(_kernel, ["ready_q", "runq"]): # only for CONFIG_SCHED_DUMB
             ptr.cls = zephyr.k_thread # "cast" *dlist to *k_thread" (shortcut)
-            print("dlist_itr ready_q", ptr)
+            #print("dlist_itr ready_q", ptr)
 
             v = self.kobj_maps[zephyr.k_thread][ptr.ptr].v
             kernel.ready_q.append(v)

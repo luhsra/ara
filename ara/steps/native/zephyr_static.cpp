@@ -368,10 +368,12 @@ namespace ara::step {
 				llvm::Constant* stop_fn_const = get_element_checked(*context.initializer, 3, context.info_node, "stop_fn");
 
 				if(!expiry_fn_const->isNullValue()) {
+					TakeGIL gil;
 					llvm::Function& expiry_fn = safe_deref(llvm::dyn_cast<llvm::Function>(expiry_fn_const));
 					py_expiry = py_str(expiry_fn.getName());
 				}
 				if(!stop_fn_const->isNullValue()) {
+					TakeGIL gil;
 					llvm::Function& stop_fn = safe_deref(llvm::dyn_cast<llvm::Function>(stop_fn_const));
 					py_stop = py_str(stop_fn.getName());
 				}
