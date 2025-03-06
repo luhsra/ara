@@ -1037,7 +1037,7 @@ class Zephyr(OSBase):
 
         # ic.zi.irm.set_print_llvmir(True)
         ic.zi.irm.stop(["arch_swap"])
-        ic.zi.irm.skip(["clear_halting"])
+        ic.zi.irm.skip(["clear_halting", "memset"])
         # ic.zi.irm.set_print_llvmir(True)
         ic.run_function_with_arch_swap("z_thread_abort", [thread.ptr], ['PTR'], True)
         # ic.zi.run_function("z_unpend_all", [join_queue.ptr], ['PTR'])
@@ -1156,7 +1156,7 @@ class Zephyr(OSBase):
             ]
 
             irm.stop(["arch_swap"])
-            irm.skip(['arch_new_thread'])
+            irm.skip(['arch_new_thread', 'memset'])
             zi.run_function("z_impl_k_thread_create", irx_args, type_hints)
 
             if irm.getCurrentCallFunctionName() == "arch_swap":

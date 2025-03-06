@@ -40,7 +40,7 @@ class ZephyrInterpreter:
 
         self.curr_tick = None
 
-        self.force_native_sim = True
+        self.force_native_sim = False
     
     def init(self, llvmirfile, kernel_ll):
         self.irm = PyIRModuleInterpreter()
@@ -142,7 +142,7 @@ class ZephyrInterpreter:
             self.run_function("posix_arch_console_init", [], [])
             self.sys_clock_driver_init()
         # self.z_sys_init_run_level(2)
-        irm.skip(['arch_new_thread'])
+        irm.skip(['arch_new_thread', 'memset'])
 
         #self.run_function("prepare_multithreading", [], [])
         # stack_ptr = irm.getExitValue()['PointerVal']
