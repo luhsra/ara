@@ -1,12 +1,17 @@
 {
 	"steps": [
 		"MultiSSE",
-		"DumpCFG"
+		"DumpCFG",
+		"HyperSSE"
 	],
 
 	"MultiSSE": {
 		"with_times": false,
 		"dump": true,
 		"log_level": "debug"
+	},
+
+	"HyperSSE": {
+		"dummy_option": 24
 	}
 }

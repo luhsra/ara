@@ -216,8 +216,8 @@ class Main:
             def step_info(step_entry):
                 return f"{step_entry.uuid} {step_entry.name}"
 
-        logger.info("History: \n" + "\n".join([step_info(se)
-                                               for se in self.s_manager.get_history()]))
+        #logger.info("History: \n" + "\n".join([step_info(se)
+        #                                       for se in self.s_manager.get_history()]))
 
 
 if __name__ == '__main__':
