@@ -9,6 +9,7 @@
 # SPDX-FileCopyrightText: 2022 Domenik Kuhn
 # SPDX-FileCopyrightText: 2022 Jan Neugebauer
 # SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2025 Mareike Burg
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -33,6 +34,7 @@ def provide_steps():
     from .fake_timings import FakeTimings
     from .find_pointer_loops import FindPointerLoops
     from .generator import Generator
+    from .hypsersse import HyperSSE
     from .icfg import ICFG
     from .instance_graph_stats import InstanceGraphStats
     from .ipi_avoidance import IPIAvoidance
@@ -75,6 +77,7 @@ def provide_steps():
     yield FakeTimings
     yield FindPointerLoops
     yield Generator
+    yield HyperSSE
     yield ICFG
     yield IPIAvoidance
     yield InstanceGraphStats
