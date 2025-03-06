@@ -90,6 +90,7 @@ class ZephyrInterpreter:
         self.curr_tick = self.irm.irx_get_global_var('curr_tick')
 
     def run_function(self, function_name, args, arg_type_hints, finish=False):
+        print(f"run_function {function_name}")
         if not self.irm.runFunction(function_name.encode("ascii"), args, arg_type_hints):
             raise RuntimeError(f"Failed to run LLVM Interpreter for function {function_name}")
         if finish:

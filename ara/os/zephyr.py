@@ -645,8 +645,8 @@ class Zephyr(OSBase):
 
         prio_vert, prio_thread = None, None
 
-        if not 'CONFIG_SCHED_DUMB' in Zephyr.config:
-            logger.warning("CONFIG_SCHED_DUMB not set. SSE might be incorrect!")
+        if not 'CONFIG_SCHED_DUMB' in Zephyr.config and Zephyr.enable_sse:
+            raise RuntimeError("only CONFIG_SCHED_DUMB supported by SSE")
 
         # start with main thread, because it is the first one spawnig
         threads = [x for x in filter(lambda t: t[1].delay == 0, all_threads)]
