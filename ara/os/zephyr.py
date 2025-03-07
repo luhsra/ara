@@ -637,6 +637,14 @@ class Zephyr(OSBase):
         state.context[state.instances.vp.obj[Zephyr.kernel]] = kernel
 
     @staticmethod
+    def get_timeout_llvm_type():
+        """depending on the architecture, the LLVM type of struct timeout can be different"""
+        if 'CONFIG_ARM' in Zephyr.config:
+            return 'PTR' # actually it is a [i32 x 1]
+        else:
+            return 'APInt64'
+
+    @staticmethod
     def get_initial_state(cfg, instances):
         running_tasks = []
         cpu_id = 0
@@ -1484,7 +1492,7 @@ class Zephyr(OSBase):
             timeout = za.to_timeout_value(args.timeout)
             
             # ic.zi.irm.set_print_llvmir(True)
-            ret, did_swap = ic.run_function_with_arch_swap("k_thread_join", [thread.ptr, timeout], ['PTR', 'APInt64'])
+            ret, did_swap = ic.run_function_with_arch_swap("k_thread_join", [thread.ptr, timeout], ['PTR', Zephyr.get_timeout_llvm_type()])
             logger.debug(f"k_thread_join ret: {ret['IntVal']['S']} {did_swap}")
         Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_thread_join", "Thread")
         return state
@@ -1498,7 +1506,7 @@ class Zephyr(OSBase):
         if Zephyr.enable_sse:
             ic = za.InterpreterContext(Zephyr.irx, state, cpu_id)
             timeout = za.to_timeout_value(args.timeout)
-            ic.run_function_with_arch_swap("z_impl_k_sleep", [timeout], ['APInt64'])
+            ic.run_function_with_arch_swap("z_impl_k_sleep", [timeout], [Zephyr.get_timeout_llvm_type()])
 
         add_self_edge(state, cpu_id, "k_sleep", ty=ZephyrEdgeType.interaction)
         return state
@@ -1595,6 +1603,7 @@ class Zephyr(OSBase):
         if Zephyr.enable_sse:
             ic = za.InterpreterContext(Zephyr.irx, state, cpu_id)
             thread = ic.thread_sym_2_ptr(args.symbol)
+            ic.zi.irm.skip(["memcpy", "memset"])
             ic.run_function_with_arch_swap("z_impl_k_thread_start", [thread.ptr], ['PTR'])
 
         add_self_edge(state, cpu_id, "k_thread_start", ty=ZephyrEdgeType.interaction)
@@ -1753,7 +1762,7 @@ class Zephyr(OSBase):
         sem = ic.get_semaphore(v)
         timeout = za.to_timeout_value(args.timeout)
 
-        ret, did_swap = ic.run_function_with_arch_swap("z_impl_k_sem_take", [sem.ptr, timeout], ['PTR', 'APInt64'])
+        ret, did_swap = ic.run_function_with_arch_swap("z_impl_k_sem_take", [sem.ptr, timeout], ['PTR', Zephyr.get_timeout_llvm_type()])
 
         print("z_impl_k_sem_take:", ret["IntVal"]["S"], did_swap)
     
@@ -1865,7 +1874,7 @@ class Zephyr(OSBase):
             v = state.instances.get_node(args.symbol)
             kobj_mutex = ic.get_kobj_from_vertex(v)
             # ic.zi.irm.set_print_llvmir(True)
-            ic.run_function_with_arch_swap("z_impl_k_mutex_lock", [kobj_mutex.ptr, timeout], ['PTR', 'APInt64'])
+            ic.run_function_with_arch_swap("z_impl_k_mutex_lock", [kobj_mutex.ptr, timeout], ['PTR', Zephyr.get_timeout_llvm_type()])
             # ic.zi.irm.set_print_llvmir(False)
 
         Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_mutex_lock", "Mutex")
@@ -2218,8 +2227,8 @@ class Zephyr(OSBase):
             timeout = za.to_timeout_value(args.timeout)
             v = state.instances.get_node(args.symbol)
             kobj_msgq = ic.get_kobj_from_vertex(v)
-            ic.zi.irm.skip(["memcpy"])
-            ic.run_function_with_arch_swap("z_impl_k_msgq_put", [kobj_msgq.ptr, 0x00, timeout], ['PTR', 'PTR', 'APInt64'])
+            ic.zi.irm.skip(["memcpy", "memset"])
+            ic.run_function_with_arch_swap("z_impl_k_msgq_put", [kobj_msgq.ptr, 0x00, timeout], ['PTR', 'PTR', Zephyr.get_timeout_llvm_type()])
 
         Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_msgq_put", "MSGQ")
         return state
@@ -2237,8 +2246,8 @@ class Zephyr(OSBase):
             timeout = za.to_timeout_value(args.timeout)
             v = state.instances.get_node(args.symbol)
             kobj_msgq = ic.get_kobj_from_vertex(v)
-            ic.zi.irm.skip(["memcpy"])
-            ic.run_function_with_arch_swap("z_impl_k_msgq_get", [kobj_msgq.ptr, 0x00, timeout], ['PTR', 'PTR', 'APInt64'])
+            ic.zi.irm.skip(["memcpy", "memset"])
+            ic.run_function_with_arch_swap("z_impl_k_msgq_get", [kobj_msgq.ptr, 0x00, timeout], ['PTR', 'PTR', Zephyr.get_timeout_llvm_type()])
 
         Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_msgq_get", "MSGQ")
         return state
