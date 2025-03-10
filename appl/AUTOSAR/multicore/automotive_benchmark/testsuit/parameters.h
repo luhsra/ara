@@ -36,7 +36,7 @@
     const unsigned NUMBER_OF_RUNNABLES = 1000;
     const unsigned NUMBER_OF_LABELS = 10000;
 #elif defined(VARIANT_CUSTOM)
-    const unsigned CYCLES = 100;
+    const unsigned CYCLES = 120;
     const unsigned NUMBER_OF_RUNNABLES = 1000;
     const unsigned NUMBER_OF_LABELS = 10000;
 
@@ -76,6 +76,34 @@ const unsigned RUNABLES_SHARE[NR_TASKS] = {3, 2, 2, 25, 25, 3, 20, 1, 4, 15};
 const unsigned RUNABLES_PERIOD[NR_TASKS] = {1, 2, 5, 10, 20, 50, 100, 200, 1000, ANGLE_SYNC_PERIOD};   // TODO could modify slightly to decrease spike at multiples
 // Average execution time of a single runnables in a specific activation period (in microseconds/us)
 const unsigned TIME_PER_RUNNABLE[NR_TASKS] = {5, 5, 12, 11, 9, 18, 11, 3, 1, 7};
+// Total runtime per task/periode
+/*
+const unsigned TOTAL_RUNTIME[NR_TASKS] = {
+	(NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS1_id] * TIME_PER_RUNNABLE[MS1_id],
+	(NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS2_id] * TIME_PER_RUNNABLE[MS2_id],
+	(NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS5_id] * TIME_PER_RUNNABLE[MS5_id],
+	(NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS10_id] * TIME_PER_RUNNABLE[MS10_id],
+	(NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS20_id] * TIME_PER_RUNNABLE[MS20_id],
+	(NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS50_id] * TIME_PER_RUNNABLE[MS50_id],
+	(NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS100_id] * TIME_PER_RUNNABLE[MS100_id],
+	(NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS200_id] * TIME_PER_RUNNABLE[MS200_id],
+	(NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS1000_id] * TIME_PER_RUNNABLE[MS1000_id],
+	(NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MSANGLE_id] * TIME_PER_RUNNABLE[MSANGLE_id]
+};*/
+
+// for testing
+const unsigned TOTAL_RUNTIME[NR_TASKS] = {
+	950,
+	500,
+	500,
+	500,
+	500,
+	500,
+	500,
+	500,
+	500,
+	500
+};
 
 // 90% of Labels are 1,2,4 Bytes, calculated average was 3 Bytes
 const unsigned AVAERAGE_LABEL_SIZE = 3;
@@ -123,7 +151,7 @@ const unsigned INTER_TASK_RATIO[NR_TASKS][NR_TASKS] = {
 
 // Used the reduce the number o task, removing the ones with the longest scheduling intervals
 // With all tasks the analysis might take very long!
-const unsigned TASK_COUNT = 1;
+const unsigned TASK_COUNT = 2;
 static_assert(TASK_COUNT <= NR_TASKS);
 
 
@@ -183,7 +211,7 @@ void kout_task_data() {
 	kout << "------------------------------------------------" << endl;
 	for (unsigned i = 0; i < TASK_COUNT; i++) {
 		runables += (NUMBER_OF_RUNNABLES / 100) * RUNABLES_SHARE[i];
-		exp_runtime = (NUMBER_OF_RUNNABLES / 100) * RUNABLES_SHARE[i] * TIME_PER_RUNNABLE[i];
+		exp_runtime = TOTAL_RUNTIME[i];
 		rt_si += exp_runtime / RUNABLES_PERIOD[i];
 		kout << taskStrings[i] << "\t | " << (NUMBER_OF_RUNNABLES / 100) * RUNABLES_SHARE[i] << "\t\t\t| ";
 		kout << exp_runtime << "\tus";

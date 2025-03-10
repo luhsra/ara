@@ -310,10 +310,10 @@ void PreTaskHook() {
 TASK(MS1) {
 	
 	unsigned int c = arch::Perf::get_cycles();
-    // unsigned const t = (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS1_id] * TIME_PER_RUNNABLE[MS1_id];
-	unsigned const t = 1950;
+    unsigned const t = TOTAL_RUNTIME[MS1_id];
 	if (debug_print) {
 		kout << cycle_count[MS1_id] << endl;
+		kout << "1g" << endl;
 	}
 	ara_timing_info(t,t + 1);
 	micro_sec_wait(t);
@@ -328,8 +328,9 @@ TASK(MS1) {
 }
 TASK(MS2) {
 	unsigned int c = arch::Perf::get_cycles();
-    unsigned const t = (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS2_id] * TIME_PER_RUNNABLE[MS2_id];
+    unsigned const t = TOTAL_RUNTIME[MS2_id];
 	if (debug_print) {
+		kout << cycle_count[MS2_id] << endl;
 		kout << "2g" << endl;
 	}
 	ara_timing_info(t,t + 1);
@@ -344,7 +345,7 @@ TASK(MS2) {
 	TerminateTask();
 }
 TASK(MS5) {
-    unsigned const t = (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS5_id] * TIME_PER_RUNNABLE[MS5_id];
+    unsigned const t = TOTAL_RUNTIME[MS5_id];
 	if (debug_print) {
 		kout << "5g" << endl;
 	}
@@ -357,7 +358,7 @@ TASK(MS5) {
 	TerminateTask();
 }
 TASK(MS10) {
-    unsigned const t = (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS10_id] * TIME_PER_RUNNABLE[MS10_id];
+    unsigned const t = TOTAL_RUNTIME[MS10_id];
 	if (debug_print) {
 		kout << "10g" << endl;
 	}
@@ -370,7 +371,7 @@ TASK(MS10) {
 	TerminateTask();
 }
 TASK(MS20) {
-    unsigned const t = (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS20_id] * TIME_PER_RUNNABLE[MS20_id];
+    unsigned const t = TOTAL_RUNTIME[MS20_id];
 	if (debug_print) {
 		kout << "20g" << endl;
 	}
@@ -383,7 +384,7 @@ TASK(MS20) {
 	TerminateTask();
 }
 TASK(MS50) {
-    unsigned const t = (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS50_id] * TIME_PER_RUNNABLE[MS50_id];
+    unsigned const t = TOTAL_RUNTIME[MS50_id];
 	if (debug_print) {
 		kout << "50g" << endl;
 	}
@@ -396,7 +397,7 @@ TASK(MS50) {
 	TerminateTask();
 }
 TASK(MS100) {
-    unsigned const t = (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS100_id] * TIME_PER_RUNNABLE[MS100_id];
+    unsigned const t = TOTAL_RUNTIME[MS100_id];
 	if (debug_print) {
 		kout << "100g" << endl;
 	}
@@ -409,7 +410,7 @@ TASK(MS100) {
 	TerminateTask();
 }
 TASK(MS200) {
-    unsigned const t = (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS200_id] * TIME_PER_RUNNABLE[MS200_id];
+    unsigned const t = TOTAL_RUNTIME[MS200_id];
 	if (debug_print) {
 		kout << "200g" << endl;
 	}
@@ -422,7 +423,7 @@ TASK(MS200) {
 	TerminateTask();
 }
 TASK(MS1000) {
-    unsigned const t = (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS1000_id] * TIME_PER_RUNNABLE[MS1000_id];
+    unsigned const t = TOTAL_RUNTIME[MS1000_id];
 	if (debug_print) {
 		kout << "1000g" << endl;
 	}
