@@ -88,7 +88,7 @@
         "events": {},
         "counters": {
           "C1": {
-            "maxallowedvalue": 10000,
+            "maxallowedvalue": 20000,
             "ticksperbase": 1,
             "mincycle": 1
           }

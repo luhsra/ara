@@ -22,7 +22,7 @@ def fake_interrupt_function(cfg, callgraph, os, name, alarmtime_ms, cycletime_ms
     Apply the interrupt interarrival time (iit) if given.
     """
 
-    # TODO if true use given iit, else set range to (0, inf)
+    # If true use given iit, else set range to (1, inf)
     do_iit = True
 
     # Autosar increments counter with a 1 kHz Timer, but other timing measurement is done with us precision

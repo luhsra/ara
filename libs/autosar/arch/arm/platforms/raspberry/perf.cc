@@ -41,6 +41,7 @@ extern "C" void cycles_wait(uint32_t wait_time) {
 	uint32_t starttime = arch::Perf::get_cycles();
 	uint32_t endtime = starttime + wait_time;
 
+	
 	// the comparison happens not at every cycle, therefore the overflow cases might be skipped
 	if (endtime < 0x0000FFFF) {
 		endtime = 0x0000FFFF;
@@ -157,6 +158,7 @@ extern "C" void bcet_micro_sec_wait(int bcet, int wcet) {
 * Wait for wait_time microseconds, 
 * maxTime on Pi is 		17.1s = 17 100 000 us
 * maxTime with Qemu is  4.3s  = 4 300 000 us
+* Overhead for 1 us ~ 0.1 us, at max 10%
 */
 extern "C" void micro_sec_wait(uint32_t wait_time) {
 	

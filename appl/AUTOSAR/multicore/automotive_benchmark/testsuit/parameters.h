@@ -36,8 +36,8 @@
     const unsigned NUMBER_OF_RUNNABLES = 1000;
     const unsigned NUMBER_OF_LABELS = 10000;
 #elif defined(VARIANT_CUSTOM)
-    const unsigned CYCLES = 10;
-    const unsigned NUMBER_OF_RUNNABLES = 3000;
+    const unsigned CYCLES = 100;
+    const unsigned NUMBER_OF_RUNNABLES = 1000;
     const unsigned NUMBER_OF_LABELS = 10000;
 
 // to make linter happier
@@ -125,6 +125,10 @@ const unsigned INTER_TASK_RATIO[NR_TASKS][NR_TASKS] = {
 // With all tasks the analysis might take very long!
 const unsigned TASK_COUNT = 1;
 static_assert(TASK_COUNT <= NR_TASKS);
+
+
+const unsigned WARMUP = 10;
+const unsigned COOLDOWN = CYCLES - 10;
 
 /**
  ******************** Debug Helpers ********************
