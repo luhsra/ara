@@ -17,8 +17,8 @@ from pathlib import Path
 def main():
     """Test for successful AUTOSAR image creation."""
 
-    TARGET = 'tftp_autosar_multicore_andreas_cores_4_riscv'
-    BUILD_DIR = "/srv/scratch/mau.hoeppner/Bachelorthesis/ara/build"
+    #TARGET = 'tftp_autosar_multicore_andreas_cores_4_riscv'
+    #BUILD_DIR = "/srv/scratch/mau.hoeppner/Bachelorthesis/ara/build"
     REMOTE_HOST ="lab-pc60"
 
 

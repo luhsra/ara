@@ -121,8 +121,16 @@ public:
 
 	static noinline void shutdown(void) {
 		// QEMU shutdown
-		(*(volatile uint32_t *) 0x100000) = 0x5555;
+		//(*(volatile uint32_t *) 0x100000) = 0x5555;
 		//htif_poweroff();
+		//asm("j do_reset");
+
+		// BeagleV "Shutdown" (No conventional shutdown feature)
+		kout << "Shutting down..." << endl;
+		while (true) {
+			halt();
+		}
+		
 	}
 
 	static noinline void halt(void) {

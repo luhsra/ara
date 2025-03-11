@@ -341,7 +341,7 @@ if get_option('enable_step_tests')
         depends: [ara_py, app['app_image_riscv_bin']],
         is_parallel: false,
         suite: ['autosar_generator_riscv_beagle'],
-        timeout: 120
+        timeout: 300 # Don't want to stop before serial connection times out
       )
     endforeach
   endif
