@@ -14,37 +14,37 @@
 
 // Lower border from paper
 #if defined(VARIANT_BASIC)
-    const unsigned CYCLES = 1000;
-    const unsigned NUMBER_OF_RUNNABLES = 1000;
-    const unsigned NUMBER_OF_LABELS = 10000;
+    constexpr unsigned CYCLES = 1000;
+    constexpr unsigned NUMBER_OF_RUNNABLES = 1000;
+    constexpr unsigned NUMBER_OF_LABELS = 10000;
 
 // Upper border from paper
 #elif defined(VARIANT_LARGE)
-    const unsigned CYCLES = 1000;
-    const unsigned NUMBER_OF_RUNNABLES = 2000;
-    const unsigned NUMBER_OF_LABELS = 25000;
+    constexpr unsigned CYCLES = 1000;
+    constexpr unsigned NUMBER_OF_RUNNABLES = 2000;
+    constexpr unsigned NUMBER_OF_LABELS = 25000;
 
 // to match our systems size
 #elif defined(VARIANT_TINY)
-    const unsigned CYCLES = 1000;
-    const unsigned NUMBER_OF_RUNNABLES = 100;
-    const unsigned NUMBER_OF_LABELS = 10000;
+    constexpr unsigned CYCLES = 1000;
+    constexpr unsigned NUMBER_OF_RUNNABLES = 100;
+    constexpr unsigned NUMBER_OF_LABELS = 10000;
 
 // same as baisc, but with longer runtime
 #elif defined(VARIANT_LONG)
-    const unsigned CYCLES = 2000;
-    const unsigned NUMBER_OF_RUNNABLES = 1000;
-    const unsigned NUMBER_OF_LABELS = 10000;
+    constexpr unsigned CYCLES = 2000;
+    constexpr unsigned NUMBER_OF_RUNNABLES = 1000;
+    constexpr unsigned NUMBER_OF_LABELS = 10000;
 #elif defined(VARIANT_CUSTOM)
-    const unsigned CYCLES = 120;
-    const unsigned NUMBER_OF_RUNNABLES = 1000;
-    const unsigned NUMBER_OF_LABELS = 10000;
+    constexpr unsigned CYCLES = 120;
+    constexpr unsigned NUMBER_OF_RUNNABLES = 1000;
+    constexpr unsigned NUMBER_OF_LABELS = 10000;
 
 // to make linter happier
 #else
-    const unsigned CYCLES = 10;
-    const unsigned NUMBER_OF_RUNNABLES = 3000;
-    const unsigned NUMBER_OF_LABELS = 10000;
+    constexpr unsigned CYCLES = 10;
+    constexpr unsigned NUMBER_OF_RUNNABLES = 3000;
+    constexpr unsigned NUMBER_OF_LABELS = 10000;
 
 #endif
 
@@ -55,30 +55,47 @@
 
 // How long the software scheduler takes at least, before starting the next round of runnables
 // Needs to match cycletime inside system.json alarm!
-const unsigned SCHEDUL_INTERVAL = 1000; //um -> 1000us = 1ms
+constexpr unsigned SCHEDUL_INTERVAL = 1000; //um -> 1000us = 1ms
 // TODO TMP
-//const unsigned SCHEDUL_INTERVAL = 10000; //um -> 1000us = 1ms
+//constexpr unsigned SCHEDUL_INTERVAL = 10000; //um -> 1000us = 1ms
 
 // 10 activation periods, which gets grouped into a task each. From 1ms to 1000ms
-const unsigned NR_TASKS = 10;
+constexpr unsigned NR_TASKS = 10;
 // Angle Sync Values, assume the worst case, so the shortest period. So a bit car with 8 Cylinders and 5000 rpm
-const unsigned CYLINDERS = 8;
-const unsigned RPM = 5000;
+constexpr unsigned CYLINDERS = 8;
+constexpr unsigned RPM = 5000;
 // Formular is 60/(CYLINDERS*RPM) -> then convert into s (*60) -> then into milliseconds * 1000
-const unsigned ANGLE_SYNC_PERIOD = (1000*60*60)/(CYLINDERS * RPM);
+constexpr unsigned ANGLE_SYNC_PERIOD = (1000*60*60)/(CYLINDERS * RPM);
 
 // Name of each task
 const char* taskStrings[NR_TASKS] = {"MS1", "MS2", "MS5", "MS10", "MS20", "MS50", "MS100", "MS200", "MS1000", "MSANGLE"};
 enum task_id { MS1_id = 0, MS2_id = 1, MS5_id = 2, MS10_id = 3, MS20_id = 4, MS50_id = 5, MS100_id = 6, MS200_id = 7, MS1000_id = 8, MSANGLE_id = 9, MS_LAST_id = 10};
 // Percentage share of each activation period of the total NUMBER_OF_RUNNABLES
-const unsigned RUNABLES_SHARE[NR_TASKS] = {3, 2, 2, 25, 25, 3, 20, 1, 4, 15};
+constexpr unsigned RUNABLES_SHARE[NR_TASKS] = {3, 2, 2, 25, 25, 3, 20, 1, 4, 15};
 // Given activation periods in which runnables get triggered (in millisecond/ms)
-const unsigned RUNABLES_PERIOD[NR_TASKS] = {1, 2, 5, 10, 20, 50, 100, 200, 1000, ANGLE_SYNC_PERIOD};   // TODO could modify slightly to decrease spike at multiples
+constexpr unsigned RUNABLES_PERIOD[NR_TASKS] = {1, 2, 5, 10, 20, 50, 100, 200, 1000, ANGLE_SYNC_PERIOD};   // TODO could modify slightly to decrease spike at multiples
+
+// Factor by which the calculation of each task is split into
+constexpr unsigned SPLITTIMES = 10;
+constexpr unsigned SPLIT_PER_TASK[NR_TASKS] = {
+	SPLITTIMES * RUNABLES_PERIOD[MS1_id],
+	SPLITTIMES * RUNABLES_PERIOD[MS2_id],
+	SPLITTIMES * RUNABLES_PERIOD[MS5_id],
+	SPLITTIMES * RUNABLES_PERIOD[MS10_id],
+	SPLITTIMES * RUNABLES_PERIOD[MS20_id],
+	SPLITTIMES * RUNABLES_PERIOD[MS50_id],
+	SPLITTIMES * RUNABLES_PERIOD[MS100_id],
+	SPLITTIMES * RUNABLES_PERIOD[MS200_id],
+	SPLITTIMES * RUNABLES_PERIOD[MS1000_id],
+	SPLITTIMES * RUNABLES_PERIOD[MSANGLE_id],
+};
+
+
 // Average execution time of a single runnables in a specific activation period (in microseconds/us)
-const unsigned TIME_PER_RUNNABLE[NR_TASKS] = {5, 5, 12, 11, 9, 18, 11, 3, 1, 7};
+constexpr unsigned TIME_PER_RUNNABLE[NR_TASKS] = {5, 5, 12, 11, 9, 18, 11, 3, 1, 7};
 // Total runtime per task/periode
-/*
-const unsigned TOTAL_RUNTIME[NR_TASKS] = {
+
+constexpr unsigned TOTAL_RUNTIME[NR_TASKS] = {
 	(NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS1_id] * TIME_PER_RUNNABLE[MS1_id],
 	(NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS2_id] * TIME_PER_RUNNABLE[MS2_id],
 	(NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS5_id] * TIME_PER_RUNNABLE[MS5_id],
@@ -89,11 +106,13 @@ const unsigned TOTAL_RUNTIME[NR_TASKS] = {
 	(NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS200_id] * TIME_PER_RUNNABLE[MS200_id],
 	(NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS1000_id] * TIME_PER_RUNNABLE[MS1000_id],
 	(NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MSANGLE_id] * TIME_PER_RUNNABLE[MSANGLE_id]
-};*/
+};
+
 
 // for testing
-const unsigned TOTAL_RUNTIME[NR_TASKS] = {
-	950,
+/*
+constexpr unsigned TOTAL_RUNTIME[NR_TASKS] = {
+	500,
 	500,
 	500,
 	500,
@@ -104,21 +123,22 @@ const unsigned TOTAL_RUNTIME[NR_TASKS] = {
 	500,
 	500
 };
+*/
 
 // 90% of Labels are 1,2,4 Bytes, calculated average was 3 Bytes
-const unsigned AVAERAGE_LABEL_SIZE = 3;
+constexpr unsigned AVAERAGE_LABEL_SIZE = 3;
 
 // Of that: 40% read, 10% write, 50% read/write
-const unsigned READ_ACCESSES_PER_RUNNABLE = AVAERAGE_LABEL_SIZE * 40 * (NUMBER_OF_LABELS / NUMBER_OF_RUNNABLES) / 100;
-const unsigned WRITE_ACCESSES_PER_RUNNABLE = AVAERAGE_LABEL_SIZE* 10 * (NUMBER_OF_LABELS / NUMBER_OF_RUNNABLES) / 100;
-const unsigned RW_ACCESSES_PER_RUNNABLE = AVAERAGE_LABEL_SIZE * 50 * (NUMBER_OF_LABELS / NUMBER_OF_RUNNABLES) / 100;
-const unsigned MEMORY_PER_RUNNABLE = READ_ACCESSES_PER_RUNNABLE + WRITE_ACCESSES_PER_RUNNABLE + RW_ACCESSES_PER_RUNNABLE;
+constexpr unsigned READ_ACCESSES_PER_RUNNABLE = AVAERAGE_LABEL_SIZE * 40 * (NUMBER_OF_LABELS / NUMBER_OF_RUNNABLES) / 100;
+constexpr unsigned WRITE_ACCESSES_PER_RUNNABLE = AVAERAGE_LABEL_SIZE* 10 * (NUMBER_OF_LABELS / NUMBER_OF_RUNNABLES) / 100;
+constexpr unsigned RW_ACCESSES_PER_RUNNABLE = AVAERAGE_LABEL_SIZE * 50 * (NUMBER_OF_LABELS / NUMBER_OF_RUNNABLES) / 100;
+constexpr unsigned MEMORY_PER_RUNNABLE = READ_ACCESSES_PER_RUNNABLE + WRITE_ACCESSES_PER_RUNNABLE + RW_ACCESSES_PER_RUNNABLE;
 
 uint8_t communication[NUMBER_OF_LABELS * AVAERAGE_LABEL_SIZE];
 uint16_t memory_pos = 0;
 
 // Final one is end of memory -> cant write further
-const unsigned memory_positions[NR_TASKS + 1] = {
+constexpr unsigned memory_positions[NR_TASKS + 1] = {
 	0,
 	(NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS1_id] * MEMORY_PER_RUNNABLE,
 	memory_positions[1] + (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS2_id] * MEMORY_PER_RUNNABLE,
@@ -135,7 +155,7 @@ const unsigned memory_positions[NR_TASKS + 1] = {
 // InterTask Communication Patter
 // with MS1 MS2 MS5 MS10 MS20 MS50 MS100 MS200 MS1000
 // 0 = 0, I = 5, II = 25, III = 75, IV = 250, V = 750, VI = 1250
-const unsigned INTER_TASK_RATIO[NR_TASKS][NR_TASKS] = {
+constexpr unsigned INTER_TASK_RATIO[NR_TASKS][NR_TASKS] = {
 										{25, 0, 0, 5, 5, 0, 5, 0, 0, 5},
 										{0, 25, 0, 5, 5, 0, 5, 0, 0, 0},
 										{0, 5, 250, 250, 25, 25, 5, 0, 0, 0},
@@ -151,12 +171,12 @@ const unsigned INTER_TASK_RATIO[NR_TASKS][NR_TASKS] = {
 
 // Used the reduce the number o task, removing the ones with the longest scheduling intervals
 // With all tasks the analysis might take very long!
-const unsigned TASK_COUNT = 2;
+constexpr unsigned TASK_COUNT = 2;
 static_assert(TASK_COUNT <= NR_TASKS);
 
 
-const unsigned WARMUP = 10;
-const unsigned COOLDOWN = CYCLES - 10;
+constexpr unsigned WARMUP = 10;
+constexpr unsigned COOLDOWN = CYCLES - 10;
 
 /**
  ******************** Debug Helpers ********************

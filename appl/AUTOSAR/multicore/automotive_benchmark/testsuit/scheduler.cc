@@ -22,7 +22,8 @@ TEST_MAKE_OS_MAIN(StartOS(0))
 
 
 /**
- * Test scheduling, where counter activates scheduler which sets tasks as active
+ * Test scheduling, where counter activates scheduler which sets tasks as active.
+ * Uses Rate Monotonic Scheduling
  */
 
 /**
@@ -46,25 +47,30 @@ TASK(INIT) {
     TerminateTask();	
 }
 
+// show debug prints, timings are not accurate then!
+const bool debug_print = false;
 
+// current cycle of scheduling
+static unsigned cycle = 0;
+
+// measure how often each tast runed
+static StatusType res;
+static unsigned start_counter[TASK_COUNT] = {0};
+static unsigned blocked_counter[TASK_COUNT] = {0};
+static unsigned finish_counter[TASK_COUNT] = {0};
+
+// measure time between two schedule cycles
+static unsigned int prev = 0;
 static unsigned int c[CYCLES] = {0};
+
+// measure start and end time of each task
 static unsigned int r[TASK_COUNT][CYCLES] = {0};
 static unsigned int cycle_count[TASK_COUNT] = {0};
 
 
-const bool debug_print = false;
-
-static StatusType res;
-static unsigned cycle = 0;
-static unsigned blocked_counter[TASK_COUNT] = {0};
-static unsigned start_counter[TASK_COUNT] = {0};
-static unsigned finish_counter[TASK_COUNT] = {0};
-static unsigned int prev = 0;
 
 // main scheduler
 TASK(SCHED) {
-
-
     ara_timing_info(10, 20);
 
     if (cycle >= CYCLES) {
@@ -73,6 +79,8 @@ TASK(SCHED) {
 		kout << "End" << endl;
 		kout << "*******************\n" << endl;
 		
+		/*
+		// print time between each scheduel cylce
 		for (unsigned i = 0; i < CYCLES; i++){
 			kout << i << " c: " << c[i] / WAIT_FREQUENCE << "us" << endl;
 			if (i == WARMUP) {
@@ -81,6 +89,9 @@ TASK(SCHED) {
 				kout << "End of run" << endl;
 			}
 		}
+		*/
+
+		// print time that passed between starting and ending a task
 		for (unsigned t = 0; t < TASK_COUNT; t++) {
 			for (unsigned i = 0; i < CYCLES; i++){
 				if (r[t][i] != 0){
@@ -94,10 +105,6 @@ TASK(SCHED) {
             kout << taskStrings[i] << "\tblocked #/%: " << blocked_counter[i] << "/" << (100 * blocked_counter[i]) / start_counter[i];
 			kout << "\tof #started_runs: " << start_counter[i] << "\tof #finished_runs: " << finish_counter[i] << endl;
         }
-		/*
-		for (unsigned i = 0; i < NR_TASKS; i++) {
-			kout << start_counter[i] << endl;
-		}*/
         kout << "\n" << endl;
 
         #ifndef QEMU
@@ -124,7 +131,7 @@ TASK(SCHED) {
 				res = ActivateTask(MS1);
 				start_counter[MS1_id]++;
 				if (debug_print) {
-					kout << "S MS1" << endl;
+					kout << "S " << MS1_id << endl;
 				}
 				if (res == StatusType::E_OS_LIMIT) {
 					if (debug_print) {
@@ -140,7 +147,7 @@ TASK(SCHED) {
 				res = ActivateTask(MS2);
 				start_counter[MS2_id]++;
 				if (debug_print) {
-					kout << "S MS2" << endl;
+					kout << "S " << MS2_id << endl;
 				}
 				if (res == StatusType::E_OS_LIMIT) {
 					if (debug_print) {
@@ -156,7 +163,7 @@ TASK(SCHED) {
 				res = ActivateTask(MS5);
 				start_counter[MS5_id]++;
 				if (debug_print) {
-					kout << "S MS5" << endl;
+					kout << "S " << MS5_id << endl;
 				}
 				if (res == StatusType::E_OS_LIMIT) {
 					if (debug_print) {
@@ -172,7 +179,7 @@ TASK(SCHED) {
 				res = ActivateTask(MS10);
 				start_counter[MS10_id]++;
 				if (debug_print) {
-					kout << "S MS10" << endl;
+					kout << "S " << MS10_id << endl;
 				}
 				if (res == StatusType::E_OS_LIMIT) {
 					if (debug_print) {
@@ -189,11 +196,11 @@ TASK(SCHED) {
 				res = ActivateTask(MS20);
 				start_counter[MS20_id]++;
 				if (debug_print) {
-					kout << "S MS20" << endl;
+					kout << "S " << MS20_id << endl;
 				}
 				if (res == StatusType::E_OS_LIMIT) {
 					if (debug_print) {
-						kout << taskStrings[MS20_id] << " still runnning!" << endl; 
+						kout << taskStrings[MS20_id] << " still runnning!" << endl;
 					}
 					blocked_counter[MS20_id]++;
 				}
@@ -205,11 +212,11 @@ TASK(SCHED) {
 				res = ActivateTask(MS50);
 				start_counter[MS50_id]++;
 				if (debug_print) {
-					kout << "S MS50" << endl;
+					kout << "S " << MS50_id << endl;
 				}
 				if (res == StatusType::E_OS_LIMIT) {
 					if (debug_print) {
-						kout << taskStrings[MS50_id] << " still runnning!" << endl; 
+						kout << taskStrings[MS50_id] << " still runnning!" << endl;
 					}
 					blocked_counter[MS50_id]++;
 				}
@@ -221,11 +228,11 @@ TASK(SCHED) {
 				res = ActivateTask(MS100);
 				start_counter[MS100_id]++;
 				if (debug_print) {
-					kout << "S MS100" << endl;
+					kout << "S " << MS100_id << endl;
 				}
 				if (res == StatusType::E_OS_LIMIT) {
 					if (debug_print) {
-						kout << taskStrings[MS100_id] << " still runnning!" << endl; 
+						kout << taskStrings[MS100_id] << " still runnning!" << endl;
 					}
 					blocked_counter[MS100_id]++;
 				}
@@ -237,11 +244,11 @@ TASK(SCHED) {
 				res = ActivateTask(MS200);
 				start_counter[MS200_id]++;
 				if (debug_print) {
-					kout << "S MS200" << endl;
+					kout << "S " << MS200_id << endl;
 				}
 				if (res == StatusType::E_OS_LIMIT) {
 					if (debug_print) {
-						kout << taskStrings[MS200_id] << " still runnning!" << endl; 
+						kout << taskStrings[MS200_id] << " still runnning!" << endl;
 					}
 					blocked_counter[MS200_id]++;
 				}
@@ -253,11 +260,11 @@ TASK(SCHED) {
 				res = ActivateTask(MS1000);
 				start_counter[MS1000_id]++;
 				if (debug_print) {
-					kout << "S MS1000" << endl;
+					kout << "S " << MS1000_id << endl;
 				}
 				if (res == StatusType::E_OS_LIMIT) {
 					if (debug_print) {
-						kout << taskStrings[MS1000_id] << " still runnning!" << endl; 
+						kout << taskStrings[MS1000_id] << " still runnning!" << endl;
 					}
 					blocked_counter[MS1000_id]++;
 				}
@@ -308,66 +315,95 @@ void PreTaskHook() {
 */
 
 TASK(MS1) {
-	
+	const task_id id = MS1_id;
+
 	unsigned int c = arch::Perf::get_cycles();
-    unsigned const t = TOTAL_RUNTIME[MS1_id];
 	if (debug_print) {
-		kout << cycle_count[MS1_id] << endl;
-		kout << "1g" << endl;
+		kout << id << " " << cycle_count[id] << "g" << endl;
 	}
+	
+    unsigned const t = TOTAL_RUNTIME[id];
 	ara_timing_info(t,t + 1);
-	micro_sec_wait(t);
-	finish_counter[MS1_id]++;
-	if (debug_print) {
-		kout << "e1" << endl;
+	for (unsigned i = 0; i < SPLIT_PER_TASK[id]; i++) {
+		micro_sec_wait(t / SPLIT_PER_TASK[id]);
 	}
-	r[MS1_id][cycle_count[MS1_id]] = arch::Perf::get_cycles() - c;
-	cycle_count[MS1_id]++;
+	
+	if (debug_print) {
+		kout << id << "e" << endl;
+	}
+	r[id][cycle_count[id]] = arch::Perf::get_cycles() - c;
+	finish_counter[id]++;
+	cycle_count[id]++;
 	
 	TerminateTask();
 }
 TASK(MS2) {
+	const task_id id = MS2_id;
+
 	unsigned int c = arch::Perf::get_cycles();
-    unsigned const t = TOTAL_RUNTIME[MS2_id];
 	if (debug_print) {
-		kout << cycle_count[MS2_id] << endl;
-		kout << "2g" << endl;
+		kout << id << " " << cycle_count[id] << "g" << endl;
 	}
+	
+    unsigned const t = TOTAL_RUNTIME[id];
 	ara_timing_info(t,t + 1);
-	micro_sec_wait(t);
-	finish_counter[MS2_id]++;
-	if (debug_print) {
-		kout << "e2" << endl;
+	for (unsigned i = 0; i < SPLIT_PER_TASK[id]; i++) {
+		micro_sec_wait(t / SPLIT_PER_TASK[id]);
 	}
-	r[MS2_id][cycle_count[MS2_id]] =  arch::Perf::get_cycles() - c;
-	cycle_count[MS2_id]++;
+	
+	if (debug_print) {
+		kout << id << "e" << endl;
+	}
+	r[id][cycle_count[id]] = arch::Perf::get_cycles() - c;
+	finish_counter[id]++;
+	cycle_count[id]++;
 	
 	TerminateTask();
 }
 TASK(MS5) {
-    unsigned const t = TOTAL_RUNTIME[MS5_id];
+	const task_id id = MS5_id;
+
+	unsigned int c = arch::Perf::get_cycles();
 	if (debug_print) {
-		kout << "5g" << endl;
+		kout << id << " " << cycle_count[id] << "g" << endl;
 	}
+	
+    unsigned const t = TOTAL_RUNTIME[id];
 	ara_timing_info(t,t + 1);
-	micro_sec_wait(t);
-	finish_counter[MS5_id]++;
-	if (debug_print) {
-		kout << "e5" << endl;
+	for (unsigned i = 0; i < SPLIT_PER_TASK[id]; i++) {
+		micro_sec_wait(t / SPLIT_PER_TASK[id]);
 	}
+	
+	if (debug_print) {
+		kout << id << "e" << endl;
+	}
+	r[id][cycle_count[id]] = arch::Perf::get_cycles() - c;
+	finish_counter[id]++;
+	cycle_count[id]++;
+	
 	TerminateTask();
 }
 TASK(MS10) {
-    unsigned const t = TOTAL_RUNTIME[MS10_id];
+	const task_id id = MS10_id;
+
+	unsigned int c = arch::Perf::get_cycles();
 	if (debug_print) {
-		kout << "10g" << endl;
+		kout << id << " " << cycle_count[id] << "g" << endl;
 	}
+	
+    unsigned const t = TOTAL_RUNTIME[id];
 	ara_timing_info(t,t + 1);
-	micro_sec_wait(t);
-	finish_counter[MS10_id]++;
-	if (debug_print) {
-		kout << "e10" << endl;
+	for (unsigned i = 0; i < SPLIT_PER_TASK[id]; i++) {
+		micro_sec_wait(t / SPLIT_PER_TASK[id]);
 	}
+	
+	if (debug_print) {
+		kout << id << "e" << endl;
+	}
+	r[id][cycle_count[id]] = arch::Perf::get_cycles() - c;
+	finish_counter[id]++;
+	cycle_count[id]++;
+	
 	TerminateTask();
 }
 TASK(MS20) {
@@ -384,54 +420,94 @@ TASK(MS20) {
 	TerminateTask();
 }
 TASK(MS50) {
-    unsigned const t = TOTAL_RUNTIME[MS50_id];
+	const task_id id = MS50_id;
+
+	unsigned int c = arch::Perf::get_cycles();
 	if (debug_print) {
-		kout << "50g" << endl;
+		kout << id << " " << cycle_count[id] << "g" << endl;
 	}
+	
+    unsigned const t = TOTAL_RUNTIME[id];
 	ara_timing_info(t,t + 1);
-	micro_sec_wait(t);
-	finish_counter[MS50_id]++;
-	if (debug_print) {
-		kout << "e50" << endl;
+	for (unsigned i = 0; i < SPLIT_PER_TASK[id]; i++) {
+		micro_sec_wait(t / SPLIT_PER_TASK[id]);
 	}
+	
+	if (debug_print) {
+		kout << id << "e" << endl;
+	}
+	r[id][cycle_count[id]] = arch::Perf::get_cycles() - c;
+	finish_counter[id]++;
+	cycle_count[id]++;
+	
 	TerminateTask();
 }
 TASK(MS100) {
-    unsigned const t = TOTAL_RUNTIME[MS100_id];
+	const task_id id = MS100_id;
+
+	unsigned int c = arch::Perf::get_cycles();
 	if (debug_print) {
-		kout << "100g" << endl;
+		kout << id << " " << cycle_count[id] << "g" << endl;
 	}
+	
+    unsigned const t = TOTAL_RUNTIME[id];
 	ara_timing_info(t,t + 1);
-	micro_sec_wait(t);
-	finish_counter[MS100_id]++;
-	if (debug_print) {
-		kout << "e100" << endl;
+	for (unsigned i = 0; i < SPLIT_PER_TASK[id]; i++) {
+		micro_sec_wait(t / SPLIT_PER_TASK[id]);
 	}
+	
+	if (debug_print) {
+		kout << id << "e" << endl;
+	}
+	r[id][cycle_count[id]] = arch::Perf::get_cycles() - c;
+	finish_counter[id]++;
+	cycle_count[id]++;
+	
 	TerminateTask();
 }
 TASK(MS200) {
-    unsigned const t = TOTAL_RUNTIME[MS200_id];
+	const task_id id = MS200_id;
+
+	unsigned int c = arch::Perf::get_cycles();
 	if (debug_print) {
-		kout << "200g" << endl;
+		kout << id << " " << cycle_count[id] << "g" << endl;
 	}
+	
+    unsigned const t = TOTAL_RUNTIME[id];
 	ara_timing_info(t,t + 1);
-	micro_sec_wait(t);
-	finish_counter[MS200_id]++;
-	if (debug_print) {
-		kout << "e200" << endl;
+	for (unsigned i = 0; i < SPLIT_PER_TASK[id]; i++) {
+		micro_sec_wait(t / SPLIT_PER_TASK[id]);
 	}
+	
+	if (debug_print) {
+		kout << id << "e" << endl;
+	}
+	r[id][cycle_count[id]] = arch::Perf::get_cycles() - c;
+	finish_counter[id]++;
+	cycle_count[id]++;
+	
 	TerminateTask();
 }
 TASK(MS1000) {
-    unsigned const t = TOTAL_RUNTIME[MS1000_id];
+	const task_id id = MS1000_id;
+
+	unsigned int c = arch::Perf::get_cycles();
 	if (debug_print) {
-		kout << "1000g" << endl;
+		kout << id << " " << cycle_count[id] << "g" << endl;
 	}
+	
+    unsigned const t = TOTAL_RUNTIME[id];
 	ara_timing_info(t,t + 1);
-	micro_sec_wait(t);
-	finish_counter[MS1000_id]++;
-	if (debug_print) {
-		kout << "e1000" << endl;
+	for (unsigned i = 0; i < SPLIT_PER_TASK[id]; i++) {
+		micro_sec_wait(t / SPLIT_PER_TASK[id]);
 	}
+	
+	if (debug_print) {
+		kout << id << "e" << endl;
+	}
+	r[id][cycle_count[id]] = arch::Perf::get_cycles() - c;
+	finish_counter[id]++;
+	cycle_count[id]++;
+	
 	TerminateTask();
 }

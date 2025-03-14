@@ -33,6 +33,21 @@ extern "C" void wait(int a, int b){
 };
 
 /*
+// Experiment to solve the issue that time runs even when a task is not running
+extern "C" void new_cycles_wait(uint32_t wait_time) {
+
+	uint32_t starttime = arch::Perf::get_cycles();
+
+	uint32_t waited = 0;
+	while (waited < wait_time) {
+		atomic
+		waited += arch::Perf::get_cycles() - starttime;
+		starttime = arch::Perf::get_cycles();
+	}
+}*/
+
+
+/*
 * Wait for wait_time cpu cycles, measured by arch::Perf,
 * maxValue is 0xFFFF FFFF / 4 294 967 295
 */
