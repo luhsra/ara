@@ -120,14 +120,14 @@ namespace arch {
 			counter0[counter0_nr++] = output;
         }
 
-#ifndef MCOUNTINHIBIT_NOT_IMPLEMENTED
 		static forceinline void stop() { 
+#ifndef MCOUNTINHIBIT_NOT_IMPLEMENTED
             // Stops the counter from counting ( registers enable)
             //debug_core << "Stopping performance monitor" << endl;
             set_csr(CSR_MCOUNTINHIBIT, MCOUNTINHIBIT_CYCLE); // disable counter incrementing
             set_csr(CSR_MCOUNTINHIBIT, MCOUNTINHIBIT_HPM3);
-        }
 #endif
+        }
 
 		static forceinline void reset_counters() {
             //debug_core << "Resetting counters" << endl;

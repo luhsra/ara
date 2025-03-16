@@ -14,19 +14,19 @@ src_files = [
   'startup.cc',
   'startup.S',
   'timer.cc',
-  'spinlock.cc'
+  'spinlock.cc',
   # 'spinlock.cc',
-  # 'platforms/beaglev/perf.cc'
+  'platforms/beaglev/perf.cc'
 ]
 
 obj_targets = []
 
 foreach src : src_files
     obj_target = custom_target(
-        src,
+        src.underscorify(),
         input: src,
-        output: src +'.o',
-        depfile: src +'.dep',
+        output: src.underscorify() +'.o',
+        depfile: src.underscorify() +'.dep',
         command: clang_cpp +
                 riscv_autosar_includes +
                 autosar_includes +
