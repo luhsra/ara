@@ -10,9 +10,9 @@ extern "C" void wait(int a, int b) {
 	if (a == 0) return;
     int counter = 0;
 	unsigned int starttime = arch::Perf::get_cycles();
-	const int time_resolution = 1000; // clocks per time unit
-	unsigned int endtime = starttime + a*time_resolution;
-	//kout << "waiting for " << a*time_resolution << " cycles" << endl;
+	const int cycle_resolution = 1000; // cycles per unit of a
+	unsigned int endtime = starttime + a*cycle_resolution;
+	//kout << "waiting for " << a*cycle_resolution << " cycles" << endl;
     while (endtime >= arch::Perf::get_cycles()) {
         counter++;
     };
