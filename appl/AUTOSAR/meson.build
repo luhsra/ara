@@ -552,99 +552,117 @@ foreach app: autosar_targets
 
   
   if riscv_enabled and not (app.has_key('synthesis_disabled') and 'riscv' in app['synthesis_disabled'])
-    if get_option('execute_ara')
-      out = custom_target(
-        full_name + '_mod_riscv',
-        input : app['ll_riscv'],
-        output : [
-          full_name + '_mod.riscv.ll',
-          full_name +'_autosar.riscv.cc',
-        ],
-        depfile : full_name + '_mod.riscv.ll.dep',
-        command : [
-          py3_inst, ara_py, '@INPUT@',
-          '--os', 'AUTOSAR',
-          '--oilfile', app['oil'],
-          #'--dump',
-          #'--log-level', 'debug',
-          '--ir_output', '@OUTPUT0@',
-          '--step-settings', files('../../settings/autosar_generator_riscv.json'),
-          '--generator_output', '@OUTPUT1@',
-          #'--timings', app['sys_timings']
-        ]
-      )
-    else
-      out = disabler()
+    ara_opt_settings = {
+        'opt': autosar_generator_riscv_opt,
+        'noopt': autosar_generator_riscv
+      }
+    opt_targets = ['noopt']
+    if app.has_key('opt') and app['opt']
+      opt_targets += ['opt']
     endif
-    app_ll_mod = out[0]
-    autosar = out[1]
-    app += {'ll_riscv_mod': app_ll_mod}
-    app += {'autosar_riscv': autosar}
 
-    app_image_riscv = custom_target(full_name + '_image_riscv',
-                            input: [
-                              app_ll_mod,
-                              autosar,
-                              libautosar_test_riscv,
-                              libautosar_os_riscv,
-                              libautosar_arch_riscv,
-                              libautosar_generic_riscv
-                            ],
-                            output : full_name + '_riscv',
-                            depfile : full_name + '.riscv.dep',
-                            command : clang_cpp +
-                                      ['-T', autosar_riscv_linkerscript] +
-                                      riscv_autosar_includes +
-                                      autosar_includes +
-                                      ld_flags +
-                                      autosar_riscv_ld_flags +
-                                      clang_flags +
-                                      autosar_riscv_clang_flags)
+  	foreach opt: opt_targets
+      if opt == 'opt'
+        opt_suffix = '_' + opt
+      else if opt == 'noopt'
+        opt_suffix = ''
+      else
+        opt_suffix = disabler()
+      endif
+      opt_app_name = full_name + opt_suffix
+      if get_option('execute_ara')
+        out = custom_target(
+          opt_app_name + '_mod_riscv',
+          input : app['ll_riscv'],
+          output : [
+            opt_app_name + '_mod.riscv.ll',
+            opt_app_name +'_autosar.riscv.cc',
+          ],
+          depfile : opt_app_name + '_mod.riscv.ll.dep',
+          command : [
+            py3_inst, ara_py, '@INPUT@',
+            '--os', 'AUTOSAR',
+            '--oilfile', app['oil'],
+            #'--dump',
+            #'--log-level', 'debug',
+            '--ir_output', '@OUTPUT0@',
+           # '--step-settings', files('../../settings/autosar_generator_riscv.json'),
+            '--step-settings', ara_opt_settings[opt],
+            '--generator_output', '@OUTPUT1@',
+            #'--timings', app['sys_timings']
+          ]
+        )
+      else
+        out = disabler()
+      endif
+      app_ll_mod = out[0]
+      autosar = out[1]
+      app += {'ll_riscv_mod' + opt_suffix: app_ll_mod}
+      app += {'autosar_riscv' + opt_suffix: autosar}
 
-    app += {'app_image_riscv': app_image_riscv}
+      app_image_riscv = custom_target(opt_app_name + '_image_riscv',
+                              input: [
+                                app_ll_mod,
+                                autosar,
+                                libautosar_test_riscv,
+                                libautosar_os_riscv,
+                                libautosar_arch_riscv,
+                                libautosar_generic_riscv
+                              ],
+                              output : opt_app_name + '_riscv',
+                              depfile : opt_app_name + '.riscv.dep',
+                              command : clang_cpp +
+                                        ['-T', autosar_riscv_linkerscript] +
+                                        riscv_autosar_includes +
+                                        autosar_includes +
+                                        ld_flags +
+                                        autosar_riscv_ld_flags +
+                                        clang_flags +
+                                        autosar_riscv_clang_flags)
 
-    run_cmd = ['qemu-system-riscv64', '-M', 'virt', '-smp', '16', '-no-reboot', '-nographic', '-serial','mon:stdio', '-device', 'loader,addr=0x80000000,file='+app_image_riscv.full_path()]
+      app += {'app_image_riscv': app_image_riscv}
 
-    app += {'run_cmd_riscv': run_cmd}
-    rt = 'run_' + full_name + '_riscv'
-    run_target(rt, command: run_cmd, depends: app_image_riscv)
-    summary('Run @0@ on RISC-V Qemu'.format(full_name), 'meson compile ' + rt, bool_yn: true, section: 'MACAW, AUTOSAR synthesis')
+      run_cmd = ['qemu-system-riscv64', '-M', 'virt', '-smp', '16', '-no-reboot', '-nographic', '-serial','mon:stdio', '-device', 'loader,addr=0x80000000,file='+app_image_riscv.full_path()]
 
-    riscv_bin = custom_target(full_name + '_riscv_bin',
-                        input: [
-                          app_image_riscv,
-                        ],
-                        output : full_name + '_riscv.bin',
-                        depfile : full_name + '.riscv.bin.dep',
-                        command : [ llvm_objcopy,
-                                  '-O', 'binary',
-                                  '@INPUT@',
-                                  '@OUTPUT@'])
+      app += {'run_cmd_riscv': run_cmd}
+      rt = 'run_' + opt_app_name + '_riscv'
+      run_target(rt, command: run_cmd, depends: app_image_riscv)
+      summary('Run @0@ on RISC-V Qemu'.format(opt_app_name), 'meson compile ' + rt, bool_yn: true, section: 'MACAW, AUTOSAR synthesis')
 
-    app += {'app_image_riscv_bin' : riscv_bin}
+      riscv_bin = custom_target(opt_app_name + '_riscv_bin',
+                          input: [
+                            app_image_riscv,
+                          ],
+                          output : opt_app_name + '_riscv.bin',
+                          depfile : opt_app_name + '.riscv.bin.dep',
+                          command : [ llvm_objcopy,
+                                    '-O', 'binary',
+                                    '@INPUT@',
+                                    '@OUTPUT@'])
 
-    rt = 'tftp_' + full_name + '_riscv'
-    tftp_cmd = [
-                          py3_inst,
-                          tftp_deploy,
-                          riscv_bin.full_path(),
-                          '--ssh-host', libplatforms_proj.get_variable('tftp_host'),
-                          '--scp', scp.full_path(),
-                          '--ssh', ssh.full_path(),
-                          '--path', '/proj/tftp/research/beaglev',
-                          '--beaglev',
-                        ]
+      app += {'app_image_riscv_bin' + opt_suffix : riscv_bin}
 
-    app += {'tftp_cmd_riscv' : tftp_cmd}
-    riscv_bin_tftp = run_target(rt,
-                        depends : [riscv_bin],
-                        command : tftp_cmd)
-    app +={'riscv_bin_tftp' : riscv_bin_tftp }
-    summary('Flash @0@ on BeagleV with TFTP'.format(full_name), 'meson compile ' + rt, bool_yn: true, section: 'MACAW, AUTOSAR synthesis')
+      rt = 'tftp_' + opt_app_name + '_riscv'
+      tftp_cmd = [
+                            py3_inst,
+                            tftp_deploy,
+                            riscv_bin.full_path(),
+                            '--ssh-host', libplatforms_proj.get_variable('tftp_host'),
+                            '--scp', scp.full_path(),
+                            '--ssh', ssh.full_path(),
+                            '--path', '/proj/tftp/research/beaglev',
+                            '--beaglev',
+                          ]
 
+      app += {'tftp_cmd_riscv' : tftp_cmd}
+      riscv_bin_tftp = run_target(rt,
+                          depends : [riscv_bin],
+                          command : tftp_cmd)
+      app +={'riscv_bin_tftp' : riscv_bin_tftp }
+      summary('Flash @0@ on BeagleV with TFTP'.format(opt_app_name), 'meson compile ' + rt, bool_yn: true, section: 'MACAW, AUTOSAR synthesis')
 
-    
-    autosar_generated_targets_riscv += app
+      autosar_generated_targets_riscv += app
+    endforeach
   endif
 
 endforeach
