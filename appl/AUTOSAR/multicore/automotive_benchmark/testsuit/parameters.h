@@ -14,27 +14,28 @@
 
 // Lower border from paper
 #if defined(VARIANT_BASIC)
-    constexpr unsigned CYCLES = 1000;
+    constexpr unsigned CYCLES = 1020;
     constexpr unsigned NUMBER_OF_RUNNABLES = 1000;
     constexpr unsigned NUMBER_OF_LABELS = 10000;
 
 // Upper border from paper
 #elif defined(VARIANT_LARGE)
-    constexpr unsigned CYCLES = 1000;
+    constexpr unsigned CYCLES = 1020;
     constexpr unsigned NUMBER_OF_RUNNABLES = 2000;
     constexpr unsigned NUMBER_OF_LABELS = 25000;
 
 // to match our systems size
 #elif defined(VARIANT_TINY)
-    constexpr unsigned CYCLES = 1000;
+    constexpr unsigned CYCLES = 1020;
     constexpr unsigned NUMBER_OF_RUNNABLES = 100;
-    constexpr unsigned NUMBER_OF_LABELS = 10000;
+    constexpr unsigned NUMBER_OF_LABELS = 5000;
 
-// same as baisc, but with longer runtime
+// same as basic, but with longer runtime
 #elif defined(VARIANT_LONG)
-    constexpr unsigned CYCLES = 2000;
+    constexpr unsigned CYCLES = 2020;
     constexpr unsigned NUMBER_OF_RUNNABLES = 1000;
     constexpr unsigned NUMBER_OF_LABELS = 10000;
+
 #elif defined(VARIANT_CUSTOM)
     constexpr unsigned CYCLES = 120;
     constexpr unsigned NUMBER_OF_RUNNABLES = 1000;
@@ -42,9 +43,9 @@
 
 // to make linter happier
 #else
-    constexpr unsigned CYCLES = 10;
-    constexpr unsigned NUMBER_OF_RUNNABLES = 3000;
-    constexpr unsigned NUMBER_OF_LABELS = 10000;
+    constexpr unsigned CYCLES = 1020;
+    constexpr unsigned NUMBER_OF_RUNNABLES = 1000;
+    constexpr unsigned NUMBER_OF_LABELS = 1000;
 
 #endif
 
@@ -171,7 +172,7 @@ constexpr unsigned INTER_TASK_RATIO[NR_TASKS][NR_TASKS] = {
 
 // Used the reduce the number o task, removing the ones with the longest scheduling intervals
 // With all tasks the analysis might take very long!
-constexpr unsigned TASK_COUNT = 2;
+constexpr unsigned TASK_COUNT = 5;
 static_assert(TASK_COUNT <= NR_TASKS);
 
 
