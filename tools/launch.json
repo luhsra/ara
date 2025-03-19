@@ -2,6 +2,20 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "type": "cppdbg",
+            "request": "launch",
+            "name": "C++ Debugger: ARA XEN",
+            "cwd": "${workspaceRoot}/build/",
+            "program": "/usr/bin/python3",
+            "additionalSOLibSearchPath": "${workspaceRoot}/build/subprojects/ara/ara/steps/native/step.cpython-310-x86_64-linux-gnu.so",
+            "args": [
+                "subprojects/ara/ara.py", "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_a.pi4.ll", "--os", "AUTOSAR", "--log-level", "debug", "--oilfile", "../subprojects/ara/appl/AUTOSAR/singlecore/xen/system.json",
+                "--step-settings", "../subprojects/ara/settings/hypersse.json"
+            ],
+            "miDebuggerPath": "/usr/bin/gdb",
+            "preLaunchTask": "Run all Ninja Xen"
+        },
+        {
             "name": "Python Debugger: ARA XEN",
             "type": "debugpy",
             "request": "launch",
@@ -12,7 +26,8 @@
             "args": [
                 "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_a.pi4.ll", "--os", "AUTOSAR", "--log-level", "debug", "--oilfile", "../subprojects/ara/appl/AUTOSAR/singlecore/xen/system.json",
                 "--step-settings", "../subprojects/ara/settings/hypersse.json"
-            ]
+            ],
+            "preLaunchTask": "Run all Ninja Xen"
         }
     ]
 }
