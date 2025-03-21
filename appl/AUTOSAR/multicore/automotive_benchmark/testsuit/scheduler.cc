@@ -277,42 +277,75 @@ TASK(SCHED) {
 	TerminateTask();
 }
 
-/*
-void PreTaskHook() {
 
+void PostTaskHook() {kout << "post" << endl;
 	TaskRefType a;
 	uint32_t id = 1337;
 	a = &id;
 	GetTaskID(a);
-	kout << arch::Perf::get_cycles() << endl;
+	// kout << arch::Perf::get_cycles() << endl;
 	if (id == 1) {
-		kout << "P Init" << endl;
+		kout << "Po Init" << endl;
 	 } else if (id == 2) {
-		kout << "P Sched" << endl;
+		kout << "Po Sched" << endl;
 	 } else if (id == 3) {
-		kout << "P MS1" << endl;
+		kout << "Po MS1" << endl;
 	 } else if (id == 4) {
-		kout << "P MS2" << endl;
+		kout << "Po MS2" << endl;
 	 } else if (id == 5) {
-		kout << "P MS5" << endl;
+		kout << "Po MS5" << endl;
 	 } else if (id == 6) {
-		kout << "P MS10" << endl;
+		kout << "Po MS10" << endl;
 	 } else if (id == 7) {
-		kout << "P MS20" << endl;
+		kout << "Po MS20" << endl;
 	 } else if (id == 8) {
-		kout << "P MS50" << endl;
+		kout << "Po MS50" << endl;
 	 } else if (id == 9) {
-		kout << "P MS100" << endl;
+		kout << "Po MS100" << endl;
 	 } else if (id == 10) {
-		kout << "P MS200" << endl;
+		kout << "Po MS200" << endl;
 	 } else if (id == 11) {
-		kout << "P MS1000" << endl;
+		kout << "Po MS1000" << endl;
 	 } else      {
-		kout << "P unknown??" << endl;
+		kout << "Po unknown??" << endl;
+	 }
+}
+
+void PreTaskHook() {
+	kout << "pre" << endl;
+	TaskRefType a;
+	uint32_t id = 1337;
+	a = &id;
+	GetTaskID(a);
+	// kout << arch::Perf::get_cycles() << endl;
+	if (id == 1) {
+		kout << "Pr Init" << endl;
+	 } else if (id == 2) {
+		kout << "Pr Sched" << endl;
+	 } else if (id == 3) {
+		kout << "Pr MS1" << endl;
+	 } else if (id == 4) {
+		kout << "Pr MS2" << endl;
+	 } else if (id == 5) {
+		kout << "Pr MS5" << endl;
+	 } else if (id == 6) {
+		kout << "Pr MS10" << endl;
+	 } else if (id == 7) {
+		kout << "Pr MS20" << endl;
+	 } else if (id == 8) {
+		kout << "Pr MS50" << endl;
+	 } else if (id == 9) {
+		kout << "Pr MS100" << endl;
+	 } else if (id == 10) {
+		kout << "Pr MS200" << endl;
+	 } else if (id == 11) {
+		kout << "Pr MS1000" << endl;
+	 } else      {
+		kout << "Pr unknown??" << endl;
 	 }
 	
 }
-*/
+
 
 TASK(MS1) {
 	const task_id id = MS1_id;

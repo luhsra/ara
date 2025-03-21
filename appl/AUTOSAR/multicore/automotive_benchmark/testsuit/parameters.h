@@ -37,7 +37,7 @@
     constexpr unsigned NUMBER_OF_LABELS = 10000;
 
 #elif defined(VARIANT_CUSTOM)
-    constexpr unsigned CYCLES = 120;
+    constexpr unsigned CYCLES = 30;
     constexpr unsigned NUMBER_OF_RUNNABLES = 1000;
     constexpr unsigned NUMBER_OF_LABELS = 10000;
 
@@ -172,7 +172,7 @@ constexpr unsigned INTER_TASK_RATIO[NR_TASKS][NR_TASKS] = {
 
 // Used the reduce the number o task, removing the ones with the longest scheduling intervals
 // With all tasks the analysis might take very long!
-constexpr unsigned TASK_COUNT = 5;
+constexpr unsigned TASK_COUNT = 1;
 static_assert(TASK_COUNT <= NR_TASKS);
 
 

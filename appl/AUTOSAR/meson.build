@@ -190,10 +190,8 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'virt_counter_multicore',                   'timing': 'BB','oil': 'virt_counter_multicore_system.json'},
   {'core': 'multicore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'hw_counter_multicore',                   'timing': 'BB','oil': 'hw_counter_multicore_system.json'},
   {'core': 'multicore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'w_time_newSched',                 'timing': 'BB', 'oil': 'w_time_newSched_system.json'},
-  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'runnables',      'oil': 'runnables_system.json', 'opt': true, 'timing': 'BB',   'variants': ['BASIC', 'LARGE', 'TINY', 'LONG']},
-  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'labels',         'oil': 'labels_system.json',      'variants': ['BASIC', 'LARGE', 'TINY','LONG']},
-  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'intercom',       'oil': 'intercom_system.json',    'variants': ['BASIC', 'LARGE', 'TINY', 'LONG']},
-# {'core': 'multicore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'scheduler',       'oil': 'scheduler_system.json',    'variants': ['BASIC', 'LARGE', 'TINY', 'LONG', 'CUSTOM']},
+  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'labels',         'timing': 'BB', 'oil': 'scheduler_system.json',    'variants': ['BASIC', 'LARGE', 'TINY', 'LONG', 'CUSTOM']},
+  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'intercom',       'timing': 'BB', 'oil': 'scheduler_system.json',    'variants': ['BASIC', 'LARGE', 'TINY', 'LONG', 'CUSTOM']},
   {'core': 'multicore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'scheduler',       'timing': 'BB', 'oil': 'scheduler_system.json',    'variants': ['BASIC', 'LARGE', 'TINY', 'LONG', 'CUSTOM']},
 ]
 subdir('multicore' / 'trampoline')

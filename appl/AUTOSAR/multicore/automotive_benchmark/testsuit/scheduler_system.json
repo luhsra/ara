@@ -101,7 +101,7 @@
               "task": "SCHED"
             },
             "autostart": true,
-            "cycletime": 1,
+            "cycletime": 100,
             "alarmtime": 1000
           }
         }
