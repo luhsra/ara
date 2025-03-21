@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Andreas Kässens
+# SPDX-FileCopyrightText: 2025 Mareike Burg
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -248,7 +249,7 @@ class GenericOS(BaseCoder):
                           hook_function.arguments_names())
                 if hook == "PostTaskHook":
                     logging.warning(
-                        "Be aware that PostTaskHooks are not properly implemented"
+                        "Be aware that PostTaskHooks are only partialy implemented. They work for counter/alarms and Activate/Terminate Tasks"
                     )
 
             if hook == "FaultDetectedHook":

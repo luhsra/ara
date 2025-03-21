@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Andreas Kässens
+# SPDX-FileCopyrightText: 2025 Mareike Burg
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -632,8 +633,10 @@ class AlarmTemplate(CodeTemplate):
                 alarm.impl.event.index,
             )
         else:
-            ret += f'debug_core << "ActivateTask {self.rules.task_desc(alarm.impl.task)}"\n << endl;'
-            ret += "scheduler_[%d].SetReady_impl(%s);\n" % (
+            # Possible reschedule later, call posttakshook here. PreTaskHook is called in dispatch
+            ret += "\t\t\tCALL_HOOK(PostTaskHook);\n"
+            ret += f'\t\t\tdebug_core << "ActivateTask {self.rules.task_desc(alarm.impl.task)}" << endl;\n'
+            ret += "\t\t\tscheduler_[%d].SetReady_impl(%s);\n" % (
                 alarm.impl.task.cpu_id,
                 self.rules.task_desc(alarm.impl.task),
             )
@@ -641,7 +644,7 @@ class AlarmTemplate(CodeTemplate):
         if alarm.cpu_id != alarm.impl.task.cpu_id:
             ret += f"Machine::trigger_interrupt({self.generator.arch_rules.IPI_SIG}, {alarm.impl.task.cpu_id}, 0);\n"
         else:
-            ret += f"scheduler_[{alarm.impl.task.cpu_id}].Schedule_impl(/* from_interrupt */ {str(is_isr).lower()});\n"
+            ret += f"\t\t\tscheduler_[{alarm.impl.task.cpu_id}].Schedule_impl(/* from_interrupt */ {str(is_isr).lower()});\n"
 
         ret += self.expand_snippet("endif_alarm", alarm=alarm.impl.name) + "\n"
 
