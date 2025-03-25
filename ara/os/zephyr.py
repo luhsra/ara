@@ -1110,11 +1110,11 @@ class Zephyr(OSBase):
             priority=args.priority,
             options=args.options,
             delay=args.delay,
-            name="",
+            name=Zephyr.get_symbol(args.symbol).get_name(), # TODO: implement k_thread_set_name
             start_in_init=False
         )
 
-        logger.debug("k_thread_create: %s", instance.entry_name)
+        logger.debug("k_thread_create: %s , %s", instance.entry_name, instance.symbol.get_name())
 
         v = Zephyr.create_or_get_instance(cfg, state, cpu_id, va, "Thread", instance, args.symbol, "k_thread_create")
 

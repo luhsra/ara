@@ -101,8 +101,10 @@ def _sstg_state_as_dot(sstg, state_vert, os=AUTOSAR):
             thread_info.append(("thread_state", bin(context.thread_state)))
             vertices = [str(obj.instances.vertex_index[v]) for v in context.join_queue]
             timeouts = [str(obj.instances.vertex_index[to.v]) for to in kernel.timeout_list]
-            thread_info.append(("join_queue", ", ".join(vertices)))
-            thread_info.append(("timeout_list", ", ".join(timeouts)))
+            if vertices:
+                thread_info.append(("join_queue", ", ".join(vertices)))
+            if timeouts:
+                thread_info.append(("timeout_list", ", ".join(timeouts)))
 
     else:
         instance = "Idle"
@@ -111,7 +113,10 @@ def _sstg_state_as_dot(sstg, state_vert, os=AUTOSAR):
         if syscall != "":
             syscall = f" ({syscall})"
         abb = f"{cfg.vp.name[cpu.abb]} {syscall}"
-        xcet = [("bcet/wcet", f"{cfg.vp.bcet[cpu.abb]}/{cfg.vp.wcet[cpu.abb]}")]
+        if cfg.vp.wcet[cpu.abb] != 0:
+            xcet = [("bcet/wcet", f"{cfg.vp.bcet[cpu.abb]}/{cfg.vp.wcet[cpu.abb]}")]
+        else:
+            xcet = []
     else:
         abb = "None"
         xcet = []
