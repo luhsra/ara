@@ -8,6 +8,7 @@
 # SPDX-FileCopyrightText: 2022 Jan Neugebauer
 # SPDX-FileCopyrightText: 2023 Andreas Kässens
 # SPDX-FileCopyrightText: 2024 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2025 Mareike Burg
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -395,6 +396,7 @@ def provide_steps():
             _native_step_fac(make_step_fac[cstep.ReplaceSyscallsCreate]()),
             _native_step_fac(make_step_fac[cstep.ResolveFunctionPointer]()),
             _native_step_fac(make_step_fac[cstep.SVFAnalyses]()),
+            _native_step_fac(make_step_fac[cstep.SVFReset]()),
             _native_step_fac(make_step_fac[cstep.SVFTransformation]()),
             _native_step_fac(make_step_fac[cstep.ValueAnalyzerCorrections]()),
             _native_step_fac(make_step_fac[cstep.ZephyrStatic]()),

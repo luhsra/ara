@@ -5,9 +5,10 @@
 # SPDX-FileCopyrightText: 2020 Yannick Loeck
 # SPDX-FileCopyrightText: 2021 Bastian Fuhlenriede
 # SPDX-FileCopyrightText: 2022 Björn Fiedler <fiedler@sra.uni-hannover.de>
-# SPDX-FileCopyrightText: 2023 Jan Neugebauer
-# SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2023 Andreas Kässens
+# SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2023 Jan Neugebauer
+# SPDX-FileCopyrightText: 2025 Mareike Burg
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -84,6 +85,7 @@ step_mod = py3_inst.extension_module('step',
         'replace_syscalls_create.cpp',
         'resolve_function_pointer.cpp',
         'svf_analyses.cpp',
+        'svf_reset.cpp',
         'svf_transformation.cpp',
         'value_analyzer_corrections.cpp',
         'zephyr_static.cpp',
