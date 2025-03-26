@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2020 Yannick Loeck
 // SPDX-FileCopyrightText: 2022 Jan Neugebauer
 // SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
+// SPDX-FileCopyrightText: 2025 Mareike Burg
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -14,22 +15,9 @@
 #include "Graphs/PTACallGraph.h"
 #include "Graphs/VFGNode.h"
 #include "SVF-FE/SVFIRBuilder.h"
-#include "MemoryModel/SVFIR.h"
 #include "Util/BasicTypes.h"
 #include "WPA/Andersen.h"
 #include <sstream>
-
-#include "SVF-FE/LLVMUtil.h"
-#include "Graphs/SVFG.h"
-#include "Util/Options.h"
-
-#include <Graphs/IRGraph.h>
-using namespace SVF;
-using namespace SVFUtil;
-IRGraph::~IRGraph() {
-	SymbolTableInfo::releaseSymbolInfo();
-    symInfo = nullptr;
-}
 
 using namespace SVF;
 
@@ -151,76 +139,65 @@ namespace ara::step {
 		ConfStep<SVFAnalyses>::init_options();
 		translation_map = translation_map_template.instantiate(get_name());
 		opts.emplace_back(translation_map);
+		hide_svf_output = hide_svf_output_template.instantiate(get_name());
+		opts.emplace_back(hide_svf_output);
 	}
 
-	Step::OptionVec SVFAnalyses::get_local_options() { return {translation_map_template}; }
+	static bool set_command_line = false;
+	void SVFAnalyses::set_up_llvm_cl() {
+		// ParseCommandLineOptions is persisten accross multiple runs of SVFAnalyses
+		if (!set_command_line) {
+			logger.info() << "First run, set up llvm::cl::options" << std::endl;
 
-	static int run_count = 0;
-	void SVFAnalyses::run() {
-		run_count += 1;
-		logger.error() << "runcount: " << run_count << std::endl;
-		
-		if (run_count == 1) {
-			logger.error() << "First run, settings llvm::cl::options" << std::endl;
-
-			// Disable SVF ThreadCallGraph because this option will not work with POSIX os model.
-			const char* command_line[] = {"ara", "-enable-tcg=false", "-stat=false"};
-			llvm::cl::ParseCommandLineOptions(3, command_line);
-
+			if (hide_svf_output.get() == true) {
+				logger.debug() << "Hiding svf output." << std::endl;
+				// Disable SVF ThreadCallGraph because this option will not work with POSIX os model.
+				const char* command_line[] = {"ara", "-enable-tcg=false", "-stat=false"};
+				llvm::cl::ParseCommandLineOptions(3, command_line);
+			} else {
+				logger.debug() << "Showing svf output." << std::endl;
+				// Disable SVF ThreadCallGraph because this option will not work with POSIX os model.
+				const char* command_line[] = {"ara", "-enable-tcg=false"};
+				llvm::cl::ParseCommandLineOptions(2, command_line);
+			}
+			set_command_line = true;
 		} else {
-		
-			// LLVMModuleSet::getLLVMModuleSet()->dumpModulesToFile(".svf.bc");
-			// LLVMModuleSet::releaseLLVMModuleSet();
-			
-			logger.error() << "Start cleanup of past run" << std::endl;
-
-			AndersenWaveDiff::releaseAndersenWaveDiff();
-			logger.error() << "Released AndersenWaveDiff" << std::endl;
-			SVFIR::releaseSVFIR();
-			logger.error() << "Release SVFIR" << std::endl;
-		
-			// LLVMModuleSet::getLLVMModuleSet()->dumpModulesToFile(".svf.bc");
-			SVF::LLVMModuleSet::releaseLLVMModuleSet();
-			logger.error() << "Release LLVMModuleSet" << std::endl;
-
-			// SymbolTableInfo::releaseSymbolInfo()
+			logger.info() << "llvm::cl::ParseCommandLineOptions already set." << std::endl;
 		}
+	}
+
+	Step::OptionVec SVFAnalyses::get_local_options() { return {translation_map_template, hide_svf_output_template}; }
+
+	void SVFAnalyses::run() {
+	
+		// use https://llvm.org/docs/CommandLine.html#the-cl-parsecommandlineoptions-function 
+		set_up_llvm_cl();
 
 		logger.info() << "Building SVF graphs." << std::endl;
 		SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(graph.get_module());
-
-		logger.error() << "Processing file: " << graph.get_module().getName().str() << std::endl;
-		logger.error() << "SvfModule: " << svfModule << std::endl;
+		logger.info() << "Processing file: " << graph.get_module().getName().str() << std::endl;
+		
 		assert(svfModule != nullptr && "SVF Module is null");
 		svfModule->buildSymbolTableInfo();
 
 		SVFIRBuilder builder(svfModule);
 		SVFIR* svfir = builder.build();
 		assert(svfir != nullptr && "SVFIR is null");
-		logger.error() << "0" << std::endl;
 
 		Andersen* ander = AndersenWaveDiff::createAndersenWaveDiff(svfir);
-		logger.error() << "1" << std::endl;
-
 		SVFGBuilder svfBuilder(true);
 		std::unique_ptr<SVFG> svfg(svfBuilder.buildFullSVFG(ander));
-		logger.error() << "2" << std::endl;
 
 		graph.get_graph_data().initialize_svfg(std::move(svfg));
-		logger.error() << "3" << std::endl;
 
 		ICFG* icfg = svfir->getICFG();
 		PTACallGraph* callgraph = ander->getPTACallGraph();
-		logger.error() << "4" << std::endl;
-
 		helper::TranslationMapParser tmp(*this);
 		tmp.parse_translation_map("translation_map", translation_map, pointer_targets);
 		apply_translation_map(safe_deref(callgraph));
-		logger.error() << "5" << std::endl;
 
 		// resolve indirect pointer in the icfg
 		icfg->updateCallGraph(callgraph);
-		logger.error() << "6" << std::endl;
 
 		// we don't need to store anything here, since all SVF datastructures are stored in singletons
 		graph::SVFG svfg_graphtool = graph.get_svfg_graphtool();
@@ -233,7 +210,7 @@ namespace ara::step {
 			callgraph->dump(*dump_prefix.get() + "svf-callgraph");
 			graph.get_svfg().dump(*dump_prefix.get() + "svfg");
 		}
-		logger.error() << "Done" << std::endl;
+		logger.warning() << "Done with Svf" << std::endl;
 
 	}
 } // namespace ara::step

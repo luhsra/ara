@@ -6,8 +6,8 @@
 	],
 
 	"SVFAnalyses": {
-		"dump": true,
-		"log_level": "debug"
+		"log_level": "debug",
+		"hide_svf_output": true
 	},
 
 	"MultiSSE": {
@@ -17,7 +17,6 @@
 	},
 
 	"HyperSSE": {
-		"dummy_option": 42,
 		"system_count": 2,
 		"dom1" : "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_b.pi4.ll"
 	}
