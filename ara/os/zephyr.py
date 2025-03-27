@@ -1045,7 +1045,7 @@ class Zephyr(OSBase):
 
         # ic.zi.irm.set_print_llvmir(True)
         ic.zi.irm.stop(["arch_swap"])
-        ic.zi.irm.skip(["clear_halting", "memset"])
+        ic.zi.irm.skip(["memset"])
         # ic.zi.irm.set_print_llvmir(True)
         ic.run_function_with_arch_swap("z_thread_abort", [thread.ptr], ['PTR'], True)
         # ic.zi.run_function("z_unpend_all", [join_queue.ptr], ['PTR'])
@@ -1609,6 +1609,57 @@ class Zephyr(OSBase):
         add_self_edge(state, cpu_id, "k_thread_start", ty=ZephyrEdgeType.interaction)
         return state
 
+    @staticmethod
+    @syscall(categories={SyscallCategory.comm},
+             signature=(Arg("symbol", hint=SigType.instance, ty=Thread),))
+    def k_thread_resume(graph, state, cpu_id, args, va):
+        state = state.copy()
+
+        if Zephyr.enable_sse:
+            ic = za.InterpreterContext(Zephyr.irx, state, cpu_id)
+            thread = ic.thread_sym_2_ptr(args.symbol)
+            ic.zi.irm.skip(["memcpy", "memset"])
+            ic.run_function_with_arch_swap("z_impl_k_thread_resume", [thread.ptr], ['PTR'])
+            ic.update()
+
+        add_self_edge(state, cpu_id, "k_thread_resume", ty=ZephyrEdgeType.interaction)
+        return state
+
+    @staticmethod
+    @syscall(categories={SyscallCategory.comm},
+             signature=(Arg("symbol", hint=SigType.instance, ty=Thread),))
+    def k_thread_suspend(graph, state, cpu_id, args, va):
+        state = state.copy()
+
+        if Zephyr.enable_sse:
+            ic = za.InterpreterContext(Zephyr.irx, state, cpu_id)
+            thread = ic.thread_sym_2_ptr(args.symbol)
+            ic.zi.irm.skip(["memcpy", "memset"])
+            ic.run_function_with_arch_swap("z_impl_k_thread_suspend", [thread.ptr], ['PTR'])
+            ic.update()
+
+        add_self_edge(state, cpu_id, "k_thread_suspend", ty=ZephyrEdgeType.interaction)
+        return state
+
+    @staticmethod
+    @syscall(categories={SyscallCategory.comm},
+             signature=(Arg("symbol", hint=SigType.instance, ty=Thread),))
+    def k_wakeup(graph, state, cpu_id, args, va):
+        state = state.copy()
+
+        if Zephyr.enable_sse:
+            ic = za.InterpreterContext(Zephyr.irx, state, cpu_id)
+            thread = ic.thread_sym_2_ptr(args.symbol)
+            ic.zi.irm.skip(["memcpy", "memset"])
+
+            ic.zi.z_mark_thread_as_started(thread)
+            # FIXME: z_impl_k_wakeup doesn't remove _THREAD_PRESTART 
+            # ic.run_function_with_arch_swap("z_impl_k_wakeup", [thread.ptr], ['PTR'])
+            ic.update()
+
+        add_self_edge(state, cpu_id, "k_wakeup", ty=ZephyrEdgeType.interaction)
+        return state
+
     # void k_yield(void)
     @syscall(categories={SyscallCategory.comm})
     def k_yield(graph, state, cpu_id, args, va):
@@ -1619,15 +1670,6 @@ class Zephyr(OSBase):
             ic.run_function_with_arch_swap("z_impl_k_yield", [], [])
 
         add_self_edge(state, cpu_id, "k_yield", ty=ZephyrEdgeType.interaction)
-        return state
-
-    # void k_wakeup(k_tid_t thread)
-    @syscall(categories={SyscallCategory.comm},
-             signature=(Arg("thread", hint=SigType.value), ))
-    def k_wakeup(graph, state, cpu_id, args, va):
-        state = state.copy()
-
-        add_self_edge(state, cpu_id, "k_wakeup", ty=ZephyrEdgeType.interaction)
         return state
 
     # k_tid_t k_current_get(void)

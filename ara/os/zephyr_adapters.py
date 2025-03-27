@@ -237,6 +237,7 @@ class ThreadStateAdapter(enum.IntFlag):
             ThreadStateAdapter._THREAD_PRESTART: TaskStatus.blocked,
             ThreadStateAdapter._THREAD_DEAD: TaskStatus.terminated,
             ThreadStateAdapter._THREAD_SUSPENDED: TaskStatus.suspended,
+            ThreadStateAdapter._THREAD_SUSPENDED | ThreadStateAdapter._THREAD_PRESTART: TaskStatus.suspended,
             ThreadStateAdapter._THREAD_ABORTING: TaskStatus.terminated,
             ThreadStateAdapter._THREAD_SUSPENDING: TaskStatus.suspended,
             ThreadStateAdapter._THREAD_QUEUED: TaskStatus.ready,
@@ -952,7 +953,7 @@ class InterpreterContext:
             kernel.cache = None
             raise RuntimeError(f"could not find the scheduled irx thread {_kernel.ready_q.cache} in AbSS")
 
-        # InterpreterContext.Zephyr.debug_print_threads(state, self)
+        InterpreterContext.Zephyr.debug_print_threads(state, self)
 
         for t in threads:
             proxy.get(t)
