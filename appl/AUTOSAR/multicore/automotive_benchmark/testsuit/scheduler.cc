@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 Mareike Burg
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #include "os.h"
 #include "test/test.h"
 #include "arch/arm/platforms/raspberry/perf.cc"
@@ -67,6 +71,11 @@ static unsigned int cycle_diff[CYCLES] = {0};
 static unsigned int task_time[TASK_COUNT][CYCLES] = {0};
 static unsigned int cycle_count[TASK_COUNT] = {0};
 
+static unsigned int hookcounter = 0;
+// 1x pre, 1x post, 1x post if idle
+static unsigned int hooks[TASK_COUNT*CYCLES*3*10000] = {0};
+
+static uint32_t* endtimes[TASK_COUNT] = {nullptr};
 
 // main scheduler
 TASK(SCHED) {
@@ -99,11 +108,21 @@ TASK(SCHED) {
 			}
 		}
 		*/
+		/*
+		// print hook counter
+		for (unsigned t = 0; t < TASK_COUNT*CYCLES*3*100; t+=2) {
+			if (hooks[t] == 11){
+				kout << "Post hook: " << (dec) << hooks[t+1] << endl;
+			} else if (hooks[t] == 22){
+				kout << "Pre hook: " << (dec) << hooks[t+1] << endl;
+			}
+		}
+		*/
 
 		// Print result
         kout << "\nResults for " << COOLDOWN - WARMUP << " scheduling cycles, each cycle " << SCHEDUL_INTERVAL << "us long:" << endl;
         for (unsigned i = 0; i < TASK_COUNT; i++) {
-            kout << taskStrings[i] << "\tblocked #/%: " << blocked_counter[i] << "/" << (100 * blocked_counter[i]) / start_counter[i];
+            kout << (dec) << taskStrings[i] << "\tblocked #/%: " << blocked_counter[i] << "/" << (100 * blocked_counter[i]) / start_counter[i];
 			kout << "\tof #started_runs: " << start_counter[i] << "\tof #finished_runs: " << finish_counter[i] << endl;
         }
         kout << "\n" << endl;
@@ -278,72 +297,59 @@ TASK(SCHED) {
 }
 
 
-void PostTaskHook() {kout << "post" << endl;
+// typedef enum {
+//     AUTOSAR_TASK_INVALID_TASK = 0,
+//     AUTOSAR_TASK_INIT = 1,
+//     AUTOSAR_TASK_SCHED = 2,
+//     AUTOSAR_TASK_MS1 = 3,
+//     AUTOSAR_TASK_MS2 = 4,
+//     AUTOSAR_TASK_MS5 = 5,
+//     AUTOSAR_TASK_MS10 = 6,
+//     AUTOSAR_TASK_MS20 = 7,
+//     AUTOSAR_TASK_MS50 = 8,
+//     AUTOSAR_TASK_MS100 = 9,
+//     AUTOSAR_TASK_MS200 = 10,
+//     AUTOSAR_TASK_MS1000 = 11
+// } TaskType;
+
+
+// if (abc == nullptr) {
+// 	kout << "null" << endl;
+// }
+
+void PostTaskHook() {
 	TaskRefType a;
-	uint32_t id = 1337;
+	uint32_t id;
 	a = &id;
 	GetTaskID(a);
+	hooks[hookcounter++] = 11;
+	hooks[hookcounter++] = id;
+	if(id == 3) {
+		kout << "MS1-Post"<< endl;
+		if(endtimes[0] != nullptr) {
+			kout << "not nul" << endl;
+		}
+		
+	}
 	// kout << arch::Perf::get_cycles() << endl;
-	if (id == 1) {
-		kout << "Po Init" << endl;
-	 } else if (id == 2) {
-		kout << "Po Sched" << endl;
-	 } else if (id == 3) {
-		kout << "Po MS1" << endl;
-	 } else if (id == 4) {
-		kout << "Po MS2" << endl;
-	 } else if (id == 5) {
-		kout << "Po MS5" << endl;
-	 } else if (id == 6) {
-		kout << "Po MS10" << endl;
-	 } else if (id == 7) {
-		kout << "Po MS20" << endl;
-	 } else if (id == 8) {
-		kout << "Po MS50" << endl;
-	 } else if (id == 9) {
-		kout << "Po MS100" << endl;
-	 } else if (id == 10) {
-		kout << "Po MS200" << endl;
-	 } else if (id == 11) {
-		kout << "Po MS1000" << endl;
-	 } else      {
-		kout << "Po unknown??" << endl;
-	 }
 }
 
+
+
 void PreTaskHook() {
-	kout << "pre" << endl;
 	TaskRefType a;
-	uint32_t id = 1337;
+	uint32_t id;
 	a = &id;
 	GetTaskID(a);
+	hooks[hookcounter++] = 22;
+	hooks[hookcounter++] = id;
 	// kout << arch::Perf::get_cycles() << endl;
-	if (id == 1) {
-		kout << "Pr Init" << endl;
-	 } else if (id == 2) {
-		kout << "Pr Sched" << endl;
-	 } else if (id == 3) {
-		kout << "Pr MS1" << endl;
-	 } else if (id == 4) {
-		kout << "Pr MS2" << endl;
-	 } else if (id == 5) {
-		kout << "Pr MS5" << endl;
-	 } else if (id == 6) {
-		kout << "Pr MS10" << endl;
-	 } else if (id == 7) {
-		kout << "Pr MS20" << endl;
-	 } else if (id == 8) {
-		kout << "Pr MS50" << endl;
-	 } else if (id == 9) {
-		kout << "Pr MS100" << endl;
-	 } else if (id == 10) {
-		kout << "Pr MS200" << endl;
-	 } else if (id == 11) {
-		kout << "Pr MS1000" << endl;
-	 } else      {
-		kout << "Pr unknown??" << endl;
-	 }
-	
+	if(id == 3) {
+		kout << "Pre-MS1"<< endl;
+		if(endtimes[0] != nullptr) {
+			kout << "not nul" << endl;
+		}
+	}
 }
 
 
@@ -357,9 +363,9 @@ TASK(MS1) {
 	
     unsigned const t = TOTAL_RUNTIME[id];
 	ara_timing_info(t,t + 1);
-	for (unsigned i = 0; i < SPLIT_PER_TASK[id]; i++) {
-		micro_sec_wait(t / SPLIT_PER_TASK[id]);
-	}
+	// for (unsigned i = 0; i < SPLIT_PER_TASK[id]; i++) {
+	micro_sec_wait_end_time(t, endtimes[id]);
+	// }
 	
 	if (debug_print) {
 		kout << id << "e" << endl;
@@ -368,6 +374,8 @@ TASK(MS1) {
 	finish_counter[id]++;
 	cycle_count[id]++;
 	
+	kout << "d" << endl;
+	// endtimes[id] = nullptr;
 	TerminateTask();
 }
 TASK(MS2) {

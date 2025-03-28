@@ -160,6 +160,12 @@ class GenericOS(BaseCoder):
            to be done after the objects are allocated.
 
         """
+        # add INVALID_TASK as TaskType
+        invalid_task_type = DataObject("const TaskType",
+                                "AUTOSAR_TASK_INVALID_TASK",
+                                static_initializer=str(0),
+                                extern_c=True)
+        self.generator.source_file.data_manager.add(invalid_task_type)
         for v, task in self.ara_graph.instances.get(Task):
             # add: const TaskType subtaskname_id = OS_subtask.name_task.id
             iddesc = DataObject("const TaskType",

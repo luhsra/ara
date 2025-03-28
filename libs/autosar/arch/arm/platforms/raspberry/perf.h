@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2023 Andreas Kässens
+// SPDX-FileCopyrightText: 2025 Mareike Burg
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -24,6 +25,7 @@
 extern "C" void wait(int a, int b);
 
 extern "C" void micro_sec_wait(uint32_t wait_time);
+extern "C" void micro_sec_wait_end_time(uint32_t wait_time, uint32_t* end_time);
 extern "C" void bcet_micro_sec_wait(int bcet, int wcet);
 
 namespace arch {

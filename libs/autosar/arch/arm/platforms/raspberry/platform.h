@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 Mareike Burg
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // #define PBASE 0x3F000000 //raspi2b
 #define PBASE 0xFE000000 // raspi4b
 
