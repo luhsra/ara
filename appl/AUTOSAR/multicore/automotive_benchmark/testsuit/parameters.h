@@ -113,9 +113,9 @@ constexpr unsigned TIME_PER_RUNNABLE[NR_TASKS] = {5, 5, 12, 11, 9, 18, 11, 3, 1,
 // for testing
 // /*
 constexpr unsigned TOTAL_RUNTIME[NR_TASKS] = {
+	500,
 	1500,
-	500,
-	500,
+	1000,
 	500,
 	500,
 	500,
@@ -172,7 +172,7 @@ constexpr unsigned INTER_TASK_RATIO[NR_TASKS][NR_TASKS] = {
 
 // Used the reduce the number o task, removing the ones with the longest scheduling intervals
 // With all tasks the analysis might take very long!
-constexpr unsigned TASK_COUNT = 1;
+constexpr unsigned TASK_COUNT = 3;
 static_assert(TASK_COUNT <= NR_TASKS);
 
 

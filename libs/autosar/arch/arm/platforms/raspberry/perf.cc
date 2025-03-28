@@ -98,45 +98,40 @@ extern "C" void cycles_wait(uint32_t wait_time) {
 extern "C" void cycles_wait_dynamic_endtime(uint32_t wait_time, uint32_t* endtime_pointer) {
 	
 	uint32_t starttime = arch::Perf::get_cycles();
-	uint32_t endtime = starttime + wait_time;
-	endtime_pointer = &endtime;
+	*endtime_pointer = starttime + wait_time;
 
 	
 	// the comparison happens not at every cycle, therefore the overflow cases might be skipped
-	if (endtime < 0x0000FFFF) {
-		endtime = 0x0000FFFF;
+	if (*endtime_pointer < 0x0000FFFF) {
+		*endtime_pointer = 0x0000FFFF;
 	}
-	else if (endtime > 0xFFFF0000) {
-		endtime = 0xFFFF0000;
+	else if (*endtime_pointer > 0xFFFF0000) {
+		*endtime_pointer = 0xFFFF0000;
 	}
 
-	// kout << (hex) << "Wait_time: " <<  wait_time << " start: " << starttime << " end: " << endtime << endl;
-	// kout << (hex) << "*endtime_pointer: " << *endtime_pointer << endl;
+	// kout << (hex) << "Wait_time: " <<  wait_time << " start: " << starttime << " end: " << *endtime_pointer << endl;
 
 	// no overflow happens
-	if (starttime < endtime) {
-		while (arch::Perf::get_cycles() <= endtime) {
-			kout << arch::Perf::get_cycles() << " " << *endtime_pointer << endl;
+	if (starttime < *endtime_pointer) {
+		while (arch::Perf::get_cycles() <= *endtime_pointer) {
 
 		};
 	// overflow happend
-	} else if (starttime > endtime) {
+	} else if (starttime > *endtime_pointer) {
 
 		// wait until overflow happend back to 0
-		while (arch::Perf::get_cycles() >= endtime) {
-			kout << arch::Perf::get_cycles() << " " << *endtime_pointer << endl;
+		while (arch::Perf::get_cycles() >= *endtime_pointer) {
 
 		};
 
 		// then wait until cycles is above endtime
-		while (arch::Perf::get_cycles() <= endtime) {
-			kout << arch::Perf::get_cycles() << " " << *endtime_pointer << endl;
+		while (arch::Perf::get_cycles() <= *endtime_pointer) {
 
 		};
 	}
 
 	// kout << "Done, get_cycles: " << arch::Perf::get_cycles()<< " *endtime_pointer: " << *endtime_pointer << endl;
-	endtime_pointer = nullptr;
+	*endtime_pointer = 0;
 
 }
 

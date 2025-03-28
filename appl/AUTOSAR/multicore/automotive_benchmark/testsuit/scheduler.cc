@@ -73,13 +73,46 @@ static unsigned int cycle_count[TASK_COUNT] = {0};
 
 static unsigned int hookcounter = 0;
 // 1x pre, 1x post, 1x post if idle
-static unsigned int hooks[TASK_COUNT*CYCLES*3*10000] = {0};
+static unsigned int hooks[TASK_COUNT*CYCLES*3*1000] = {0};
 
-static uint32_t* endtimes[TASK_COUNT] = {nullptr};
+static uint32_t endtimes[TASK_COUNT] = {0};
+static uint32_t time_in_post[TASK_COUNT] = {0};
+
+task_id translate_task_type(uint32_t task) {
+	switch (task){
+		case 3:
+			return task_id::MS1_id;
+		case 4:
+			return task_id::MS2_id;
+		case 5:
+			return task_id::MS5_id;
+		case 6:
+			return task_id::MS10_id;
+		case 7:
+			return task_id::MS20_id;
+		case 8:
+			return task_id::MS50_id;
+		case 9:
+			return task_id::MS100_id;
+		case 10:
+			return task_id::MS200_id;
+		case 11:
+			return task_id::MS1000_id;
+		default:
+			return task_id::MS_LAST_id;
+	}
+}
+enum hook_type {pre = 1, post = 2, sched = 3};
 
 // main scheduler
 TASK(SCHED) {
     ara_timing_info(10, 20);
+
+	hooks[hookcounter++] = hook_type::sched;
+	hooks[hookcounter++] = cycle;
+	hooks[hookcounter++] = 0;
+	hooks[hookcounter++] = 0;
+	hooks[hookcounter++] = 0;
 
     if (cycle >= CYCLES) {
 		ara_timing_info(1, 2);
@@ -108,16 +141,19 @@ TASK(SCHED) {
 			}
 		}
 		*/
-		/*
+		// /*
 		// print hook counter
-		for (unsigned t = 0; t < TASK_COUNT*CYCLES*3*100; t+=2) {
-			if (hooks[t] == 11){
-				kout << "Post hook: " << (dec) << hooks[t+1] << endl;
-			} else if (hooks[t] == 22){
-				kout << "Pre hook: " << (dec) << hooks[t+1] << endl;
+		for (unsigned t = 0; t < hookcounter; t+=5) {
+			if (hooks[t] == hook_type::post){
+				kout << "Post hook id: " << taskStrings[hooks[t+1]] << (dec) << " cycle: " << hooks[t+2] << " time_set: "  << hooks[t+3] << " end: " <<  hooks[t+4] << endl;
+			} else if (hooks[t] == hook_type::pre){
+				kout << "Pre  hook id: " << taskStrings[hooks[t+1]] << (dec)  << " cycle: " << hooks[t+2] << " delta: " << hooks[t+3] << " end: " <<  hooks[t+4] << endl;
+			} else if (hooks[t] == hook_type::sched) {
+				kout << "Schedule round: " << hooks[t+1] << endl;
 			}
+			
 		}
-		*/
+		// */
 
 		// Print result
         kout << "\nResults for " << COOLDOWN - WARMUP << " scheduling cycles, each cycle " << SCHEDUL_INTERVAL << "us long:" << endl;
@@ -322,18 +358,35 @@ void PostTaskHook() {
 	uint32_t id;
 	a = &id;
 	GetTaskID(a);
-	hooks[hookcounter++] = 11;
-	hooks[hookcounter++] = id;
-	if(id == 3) {
-		kout << "MS1-Post"<< endl;
-		if(endtimes[0] != nullptr) {
-			kout << "not nul" << endl;
+	
+	// time_in_post[0] = arch::Perf::get_cycles();
+
+	task_id t_id = translate_task_type(id);
+
+	if (t_id != task_id::MS_LAST_id) {
+
+		hooks[hookcounter++] = hook_type::post;
+		hooks[hookcounter++] = t_id;
+		hooks[hookcounter++] = arch::Perf::get_cycles();
+		if (endtimes[t_id] != 0) {
+			uint32_t t = arch::Perf::get_cycles();
+			time_in_post[t_id] = t;
+			hooks[hookcounter++] = t;
+		} else {
+			hooks[hookcounter++] = 0;
 		}
+		hooks[hookcounter++] = endtimes[t_id];
 		
-	}
+		
+		// hooks[hookcounter++] = delta;
+		// kout << (dec) << delta << endl;
+	
+}
+	
+		
+	
 	// kout << arch::Perf::get_cycles() << endl;
 }
-
 
 
 void PreTaskHook() {
@@ -341,15 +394,30 @@ void PreTaskHook() {
 	uint32_t id;
 	a = &id;
 	GetTaskID(a);
-	hooks[hookcounter++] = 22;
-	hooks[hookcounter++] = id;
-	// kout << arch::Perf::get_cycles() << endl;
-	if(id == 3) {
-		kout << "Pre-MS1"<< endl;
-		if(endtimes[0] != nullptr) {
-			kout << "not nul" << endl;
+
+	task_id t_id = translate_task_type(id);
+
+	if (t_id != task_id::MS_LAST_id) {
+
+		hooks[hookcounter++] = hook_type::pre;
+		hooks[hookcounter++] = t_id;
+		hooks[hookcounter++] = arch::Perf::get_cycles();
+		if (time_in_post[t_id] != 0) {
+			uint32_t t = arch::Perf::get_cycles() - time_in_post[t_id];
+			time_in_post[t_id] = 0;
+			hooks[hookcounter++] = t;
+			endtimes[t_id] += t;
+		} else {
+			hooks[hookcounter++] = 0;
 		}
+		hooks[hookcounter++] = endtimes[t_id];
+		
+		// uint32_t delta =  arch::Perf::get_cycles() - time_in_post[0];
+		// kout << (dec) << delta << endl;
+		
 	}
+	
+	// kout << arch::Perf::get_cycles() << endl;
 }
 
 
@@ -364,7 +432,8 @@ TASK(MS1) {
     unsigned const t = TOTAL_RUNTIME[id];
 	ara_timing_info(t,t + 1);
 	// for (unsigned i = 0; i < SPLIT_PER_TASK[id]; i++) {
-	micro_sec_wait_end_time(t, endtimes[id]);
+	uint32_t* end_time = &endtimes[id];
+	micro_sec_wait_end_time(t, end_time);
 	// }
 	
 	if (debug_print) {
@@ -388,9 +457,8 @@ TASK(MS2) {
 	
     unsigned const t = TOTAL_RUNTIME[id];
 	ara_timing_info(t,t + 1);
-	for (unsigned i = 0; i < SPLIT_PER_TASK[id]; i++) {
-		micro_sec_wait(t / SPLIT_PER_TASK[id]);
-	}
+	uint32_t* end_time = &endtimes[id];
+	micro_sec_wait_end_time(t, end_time);
 	
 	if (debug_print) {
 		kout << id << "e" << endl;
@@ -411,9 +479,8 @@ TASK(MS5) {
 	
     unsigned const t = TOTAL_RUNTIME[id];
 	ara_timing_info(t,t + 1);
-	for (unsigned i = 0; i < SPLIT_PER_TASK[id]; i++) {
-		micro_sec_wait(t / SPLIT_PER_TASK[id]);
-	}
+	uint32_t* end_time = &endtimes[id];
+	micro_sec_wait_end_time(t, end_time);
 	
 	if (debug_print) {
 		kout << id << "e" << endl;
