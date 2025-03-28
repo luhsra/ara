@@ -2474,6 +2474,42 @@ class Zephyr(OSBase):
         Zephyr.add_instance_comm(state, cpu_id, args.symbol, "z_impl_k_timer_stop", "Timer")
         return state
 
+    # int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
+	#		   size_t block_size, uint32_t num_blocks);
+    @syscall(categories={SyscallCategory.create},
+             signature=(Arg("symbol", hint=SigType.instance),
+                        Arg("buf", hint=SigType.symbol, ty=pyllco.Value),
+                        Arg("block_size", hint=SigType.value),
+                        Arg("num_blocks", hint=SigType.value)))
+    def k_mem_slab_init(graph, state, cpu_id, args, va):
+        state = state.copy()
+        cfg = graph.cfg
+
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_mem_slab_init", "SLAB")
+        return state
+
+    #int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem,
+    #			    k_timeout_t timeout);
+    @syscall(categories={SyscallCategory.create},
+             signature=(Arg("symbol", hint=SigType.instance),
+                        Arg("mem", hint=SigType.value),
+                        Arg("timeout", hint=SigType.value)))
+    def k_mem_slab_alloc(graph, state, cpu_id, args, va):
+        state = state.copy()
+        cfg = graph.cfg
+        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_mem_slab_alloc", "SLAB")
+        return state
+
+    #int void k_mem_slab_free(struct k_mem_slab *slab, void *mem);
+    @syscall(categories={SyscallCategory.create},
+             signature=(Arg("symbol", hint=SigType.instance),
+                        Arg("mem", hint=SigType.value)))
+    def k_mem_slab_free(graph, state, cpu_id, args, va):
+        state = state.copy()
+        cfg = graph.cfg
+        #Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_mem_slab_free", "SLAB")
+        return state
+
     @staticmethod
     def _find_isr_by_entry_name(state, entry_name):
         for v, isr_obj in state.instances.get(ISR):
