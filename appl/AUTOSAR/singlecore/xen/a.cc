@@ -1,7 +1,7 @@
 #include "autosar/os.h"
 #include "events.h"
 
-DeclareTask(H1);
+DeclareTask(A);
 
 evtchn_port_t local_port;
 
@@ -11,7 +11,7 @@ int main(void) {
 	StartOS(0);
 }
 
-TASK(H1) {
+TASK(A) {
 	kout << "Hello World"<< endl;
 
 	notify_evtchn(local_port);

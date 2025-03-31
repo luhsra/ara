@@ -1,0 +1,44 @@
+{
+  "cpus": [
+    {
+      "id": 0,
+      "task_groups": {
+        "BGroup": {
+          "promises": [],
+          "tasks": {
+            "B": {
+              "activation": 1,
+              "autostart": true,
+              "priority": 5,
+              "schedule": true
+            }
+          }
+        }
+      },
+      "resources": {},
+      "events": {},
+      "counters": {},
+      "alarms": {}
+    },
+    {
+      "id": 1,
+      "task_groups": {
+        "BGroup": {
+          "promises": [],
+          "tasks": {
+            "B2": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 5,
+              "schedule": true
+            }
+          }
+        }
+      },
+      "resources": {},
+      "events": {},
+      "counters": {},
+      "alarms": {}
+    }
+  ]
+}

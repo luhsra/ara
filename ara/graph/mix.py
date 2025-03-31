@@ -9,6 +9,7 @@
 # SPDX-FileCopyrightText: 2021 Bastian Fuhlenriede
 # SPDX-FileCopyrightText: 2022 Jan Neugebauer
 # SPDX-FileCopyrightText: 2024 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2025 Mareike Burg
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
@@ -142,6 +143,68 @@ class StateType(enum.IntEnum): # */
 
     #undef pass
     #define pass }; STANDARD_OPERATORS(StateType)}
+    pass
+
+#undef MIX
+#define MIX 1 /*
+# HyperStateType: describe the node type within the HSTG
+#
+# state = The node represents a single core system state
+# metastate = The node links to a set of system states.
+# entry_sync = The node describes a synchronisation point entry across multiple cores.
+# exit_sync = The node describes a synchronisation point exit across multiple cores.
+# hyper_metastate = The node links to a set of system states of one system.
+# entry_sync = The node describes a synchronisation point entry across multiple systems.
+# exit_sync = The node describes a synchronisation point exit across multiple systems.
+# ATTENTION: Change also mix.cpp when changing values here.
+class HyperStateType(enum.IntEnum): # */
+    #undef pass
+    #define pass namespace ara::graph { enum class HyperStateType {
+    pass
+
+    state = 1,
+    metastate = 2,
+    entry_sync = 4,
+    exit_sync = 8,
+    invalid = 16,
+    hyper_metastate = 32,
+    hyper_entry_sync = 64,
+    hyper_exit_sync = 128,
+
+    #undef pass
+    #define pass }; STANDARD_OPERATORS(HyperStateType)}
+    pass
+
+#undef MIX
+#define MIX 1 /*
+# HSTType: Hypercall state transition type
+#
+# m2s = metastate to state
+# st2sy = state to sync (or vice versa)
+# s2s = state to state (normal SSE transition)
+# sy2sy = sync to sync (parent to child, where the parent has greater context)
+# follow_sync = sync to sync (which follows in the time domain)
+# en2ex = edge between an entry and exit sync state
+# m2sy = edge between a metastate and a sync state
+# sync_neighbor = mark two sync states that has an equal outcome
+# ATTENTION: Change also mix.cpp when changing values here.
+class HSTType(enum.IntEnum): # */
+    #undef pass
+    #define pass namespace ara::graph { enum class HSTType {
+    pass
+
+    m2s = 1 << 0,
+    st2sy = 1 << 1,
+    s2s = 1 << 2,
+    sy2sy = 1 << 3,
+    follow_sync = 1 << 4,
+    en2ex = 1 << 5,
+    m2sy = 1 << 6,
+    sync_neighbor = 1 << 7,
+    invalid = 1 << 8,
+
+    #undef pass
+    #define pass }; STANDARD_OPERATORS(HSTType)}
     pass
 
 #undef MIX

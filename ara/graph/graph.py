@@ -579,7 +579,6 @@ class Callgraph(graph_tool.Graph):
         new = Callgraph(cfg, self)
         return new
 
-
 class MSTGraph(graph_tool.Graph):
     """The Multi state transition graph"""
     def __init__(self):
@@ -702,6 +701,12 @@ class MSTGraph(graph_tool.Graph):
         m2sy = graph_tool.GraphView(self.edge_type(MSTType.m2sy),
                                     reversed=True)
         return self._get_cpu_bound_state(m2sy, exit_cp, cpu_id)
+
+
+class HSTGraph(MSTGraph):
+    def __init__(self):
+        super().__init__()  # TODO fake node 0 in init
+        
 
 
 class InstanceGraph(graph_tool.Graph):
