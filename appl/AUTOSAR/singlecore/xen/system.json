@@ -3,10 +3,10 @@
     {
       "id": 0,
       "task_groups": {
-        "H1Group": {
+        "AGroup": {
           "promises": [],
           "tasks": {
-            "H1": {
+            "A": {
               "activation": 1,
               "autostart": true,
               "priority": 5,
