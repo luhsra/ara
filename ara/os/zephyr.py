@@ -2484,30 +2484,26 @@ class Zephyr(OSBase):
     def k_mem_slab_init(graph, state, cpu_id, args, va):
         state = state.copy()
         cfg = graph.cfg
-
-        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_mem_slab_init", "SLAB")
         return state
 
     #int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem,
     #			    k_timeout_t timeout);
     @syscall(categories={SyscallCategory.create},
              signature=(Arg("symbol", hint=SigType.instance),
-                        Arg("mem", hint=SigType.value),
+                        Arg("mem", hint=SigType.symbol),
                         Arg("timeout", hint=SigType.value)))
     def k_mem_slab_alloc(graph, state, cpu_id, args, va):
         state = state.copy()
         cfg = graph.cfg
-        Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_mem_slab_alloc", "SLAB")
         return state
 
     #int void k_mem_slab_free(struct k_mem_slab *slab, void *mem);
     @syscall(categories={SyscallCategory.create},
              signature=(Arg("symbol", hint=SigType.instance),
-                        Arg("mem", hint=SigType.value)))
+                        Arg("mem", hint=SigType.symbol)))
     def k_mem_slab_free(graph, state, cpu_id, args, va):
         state = state.copy()
         cfg = graph.cfg
-        #Zephyr.add_instance_comm(state, cpu_id, args.symbol, "k_mem_slab_free", "SLAB")
         return state
 
     @staticmethod
