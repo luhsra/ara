@@ -148,6 +148,25 @@ class ThreadContext(ControlContext):
             sched_locked=self.sched_locked,
         )
 
+
+@dataclass
+class IRQContext:
+    enabled: bool = field(default=False)
+    def __hash__(self):
+        return hash(
+            (
+                "IRQContext",
+                self.enabled,
+            )
+        )
+
+    def __copy__(self):
+        return IRQContext(
+            enabled=self.enabled,
+
+        )
+
+
 @dataclass
 class ISRContext(ControlContext):
     def __hash__(self):
@@ -953,7 +972,7 @@ class InterpreterContext:
             kernel.cache = None
             raise RuntimeError(f"could not find the scheduled irx thread {_kernel.ready_q.cache} in AbSS")
 
-        InterpreterContext.Zephyr.debug_print_threads(state, self)
+        #InterpreterContext.Zephyr.debug_print_threads(state, self)
 
         for t in threads:
             proxy.get(t)

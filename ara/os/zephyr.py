@@ -109,6 +109,9 @@ class ZephyrIRQ(IRQ):
 
     wanted_attrs = ["symbol"]
 
+    def __hash__(self):
+        return hash(("ZephyrIRQ", self.symbol))
+
 
 @dataclass
 class Timer(ZephyrInstance):
@@ -2529,7 +2532,7 @@ class Zephyr(OSBase):
         cfg = graph.cfg
 
         v, obj = Zephyr._find_irq_by_id(state, args.irq)
-        obj.active = True
+        state.context[obj] = za.IRQContext(enabled=True)
 
         return state
 
@@ -2540,7 +2543,7 @@ class Zephyr(OSBase):
         cfg = graph.cfg
 
         v, obj = Zephyr._find_irq_by_id(state, args.irq)
-        obj.active = False
+        state.context[obj] = za.IRQContext(enabled=False)
 
         return state
 
@@ -2623,6 +2626,10 @@ class Zephyr(OSBase):
             return None
 
         if irq.name.startswith('IRQCONNECT'): # user declared ISRs, # mostly same as sys_clock_announce
+
+            # trigger one Interrupt per hyperperiod only
+            # TODO: NO PERMUTATION THIS WAY! 
+
             kernel = Zephyr.get_kernel_context(state)
             state = root_state.copy()
 
@@ -2631,6 +2638,16 @@ class Zephyr(OSBase):
             isr_fn_name = irq.isr_handler.entry_name
             if isr_fn_name != None: # handle application ISR
                 cpu = state.cpus[cpu_id]
+
+                if irq not in state.context:
+                    logger.warning(f"{irq.name} not yet enabled")
+                    return None
+                if not state.context[irq].enabled:
+                    logger.warning(f"{irq.name} disabled")
+                    return None
+                else:
+                    logger.warning(f"{irq.name} triggering once")
+                    state.context[irq].enabled = False
 
                 new_vertex, new_obj = Zephyr._find_isr_by_entry_name(state, isr_fn_name)
                 old_ctx = state.cur_context(cpu_id)
