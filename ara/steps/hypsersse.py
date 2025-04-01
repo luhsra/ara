@@ -4,7 +4,7 @@
 
 """Container for HyperSSE."""
 import sys
-from ara.graph import Callgraph, Graph, CFG, MSTGraph, MSTType, StateType
+from ara.graph import Callgraph, Graph, CFG, MSTGraph, MSTType, StateType, HSTGraph, HSTType, HyperStateType
 from ara.os import autosar
 from ara.stepmanager import StepManager
 import logging
@@ -96,6 +96,20 @@ class HyperSSE(Step):
         for e in mstg.edges():
             print(f"Edge: {e} Type={str(MSTType(mstg.ep.type[e]))} irq={mstg.ep.irq[e]} cpu_id={mstg.ep.cpu_id[e]} bcet={mstg.ep.bcet[e]} wcet={mstg.ep.wcet[e]}")
 
+    def print_hstg(self, hstg: HSTGraph) -> None:
+        log: logging = self._log
+
+        log.error(f"Printing: hstg")
+        hstg.list_properties()
+        for v in hstg.vertices():
+            # {hstg.vp.state[v]}
+            if hstg.vp.type[v] == 0:
+                print(f"Node: {v} Type=Invalid domain_id={hstg.vp.domain_id[v]} cpu_id={hstg.vp.cpu_id[v]} bcet={hstg.vp.bcet[v]} wcet={hstg.vp.wcet[v]}")
+            else:
+                print(f"Node: {v} Type={str(HyperStateType(hstg.vp.type[v]))} domain_id={hstg.vp.domain_id[v]} cpu_id={hstg.vp.cpu_id[v]} bcet={hstg.vp.bcet[v]} wcet={hstg.vp.wcet[v]}")
+        for e in hstg.edges():
+            print(f"Edge: {e} Type={str(HSTType(hstg.ep.type[e]))} irq={hstg.ep.irq[e]} domain_id={hstg.ep.domain_id[e]} cpu_id={hstg.ep.cpu_id[e]} bcet={hstg.ep.bcet[e]} wcet={hstg.ep.wcet[e]}")
+
 
     def run(self):
         # checkout get_logger() from ara/util.py
@@ -131,11 +145,18 @@ class HyperSSE(Step):
             s_manager.execute(program, extra, None)
 
 
+        hstg = HSTGraph()
+        hstg.vp.domain_id[0] = -1
+
         # careful, each instance would return here, so call sys.exit(0) at the end
         for i, graph in enumerate(HyperSSE.graphs):
-            self.print_mstg(mstg=graph.mstg)
-            # graph_draw(graph.mstg, vertex_text=graph.mstg.vertex_index, output=f"dumps/out_{i}.svg")
+            mstg = graph.mstg
+            hstg.add_mstg(mstg=mstg)
 
+            # self.print_mstg(mstg=mstg)
+            # graph_draw(mstg, vertex_text=mstg.vertex_index, output=f"dumps/out_{i}.svg")
+
+        self.print_hstg(hstg=hstg)
 
         log.error("Done with HyperSSE")
         sys.exit(0)

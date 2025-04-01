@@ -4,6 +4,7 @@
 # SPDX-FileCopyrightText: 2022 Jan Neugebauer
 # SPDX-FileCopyrightText: 2023 Andreas Kässens
 # SPDX-FileCopyrightText: 2024 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2025 Mareike Burg
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -704,9 +705,34 @@ class MSTGraph(graph_tool.Graph):
 
 
 class HSTGraph(MSTGraph):
+
+    domain_id: int = 0
+
     def __init__(self):
         super().__init__()  # TODO fake node 0 in init
-        
+        self.vertex_properties["domain_id"] = self.new_vp("int")
+        self.edge_properties["domain_id"] = self.new_ep("int")
+
+    # init from exisiting mstg
+    def add_mstg(self, mstg: MSTGraph) -> None:
+
+        offset: int = self.num_vertices()
+
+        for v in mstg.vertices():
+            h_v = self.add_vertex()
+            for p in mstg.vp:
+                self.vp[p][h_v] = mstg.vp[p][v]
+            self.vp.domain_id[h_v] = HSTGraph.domain_id
+
+        for e in mstg.edges():
+            h_e = self.add_edge(int(e.source()) + offset, int(e.target()) + offset)
+            for p in mstg.ep:
+                # _log(self).warning(mstg.ep[p][e])
+                self.ep[p][h_e] = mstg.ep[p][e]
+            self.ep.domain_id[h_e] = HSTGraph.domain_id
+
+        HSTGraph.domain_id +=1 
+
 
 
 class InstanceGraph(graph_tool.Graph):

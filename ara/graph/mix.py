@@ -150,13 +150,12 @@ class StateType(enum.IntEnum): # */
 # HyperStateType: describe the node type within the HSTG
 #
 # state = The node represents a single core system state
-# metastate = The node links to a set of system states.
+# metastate = The node links to a set of single core system states.
 # entry_sync = The node describes a synchronisation point entry across multiple cores.
 # exit_sync = The node describes a synchronisation point exit across multiple cores.
-# hyper_metastate = The node links to a set of system states of one system.
+# hyper_metastate = The node links to a set of multicoer states.
 # entry_sync = The node describes a synchronisation point entry across multiple systems.
 # exit_sync = The node describes a synchronisation point exit across multiple systems.
-# ATTENTION: Change also mix.cpp when changing values here.
 class HyperStateType(enum.IntEnum): # */
     #undef pass
     #define pass namespace ara::graph { enum class HyperStateType {
@@ -187,7 +186,6 @@ class HyperStateType(enum.IntEnum): # */
 # en2ex = edge between an entry and exit sync state
 # m2sy = edge between a metastate and a sync state
 # sync_neighbor = mark two sync states that has an equal outcome
-# ATTENTION: Change also mix.cpp when changing values here.
 class HSTType(enum.IntEnum): # */
     #undef pass
     #define pass namespace ara::graph { enum class HSTType {
@@ -202,6 +200,7 @@ class HSTType(enum.IntEnum): # */
     m2sy = 1 << 6,
     sync_neighbor = 1 << 7,
     invalid = 1 << 8,
+    h2st = 1 << 9,
 
     #undef pass
     #define pass }; STANDARD_OPERATORS(HSTType)}
