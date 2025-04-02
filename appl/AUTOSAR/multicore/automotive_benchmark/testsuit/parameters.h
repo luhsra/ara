@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 Mareike Burg
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /**
  * Config file for testsuit benchmarks, defines different values for paramaters that describe the size and the properties of the system.
  * Only one variant can be active at the same time, set by meson.
@@ -48,6 +52,28 @@
     constexpr unsigned NUMBER_OF_LABELS = 1000;
 
 #endif
+
+
+
+/**
+ ******************** DEFINEs ********************
+ * control what gets measured and printed at the end
+ */
+
+// At end of run print stats about the runned tasks
+// #define PRINT_TASK_DATA
+
+// At end of run print how often each task completed or got blocked because the previous run was still running
+// #define PRINT_RUN_STATS
+
+// At end of run print time spend between each call of TASK(SCHED), should be equal to SCHEDUL_INTERVAL
+// #define PRINT_CYCLE_TIMING
+
+// At end of run print time that passed between start and end of each run of each task
+// #define PRINT_TASK_TIMING
+
+// At end of run print time spend in hooks
+#define PRINT_HOOK_STATS
 
 /**
  ******************** Static Variables ********************
@@ -223,23 +249,6 @@ Avarage runtime per Scheduling interval = 600 us -> 60%
 EXPECTED RUNTIME / RUNABLES_PERIOD[NR_TASKS]
 Cylcles
 */
-void kout_task_data() {
-	unsigned exp_runtime = 0;
-	unsigned runables = 0;
-	unsigned rt_si = 0;
-	kout << "Runnables + Runtime Table with " << TASK_COUNT << " tasks:" << endl;
-	kout << "TASK     | NUMBER OF RUNNABLES | EXPECTED RUNTIME | EXPECTED RUNTIME per SCHEDUL_INTERVAL" << endl;
-	kout << "------------------------------------------------" << endl;
-	for (unsigned i = 0; i < TASK_COUNT; i++) {
-		runables += (NUMBER_OF_RUNNABLES / 100) * RUNABLES_SHARE[i];
-		exp_runtime = TOTAL_RUNTIME[i];
-		rt_si += exp_runtime / RUNABLES_PERIOD[i];
-		kout << taskStrings[i] << "\t | " << (NUMBER_OF_RUNNABLES / 100) * RUNABLES_SHARE[i] << "\t\t\t| ";
-		kout << exp_runtime << "\tus";
-		kout << "\t  | " << exp_runtime / RUNABLES_PERIOD[i] << "\tus" << endl;
-	}
-	kout << "Active number of runnables=" << runables << "  |  Total runtime per interval=" << rt_si << endl;
-}
 
 void kout_intercom_data() {
 
