@@ -38,6 +38,9 @@ static uint32_t calculate_until[TASK_COUNT] = {0};
 // keep track what time it was when the task entered its PostTaskHook
 static uint32_t time_when_stopped[TASK_COUNT] = {0};
 
+/**
+ ******************** OS TASKS ********************
+ */
 // Small Init Task
 TASK(INIT) {
     setup_and_print("only-tasks");
@@ -268,7 +271,7 @@ void PreTaskHook() {
 
 
 /**
- ******************** TASKS ********************
+ ******************** WORKER TASKS ********************
  */
 TASK(MS1) {
 	const task_id id = MS1_id;

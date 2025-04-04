@@ -71,7 +71,30 @@ void setup_and_print(const char* name) {
 
     arch::Perf::start();
 
-    kout << "\r\nRun " << name << " testsuit." << endl;
+    kout << "Run " << name << " testsuit." << endl;
+
+	#ifdef PRINT_VARIANT
+		kout << "*******************" << endl;
+		#if defined(VARIANT_BASIC)
+			kout << "VARIANT_BASIC" << endl;
+		#elif defined(VARIANT_LARGE)
+			kout << "VARIANT_LARGE" << endl;
+		#elif defined(VARIANT_TINY)
+			kout << "VARIANT_TINY" << endl;
+		#elif defined(VARIANT_LONG)
+			kout << "VARIANT_LONG" << endl;
+		#elif defined(VARIANT_CUSTOM)
+			kout << "VARIANT_CUSTOM" << endl;
+		#else
+			kout << "VARIANT_UNKNOWN" << endl;
+		#endif
+
+		kout << "#CYCLES total/benchmarked: " << CYCLES << "/" << COOLDOWN - WARMUP << endl;
+		kout << "#RUNNABLES               : " << NUMBER_OF_RUNNABLES << endl;
+		kout << "#LABELS (if benchmarked) : " << NUMBER_OF_LABELS << endl;
+		kout << "*******************\r\n" << endl;
+	#endif
+
 	// to better see results on PI wait at the beginning
 	#ifndef QEMU
 		micro_sec_wait(2000000);
@@ -164,7 +187,7 @@ void print_results() {
 			kout << "\t| " << exp_runtime / RUNABLES_PERIOD[i] << "\tus" << endl;
 		}
 		kout << "Active number of runnables=" << runables << " | Needed runtime per interval=" << rt_si;
-		kout  << "us (available_interval=" << SCHEDUL_INTERVAL << "us):" << endl;
+		kout  << "us (available_interval=" << SCHEDUL_INTERVAL << "us) | Load=" << rt_si / (SCHEDUL_INTERVAL / 100) << "%" << endl;
 		kout << "*******************\r\n" << endl;
 	#endif
 
@@ -186,3 +209,24 @@ void print_results() {
 	#endif
 }
 
+
+/*
+TODO 
+void kout_intercom_data() {
+
+	kout << "\nInter-Task Communication Matrix\nLeft column is sender, the others are receiving tasks" << endl;
+	for (unsigned i = 0; i < NR_TASKS; i++) {
+		kout <<  taskStrings[i] << "\t";
+	}
+	kout << "\n-------------------------------------------------------------------------" << endl;
+	for (unsigned i = 0; i < NR_TASKS; i++) {
+		kout << taskStrings[i] << "\t";
+		for (unsigned j = 0; j < NR_TASKS; j++) {
+			kout << INTER_TASK_RATIO[i][j] << "\t";
+		}
+		kout << endl;
+	}
+	kout << endl;
+	
+}*/
+	
