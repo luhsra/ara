@@ -7,6 +7,13 @@
 		"HyperSSE"
 	],
 
+	"DumpCFG": {
+		"dot" : "dom0"
+	},
+	"DumpInstances": {
+		"dot" : "dom0"
+	},
+
 	"SVFAnalyses": {
 		"log_level": "debug",
 		"hide_svf_output": true
@@ -20,6 +27,7 @@
 
 	"HyperSSE": {
 		"system_count": 2,
-		"dom1" : "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_b.pi4.ll"
+		"dom1_file" : "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_single_core.pi4.ll",
+		"dom1_oil" : "../subprojects/ara/appl/AUTOSAR/singlecore/xen/single_core.json"
 	}
 }

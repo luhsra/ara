@@ -4,7 +4,7 @@
 
 """Container for HyperSSE."""
 import sys
-from ara.graph import Callgraph, Graph, CFG, MSTGraph, MSTType, StateType, HSTGraph, HSTType, HyperStateType
+from ara.graph import ABBType, Callgraph, Graph, CFG, InstanceGraph, MSTGraph, MSTType, NodeLevel, StateType, HSTGraph, HSTType, HyperStateType
 from ara.os import autosar
 from ara.stepmanager import StepManager
 import logging
@@ -24,9 +24,13 @@ class HyperSSE(Step):
                           ty=Integer(),
                           default_value=1)
     # dom0 is given by ara cli parameters
-    dom1: Option = Option(name="dom1",
+    dom1_file: Option = Option(name="dom1_file",
                          help="Path of dom1 ll.",
                          ty=String())
+    dom1_oil: Option = Option(name="dom1_oil",
+                         help="Path of dom1 oil.",
+                         ty=String())
+
 
     # used for dom0
     def get_single_dependencies(self):
@@ -36,6 +40,7 @@ class HyperSSE(Step):
     runid: int = 0
     systems: int|None = None
     graphs: list[Graph] = []
+    done: bool = False
     # cfg: list[CFG] = []
     # callgraph: list[Callgraph] = []
     # os: list[autosar.AUTOSAR] = []
@@ -99,7 +104,7 @@ class HyperSSE(Step):
     def print_hstg(self, hstg: HSTGraph) -> None:
         log: logging = self._log
 
-        log.error(f"Printing: hstg")
+        log.warning(f"Printing: hstg")
         hstg.list_properties()
         for v in hstg.vertices():
             # {hstg.vp.state[v]}
@@ -109,6 +114,43 @@ class HyperSSE(Step):
                 print(f"Node: {v} Type={str(HyperStateType(hstg.vp.type[v]))} domain_id={hstg.vp.domain_id[v]} cpu_id={hstg.vp.cpu_id[v]} bcet={hstg.vp.bcet[v]} wcet={hstg.vp.wcet[v]}")
         for e in hstg.edges():
             print(f"Edge: {e} Type={str(HSTType(hstg.ep.type[e]))} irq={hstg.ep.irq[e]} domain_id={hstg.ep.domain_id[e]} cpu_id={hstg.ep.cpu_id[e]} bcet={hstg.ep.bcet[e]} wcet={hstg.ep.wcet[e]}")
+
+
+
+    def build_hstg(self) -> HSTGraph:
+
+        hstg = HSTGraph()
+        hstg.vp.domain_id[0] = -1
+
+        for i, graph in enumerate(HyperSSE.graphs):
+            mstg = graph.mstg
+            hstg.add_mstg(mstg=mstg)
+
+            # self.print_mstg(mstg=mstg)
+            # graph_draw(mstg, vertex_text=mstg.vertex_index, output=f"dumps/out_{i}.svg")
+
+        self.print_hstg(hstg=hstg)
+
+        # print hstg
+        self._graph.hstg = hstg
+        file_name = f"{self.dump_prefix.get()}hstg.dot"
+        self._step_manager.chain_step({"name": "Printer",
+                                        "dot": file_name,
+                                        "graph_name": "HSTG",
+                                        "subgraph": 'hstg'})
+        return hstg
+
+    def print_cfg_nodes(self, cfg: CFG) -> None:
+        log: logging = self._log
+
+        log.warning(f"Printing: cfg")
+        cfg.list_properties()
+        for v in cfg.vertices():
+            print(f"Node: {v} {str(ABBType(cfg.vp.type[v]))} {str(NodeLevel(cfg.vp.level[v]))}")
+            #Type={str(HyperStateType(cfg.vp.type[v]))} domain_id={cfg.vp.domain_id[v]} cpu_id={hstg.vp.cpu_id[v]} bcet={hstg.vp.bcet[v]} wcet={hstg.vp.wcet[v]}")
+        for e in cfg.edges():
+            print(f"Edge: {e} is_entry: {cfg.ep.is_entry[e]}")
+            #Type={str(HSTType(cfg.ep.type[e]))} irq={cfg.ep.irq[e]} domain_id={cfg.ep.domain_id[e]} cpu_id={hstg.ep.cpu_id[e]} bcet={hstg.ep.bcet[e]} wcet={hstg.ep.wcet[e]}")
 
 
     def run(self):
@@ -133,31 +175,52 @@ class HyperSSE(Step):
             self._graph = Graph()
             self._graph.os = HyperSSE.graphs[-1].os
 
+            input_file = self.dom1_file.get()
+            oilfile = self.dom1_oil.get()
+            log.warning(f"Found {input_file}, {oilfile}")
+
+            program = self._step_manager._config.program
+            extra = self._step_manager._config.extra
+
+            # log.error(f"Olf config: {self._step_manager._config}")
             s_manager: StepManager = StepManager(self._graph)
             
             self._step_manager = s_manager
 
-            extra = {'steps': ['MultiSSE', 'DumpCFG', 'HyperSSE'], 'MultiSSE': {'with_times': False, 'dump': True, 'log_level': 'debug'}, "SVFAnalyses": {"log_level": "debug","hide_svf_output": True}, 'HyperSSE': {'dummy_option': 24, "system_count": 2, "dom1" : "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_a2.pi4.ll"}}
-            program = {'list_steps': False, 'verbose': False, 'log_level': 'debug', 'dump': False, 'dump_prefix': 'dumps/{step_name}.{uuid}.', 'runtime_stats': False, 'runtime_stats_file': 'logger', 'runtime_stats_format': 'human', 'step_data': False, 'entry_point': '__ara_fake_entry', 'input_file': 'subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_a2.pi4.ll', 'oilfile': '../subprojects/ara/appl/AUTOSAR/singlecore/xen/system2.json', 'step_settings': ['../subprojects/ara/settings/hypersse.json'], 'Werr': False, 'threads': 0, 'trace_algorithm': False, 'os': 'AUTOSAR', 'with_stubs': False}
+            program["input_file"] = input_file
+            program["oilfile"] = oilfile
+
+            extra["steps"] = ['MultiSSE', 'DumpCFG', 'DumpInstances', 'HyperSSE']
+            extra["MultiSSE"]["entry_point"] = "main"
+            extra["HyperSSE"]["dom1_file"] = input_file
+            extra["DumpCFG"]["dot"] = "dom1"
+            extra["DumpInstances"]["dot"] = "dom1"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+
            
-            # extra = {'steps': ['MultiSSE', 'DumpCFG', 'HyperSSE'], 'MultiSSE': {'with_times': False, 'dump': True, 'log_level': 'debug'}, "SVFAnalyses": {"log_level": "debug","hide_svf_output": True}, 'HyperSSE': {'dummy_option': 24, "system_count": 2, "dom1" : "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_b.pi4.ll"}}
-            # program = {'list_steps': False, 'verbose': False, 'log_level': 'debug', 'dump': False, 'dump_prefix': 'dumps/{step_name}.{uuid}.', 'runtime_stats': False, 'runtime_stats_file': 'logger', 'runtime_stats_format': 'human', 'step_data': False, 'entry_point': '__ara_fake_entry', 'input_file': 'subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_b.pi4.ll', 'oilfile': '../subprojects/ara/appl/AUTOSAR/singlecore/xen/b_system.json', 'step_settings': ['../subprojects/ara/settings/hypersse.json'], 'Werr': False, 'threads': 0, 'trace_algorithm': False, 'os': 'AUTOSAR', 'with_stubs': False}
+            # log.error(f"New config: {program}, {extra}")
+            
             s_manager.execute(program, extra, None)
 
+        # careful, each instance would return here, so exit unless we are the first instance
+        if HyperSSE.done:
+            return
 
-        hstg = HSTGraph()
-        hstg.vp.domain_id[0] = -1
+        merged_cfg = CFG()
+        merged_instance = InstanceGraph()
 
-        # careful, each instance would return here, so call sys.exit(0) at the end
         for i, graph in enumerate(HyperSSE.graphs):
-            mstg = graph.mstg
-            hstg.add_mstg(mstg=mstg)
+            merged_cfg.add_cfg(cfg=graph.cfg, id=i)
+            merged_instance.add_instance(instance=graph.instances, id=i)
 
-            # self.print_mstg(mstg=mstg)
-            # graph_draw(mstg, vertex_text=mstg.vertex_index, output=f"dumps/out_{i}.svg")
+        self._graph.cfg = merged_cfg
+        self._graph.instances = merged_instance
 
-        self.print_hstg(hstg=hstg)
+        self.print_cfg_nodes(merged_cfg)
+
+        self._step_manager.chain_step({"name": "DumpCFG", "dot": "merged"})
+        self._step_manager.chain_step({"name": "DumpInstances", "dot": "merged"})
+
+        # self._step_manager.chain_step({"name": "MultiSSE", "with_times": False, "dump": True, "log_level": "debug"})
 
         log.error("Done with HyperSSE")
-        sys.exit(0)
-        
+        HyperSSE.done = True
