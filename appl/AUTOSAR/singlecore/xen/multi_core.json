@@ -1,0 +1,34 @@
+{
+  "cpus": [
+    {
+      "id": 0,
+      "tasks": {
+        "B": {
+          "activation": 1,
+          "autostart": true,
+          "priority": 5,
+          "schedule": true
+        }
+      },
+      "resources": {},
+      "events": {},
+      "counters": {},
+      "alarms": {}
+    },
+    {
+      "id": 1,
+      "tasks": {
+        "B2": {
+          "activation": 1,
+          "autostart": false,
+          "priority": 4,
+          "schedule": true
+        }
+      },
+      "resources": {},
+      "events": {},
+      "counters": {},
+      "alarms": {}
+    }
+  ]
+}
