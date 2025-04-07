@@ -16,7 +16,7 @@ from graph_tool.search import bfs_iterator
 from graph_tool.topology import label_out_component
 
 from .graph_data import PyGraphData, _get_llvm_obj
-from .mix import ABBType, CFType, SyscallCategory, NodeLevel, StateType, MSTType
+from .mix import ABBType, CFType, SyscallCategory, NodeLevel, StateType, MSTType, HyperStateType, HSTType
 from .mix import CFG_INVALID_ABB as _CFG_INVALID_ABB
 
 from collections.abc import Iterator
@@ -166,6 +166,25 @@ class CFG(graph_tool.Graph):
         self.edge_properties["is_entry"] = self.new_ep("bool")
         # edge making a lopp, coming back to loop head (icf, lcf edges)
         self.edge_properties["back_edge"] = self.new_ep("bool")
+
+    # copies one CFG into another
+    def add_cfg(self, cfg: 'CFG', id: int = 0) -> None:
+
+        offset: int = self.num_vertices()
+        
+        for v in cfg.vertices():
+            h_v = self.add_vertex()
+            for p in cfg.vp:
+                if p == "name":
+                    self.vp[p][h_v] = str(id) + "_" + cfg.vp[p][v]
+                else:
+                    self.vp[p][h_v] = cfg.vp[p][v]
+    
+        for e in cfg.edges():
+            h_e = self.add_edge(int(e.source()) + offset, int(e.target()) + offset)
+            for p in cfg.ep:
+                self.ep[p][h_e] = cfg.ep[p][e]
+
 
     def contains_function_by_name(self, name: str):
         func = graph_tool.util.find_vertex(self, self.vp["name"], name)
@@ -718,11 +737,20 @@ class HSTGraph(MSTGraph):
 
         offset: int = self.num_vertices()
 
+        # add inital hyper sync point
+        # v = self.add_vertex()
+        # self.vp.type[v] = HyperStateType.exit_sync
+        # TODO need state here
+
         for v in mstg.vertices():
             h_v = self.add_vertex()
             for p in mstg.vp:
                 self.vp[p][h_v] = mstg.vp[p][v]
             self.vp.domain_id[h_v] = HSTGraph.domain_id
+        
+        # inital hyper sync point connect
+        # e = self.add_edge(self.vertex(0), self.vertex(offset))
+        # self.ep.type[e] = HSTType.st2sy
 
         for e in mstg.edges():
             h_e = self.add_edge(int(e.source()) + offset, int(e.target()) + offset)
@@ -773,6 +801,25 @@ class InstanceGraph(graph_tool.Graph):
         self.edge_properties["syscall"] = self.new_ep("int")  # ABB vertex ID
         # not distinguishable interactions
         self.edge_properties["quantity"] = self.new_ep("int64_t")
+
+    # copies one InstanceGraph into another
+    def add_instance(self, instance: 'InstanceGraph', id: int = 0) -> None:
+
+        offset: int = self.num_vertices()
+        
+        for v in instance.vertices():
+            h_v = self.add_vertex()
+            for p in instance.vp:
+                if p == "label":
+                    self.vp[p][h_v] = str(id) + "_" + instance.vp[p][v]
+                else:
+                    self.vp[p][h_v] = instance.vp[p][v]
+    
+        for e in instance.edges():
+            h_e = self.add_edge(int(e.source()) + offset, int(e.target()) + offset)
+            for p in instance.ep:
+                self.ep[p][h_e] = instance.ep[p][e]
+
 
     def get_controls(self):
         return graph_tool.GraphView(self, vfilt=self.vp.is_control)
