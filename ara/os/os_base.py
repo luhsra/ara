@@ -13,7 +13,7 @@ from typing import Any, List
 
 import graph_tool
 
-from ara.graph import SyscallCategory, CallPath, CFG, ABBType
+from ara.graph import InstanceGraph, SyscallCategory, CallPath, CFG, ABBType
 
 # from ara.util import get_logger
 # logger = get_logger("OS_BASE")
@@ -257,15 +257,36 @@ def _get_id():
     return _state_id
 
 
-@dataclass(kw_only=True)
+# @dataclass(kw_only=True)
 class OSState:
-    id: int = field(init=False, default_factory=_get_id)
-    cpus: CPUList
-    instances: graph_tool.Graph
-    cfg: CFG
+    
+    def __init__(self, cpus: CPUList, cfg: CFG, instances: InstanceGraph):
+        self.id: int = field(init=False, default_factory=_get_id)
+        self.cpus = cpus
+        self.cfg_s = cfg
+        self.instances_s = instances
+        # key: some instance, value: mutable context
+        self.context: dict = {}
 
-    # key: some instance, value: mutable context
-    context: dict = field(default_factory=dict, init=False)
+        self.cfg_list: list[CFG] = None
+        self.instances_list: list[InstanceGraph] = None
+        self.has_array: bool = False
+        self.current_index: int = False
+
+    @property
+    def cfg(self):
+        if self.has_array:
+            return self.cfg_list[self.current_index]
+        else:
+            return self.cfg_s
+    @property
+    def instances(self):
+        if self.has_array:
+            return self.instances_list[self.current_index]
+        else:
+            return self.instances_s
+
+
 
     def __eq__(self, other):
         return hash(self) == hash(other)
@@ -345,7 +366,7 @@ class OSBase(metaclass=OSCreator):
         raise NotImplementedError
 
     @staticmethod
-    def get_initial_state(cfg, instances):
+    def get_initial_state(cfg: CFG, instances: InstanceGraph) -> OSState:
         """Get the OS specific initial state.
 
         Arguments:

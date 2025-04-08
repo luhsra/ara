@@ -2,18 +2,13 @@
   "cpus": [
     {
       "id": 0,
-      "task_groups": {
-        "AGroup": {
-          "promises": [],
-          "tasks": {
-            "A": {
-              "activation": 1,
-              "autostart": true,
-              "priority": 5,
-              "schedule": true
+        "tasks": {
+          "A": {
+            "activation": 1,
+            "autostart": true,
+            "priority": 5,
+            "schedule": true
             }
-          }
-        }
       },
       "resources": {},
       "events": {},
