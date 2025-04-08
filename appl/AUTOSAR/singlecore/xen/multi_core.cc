@@ -19,19 +19,25 @@ int main() {
 }
 
 TASK(B) {
-	kout << "Hello World"<< endl;
+	// kout << "Hello World"<< endl;
 
 	// notify_evtchn(local_port);
-	ActivateTask(B2);
+	// ActivateTask(B2);
 	TerminateTask();
 }
 
 
 
 TASK(B2) {
-	kout << "From Core 2"<< endl;
+	// kout << "From Core 2"<< endl;
 
 	// notify_evtchn(local_port);
 
-	ShutdownAllCores(E_OK);
+	TerminateTask();
+}
+
+void PreIdleHook() {
+	ShutdownMachine();
+
+	// ShutdownAllCores(E_OK);
 }

@@ -9,6 +9,8 @@ from ara.os import autosar
 from ara.stepmanager import StepManager
 import logging
 
+from ara.os.xen_hypervisor import XEN_HYPERVISOR
+
 from .step import Step # type: ignore
 from .option import Option, Integer, String
 
@@ -217,13 +219,15 @@ class HyperSSE(Step):
 
         self.print_cfg_nodes(merged_cfg)
 
-        self._graph.cfg = merged_cfg
-        self._graph.instances = merged_instance
+        # self._graph.cfg = merged_cfg
+        # self._graph.instances = merged_instance
 
         self._step_manager.chain_step({"name": "DumpCFG", "dot": "merged", "add_legend": True})
         self._step_manager.chain_step({"name": "DumpInstances", "dot": "merged"})
 
-        # self._step_manager.chain_step({"name": "MultiSSE", "with_times": False, "dump": True, "log_level": "debug"})
+        self._graph = HyperSSE.graphs[0]
+        self._graph.os = XEN_HYPERVISOR()
+        self._step_manager.chain_step({"name": "MultiSSE", "with_times": False, "dump": True, "log_level": "debug"})
 
         log.error("Done with HyperSSE")
         HyperSSE.done = True
