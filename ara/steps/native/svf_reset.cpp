@@ -35,8 +35,21 @@ namespace ara::step {
 		logger.debug() << "Released AndersenWaveDiff" << std::endl;
 		SVFIR::releaseSVFIR();
 		logger.debug() << "Released SVFIR" << std::endl;
-		SVF::LLVMModuleSet::releaseLLVMModuleSet();
+		LLVMModuleSet::releaseLLVMModuleSet();
 		logger.debug() << "Released LLVMModuleSet" << std::endl;
 
+		// SVFGBuilder::releaseSVFG();
+		// SymbolTableInfo::releaseSymbolInfo();
+		// SVFGBuilder::releaseMemory();
+		
+		// FSMPTA::releaseFSMPTA();
+		// releaseVFSWPA();
+		// releaseSteensgaard();
+
+		// releaseAndersenSFR;
+		// releaseAndersenSCD;
+
+		// SVF::Z3Expr::sreleaseContext();
+		// SVF::Z3Expr::releaseSolver();
 	}
 } // namespace ara::step

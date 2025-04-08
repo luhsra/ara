@@ -8,7 +8,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 """Container for Printer."""
-from ara.graph import (ABBType, CFType, CFGView, MSTType, StateType,
+from ara.graph import (ABBType, CFType, CFGView, HSTGraph, HSTType, HyperStateType, MSTType, StateType,
                        single_check, vertex_types)
 from ara.os.os_base import ExecState, IRQCPU
 
@@ -439,6 +439,104 @@ def mstg_to_dot(mstg, label="MSTG"):
     return dot_graph
 
 
+def hstg_to_dot(hstg: HSTGraph, label: str ="HSTG") -> pydot.Dot:
+    def _to_str(v):
+        return str(int(v))
+
+    def _draw_sync(sync, edges):
+        cols = []
+        for e in edges:
+            if hstg.ep.type[e] == HSTType.st2sy:
+                cpu_id = hstg.ep.cpu_id[e]
+                cols.append(f"<TD PORT=\"c{cpu_id}\">CPU {cpu_id}</TD>")
+        if cols:
+            label = '<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">' \
+                    '<TR>{}</TR>' \
+                    '</TABLE>>'.format(''.join(sorted(cols)))
+            shape = "plaintext"
+        else:
+            label = "undiscovered"
+            shape = "box"
+        return pydot.Node(_to_str(sync), label=label,
+                          shape=shape,
+                          tooltip=_to_str(sync))
+
+    dot_graph = pydot.Dot(graph_type="digraph", label=label)
+
+    m2s = hstg.edge_type(HSTType.m2s)
+    m2sy = hstg.edge_type(HSTType.m2sy)
+
+    ms_done = set()
+    # draw initial sync node
+    for init in hstg.get_sync_points(exit=True).vertices():
+        init = hstg.vertex(init)
+        if init.in_degree() == 0:
+            dot_graph.add_node(_draw_sync(init, init.out_edges()))
+        # draw metastates
+        for metastate in sorted(m2sy.vertex(init).out_neighbors(),
+                                key=lambda x: hstg.vp.cpu_id[x]):
+            metastate = hstg.vertex(metastate)
+            if metastate in ms_done:
+                continue
+            ms_done.add(metastate)
+            m2s = hstg.edge_type(HSTType.m2s)
+            cpu_id = hstg.vp.cpu_id[metastate]
+
+            dot_m = pydot.Cluster(_to_str(metastate),
+                                  label=f"M{int(metastate)} (CPU {cpu_id})")
+            dot_graph.add_subgraph(dot_m)
+
+            for state in m2s.vertex(metastate).out_neighbors():
+                attrs = _sstg_state_as_dot(hstg, state)
+                dot_state = pydot.Node(_to_str(state), **attrs)
+                dot_m.add_node(dot_state)
+
+    for sync_point in hstg.get_sync_points(exit=False).vertices():
+        sync_point = hstg.vertex(sync_point)
+        sync_m = pydot.Cluster("Metasync" + _to_str(sync_point), label="")
+        dot_graph.add_subgraph(sync_m)
+        # draw entry_sync
+        sync_m.add_node(_draw_sync(sync_point, sync_point.in_edges()))
+        # draw exit_sync
+        for follow in sync_point.out_neighbors():
+            sync_m.add_node(_draw_sync(follow, follow.out_edges()))
+
+    flow = GraphView(hstg, efilt=hstg.ep.type.fa != HSTType.m2s)
+
+    def _sync_str(v, e):
+        return f"{_to_str(v)}:c{flow.ep.cpu_id[e]}"
+
+    for edge in flow.edges():
+        src = edge.source()
+        tgt = edge.target()
+        attrs = {"color": "black"}
+        if flow.ep.type[edge] == HSTType.st2sy:
+            if flow.vp.type[src] == HyperStateType.exit_sync:
+                src = _sync_str(src, edge)
+                tgt = _to_str(tgt)
+            elif flow.vp.type[tgt] == HyperStateType.entry_sync:
+                src = _to_str(src)
+                tgt = _sync_str(tgt, edge)
+            else:
+                assert False
+        else:
+            if flow.ep.type[edge] == HSTType.sy2sy:
+                attrs = {"color": "darkred",
+                         "style": "dashed"}
+            if flow.ep.type[edge] == HSTType.follow_sync:
+                attrs = {"color": "darkgreen",
+                         "style": "dotted",
+                         "label": f"{flow.ep.bcet[edge]} - {flow.ep.wcet[edge]}"}
+            if flow.ep.type[edge] in [HSTType.sync_neighbor, HSTType.m2sy]:
+                continue
+            src = _to_str(src)
+            tgt = _to_str(tgt)
+
+        dot_graph.add_edge(pydot.Edge(src, tgt, **attrs))
+
+    return dot_graph
+
+
 def sp_mstg_to_dot(mstg, cfg, label="SyncPoints MSTG"):
     legend = '<br/>'.join([html.escape(x) for x in [
         "state format:",
@@ -558,7 +656,7 @@ class Printer(Step):
                       help="Choose, what subgraph should be printed.",
                       ty=Choice("bbs", "abbs", "instances", "sysrel_callgraph",
                                 "callgraph", "multistates", "sstg",
-                                "reduced_sstg", "mstg", "reduced_mstg",
+                                "reduced_sstg", "mstg", "hstg", "reduced_mstg",
                                 "sp_mstg"))
     entry_point = Option(name="entry_point",
                          help="system entry point",
@@ -571,8 +669,13 @@ class Printer(Step):
                             help="Generate source code links (with Pygments)",
                             ty=Bool(),
                             default_value=True)
+    add_legend = Option(name="add_legend",
+                            help="Add a legend pydot cluster to the graph. Currently only supports CFGs.",
+                            ty=Bool(),
+                            default_value=False)
 
-    def _print_init(self):
+
+    def _print_init(self) -> str:
         dot = self.dot.get()
         if not dot:
             self._fail("dot file path must be given.")
@@ -582,7 +685,7 @@ class Printer(Step):
             name = ''
         return name
 
-    def _write_dot(self, dot):
+    def _write_dot(self, dot: pydot.Dot) -> None:
         dot_path = self.dot.get()
         assert dot_path
         dot_path = os.path.abspath(dot_path)
@@ -705,6 +808,31 @@ class Printer(Step):
             dot_graph.add_edge(pydot.Edge(str(hash(edge.source())),
                                           str(hash(edge.target())),
                                           color=color))
+        
+        if self.add_legend.get():
+            # add a new cluster with the legend
+            legend = pydot.Cluster(graph_name="legend", label="CFG-Legend\n(Each box is a function)")
+            dot_graph.add_subgraph(legend)
+            
+            comp = pydot.Node(name="comp", label="Computation Block", shape=self.SHAPES[ABBType.computation][0], 
+                                 color=self.SHAPES[ABBType.computation][1])
+            legend.add_node(comp)
+            syscall = pydot.Node(name="syscall", label="Syscall",  shape=self.SHAPES[ABBType.syscall][0], 
+                                 color=self.SHAPES[ABBType.syscall][1])
+            legend.add_node(syscall)
+
+            icf = pydot.Edge(src='comp', dst='syscall', label='Interprocedural\nControl\nFlow', color='blue')
+            legend.add_edge(icf)
+
+            exit_node = pydot.Node(name="exit", label="Exit Node", shape="oval", 
+                                 color="violet")
+            legend.add_node(exit_node)
+            
+            lcf = pydot.Edge(src='syscall', dst='exit', label='Local\nControl\nFlow', color='red')
+            legend.add_edge(lcf)
+
+            # TODO add loop
+            
         self._write_dot(dot_graph)
 
     def print_instances(self):
@@ -799,6 +927,12 @@ class Printer(Step):
         dot_graph = sp_mstg_to_dot(self._graph.mstg, self._graph.cfg, name)
         self._write_dot(dot_graph)
 
+
+    def print_hstg(self) -> None:
+        name = self._print_init()
+        self._log.info(f"Writing HSTG to {self.dot.get()}.")
+        dot_graph = hstg_to_dot(hstg=self._graph.hstg, label=name)
+        self._write_dot(dot_graph)
 
 
     def print_callgraph(self, only_systemrelevant=False):
@@ -990,7 +1124,7 @@ class Printer(Step):
         self._write_dot(dot_graph)
 
     def run(self):
-        subgraph = self.subgraph.get()
+        subgraph: str = self.subgraph.get()
         if subgraph == 'bbs':
             self.print_xbbs(bbs=True)
         if subgraph == 'abbs':
@@ -1001,6 +1135,8 @@ class Printer(Step):
             self.print_sstg()
         if subgraph == 'mstg':
             self.print_mstg()
+        if subgraph == 'hstg':
+            self.print_hstg()
         if subgraph == 'reduced_sstg':
             self.print_sstg(reduced=True)
         if subgraph == 'reduced_mstg':

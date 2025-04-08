@@ -173,7 +173,7 @@ namespace ara::step {
 		// use https://llvm.org/docs/CommandLine.html#the-cl-parsecommandlineoptions-function 
 		set_up_llvm_cl();
 
-		logger.info() << "Building SVF graphs." << std::endl;
+		logger.debug() << "Building SVF graphs." << std::endl;
 		SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(graph.get_module());
 		logger.info() << "Processing file: " << graph.get_module().getName().str() << std::endl;
 		
@@ -210,7 +210,7 @@ namespace ara::step {
 			callgraph->dump(*dump_prefix.get() + "svf-callgraph");
 			graph.get_svfg().dump(*dump_prefix.get() + "svfg");
 		}
-		logger.warning() << "Done with Svf" << std::endl;
+		logger.debug() << "Done with Svf" << std::endl;
 
 	}
 } // namespace ara::step
