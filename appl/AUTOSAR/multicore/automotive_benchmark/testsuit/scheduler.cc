@@ -60,16 +60,30 @@ TASK(SCHED) {
         ShutdownMachine();
     }
 
+	#if defined(PRINT_CYCLE_TIMING) || defined(PRINT_HOOK_STATS) || defined(PRINT_IDLE)
+		uint32_t t = arch::Perf::get_cycles();
+	#endif
+
 	#ifdef PRINT_CYCLE_TIMING
-		cycle_diff[cycle] =  arch::Perf::get_cycles() - prev;
-		prev = arch::Perf::get_cycles();
+		cycle_diff[cycle] = t - prev;
+		prev = t;
 	#endif
 	
 	#ifdef PRINT_HOOK_STATS
 		hooks[hookcounter][0] = hook_type::sched;
 		hooks[hookcounter][1] = cycle;
-		hooks[hookcounter][2] = arch::Perf::get_cycles();
+		hooks[hookcounter][2] = t;
+		hooks[hookcounter][3] = hook_idle;
+		hooks[hookcounter][4] = t - hook_start_of_idle;
 		hookcounter++;
+	#endif
+
+	#ifdef PRINT_IDLE
+		if (WARMUP <= cycle && cycle <= COOLDOWN){
+			if (idle == true){
+				idle_total += t - start_of_idle;
+			}
+		}
 	#endif
 
 	StatusType res;
@@ -229,11 +243,28 @@ void PostTaskHook() {
 			hooks[hookcounter][2] = t;
 			hooks[hookcounter][3] = calculate_until[t_id];
 			hookcounter++;
+
+			hook_idle = true;
+			hook_start_of_idle = t;
+		#endif
+
+		#ifdef PRINT_IDLE
+			idle = true;
+			start_of_idle = t;
 		#endif
 
 		// when calculate_until is set, this task was still in calculation.
 		if (calculate_until[t_id] != 0) {
 			time_when_stopped[t_id] = t;
+
+			#ifdef PRINT_HOOK_STATS
+				hook_idle = false;
+			#endif
+
+			#ifdef PRINT_IDLE
+				idle = false;
+			#endif
+
 		}
 
 	}

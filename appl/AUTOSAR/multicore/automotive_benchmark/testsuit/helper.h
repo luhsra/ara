@@ -27,6 +27,18 @@
 	static const unsigned int HOOK_VALUES = 5;
 	// depening on system load each tasks needs multiple hooks, extend as needed
 	static unsigned int hooks[TASK_COUNT*CYCLES*25][HOOK_VALUES] = {0};
+	// tracks if any tasks is still running when scheduler starts
+	static bool hook_idle = false;
+	// used to calculate how long one idle window is
+	static uint32_t hook_start_of_idle = 0;
+#endif
+
+#ifdef PRINT_IDLE
+	// tracks if any tasks is still running when scheduler starts
+	static bool idle = false;
+	// used to calculate how long one idle window is
+	static uint32_t start_of_idle = 0;
+	static uint32_t idle_total = 0;
 #endif
 
 
@@ -163,11 +175,25 @@ void print_results() {
 				kout << endl;
 
 			} else if (hooks[t][0] == hook_type::sched) {
-				if (WARMUP <= hooks[t][1] &&  hooks[t][1] < COOLDOWN){
-					kout << "Sched round: " << hooks[t][1] << "  | " << hooks[t][2]/WAIT_FREQUENCE << " us" << endl;
+				if (WARMUP <= hooks[t][1] &&  hooks[t][1] <= COOLDOWN){
+					kout << "Sched round: " << hooks[t][1] << "  | " << hooks[t][2]/WAIT_FREQUENCE << " us";
+					if (hooks[t][3] == true) {
+						kout << " Idle for: " << hooks[t][4]/WAIT_FREQUENCE << " us" << endl;
+					} else {
+						kout << " No Idle" << endl;
+					}
 				}
 			}
 		}
+		kout << "*******************\r\n" << endl;
+	#endif
+
+	#ifdef PRINT_IDLE
+		kout << "*******************\r\n" << "Idle time:" << endl;
+		unsigned idle_time = idle_total / WAIT_FREQUENCE;
+		unsigned runtime = SCHEDUL_INTERVAL * COUNTED_CYCLES;
+		kout << "Total Idle Time was: " << idle_time << " us, of a total runtime of: " << runtime << " us." << endl;
+		kout << "Which means load of: " << 100 - (idle_time * 100 / runtime) << " %" << endl;
 		kout << "*******************\r\n" << endl;
 	#endif
 
@@ -192,7 +218,7 @@ void print_results() {
 	#endif
 
 	#ifdef PRINT_RUN_STATS
-	kout << "*******************\r\nResults for " << COOLDOWN - WARMUP << " scheduling cycles:" << endl;
+	kout << "*******************\r\nResults for " << COUNTED_CYCLES << " scheduling cycles:" << endl;
 		kout << "TASK\t| #started_runs | #finished_runs | blocked_runs #/%"<< endl;
 		kout << "--------------------------------------------------------" << endl;
 		for (unsigned i = 0; i < TASK_COUNT; i++) {

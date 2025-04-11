@@ -46,7 +46,7 @@
     constexpr unsigned NUMBER_OF_LABELS = 10000;
 
 #elif defined(VARIANT_CUSTOM)
-    constexpr unsigned CYCLES = 40;
+    constexpr unsigned CYCLES = 30;
     constexpr unsigned NUMBER_OF_RUNABLES = 1000;
     constexpr unsigned NUMBER_OF_LABELS = 10000;
 
@@ -62,6 +62,7 @@ constexpr unsigned WARMUP = 10;
 // Cycles at the end, where no new tasks are started but running ones can finish.
 constexpr unsigned COOLDOWN = CYCLES - 10;
 
+constexpr unsigned COUNTED_CYCLES = COOLDOWN- WARMUP;
 /**
  ******************** DEFINEs ********************
  * Control what gets measured and printed at the end, comment in or out.
@@ -77,17 +78,19 @@ constexpr unsigned COOLDOWN = CYCLES - 10;
 #define PRINT_RUN_STATS
 
 // At end of run print time spend between each call of TASK(SCHED), should be equal to SCHEDUL_INTERVAL
-#define PRINT_CYCLE_TIMING
+// #define PRINT_CYCLE_TIMING
 
 // At end of run print time that passed between start and end of each run of each task
-#define PRINT_TASK_TIMING
+// #define PRINT_TASK_TIMING
 
 // At end of run print time spend in hooks
-#define PRINT_HOOK_STATS
+// #define PRINT_HOOK_STATS
 
+// At end of run print time spent idling
+#define PRINT_IDLE
 
 // At end of run print memory setup
-#define PRINT_MEM_STATS
+// #define PRINT_MEM_STATS
 
 
 /**
@@ -102,7 +105,7 @@ constexpr unsigned SCHEDUL_INTERVAL = 1000; //um -> 1000us = 1ms
 constexpr unsigned NR_TASKS = 10;
 // Used to reduce the number o task, removing the ones with the longest scheduling intervals.
 // With all tasks the analysis might take very long!
-constexpr unsigned TASK_COUNT = 5;
+constexpr unsigned TASK_COUNT = 3;
 static_assert(TASK_COUNT <= NR_TASKS);
 
 
