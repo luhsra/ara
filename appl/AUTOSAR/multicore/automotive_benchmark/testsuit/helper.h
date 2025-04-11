@@ -26,7 +26,7 @@
 	// how many things get tracked in each hook
 	static const unsigned int HOOK_VALUES = 5;
 	// depening on system load each tasks needs multiple hooks, extend as needed
-	static unsigned int hooks[TASK_COUNT*CYCLES*100][HOOK_VALUES] = {0};
+	static unsigned int hooks[TASK_COUNT*CYCLES*25][HOOK_VALUES] = {0};
 #endif
 
 
@@ -90,7 +90,7 @@ void setup_and_print(const char* name) {
 		#endif
 
 		kout << "#CYCLES total/benchmarked: " << CYCLES << "/" << COOLDOWN - WARMUP << endl;
-		kout << "#RUNNABLES               : " << NUMBER_OF_RUNNABLES << endl;
+		kout << "#RUNNABLES               : " << NUMBER_OF_RUNABLES << endl;
 		kout << "#LABELS (if benchmarked) : " << NUMBER_OF_LABELS << endl;
 		kout << "*******************\r\n" << endl;
 	#endif
@@ -172,17 +172,17 @@ void print_results() {
 	#endif
 
 	#ifdef PRINT_TASK_DATA
-		kout << "*******************\r\n" << TASK_COUNT << " different Tasks/Activation Periods:" << endl;
+		kout << "*******************\r\n" << TASK_COUNT << " different Tasks/Activation Periods (ONLY FOR CALCULATION, NOT MEMORY TIMES):" << endl;
 		unsigned exp_runtime = 0;
 		unsigned runables = 0;
 		unsigned rt_si = 0;
-		kout << "TASK     | #RUNNABLES \t| SINGLE RUNTIME | TASK RUNTIME | EXPECTED RUNTIME per SCHEDUL_INTERVAL" << endl;
+		kout << "TASK     | % of RUNNABLES | #RUNNABLES \t| SINGLE RUNTIME | TASK RUNTIME | EXPECTED RUNTIME per SCHEDUL_INTERVAL" << endl;
 		kout << "-----------------------------------------------------------------------------------------------" << endl;
 		for (unsigned i = 0; i < TASK_COUNT; i++) {
-			runables += (NUMBER_OF_RUNNABLES / 100) * RUNABLES_SHARE[i];
+			runables += (NUMBER_OF_RUNABLES / 100) * RUNABLES_SHARE[i];
 			exp_runtime = TOTAL_RUNTIME[i];
 			rt_si += exp_runtime / RUNABLES_PERIOD[i];
-			kout << taskStrings[i] << "\t | " << (NUMBER_OF_RUNNABLES / 100) * RUNABLES_SHARE[i] << "\t\t| ";
+			kout << taskStrings[i] << "\t | " << RUNABLES_SHARE[i] << "\t\t  | " << (NUMBER_OF_RUNABLES / 100) * RUNABLES_SHARE[i] << "\t\t| ";
 			kout <<  RUNABLES_PERIOD[i] << "\tus\t | " << exp_runtime << "\tus";
 			kout << "\t| " << exp_runtime / RUNABLES_PERIOD[i] << "\tus" << endl;
 		}
@@ -200,6 +200,21 @@ void print_results() {
 			kout << blocked_counter[i] << "/" << (100 * blocked_counter[i]) / start_counter[i] << endl;
 		}
 		
+		kout << "*******************\r\n" << endl;
+	#endif
+
+	#ifdef PRINT_MEM_STATS
+		kout << "*******************\r\nMemory Analysis for up to " << NUMBER_OF_LABELS << " labels with each ";
+		kout << AVAERAGE_LABEL_SIZE << " bytes:" << endl;
+		kout << "Read-only: " << RO_SHARE << "% | Write-only: " << WO_SHARE << "% | Intercom: " << RW_SHARE << "%." << endl;
+		kout << "TASK\t| RO_SIZE (Bytes) | Start of Mem"<< endl;
+		kout << "--------------------------------------------------------" << endl;
+		unsigned labels = 0;
+		for (unsigned i = 0; i < TASK_COUNT; i++) {
+			labels += ro_memory_size[i];
+			kout << taskStrings[i] << "\t| " << ro_memory_size[i] << "\t\t  | " << ro_memory_offset[i] << endl;
+		}
+		kout << "Total used: " << labels << " bytes." << endl;
 		kout << "*******************\r\n" << endl;
 	#endif
 

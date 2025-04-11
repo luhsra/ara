@@ -12,7 +12,7 @@
  CYCLES
  Number of times the schedueler is called, each cycles represents once the SCHEDUL_INTERVAL
 
- NUMBER_OF_RUNNABLES
+ NUMBER_OF_RUNABLES
  Number of runnables that gets distributed acording to the percentages in RUNABLES_SHARE
  -> main option to modify systems load
 
@@ -24,36 +24,36 @@
 // Lower border from paper
 #if defined(VARIANT_BASIC)
     constexpr unsigned CYCLES = 1020;
-    constexpr unsigned NUMBER_OF_RUNNABLES = 1000;
+    constexpr unsigned NUMBER_OF_RUNABLES = 1000;
     constexpr unsigned NUMBER_OF_LABELS = 10000;
 
 // Upper border from paper
 #elif defined(VARIANT_LARGE)
     constexpr unsigned CYCLES = 1020;
-    constexpr unsigned NUMBER_OF_RUNNABLES = 2000;
+    constexpr unsigned NUMBER_OF_RUNABLES = 2000;
     constexpr unsigned NUMBER_OF_LABELS = 25000;
 
 // to match our systems size
 #elif defined(VARIANT_TINY)
     constexpr unsigned CYCLES = 1020;
-    constexpr unsigned NUMBER_OF_RUNNABLES = 100;
+    constexpr unsigned NUMBER_OF_RUNABLES = 100;
     constexpr unsigned NUMBER_OF_LABELS = 5000;
 
 // same as basic, but with longer runtime
 #elif defined(VARIANT_LONG)
     constexpr unsigned CYCLES = 2020;
-    constexpr unsigned NUMBER_OF_RUNNABLES = 1000;
+    constexpr unsigned NUMBER_OF_RUNABLES = 1000;
     constexpr unsigned NUMBER_OF_LABELS = 10000;
 
 #elif defined(VARIANT_CUSTOM)
-    constexpr unsigned CYCLES = 30;
-    constexpr unsigned NUMBER_OF_RUNNABLES = 1000;
+    constexpr unsigned CYCLES = 40;
+    constexpr unsigned NUMBER_OF_RUNABLES = 1000;
     constexpr unsigned NUMBER_OF_LABELS = 10000;
 
 // to make linter happier
 #else
     constexpr unsigned CYCLES = 1020;
-    constexpr unsigned NUMBER_OF_RUNNABLES = 1000;
+    constexpr unsigned NUMBER_OF_RUNABLES = 1000;
     constexpr unsigned NUMBER_OF_LABELS = 1000;
 
 #endif
@@ -68,22 +68,26 @@ constexpr unsigned COOLDOWN = CYCLES - 10;
  */
 
 // At start of run print variant and its values
-#define PRINT_VARIANT
+// #define PRINT_VARIANT
 
 // At end of run print stats about the runned tasks
-// #define PRINT_TASK_DATA
+#define PRINT_TASK_DATA
 
 // At end of run print how often each task completed or got blocked because the previous run was still running
-// #define PRINT_RUN_STATS
+#define PRINT_RUN_STATS
 
 // At end of run print time spend between each call of TASK(SCHED), should be equal to SCHEDUL_INTERVAL
-// #define PRINT_CYCLE_TIMING
+#define PRINT_CYCLE_TIMING
 
 // At end of run print time that passed between start and end of each run of each task
-// #define PRINT_TASK_TIMING
+#define PRINT_TASK_TIMING
 
 // At end of run print time spend in hooks
-// #define PRINT_HOOK_STATS
+#define PRINT_HOOK_STATS
+
+
+// At end of run print memory setup
+#define PRINT_MEM_STATS
 
 
 /**
@@ -98,7 +102,7 @@ constexpr unsigned SCHEDUL_INTERVAL = 1000; //um -> 1000us = 1ms
 constexpr unsigned NR_TASKS = 10;
 // Used to reduce the number o task, removing the ones with the longest scheduling intervals.
 // With all tasks the analysis might take very long!
-constexpr unsigned TASK_COUNT = 3;
+constexpr unsigned TASK_COUNT = 5;
 static_assert(TASK_COUNT <= NR_TASKS);
 
 
@@ -106,27 +110,41 @@ static_assert(TASK_COUNT <= NR_TASKS);
 const char* taskStrings[NR_TASKS] = {"MS1", "MS2", "MS5", "MS10", "MS20", "MS50", "MS100", "MS200", "MS1000", "MSANGLE"};
 enum task_id { MS1_id = 0, MS2_id = 1, MS5_id = 2, MS10_id = 3, MS20_id = 4, MS50_id = 5, MS100_id = 6, MS200_id = 7, MS1000_id = 8, MSANGLE_id = 9, MS_LAST_id = 10};
 
-// Percentage share of each activation period of the total NUMBER_OF_RUNNABLES
+// Percentage share of each activation period of the total NUMBER_OF_RUNABLES
 constexpr unsigned RUNABLES_SHARE[NR_TASKS] = {3, 2, 2, 25, 25, 3, 20, 1, 4, 15};
 // Given activation periods in which runnables get triggered (in millisecond/ms)
-constexpr unsigned RUNABLES_PERIOD[NR_TASKS] = {1, 2, 5, 10, 20, 50, 100, 200, 1000, ANGLE_SYNC_PERIOD};   // TODO could modify slightly to decrease spike at multiples
+// Angle_sync task changes it period!
+constexpr unsigned RUNABLES_PERIOD[NR_TASKS] = {1, 2, 5, 10, 20, 50, 100, 200, 1000, 0};   // TODO could modify slightly to decrease spike at multiples
 // Average execution time of a single runnables in a specific activation period (in microseconds/us)
-constexpr unsigned TIME_PER_RUNNABLE[NR_TASKS] = {5, 5, 12, 11, 9, 18, 11, 3, 1, 7};
+constexpr unsigned TIME_PER_RUNABLE[NR_TASKS] = {5, 5, 12, 11, 9, 18, 11, 3, 1, 7};
+// Of how many runnables each tasks consist
+constexpr unsigned RUNABLES_COUNT[NR_TASKS] = {
+	(NUMBER_OF_RUNABLES/100) * RUNABLES_SHARE[MS1_id],
+	(NUMBER_OF_RUNABLES/100) * RUNABLES_SHARE[MS2_id],
+	(NUMBER_OF_RUNABLES/100) * RUNABLES_SHARE[MS5_id],
+	(NUMBER_OF_RUNABLES/100) * RUNABLES_SHARE[MS10_id],
+	(NUMBER_OF_RUNABLES/100) * RUNABLES_SHARE[MS20_id],
+	(NUMBER_OF_RUNABLES/100) * RUNABLES_SHARE[MS50_id],
+	(NUMBER_OF_RUNABLES/100) * RUNABLES_SHARE[MS100_id],
+	(NUMBER_OF_RUNABLES/100) * RUNABLES_SHARE[MS200_id],
+	(NUMBER_OF_RUNABLES/100) * RUNABLES_SHARE[MS1000_id],
+	(NUMBER_OF_RUNABLES/100) * RUNABLES_SHARE[MSANGLE_id]
+};
 // Total runtime of each task
-// constexpr unsigned TOTAL_RUNTIME[NR_TASKS] = {
-// 	(NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS1_id] * TIME_PER_RUNNABLE[MS1_id],
-// 	(NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS2_id] * TIME_PER_RUNNABLE[MS2_id],
-// 	(NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS5_id] * TIME_PER_RUNNABLE[MS5_id],
-// 	(NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS10_id] * TIME_PER_RUNNABLE[MS10_id],
-// 	(NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS20_id] * TIME_PER_RUNNABLE[MS20_id],
-// 	(NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS50_id] * TIME_PER_RUNNABLE[MS50_id],
-// 	(NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS100_id] * TIME_PER_RUNNABLE[MS100_id],
-// 	(NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS200_id] * TIME_PER_RUNNABLE[MS200_id],
-// 	(NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS1000_id] * TIME_PER_RUNNABLE[MS1000_id],
-// 	(NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MSANGLE_id] * TIME_PER_RUNNABLE[MSANGLE_id]
-// };
+constexpr unsigned TOTAL_RUNTIME[NR_TASKS] = {
+	RUNABLES_COUNT[MS1_id] * TIME_PER_RUNABLE[MS1_id],
+	RUNABLES_COUNT[MS2_id] * TIME_PER_RUNABLE[MS2_id],
+	RUNABLES_COUNT[MS5_id] * TIME_PER_RUNABLE[MS5_id],
+	RUNABLES_COUNT[MS10_id] * TIME_PER_RUNABLE[MS10_id],
+	RUNABLES_COUNT[MS20_id] * TIME_PER_RUNABLE[MS20_id],
+	RUNABLES_COUNT[MS50_id] * TIME_PER_RUNABLE[MS50_id],
+	RUNABLES_COUNT[MS100_id] * TIME_PER_RUNABLE[MS100_id],
+	RUNABLES_COUNT[MS200_id] * TIME_PER_RUNABLE[MS200_id],
+	RUNABLES_COUNT[MS1000_id] * TIME_PER_RUNABLE[MS1000_id],
+	RUNABLES_COUNT[MSANGLE_id] * TIME_PER_RUNABLE[MSANGLE_id]
+};
 // Overwrite for testing
-// /*
+/*
 constexpr unsigned TOTAL_RUNTIME[NR_TASKS] = {
 	500,
 	1500,
@@ -139,36 +157,60 @@ constexpr unsigned TOTAL_RUNTIME[NR_TASKS] = {
 	500,
 	500
 };
-// */
+*/
 
 // [MEMORY]
 // AVAERAGE_LABEL_SIZE: Size of a single label in Byte, calculated by (1*35+2*49+4*13+8*0.8+16*1.3+32*0.5+64*0.2+128*0.2)/ 100 -> 2.66 Byte
 // 90% of Labels are 1,2,4 Bytes, calculated average was 3 Bytes
 constexpr unsigned AVAERAGE_LABEL_SIZE = 3;
+constexpr unsigned LABELS_PER_RUNABLE = NUMBER_OF_LABELS / NUMBER_OF_RUNABLES;
 
 // Of that: 40% read, 10% write, 50% read/write
-constexpr unsigned READ_ACCESSES_PER_RUNNABLE = AVAERAGE_LABEL_SIZE * 40 * (NUMBER_OF_LABELS / NUMBER_OF_RUNNABLES) / 100;
-constexpr unsigned WRITE_ACCESSES_PER_RUNNABLE = AVAERAGE_LABEL_SIZE* 10 * (NUMBER_OF_LABELS / NUMBER_OF_RUNNABLES) / 100;
-constexpr unsigned RW_ACCESSES_PER_RUNNABLE = AVAERAGE_LABEL_SIZE * 50 * (NUMBER_OF_LABELS / NUMBER_OF_RUNNABLES) / 100;
+constexpr unsigned RO_SHARE = 40;
+constexpr unsigned WO_SHARE = 10;
+constexpr unsigned RW_SHARE = 50;
+
+constexpr unsigned RO_MEMORY = (NUMBER_OF_LABELS / 100) * RO_SHARE * AVAERAGE_LABEL_SIZE;
+constexpr unsigned WO_MEMORY = (NUMBER_OF_LABELS / 100) * WO_SHARE * AVAERAGE_LABEL_SIZE;
+constexpr unsigned RW_MEMORY = (NUMBER_OF_LABELS / 100) * RW_SHARE * AVAERAGE_LABEL_SIZE;
+
+// Final one is end of memory -> cant write further
+constexpr unsigned ro_memory_offset[NR_TASKS + 1] = {
+	0,
+	ro_memory_offset[0] + (RO_MEMORY / 100) * RUNABLES_SHARE[MS1_id],
+	ro_memory_offset[1] + (RO_MEMORY / 100) * RUNABLES_SHARE[MS2_id],
+	ro_memory_offset[2] + (RO_MEMORY / 100) * RUNABLES_SHARE[MS5_id],
+	ro_memory_offset[3] + (RO_MEMORY / 100) * RUNABLES_SHARE[MS10_id],
+	ro_memory_offset[4] + (RO_MEMORY / 100) * RUNABLES_SHARE[MS20_id],
+	ro_memory_offset[5] + (RO_MEMORY / 100) * RUNABLES_SHARE[MS50_id],
+	ro_memory_offset[6] + (RO_MEMORY / 100) * RUNABLES_SHARE[MS100_id],
+	ro_memory_offset[7] + (RO_MEMORY / 100) * RUNABLES_SHARE[MS200_id],
+	ro_memory_offset[8] + (RO_MEMORY / 100) * RUNABLES_SHARE[MS1000_id],
+	ro_memory_offset[9] + (RO_MEMORY / 100) * RUNABLES_SHARE[MSANGLE_id]
+};
+
+// Final one is end of memory -> cant write further
+constexpr unsigned ro_memory_size[NR_TASKS] = {
+	(RO_MEMORY / 100) * RUNABLES_SHARE[MS1_id],
+	(RO_MEMORY / 100) * RUNABLES_SHARE[MS2_id],
+	(RO_MEMORY / 100) * RUNABLES_SHARE[MS5_id],
+	(RO_MEMORY / 100) * RUNABLES_SHARE[MS10_id],
+	(RO_MEMORY / 100) * RUNABLES_SHARE[MS20_id],
+	(RO_MEMORY / 100) * RUNABLES_SHARE[MS50_id],
+	(RO_MEMORY / 100) * RUNABLES_SHARE[MS100_id],
+	(RO_MEMORY / 100) * RUNABLES_SHARE[MS200_id],
+	(RO_MEMORY / 100) * RUNABLES_SHARE[MS1000_id],
+	(RO_MEMORY / 100) * RUNABLES_SHARE[MSANGLE_id]
+};
+
+constexpr unsigned READ_ACCESSES_PER_RUNNABLE = AVAERAGE_LABEL_SIZE * 40 * (NUMBER_OF_LABELS / NUMBER_OF_RUNABLES) / 100;
+constexpr unsigned WRITE_ACCESSES_PER_RUNNABLE = AVAERAGE_LABEL_SIZE* 10 * (NUMBER_OF_LABELS / NUMBER_OF_RUNABLES) / 100;
+constexpr unsigned RW_ACCESSES_PER_RUNNABLE = AVAERAGE_LABEL_SIZE * 50 * (NUMBER_OF_LABELS / NUMBER_OF_RUNABLES) / 100;
 constexpr unsigned MEMORY_PER_RUNNABLE = READ_ACCESSES_PER_RUNNABLE + WRITE_ACCESSES_PER_RUNNABLE + RW_ACCESSES_PER_RUNNABLE;
 
 uint8_t communication[NUMBER_OF_LABELS * AVAERAGE_LABEL_SIZE];
 uint16_t memory_pos = 0;
 
-// Final one is end of memory -> cant write further
-constexpr unsigned memory_positions[NR_TASKS + 1] = {
-	0,
-	(NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS1_id] * MEMORY_PER_RUNNABLE,
-	memory_positions[1] + (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS2_id] * MEMORY_PER_RUNNABLE,
-	memory_positions[2] + (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS5_id] * MEMORY_PER_RUNNABLE,
-	memory_positions[3] + (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS10_id] * MEMORY_PER_RUNNABLE,
-	memory_positions[4] + (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS20_id] * MEMORY_PER_RUNNABLE,
-	memory_positions[5] + (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS50_id] * MEMORY_PER_RUNNABLE,
-	memory_positions[6] + (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS100_id] * MEMORY_PER_RUNNABLE,
-	memory_positions[7] + (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS200_id] * MEMORY_PER_RUNNABLE,
-	memory_positions[8] + (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MS1000_id] * MEMORY_PER_RUNNABLE,
-	memory_positions[9] + (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[MSANGLE_id] * MEMORY_PER_RUNNABLE
-};
 
 // InterTask Communication Patter
 // with MS1 MS2 MS5 MS10 MS20 MS50 MS100 MS200 MS1000
@@ -190,8 +232,8 @@ constexpr unsigned INTER_TASK_RATIO[NR_TASKS][NR_TASKS] = {
 
 // [ANGLESYNC]
 // Angle Sync Values, assume the worst case, so the shortest period. So a bit car with 8 Cylinders and 5000 rpm
-constexpr unsigned CYLINDERS = 8;
-constexpr unsigned RPM = 5000;
+unsigned CYLINDERS = 8;
+unsigned RPM = 5000;
 // Formular is 60/(CYLINDERS*RPM) -> then convert into s (*60) -> then into milliseconds * 1000
-constexpr unsigned ANGLE_SYNC_PERIOD = (1000*60*60)/(CYLINDERS * RPM);
+unsigned ANGLE_SYNC_PERIOD = (1000*60*60)/(CYLINDERS * RPM);
 

@@ -23,7 +23,9 @@ DeclareTask(MS100);
 DeclareTask(MS200);
 DeclareTask(MS1000);
 
-TEST_MAKE_OS_MAIN(StartOS(0))
+int main(void) {                                                                                                   
+	StartOS(0);
+}
 
 /**
  * Testcase for new scheduler, where counter activates scheduler which sets tasks as active.
@@ -45,7 +47,7 @@ static uint32_t time_when_stopped[TASK_COUNT] = {0};
 TASK(INIT) {
     setup_and_print("only-tasks");
     ara_timing_info(1, 5);
-    TerminateTask();	
+    TerminateTask();
 }
 
 // Main Scheduler, activated by AUTOSAR Counter
