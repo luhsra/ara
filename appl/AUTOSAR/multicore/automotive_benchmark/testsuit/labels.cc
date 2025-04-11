@@ -45,6 +45,8 @@ static uint32_t time_when_stopped[TASK_COUNT] = {0};
 // read only memory
 static unsigned ro_mem[RO_MEMORY] = {0};
 
+static unsigned mem_results[TASK_COUNT] = {0};
+
 void fill_ro_mem() {
 
 	for (unsigned i = 0; i < RO_MEMORY; i++){
@@ -72,7 +74,14 @@ TASK(SCHED) {
     ara_timing_info(10, 20);
 
     if (cycle >= CYCLES) {
+
+	
 		print_results();
+
+		kout << "Dump mem so it doesnt get optimized by compliter" << endl;
+		for (unsigned i = 0; i < TASK_COUNT; i++){
+			kout << "Read only Mem Reselt for: " << i << " " << mem_results[i] << endl;
+		}
 		ara_timing_info(15, 25);
         ShutdownMachine();
     }
@@ -332,11 +341,9 @@ TASK(MS1) {
 	#endif
 	
 	// load mem
-	unsigned tmp = 0;
 	unsigned memory_pos = ro_memory_offset[id];
 	for(unsigned i = 0; i < ro_memory_size[id]; i++, memory_pos++)
-		// kout << id << " and " << ro_mem[memory_pos] << endl;
-		tmp = ro_mem[memory_pos];
+		mem_results[id] += ro_mem[memory_pos];
 
 	// create pointer, so end_times can be modified in hooks
 	uint32_t* end_time = &calculate_until[id];
@@ -351,7 +358,6 @@ TASK(MS1) {
 		finish_counter[id]++;
 	#endif
 
-	kout << tmp << endl;
 	TerminateTask();
 }
 TASK(MS2) {

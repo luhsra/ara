@@ -105,6 +105,7 @@ constexpr unsigned SCHEDUL_INTERVAL = 1000; //um -> 1000us = 1ms
 constexpr unsigned NR_TASKS = 10;
 // Used to reduce the number o task, removing the ones with the longest scheduling intervals.
 // With all tasks the analysis might take very long!
+// for 7 Tasks ~200s, for 8 Tasks 1340s
 constexpr unsigned TASK_COUNT = 3;
 static_assert(TASK_COUNT <= NR_TASKS);
 

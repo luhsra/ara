@@ -193,6 +193,7 @@ void print_results() {
 		unsigned idle_time = idle_total / WAIT_FREQUENCE;
 		unsigned runtime = SCHEDUL_INTERVAL * COUNTED_CYCLES;
 		kout << "Total Idle Time was: " << idle_time << " us, of a total runtime of: " << runtime << " us." << endl;
+		kout << "Idle Cycles were: " << idle_total << endl;
 		kout << "Which means load of: " << 100 - (idle_time * 100 / runtime) << " %" << endl;
 		kout << "*******************\r\n" << endl;
 	#endif
