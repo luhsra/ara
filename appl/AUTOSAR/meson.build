@@ -564,7 +564,7 @@ foreach app: autosar_targets
   	foreach opt: opt_targets
       if opt == 'opt'
         opt_suffix = '_' + opt
-      else if opt == 'noopt'
+      elif opt == 'noopt'
         opt_suffix = ''
       else
         opt_suffix = disabler()
