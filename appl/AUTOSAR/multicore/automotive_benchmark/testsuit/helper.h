@@ -188,16 +188,6 @@ void print_results() {
 		kout << "*******************\r\n" << endl;
 	#endif
 
-	#ifdef PRINT_IDLE
-		kout << "*******************\r\n" << "Idle time:" << endl;
-		unsigned idle_time = idle_total / WAIT_FREQUENCE;
-		unsigned runtime = SCHEDUL_INTERVAL * COUNTED_CYCLES;
-		kout << "Total Idle Time was: " << idle_time << " us, of a total runtime of: " << runtime << " us." << endl;
-		kout << "Idle Cycles were: " << idle_total << endl;
-		kout << "Which means load of: " << 100 - (idle_time * 100 / runtime) << " %" << endl;
-		kout << "*******************\r\n" << endl;
-	#endif
-
 	#ifdef PRINT_TASK_DATA
 		kout << "*******************\r\n" << TASK_COUNT << " different Tasks/Activation Periods (ONLY FOR CALCULATION, NOT MEMORY TIMES):" << endl;
 		unsigned exp_runtime = 0;
@@ -242,6 +232,17 @@ void print_results() {
 			kout << taskStrings[i] << "\t| " << ro_memory_size[i] << "\t\t  | " << ro_memory_offset[i] << endl;
 		}
 		kout << "Total used: " << labels << " bytes." << endl;
+		kout << "*******************\r\n" << endl;
+	#endif
+
+	#ifdef PRINT_IDLE
+		kout << "*******************\r\n" << "Idle time:" << endl;
+		unsigned idle_time = idle_total / WAIT_FREQUENCE;
+		unsigned runtime = SCHEDUL_INTERVAL * COUNTED_CYCLES;
+		kout << "Total Idle Time was: " << idle_time << " us, of a total runtime of: " << runtime << " us." << endl;
+		kout << "Idle Cycles were: " << idle_total << " of " << runtime * WAIT_FREQUENCE << endl;
+		unsigned load = 10000 - (idle_time * 10000 / runtime);
+		kout << "Which means load of: " << load / 100 << "." << load % 100 << " %" << endl;
 		kout << "*******************\r\n" << endl;
 	#endif
 

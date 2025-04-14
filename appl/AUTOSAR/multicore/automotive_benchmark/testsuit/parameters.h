@@ -69,7 +69,7 @@ constexpr unsigned COUNTED_CYCLES = COOLDOWN- WARMUP;
  */
 
 // At start of run print variant and its values
-// #define PRINT_VARIANT
+#define PRINT_VARIANT
 
 // At end of run print stats about the runned tasks
 #define PRINT_TASK_DATA
@@ -178,22 +178,6 @@ constexpr unsigned RO_MEMORY = (NUMBER_OF_LABELS / 100) * RO_SHARE * AVAERAGE_LA
 constexpr unsigned WO_MEMORY = (NUMBER_OF_LABELS / 100) * WO_SHARE * AVAERAGE_LABEL_SIZE;
 constexpr unsigned RW_MEMORY = (NUMBER_OF_LABELS / 100) * RW_SHARE * AVAERAGE_LABEL_SIZE;
 
-// Final one is end of memory -> cant write further
-constexpr unsigned ro_memory_offset[NR_TASKS + 1] = {
-	0,
-	ro_memory_offset[0] + (RO_MEMORY / 100) * RUNABLES_SHARE[MS1_id],
-	ro_memory_offset[1] + (RO_MEMORY / 100) * RUNABLES_SHARE[MS2_id],
-	ro_memory_offset[2] + (RO_MEMORY / 100) * RUNABLES_SHARE[MS5_id],
-	ro_memory_offset[3] + (RO_MEMORY / 100) * RUNABLES_SHARE[MS10_id],
-	ro_memory_offset[4] + (RO_MEMORY / 100) * RUNABLES_SHARE[MS20_id],
-	ro_memory_offset[5] + (RO_MEMORY / 100) * RUNABLES_SHARE[MS50_id],
-	ro_memory_offset[6] + (RO_MEMORY / 100) * RUNABLES_SHARE[MS100_id],
-	ro_memory_offset[7] + (RO_MEMORY / 100) * RUNABLES_SHARE[MS200_id],
-	ro_memory_offset[8] + (RO_MEMORY / 100) * RUNABLES_SHARE[MS1000_id],
-	ro_memory_offset[9] + (RO_MEMORY / 100) * RUNABLES_SHARE[MSANGLE_id]
-};
-
-// Final one is end of memory -> cant write further
 constexpr unsigned ro_memory_size[NR_TASKS] = {
 	(RO_MEMORY / 100) * RUNABLES_SHARE[MS1_id],
 	(RO_MEMORY / 100) * RUNABLES_SHARE[MS2_id],
@@ -206,6 +190,50 @@ constexpr unsigned ro_memory_size[NR_TASKS] = {
 	(RO_MEMORY / 100) * RUNABLES_SHARE[MS1000_id],
 	(RO_MEMORY / 100) * RUNABLES_SHARE[MSANGLE_id]
 };
+
+// Final one is end of memory -> cant write further
+constexpr unsigned ro_memory_offset[NR_TASKS + 1] = {
+	0,
+	ro_memory_offset[0] + ro_memory_size[MS1_id],
+	ro_memory_offset[1] + ro_memory_size[MS2_id],
+	ro_memory_offset[2] + ro_memory_size[MS5_id],
+	ro_memory_offset[3] + ro_memory_size[MS10_id],
+	ro_memory_offset[4] + ro_memory_size[MS20_id],
+	ro_memory_offset[5] + ro_memory_size[MS50_id],
+	ro_memory_offset[6] + ro_memory_size[MS100_id],
+	ro_memory_offset[7] + ro_memory_size[MS200_id],
+	ro_memory_offset[8] + ro_memory_size[MS1000_id],
+	ro_memory_offset[9] + ro_memory_size[MSANGLE_id]
+};
+
+// Write only memory skipped for now, since it is only 10% and hard to measure.
+// constexpr unsigned wo_memory_size[NR_TASKS] = {
+// 	(WO_MEMORY / 100) * RUNABLES_SHARE[MS1_id],
+// 	(WO_MEMORY / 100) * RUNABLES_SHARE[MS2_id],
+// 	(WO_MEMORY / 100) * RUNABLES_SHARE[MS5_id],
+// 	(WO_MEMORY / 100) * RUNABLES_SHARE[MS10_id],
+// 	(WO_MEMORY / 100) * RUNABLES_SHARE[MS20_id],
+// 	(WO_MEMORY / 100) * RUNABLES_SHARE[MS50_id],
+// 	(WO_MEMORY / 100) * RUNABLES_SHARE[MS100_id],
+// 	(WO_MEMORY / 100) * RUNABLES_SHARE[MS200_id],
+// 	(WO_MEMORY / 100) * RUNABLES_SHARE[MS1000_id],
+// 	(WO_MEMORY / 100) * RUNABLES_SHARE[MSANGLE_id]
+// };
+
+// // Final one is end of memory -> cant write further
+// constexpr unsigned wo_memory_offset[NR_TASKS + 1] = {
+// 	0,
+// 	wo_memory_offset[0] + wo_memory_size[MS1_id],
+// 	wo_memory_offset[1] + wo_memory_size[MS2_id],
+// 	wo_memory_offset[2] + wo_memory_size[MS5_id],
+// 	wo_memory_offset[3] + wo_memory_size[MS10_id],
+// 	wo_memory_offset[4] + wo_memory_size[MS20_id],
+// 	wo_memory_offset[5] + wo_memory_size[MS50_id],
+// 	wo_memory_offset[6] + wo_memory_size[MS100_id],
+// 	wo_memory_offset[7] + wo_memory_size[MS200_id],
+// 	wo_memory_offset[8] + wo_memory_size[MS1000_id],
+// 	wo_memory_offset[9] + wo_memory_size[MSANGLE_id]
+// };
 
 constexpr unsigned READ_ACCESSES_PER_RUNNABLE = AVAERAGE_LABEL_SIZE * 40 * (NUMBER_OF_LABELS / NUMBER_OF_RUNABLES) / 100;
 constexpr unsigned WRITE_ACCESSES_PER_RUNNABLE = AVAERAGE_LABEL_SIZE* 10 * (NUMBER_OF_LABELS / NUMBER_OF_RUNABLES) / 100;

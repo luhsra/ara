@@ -44,8 +44,11 @@ static uint32_t time_when_stopped[TASK_COUNT] = {0};
 
 // read only memory
 static unsigned ro_mem[RO_MEMORY] = {0};
+static unsigned ro_mem_results[TASK_COUNT] = {0};
 
-static unsigned mem_results[TASK_COUNT] = {0};
+// // write only memory
+// static unsigned wo_mem[RO_MEMORY] = {0};
+// static unsigned wo_mem_results[TASK_COUNT] = {0};
 
 void fill_ro_mem() {
 
@@ -80,7 +83,8 @@ TASK(SCHED) {
 
 		kout << "Dump mem so it doesnt get optimized by compliter" << endl;
 		for (unsigned i = 0; i < TASK_COUNT; i++){
-			kout << "Read only Mem Reselt for: " << i << " " << mem_results[i] << endl;
+			kout << "Read only Mem Result for: " << i << " " << ro_mem_results[i] << endl;
+			// kout << "Write only Mem Result for: " << i << " " << wo_mem_results[i] << endl;
 		}
 		ara_timing_info(15, 25);
         ShutdownMachine();
@@ -340,15 +344,20 @@ TASK(MS1) {
 		unsigned int c = arch::Perf::get_cycles();
 	#endif
 	
-	// load mem
+	// read mem
 	unsigned memory_pos = ro_memory_offset[id];
 	for(unsigned i = 0; i < ro_memory_size[id]; i++, memory_pos++)
-		mem_results[id] += ro_mem[memory_pos];
+		ro_mem_results[id] += ro_mem[memory_pos];
 
 	// create pointer, so end_times can be modified in hooks
 	uint32_t* end_time = &calculate_until[id];
 	micro_sec_wait_end_time(TOTAL_RUNTIME[id], end_time);
-	
+		
+	// // write mem
+	// memory_pos = wo_memory_offset[id];
+	// for(unsigned i = 0; i < wo_memory_size[id]; i++, memory_pos++)
+	// 	wo_mem_results[id] = TOTAL_RUNTIME[id];
+
 	#ifdef PRINT_TASK_TIMING
 		task_time[id][cycle_count[id]] = arch::Perf::get_cycles() - c;
 		cycle_count[id]++;
@@ -367,7 +376,12 @@ TASK(MS2) {
 	#ifdef PRINT_TASK_TIMING
 		unsigned int c = arch::Perf::get_cycles();
 	#endif
-	
+		
+	// load mem
+	unsigned memory_pos = ro_memory_offset[id];
+	for(unsigned i = 0; i < ro_memory_size[id]; i++, memory_pos++)
+		ro_mem_results[id] += ro_mem[memory_pos];
+
 	// create pointer, so end_times can be modified in hooks
 	uint32_t* end_time = &calculate_until[id];
 	micro_sec_wait_end_time(TOTAL_RUNTIME[id], end_time);
@@ -390,11 +404,16 @@ TASK(MS5) {
 	#ifdef PRINT_TASK_TIMING
 		unsigned int c = arch::Perf::get_cycles();
 	#endif
-	
+		
+	// load mem
+	unsigned memory_pos = ro_memory_offset[id];
+	for(unsigned i = 0; i < ro_memory_size[id]; i++, memory_pos++)
+		ro_mem_results[id] += ro_mem[memory_pos];
+
 	// create pointer, so end_times can be modified in hooks
 	uint32_t* end_time = &calculate_until[id];
 	micro_sec_wait_end_time(TOTAL_RUNTIME[id], end_time);
-	
+			
 	#ifdef PRINT_TASK_TIMING
 		task_time[id][cycle_count[id]] = arch::Perf::get_cycles() - c;
 		cycle_count[id]++;
@@ -414,6 +433,11 @@ TASK(MS10) {
 		unsigned int c = arch::Perf::get_cycles();
 	#endif
 	
+	// load mem
+	unsigned memory_pos = ro_memory_offset[id];
+	for(unsigned i = 0; i < ro_memory_size[id]; i++, memory_pos++)
+		ro_mem_results[id] += ro_mem[memory_pos];
+
 	// create pointer, so end_times can be modified in hooks
 	uint32_t* end_time = &calculate_until[id];
 	micro_sec_wait_end_time(TOTAL_RUNTIME[id], end_time);
@@ -436,7 +460,12 @@ TASK(MS20) {
 	#ifdef PRINT_TASK_TIMING
 		unsigned int c = arch::Perf::get_cycles();
 	#endif
-	
+		
+	// load mem
+	unsigned memory_pos = ro_memory_offset[id];
+	for(unsigned i = 0; i < ro_memory_size[id]; i++, memory_pos++)
+		ro_mem_results[id] += ro_mem[memory_pos];
+		
 	// create pointer, so end_times can be modified in hooks
 	uint32_t* end_time = &calculate_until[id];
 	micro_sec_wait_end_time(TOTAL_RUNTIME[id], end_time);
@@ -459,7 +488,12 @@ TASK(MS50) {
 	#ifdef PRINT_TASK_TIMING
 		unsigned int c = arch::Perf::get_cycles();
 	#endif
-	
+		
+	// load mem
+	unsigned memory_pos = ro_memory_offset[id];
+	for(unsigned i = 0; i < ro_memory_size[id]; i++, memory_pos++)
+		ro_mem_results[id] += ro_mem[memory_pos];
+
 	// create pointer, so end_times can be modified in hooks
 	uint32_t* end_time = &calculate_until[id];
 	micro_sec_wait_end_time(TOTAL_RUNTIME[id], end_time);
@@ -483,6 +517,11 @@ TASK(MS100) {
 		unsigned int c = arch::Perf::get_cycles();
 	#endif
 	
+	// load mem
+	unsigned memory_pos = ro_memory_offset[id];
+	for(unsigned i = 0; i < ro_memory_size[id]; i++, memory_pos++)
+		ro_mem_results[id] += ro_mem[memory_pos];
+
 	// create pointer, so end_times can be modified in hooks
 	uint32_t* end_time = &calculate_until[id];
 	micro_sec_wait_end_time(TOTAL_RUNTIME[id], end_time);
@@ -505,7 +544,12 @@ TASK(MS200) {
 	#ifdef PRINT_TASK_TIMING
 		unsigned int c = arch::Perf::get_cycles();
 	#endif
-	
+		
+	// load mem
+	unsigned memory_pos = ro_memory_offset[id];
+	for(unsigned i = 0; i < ro_memory_size[id]; i++, memory_pos++)
+		ro_mem_results[id] += ro_mem[memory_pos];
+
 	// create pointer, so end_times can be modified in hooks
 	uint32_t* end_time = &calculate_until[id];
 	micro_sec_wait_end_time(TOTAL_RUNTIME[id], end_time);
@@ -528,7 +572,12 @@ TASK(MS1000) {
 	#ifdef PRINT_TASK_TIMING
 		unsigned int c = arch::Perf::get_cycles();
 	#endif
-	
+		
+	// load mem
+	unsigned memory_pos = ro_memory_offset[id];
+	for(unsigned i = 0; i < ro_memory_size[id]; i++, memory_pos++)
+		ro_mem_results[id] += ro_mem[memory_pos];
+
 	// create pointer, so end_times can be modified in hooks
 	uint32_t* end_time = &calculate_until[id];
 	micro_sec_wait_end_time(TOTAL_RUNTIME[id], end_time);
@@ -543,10 +592,6 @@ TASK(MS1000) {
 	#endif
 
 	TerminateTask();
-}
-
-unsigned* loadMem(unsigned size) {
-
 }
 
 void workTask(task_id task) {
