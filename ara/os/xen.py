@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from graph_tool import Graph
 from ara.util import get_logger
 
 from .os_util import (
@@ -29,15 +30,15 @@ from .os_base import (
     InterruptMissing,
 )
 
-logger = get_logger("AUTOSAR")
+logger = get_logger("XEN")
 
-
-class XEN_HYPERVISOR(OSBase):
+class XEN(OSBase):
     
-    system_count: int
-    system_types: list[OSBase]
-    # cfgs: list[CFG]
-    # instances: list[InstanceGraph]
+    system_count: int = 0
+    system_types: list[OSBase] = []
+    cfg_list: list[CFG] = []
+    instances_list: list[InstanceGraph] = []
+    graph_list: list[Graph] = []
 
     # @classmethod
     # def is_syscall(cls, function_name):
@@ -65,33 +66,43 @@ class XEN_HYPERVISOR(OSBase):
 
     @staticmethod
     def merge_states(states: list[OSState]) -> OSState:
-        cpus = []
-        context = {}
+        cpus: list[CPU] = []
         # instances = InstanceGraph TODO
-        for s in states:
-            assert(len(s.cpus) == 1, "Tried to merge state that is already multicore.")
-            cpus.append(s.cpus)
+        for idx, s in enumerate(states):
+            assert len(s.cpus) == 1, f"Tried to merge state that is already multicore {len(s.cpus)}."
+            cpu: CPU = s.cpus.one()
+            cpu.id = idx
+            cpus.append(cpu)
 
-            for c in s.context:
-                logger.error(f"Found context: {c}")
 
         # cfg emtpy for now
-        state = OSState(cpus=cpus, cfg=None, instances=states[0].instances)
+        # TODO XEN [0]
+        state = OSState(cpus=CPUList(cpus), cfg=states[0].cfg, instances=states[0].instances)
+
+        for s in states:
+            for k,v in s.context.items():
+                logger.info(f"Adding context: {k} {v}")
+                state.context[k] = v
+
+        return state
 
     @staticmethod
-    def get_initial_state(cfg: CFG, instances: InstanceGraph):
+    def get_initial_state(cfg: CFG, instances: InstanceGraph) -> OSState:
+        logger.warning(f"Get inital state from {XEN.system_count} systems.")
         states: OSState = []
-        for i in range(XEN_HYPERVISOR.system_count):
-            states.append(XEN_HYPERVISOR.system_types[i].get_initial_state())
+        for i in range(XEN.system_count):
+            states.append(XEN.system_types[i].get_initial_state(
+                cfg=XEN.cfg_list[i],
+                instances=XEN.instances_list[i]))
 
-        return XEN_HYPERVISOR.merge_states(states)
+        return XEN.merge_states(states)
 
 
 
     @staticmethod
-    def get_cpu_local_contexts(contexts, cpu_id, instances):
-        """Get all contexts that affect cpu_id."""
-        raise NotImplementedError
+    def get_cpu_local_contexts(context: dict, cpu_id: int, instances: InstanceGraph) -> dict:
+        # since each system is single-core assume id=0
+        return XEN.system_types[cpu_id].get_cpu_local_contexts(context, 0, instances)
 
     @staticmethod
     def get_global_contexts(contexts, instances):
@@ -131,23 +142,16 @@ class XEN_HYPERVISOR(OSBase):
         raise NotImplementedError
 
     @staticmethod
-    def interpret(graph, state, cpu_id, categories=SyscallCategory.every):
-        """Entry point for a synchronous os action (system call).
+    def interpret(graph: Graph, state: OSState, cpu_id, categories=SyscallCategory.every) -> OSState:
+        # TODO XEN [0]
 
-        Arguments:
-        graph      -- the system graph
-        state      -- the current system state (see the State class)
-        cpu_id     -- the CPU where the system call occurs
-        categories -- interpret only specific system calls (for performance)
-
-        Return:
-        The follow up state.
-        """
-        raise NotImplementedError()
+        logger.error(f"cpu_id: {cpu_id} System count: {XEN.system_count} {XEN.graph_list}\nCurrent graph: {graph}")
+        return XEN.system_types[0].interpret(graph=XEN.graph_list[0], state=state, cpu_id=cpu_id, categories=categories)
 
     @staticmethod
-    def schedule(state, cpus=None):
-        pass
+    def schedule(state: OSState, cpus=None) -> None:
+        # TODO XEN [0]
+        XEN.system_types[0].schedule(state=state, cpus=cpus)
         # s1,s2 = split_states(state)
-        # XEN_HYPERVISOR.os0.schedule(s1)
-        # XEN_HYPERVISOR.os0.schedule(s2)
+        # XEN.os0.schedule(s1)
+        # XEN.os0.schedule(s2)

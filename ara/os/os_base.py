@@ -257,35 +257,47 @@ def _get_id():
     return _state_id
 
 
-# @dataclass(kw_only=True)
+@dataclass(kw_only=True)
 class OSState:
-    
-    def __init__(self, cpus: CPUList, cfg: CFG, instances: InstanceGraph):
-        self.id: int = field(init=False, default_factory=_get_id)
-        self.cpus = cpus
-        self.cfg_s = cfg
-        self.instances_s = instances
-        # key: some instance, value: mutable context
-        self.context: dict = {}
 
-        self.cfg_list: list[CFG] = None
-        self.instances_list: list[InstanceGraph] = None
-        self.has_array: bool = False
-        self.current_index: int = False
+    id: int = field(init=False, default_factory=_get_id)
+    cpus: CPUList
+    instances: graph_tool.Graph = field(repr=False)
+    cfg: CFG = field(repr=False)
+
+    # key: some instance, value: mutable context
+    context: dict = field(default_factory=dict, init=False)
+
+    cfg_list: list[CFG] = None
+    instances_list: list[InstanceGraph] = None
+    has_array: bool = False
+    current_index: int = False
+
+    def __post_init__(self):
+        self._instances = self.instances
+        self._cfg = self.cfg
 
     @property
     def cfg(self):
         if self.has_array:
             return self.cfg_list[self.current_index]
         else:
-            return self.cfg_s
-    @property
+            return self._cfg
+        
+    @cfg.setter
+    def cfg(self, cfg):
+        self._cfg = cfg
+            
+    @property 
     def instances(self):
         if self.has_array:
-            return self.instances_list[self.current_index]
+            return self.cfg_list[self.current_index]
         else:
-            return self.instances_s
-
+            return self._instances
+        
+    @instances.setter
+    def instances(self, instances):
+        self._instances = instances
 
 
     def __eq__(self, other):
@@ -337,12 +349,12 @@ class OSBase(metaclass=OSCreator):
     config = {}  # compile time config, TODO: this needs to be in the state
 
     @classmethod
-    def get_name(cls):
+    def get_name(cls) -> str:
         """Get the name of the operating System."""
         return cls.__name__
 
     @classmethod
-    def is_syscall(cls, function_name):
+    def is_syscall(cls, function_name) -> bool:
         """Return whether a function name is a system call of this OS."""
         if hasattr(cls, function_name):
             return hasattr(getattr(cls, function_name), "syscall")
@@ -376,7 +388,7 @@ class OSBase(metaclass=OSCreator):
         raise NotImplementedError
 
     @staticmethod
-    def get_cpu_local_contexts(contexts, cpu_id, instances):
+    def get_cpu_local_contexts(context: dict, cpu_id: int, instances: InstanceGraph) -> dict:
         """Get all contexts that affect cpu_id."""
         raise NotImplementedError
 
@@ -418,7 +430,7 @@ class OSBase(metaclass=OSCreator):
         raise NotImplementedError
 
     @staticmethod
-    def interpret(graph, state, cpu_id, categories=SyscallCategory.every):
+    def interpret(graph: graph_tool.Graph, state: OSState, cpu_id, categories=SyscallCategory.every) -> OSState:
         """Entry point for a synchronous os action (system call).
 
         Arguments:
@@ -433,7 +445,7 @@ class OSBase(metaclass=OSCreator):
         raise NotImplementedError()
 
     @staticmethod
-    def schedule(state, cpus=None):
+    def schedule(state: OSState, cpus=None) -> None:
         """Schedule the current state.
 
         Arguments:
