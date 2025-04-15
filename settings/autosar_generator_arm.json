@@ -5,9 +5,7 @@
 		"LockElision",
 		"AutosarGeneratorIR",
 		"IRWriter",
-		"Generator",
-		"DumpCFG",
-		"DumpInstances"
+		"Generator"
 	],
 	"AutosarGeneratorIR": {
 		"log_level": "debug",
