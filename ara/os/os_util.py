@@ -24,8 +24,8 @@ from ara.steps.util import current_step
 
 from .os_base import ExecState
 
-# from ara.util import get_logger
-# logger = get_logger("OS_UTIL")
+from ara.util import get_logger
+logger = get_logger("OS_UTIL")
 
 
 class AutoDotInstance(ABC):
@@ -321,6 +321,8 @@ class SysCall:
         from ara.steps import get_native_component
         ValueAnalyzer = get_native_component("ValueAnalyzer")
         ValuesUnknown = get_native_component("ValuesUnknown")
+
+        logger.info(f"Syscall analysis of cpu_id: {cpu_id} and graph: {graph}")
 
         class CachingValueAnalyzer(ValueAnalyzer):
             def get_argument_value(self, abb, idx, callpath=None, hint=None):
