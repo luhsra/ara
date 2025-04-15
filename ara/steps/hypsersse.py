@@ -4,17 +4,16 @@
 
 """Container for HyperSSE."""
 import sys
-from ara.graph import ABBType, Callgraph, Graph, CFG, InstanceGraph, MSTGraph, MSTType, NodeLevel, StateType, HSTGraph, HSTType, HyperStateType
-from ara.os import autosar
+from ara.graph import ABBType, Graph, CFG, MSTGraph, MSTType, NodeLevel, StateType, HSTGraph, HSTType, HyperStateType
+from ara.os.autosar import AUTOSAR
 from ara.stepmanager import StepManager
 import logging
 
-from ara.os.xen_hypervisor import XEN_HYPERVISOR
+from ara.os.xen import XEN
 
 from .step import Step # type: ignore
 from .option import Option, Integer, String
 
-import graph_tool.util
 from graph_tool.draw import graph_draw
 
 
@@ -38,6 +37,7 @@ class HyperSSE(Step):
     def get_single_dependencies(self):
         # first run MultiSSE, afterwards cleanup svf datastructures for next run
         return ["MultiSSE", "SVFReset"]
+        # return ["MultiSSE"]
     
     runid: int = 0
     systems: int|None = None
@@ -117,8 +117,6 @@ class HyperSSE(Step):
         for e in hstg.edges():
             print(f"Edge: {e} Type={str(HSTType(hstg.ep.type[e]))} irq={hstg.ep.irq[e]} domain_id={hstg.ep.domain_id[e]} cpu_id={hstg.ep.cpu_id[e]} bcet={hstg.ep.bcet[e]} wcet={hstg.ep.wcet[e]}")
 
-
-
     def build_hstg(self) -> HSTGraph:
 
         hstg = HSTGraph()
@@ -177,6 +175,9 @@ class HyperSSE(Step):
             self._graph = Graph()
             self._graph.os = HyperSSE.graphs[-1].os
 
+            # geht nicht
+            # self._graph._graph_data = HyperSSE.graphs[-1]._graph_data
+
             input_file = self.dom1_file.get()
             oilfile = self.dom1_oil.get()
             log.warning(f"Found {input_file}, {oilfile}")
@@ -210,6 +211,8 @@ class HyperSSE(Step):
         if HyperSSE.done:
             return
 
+        # MERGING:
+        """
         merged_cfg = CFG()
         merged_instance = InstanceGraph()
 
@@ -224,9 +227,18 @@ class HyperSSE(Step):
 
         self._step_manager.chain_step({"name": "DumpCFG", "dot": "merged", "add_legend": True})
         self._step_manager.chain_step({"name": "DumpInstances", "dot": "merged"})
+        """
 
-        self._graph = HyperSSE.graphs[0]
-        self._graph.os = XEN_HYPERVISOR()
+        # self._graph = HyperSSE.graphs[0]
+        self._graph.os = XEN
+        XEN.graph_list = HyperSSE.graphs
+
+        for graph in HyperSSE.graphs:
+            XEN.system_count += 1
+            XEN.system_types.append(AUTOSAR)
+            XEN.cfg_list.append(graph.cfg)
+            XEN.instances_list.append(graph.instances)
+
         self._step_manager.chain_step({"name": "MultiSSE", "with_times": False, "dump": True, "log_level": "debug"})
 
         log.error("Done with HyperSSE")
