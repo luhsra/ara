@@ -15,13 +15,13 @@ from dataclasses import dataclass, field
 from enum import IntEnum
 from itertools import chain
 from typing import Any, List
-from graph_tool import GraphView
+from graph_tool import Graph, GraphView
 from graph_tool.search import dfs_iterator
 
 import pyllco
 
 from ara.util import get_logger, has_path
-from ara.graph import CallPath, SyscallCategory, SigType, single_check, edge_types
+from ara.graph import CallPath, InstanceGraph, SyscallCategory, SigType, single_check, edge_types, CFG
 
 from .os_util import (
     syscall,
@@ -264,7 +264,7 @@ class AUTOSAR(OSBase):
         return False
 
     @staticmethod
-    def get_cpu_local_contexts(context, cpu_id, instances):
+    def get_cpu_local_contexts(context: dict, cpu_id: int, instances: InstanceGraph) -> dict:
         local_contexts = []
         for inst, ctx in context.items():
             if getattr(inst, "cpu_id", None) == cpu_id:
@@ -298,7 +298,7 @@ class AUTOSAR(OSBase):
         return OSIRQStatus(name="AUTOSAR_OSIRQ_STATUS_" + str(cpu_id), cpu_id=cpu_id)
 
     @staticmethod
-    def get_initial_state(cfg, instances):
+    def get_initial_state(cfg: CFG, instances: InstanceGraph) -> OSState:
         # technically, AUTOSAR starts with a main function on every core
         # The actual startup happens via StartCore or in HW directly
         # After that, each core calls StartOS which syncs all cores and enables
@@ -526,7 +526,7 @@ class AUTOSAR(OSBase):
         return []
 
     @staticmethod
-    def interpret(graph, state, cpu_id, categories=None):
+    def interpret(graph: Graph, state: OSState, cpu_id, categories=SyscallCategory.every) -> OSState:
         if not categories:
             categories = {SyscallCategory.every}
         cfg = graph.cfg
@@ -580,7 +580,7 @@ class AUTOSAR(OSBase):
         return False
 
     @staticmethod
-    def schedule(state, cpus=None):
+    def schedule(state: OSState, cpus=None) -> None:
         if cpus is None:
             cpus = [cpu.id for cpu in state.cpus]
 

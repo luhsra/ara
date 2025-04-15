@@ -25,6 +25,11 @@
 		"log_level": "debug"
 	},
 
+	"logger": {
+		"AUTOSAR": "debug",
+		"XEN": "debug"
+	},
+
 	"HyperSSE": {
 		"system_count": 2,
 		"dom1_file" : "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_single_core.pi4.ll",
