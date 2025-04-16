@@ -277,7 +277,7 @@ class AUTOSAR(OSBase):
     @staticmethod
     def get_cpu_local_contexts(context: dict, cpu_id: int, instances: InstanceGraph) -> dict:
         
-        logger.debug(f"LocalContext: id={cpu_id} instances={instances}")
+        # logger.debug(f"LocalContext: id={cpu_id} instances={instances}")
         local_contexts = []
         for inst, ctx in context.items():
             if getattr(inst, "cpu_id", None) == cpu_id:
@@ -311,6 +311,7 @@ class AUTOSAR(OSBase):
         return OSIRQStatus(name="AUTOSAR_OSIRQ_STATUS_" + str(cpu_id), cpu_id=cpu_id)
 
     # HyperSSE starts with each system thinking its running on cpu 0, for the analysis they need to be moved
+    # single core contexte mit cpu0 -> single core contexte mit cpuNEW
     @staticmethod
     def move_context(context: dict, target_cpu_id: int) -> dict:
         logger.info(f"Moved context to CPU {target_cpu_id}.")
