@@ -226,6 +226,10 @@ class CPU:
         abb = self.abb and int(self.abb)
         return hash((self.irq_on, ci, abb, self.call_path, self.exec_state))
 
+    def __str__(self):
+        s = f"CPU: Id={self.id} irq_on={self.irq_on} control_instance={self.control_instance} Cfg-Abb={self.abb} " \
+            f"callpath={self.call_path} exec_state={self.exec_state.name}"
+        return s
 
 @dataclass
 class IRQCPU(CPU):
@@ -268,21 +272,49 @@ class OSState:
     # key: some instance, value: mutable context
     context: dict = field(default_factory=dict, init=False)
 
+    current_index: int = None
+    system_count: int = None
     cfg_list: list[CFG] = None
     instances_list: list[InstanceGraph] = None
-    has_array: bool = False
-    current_index: int = False
+
+    def __str__(self):
+        s = f"\nPrinting OSState: Id={self.id} #cpus={len(self.cpus)}"
+        if self.system_count:
+            s += f", system_count={self.system_count}\n"
+            for i in range(self.system_count):
+                s += "\t" + str(self.cfg_list[i]) + ", " + str(self.instances_list[i]) + "\n"
+        else:
+            s += "\n\t" + str(self.cfg) + " " + str(self.instances)
+        for cpu in self.cpus:
+            s += f"\n\t{str(cpu)}"
+        s += "\n"
+        for k, v in self.context.items():
+            s += f"\n\t{k} : {v}"
+        s += "\n"
+        return s
 
     def __post_init__(self):
         self._instances = self.instances
         self._cfg = self.cfg
 
+
+    def hypersse_state(self, system_count: int, cfg_list: list[CFG], 
+                       instances_list: list[InstanceGraph]) -> None:
+        self.system_count = system_count
+        self.cfg_list = cfg_list
+        self.instances_list = instances_list
+
+    # def choose_cfg(self, system_id: int) -> CFG:
+    #     assert(system_id <= self.system_count, f"Choose cfg_id {system_id} to high")
+    #     return self.cfg_list[system_id]
+        
+    # def choose_instances(self, system_id: int) -> InstanceGraph:
+    #     assert(system_id <= self.system_count, f"Choose instances_id {system_id} to high")
+    #     return self.instances_list[system_id]
+        
     @property
     def cfg(self):
-        if self.has_array:
-            return self.cfg_list[self.current_index]
-        else:
-            return self._cfg
+        return self._cfg
         
     @cfg.setter
     def cfg(self, cfg):
@@ -290,15 +322,11 @@ class OSState:
             
     @property 
     def instances(self):
-        if self.has_array:
-            return self.cfg_list[self.current_index]
-        else:
-            return self._instances
+        return self._instances
         
     @instances.setter
     def instances(self, instances):
         self._instances = instances
-
 
     def __eq__(self, other):
         return hash(self) == hash(other)
@@ -311,6 +339,16 @@ class OSState:
         new_state = OSState(cpus=copy.copy(self.cpus),
                             instances=self.instances,
                             cfg=self.cfg)
+        # new context for control instances
+        for inst, ctx in self.context.items():
+            new_state.context[inst] = copy.copy(ctx)
+        return new_state
+    
+    # used by MultiSSE in _get_single_core_states, to split multicore into singlecore states 
+    def copy_index(self, system_id: int):
+        new_state = OSState(cpus=copy.copy(self.cpus),
+                            instances=self.instances_list[system_id],
+                            cfg=self.cfg_list[system_id])
         # new context for control instances
         for inst, ctx in self.context.items():
             new_state.context[inst] = copy.copy(ctx)
