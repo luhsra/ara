@@ -102,13 +102,21 @@ class XEN(OSBase):
         return XEN.merge_states(states)
 
 
-
     @staticmethod
     def get_cpu_local_contexts(context: dict, cpu_id: int, instances: InstanceGraph) -> dict:
         # since each system is single-core assume id=0
         # here we have to translate back again that each system thinks it has cpu_id 0
         # instances is already set to the right graph
-        return XEN.system_types[cpu_id].get_cpu_local_contexts(context, 0, instances)
+
+
+        # TODO what happens when context contains 
+        new_context = XEN.system_types[cpu_id].get_cpu_local_contexts(context, cpu_id, instances)
+
+        # for k, v in new_context.items():
+        #    logger.info(f"{k} : {v}")
+
+        return new_context
+
 
     @staticmethod
     def get_global_contexts(contexts, instances):
