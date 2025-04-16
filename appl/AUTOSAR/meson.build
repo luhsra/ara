@@ -90,6 +90,8 @@ autosar_apps = [
   {'core': 'singlecore', 'path': 'ecc1' / 'eventisr1', 'name': 'f',                     'oil': 'system.json', 'mtrace': 'f.trace.json'},
   {'core': 'singlecore', 'path': 'sched' ,             'name': 'a',                     'oil': 'a.json', 'mtrace': 'a.trace.json'},
   {'core': 'singlecore', 'path': 'xen',                'name': 'single_core',           'oil': 'single_core.json'},
+  {'core': 'singlecore', 'path': 'xen',                'name': 'a',           'oil': 'a.json'},
+  {'core': 'singlecore', 'path': 'xen',                'name': 'b',           'oil': 'b.json'},
   {'core': 'singlecore', 'path': 'xen',                'name': 'multi_core',            'oil': 'multi_core.json'},
   {'core': 'singlecore', 'path': 'xen',                'name': 'spinlock',              'oil': 'spinlock.json'},
   {'core': 'multicore',  'path': '',                   'name': 'minexample',            'oil': 'minexample.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
