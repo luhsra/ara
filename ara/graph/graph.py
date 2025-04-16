@@ -110,6 +110,7 @@ class CFG(graph_tool.Graph):
     The pointer to the respective LLVM datastructure is stored via llvm_link.
     """
     INVALID_ABB = _CFG_INVALID_ABB
+    name: str = ""
 
     def __init__(self, graph=None):
         super().__init__(graph)
@@ -465,6 +466,10 @@ class CFG(graph_tool.Graph):
                 else:
                     yield edge.target
 
+    def __str__(self):
+        s = f"CFG{self.name}: {self.num_vertices()}v/{self.num_edges()}e," \
+            f"{len(self.vp)}vp/{len(self.ep)}ep at {hex(id(self))}"
+        return s
 
 class CFGView(graph_tool.GraphView):
     """Class to get CFG functions for a filtered CFG."""
@@ -767,6 +772,9 @@ class InstanceGraph(graph_tool.Graph):
     """Tracks all instances (nodes) with its flow insensitive interactions
     (edges).
     """
+
+    name: str = ""
+    
     def __init__(self, graph=None):
         super().__init__(graph)
         # vertex properties
@@ -855,6 +863,11 @@ class InstanceGraph(graph_tool.Graph):
             if obj.artificial or obj.function is None:
                 continue
             yield obj.function, inst
+
+    def __str__(self):
+        s = f"InstanceGraph{self.name}: {self.num_vertices()}v/{self.num_edges()}e," \
+            f"{len(self.vp)}vp/{len(self.ep)}ep at {hex(id(self))}"
+        return s
 
 
 class SVFG(graph_tool.Graph):

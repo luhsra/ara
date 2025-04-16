@@ -75,13 +75,16 @@ class XEN(OSBase):
             cpus.append(cpu)
 
 
+        # for 
         # cfg emtpy for now
         # TODO XEN [0]
-        state = OSState(cpus=CPUList(cpus), cfg=states[0].cfg, instances=states[0].instances)
+        state = OSState(cpus=CPUList(cpus), cfg=states[1].cfg, instances=states[1].instances)
+        state.hypersse_state(system_count=XEN.system_count, cfg_list=XEN.cfg_list, 
+                             instances_list=XEN.instances_list)
 
-        for s in states:
-            for k,v in s.context.items():
-                logger.info(f"Adding context: {k} {v}")
+        for i, s in enumerate(states):
+            new_context = XEN.system_types[i].move_context(s.context, i)
+            for k,v in new_context.items():
                 state.context[k] = v
 
         return state
@@ -93,7 +96,8 @@ class XEN(OSBase):
         for i in range(XEN.system_count):
             states.append(XEN.system_types[i].get_initial_state(
                 cfg=XEN.cfg_list[i],
-                instances=XEN.instances_list[i]))
+                instances=XEN.instances_list[i])
+                )
 
         return XEN.merge_states(states)
 
@@ -102,6 +106,8 @@ class XEN(OSBase):
     @staticmethod
     def get_cpu_local_contexts(context: dict, cpu_id: int, instances: InstanceGraph) -> dict:
         # since each system is single-core assume id=0
+        # here we have to translate back again that each system thinks it has cpu_id 0
+        # instances is already set to the right graph
         return XEN.system_types[cpu_id].get_cpu_local_contexts(context, 0, instances)
 
     @staticmethod
@@ -144,14 +150,41 @@ class XEN(OSBase):
     @staticmethod
     def interpret(graph: Graph, state: OSState, cpu_id, categories=SyscallCategory.every) -> OSState:
         # TODO XEN [0]
-
-        logger.error(f"cpu_id: {cpu_id} System count: {XEN.system_count} {XEN.graph_list}\nCurrent graph: {graph}")
-        return XEN.system_types[0].interpret(graph=XEN.graph_list[0], state=state, cpu_id=cpu_id, categories=categories)
+        logger.warning(f"Interpret: cpu_id: {cpu_id} System count: {XEN.system_count} {XEN.graph_list}\nCurrent graph: {graph}")
+        return XEN.system_types[cpu_id].interpret(graph=XEN.graph_list[cpu_id], state=state, cpu_id=cpu_id, categories=categories)
 
     @staticmethod
+    def split_states(state: OSState) -> list[OSState]:
+        
+        states: list[OSState] = []
+        cpus: list[CPU] = [cpu.id for cpu in state.cpus]
+
+        logger.debug(f"Splitting state into {len(cpus)} states.")
+
+        # instances = InstanceGraph TODO
+        for idx, cpu in enumerate(cpus):
+            states.append(OSState(cpus=CPUList(cpus=cpu), cfg=XEN.cfg_list[idx].cfg, instances=XEN.instances_list[idx].instances))
+
+        # see _get_single_core_states in MultiSSE
+        return states
+    
+            
+    
+    @staticmethod
     def schedule(state: OSState, cpus=None) -> None:
-        # TODO XEN [0]
-        XEN.system_types[0].schedule(state=state, cpus=cpus)
-        # s1,s2 = split_states(state)
-        # XEN.os0.schedule(s1)
-        # XEN.os0.schedule(s2)
+
+        if cpus is None:
+            cpus = [cpu.id for cpu in state.cpus]
+
+        if len(cpus) == 1:
+            XEN.system_types[0].schedule(state=state, cpus=cpus)
+
+        else:
+
+            states = XEN.split_states(state=state)
+
+            for idx, sc_state in enumerate(states):
+
+                # TODO XEN [0]
+                XEN.system_types[idx].schedule(state=sc_state, cpus=cpus)
+

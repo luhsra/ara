@@ -133,6 +133,11 @@ class Task(AUTOSARInstance, ControlInstance):
             "sublabel": sublabel,
         }
 
+    def __str__(self):
+        s = f"Task: name={self.name} cpu_id={self.cpu_id} prio={self.priority} autoS={self.autostart} "
+        s += f"cfg={self.cfg} func={self.function} ..."
+        return s
+
 
 @dataclass
 class TaskContext(ControlContext):
@@ -164,6 +169,12 @@ class TaskContext(ControlContext):
             waited_events=self.waited_events,
             in_critical_section=self.in_critical_section,
         )
+
+    def __str__(self):
+        s = f"TaskContext: status={self.status.name} abb={self.abb} call_path={self.call_path} "
+        s += f"dyn_prio={self.dyn_prio} received_events={self.received_events} "
+        s += f"waited_events={self.waited_events} in_critical_section={self.in_critical_section}"
+        return s
 
 
 """
@@ -265,6 +276,8 @@ class AUTOSAR(OSBase):
 
     @staticmethod
     def get_cpu_local_contexts(context: dict, cpu_id: int, instances: InstanceGraph) -> dict:
+        
+        logger.debug(f"LocalContext: id={cpu_id} instances={instances}")
         local_contexts = []
         for inst, ctx in context.items():
             if getattr(inst, "cpu_id", None) == cpu_id:
@@ -296,6 +309,23 @@ class AUTOSAR(OSBase):
     @staticmethod
     def _os_irq_status_key(cpu_id):
         return OSIRQStatus(name="AUTOSAR_OSIRQ_STATUS_" + str(cpu_id), cpu_id=cpu_id)
+
+    # HyperSSE starts with each system thinking its running on cpu 0, for the analysis they need to be moved
+    @staticmethod
+    def move_context(context: dict, target_cpu_id: int) -> dict:
+        logger.info(f"Moved context to CPU {target_cpu_id}.")
+        new_context = {}
+        for k,v in context.items():
+            # logger.info(f"Found context: {k} : {v}")
+            if isinstance(k, Task):
+                k.cpu_id = target_cpu_id
+                new_context[k] = v
+            elif isinstance(k, AUTOSARInstance):
+                k.name = k.name.replace("_0", f"_{target_cpu_id}")
+                k.cpu_id = target_cpu_id
+                new_context[k] = v
+
+        return new_context
 
     @staticmethod
     def get_initial_state(cfg: CFG, instances: InstanceGraph) -> OSState:

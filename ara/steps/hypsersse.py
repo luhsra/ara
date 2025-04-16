@@ -12,7 +12,7 @@ import logging
 from ara.os.xen import XEN
 
 from .step import Step # type: ignore
-from .option import Option, Integer, String
+from .option import Option, Integer, String, List
 
 from graph_tool.draw import graph_draw
 
@@ -24,19 +24,21 @@ class HyperSSE(Step):
                           help="Number of systems that should be analysed together.",
                           ty=Integer(),
                           default_value=1)
-    # dom0 is given by ara cli parameters
-    dom1_file: Option = Option(name="dom1_file",
-                         help="Path of dom1 ll.",
-                         ty=String())
-    dom1_oil: Option = Option(name="dom1_oil",
-                         help="Path of dom1 oil.",
-                         ty=String())
+    
+    # ara cli paramters are ignored for now
+    dom_files: Option = Option(name="dom_files",
+                         help="Path of list of dom ll.",
+                         ty=List(String))
+    dom_oils: Option = Option(name="dom_oils",
+                         help="Path of list of dom oil.",
+                         ty=List(String))
 
 
     # used for dom0
     def get_single_dependencies(self):
         # first run MultiSSE, afterwards cleanup svf datastructures for next run
-        return ["MultiSSE", "SVFReset"]
+        #return ["MultiSSE", "SVFReset"]
+        return []
         # return ["MultiSSE"]
     
     runid: int = 0
@@ -160,26 +162,28 @@ class HyperSSE(Step):
         if not HyperSSE.systems:
             HyperSSE.systems = self.system_count.get()
 
-        log.warning(f"MultiSSE for dom{HyperSSE.runid} done.")
+        # log.warning(f"MultiSSE for dom{HyperSSE.runid} done.")
 
         # HyperSSE.cfg.append(self._graph.cfg)
         # HyperSSE.callgraph.append(self._graph.callgraph)
         # HyperSSE.os.append(self._graph.os)
-        HyperSSE.graphs.append(self._graph)
+        # HyperSSE.graphs.append(self._graph)
 
-        HyperSSE.runid += 1
+        if HyperSSE.runid != 0:
+
+            HyperSSE.graphs.append(self._graph)
 
         while HyperSSE.runid < HyperSSE.systems:
             log.warning(f"Starting HyperSSE step - dom{HyperSSE.runid}")
 
             self._graph = Graph()
-            self._graph.os = HyperSSE.graphs[-1].os
+            self._graph.os = AUTOSAR
 
             # geht nicht
             # self._graph._graph_data = HyperSSE.graphs[-1]._graph_data
 
-            input_file = self.dom1_file.get()
-            oilfile = self.dom1_oil.get()
+            input_file = self.dom_files.get()[HyperSSE.runid]
+            oilfile = self.dom_oils.get()[HyperSSE.runid]
             log.warning(f"Found {input_file}, {oilfile}")
 
             program = self._step_manager._config.program
@@ -193,19 +197,22 @@ class HyperSSE(Step):
             # add new files for new dom
             program["input_file"] = input_file
             program["oilfile"] = oilfile
-            extra["HyperSSE"]["dom1_file"] = input_file
-            extra["DumpCFG"]["dot"] = "dom1"
-            extra["DumpInstances"]["dot"] = "dom1"     
+            extra["HyperSSE"]["dom_files"] = self.dom_files.get()
+            extra["HyperSSE"]["oil_files"] = self.dom_oils.get()
+            extra["DumpCFG"]["dot"] = "dom" + str(HyperSSE.runid)
+            extra["DumpInstances"]["dot"] = "dom" + str(HyperSSE.runid)   
 
             # readd steps that are completed
-            extra["steps"] = ['MultiSSE', 'DumpCFG', 'DumpInstances', 'HyperSSE']
+            extra["steps"] = ['MultiSSE', 'DumpCFG', 'DumpInstances', 'SVFReset', 'HyperSSE']
             # reset entry_points
-            program["entry_point"] = "main"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
+            program["entry_point"] = "main" 
 
+            HyperSSE.runid += 1
            
             # log.error(f"New config: {program}, {extra}")
             
             s_manager.execute(program, extra, None)
+
 
         # careful, each instance would return here, so exit unless we are the first instance
         if HyperSSE.done:
@@ -234,12 +241,15 @@ class HyperSSE(Step):
         XEN.graph_list = HyperSSE.graphs
 
         for graph in HyperSSE.graphs:
-            XEN.system_count += 1
             XEN.system_types.append(AUTOSAR)
+            graph.cfg.name = "dom" + str(XEN.system_count)
+            graph.instances.name = "dom" + str(XEN.system_count)
             XEN.cfg_list.append(graph.cfg)
             XEN.instances_list.append(graph.instances)
+            XEN.system_count += 1
 
-        self._step_manager.chain_step({"name": "MultiSSE", "with_times": False, "dump": True, "log_level": "debug"})
+        self._step_manager.chain_step({"name": "MultiSSE", "with_times": False, "dump": True, 
+                                       "log_level": "debug", "hyper_sse": True})
 
-        log.error("Done with HyperSSE")
+        log.error("Done with single MultiSSEs, starting HyperSSE MultiSSE now!")
         HyperSSE.done = True

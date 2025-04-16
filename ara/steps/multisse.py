@@ -255,6 +255,11 @@ class MultiSSE(StatsStep):
                                     "(-1 means unlimited)"),
                               ty=Integer(),
                               default_value=-1)
+    
+    hyper_sse = Option(name="hyper_sse",
+                              help=("states can have different encodings for hypersse"),
+                              ty=Bool(),
+                              default_value=False)
 
     log_single_core_transitions = Option(
         name="log_single_core_transitions",
@@ -299,6 +304,7 @@ class MultiSSE(StatsStep):
     def _get_initial_state(self):
         os_state = self._graph.os.get_initial_state(self._graph.cfg,
                                                     self._graph.instances)
+        self._log.info(f"Init state: {os_state}")
         cpu_idx = max([x.id for x in os_state.cpus]) + 1
         instances = os_state.instances
         # add interrupts
@@ -338,14 +344,22 @@ class MultiSSE(StatsStep):
 
     def _get_single_core_states(self, multi_core_state):
         single_core_states = {}
+        self._log.info(f"MC: {multi_core_state}")
         for cpu in multi_core_state.cpus:
             # restrict state to this cpu
-            state = multi_core_state.copy()
+
+            if self.hyper_sse.get():
+                self._log.warning("hypersse _get_single_core_states")
+                state = multi_core_state.copy_index(cpu.id)
+            else:
+                state = multi_core_state.copy()
             state.cpus = CPUList([cpu])
             state.context = self._graph.os.get_cpu_local_contexts(
                 multi_core_state.context, cpu.id, state.instances)
             single_core_states[cpu.id] = state
 
+        for k, v in single_core_states.items():
+            self._log.info(f"SC {k}: {v}")
         return single_core_states
 
     def _get_common_metastate(self, meta_states):
