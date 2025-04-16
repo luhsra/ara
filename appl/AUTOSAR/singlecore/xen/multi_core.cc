@@ -1,8 +1,8 @@
 #include "autosar/os.h"
 // #include "events.h"
 
+DeclareTask(A);
 DeclareTask(B);
-DeclareTask(B2);
 
 // evtchn_port_t local_port;
 
@@ -18,7 +18,7 @@ int main() {
 	}
 }
 
-TASK(B) {
+TASK(A) {
 	// kout << "Hello World"<< endl;
 
 	// notify_evtchn(local_port);
@@ -28,7 +28,7 @@ TASK(B) {
 
 
 
-TASK(B2) {
+TASK(B) {
 	// kout << "From Core 2"<< endl;
 
 	// notify_evtchn(local_port);

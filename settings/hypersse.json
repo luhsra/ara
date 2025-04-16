@@ -1,9 +1,5 @@
 {
 	"steps": [
-		"MultiSSE",
-		"DumpCFG",
-		"DumpInstances",
-		"DumpCallgraph",
 		"HyperSSE"
 	],
 
@@ -32,7 +28,9 @@
 
 	"HyperSSE": {
 		"system_count": 2,
-		"dom1_file" : "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_single_core.pi4.ll",
-		"dom1_oil" : "../subprojects/ara/appl/AUTOSAR/singlecore/xen/single_core.json"
+		"dom_files" : ["subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_a.pi4.ll",
+					"subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_b.pi4.ll"],
+		"dom_oils" : ["../subprojects/ara/appl/AUTOSAR/singlecore/xen/a.json", 
+						"../subprojects/ara/appl/AUTOSAR/singlecore/xen/b.json"]
 	}
 }
