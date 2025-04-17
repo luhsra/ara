@@ -5,7 +5,9 @@
 		"LockElision",
 		"AutosarGeneratorIR",
 		"IRWriter",
-		"Generator"
+		"Generator",
+		"DumpCFG",
+		"DumpInstances"
 	],
 	"AutosarGeneratorIR": {
 		"log_level": "debug",
@@ -22,6 +24,7 @@
 		"fail_on_deadlock": true
 	},
 	"MultiSSE": {
-		"with_times": false
+		"with_times": false,
+		"log_level": "debug"
 	}
 }
