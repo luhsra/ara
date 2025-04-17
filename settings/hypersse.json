@@ -3,13 +3,6 @@
 		"HyperSSE"
 	],
 
-	"DumpCFG": {
-		"dot" : "dom0"
-	},
-	"DumpInstances": {
-		"dot" : "dom0"
-	},
-
 	"SVFAnalyses": {
 		"log_level": "debug",
 		"hide_svf_output": true
@@ -28,9 +21,9 @@
 
 	"HyperSSE": {
 		"system_count": 2,
-		"dom_files" : ["subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_a.pi4.ll",
+		"dom_files" : ["subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_a2.pi4.ll",
 					"subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_b.pi4.ll"],
-		"dom_oils" : ["../subprojects/ara/appl/AUTOSAR/singlecore/xen/a.json", 
+		"dom_oils" : ["../subprojects/ara/appl/AUTOSAR/singlecore/xen/a2.json", 
 						"../subprojects/ara/appl/AUTOSAR/singlecore/xen/b.json"]
 	}
 }
