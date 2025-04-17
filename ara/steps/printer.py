@@ -341,7 +341,8 @@ def reduced_mstg_to_dot(mstg, cfg, label="MSTG"):
     return dot_graph
 
 
-def mstg_to_dot(mstg, label="MSTG"):
+def mstg_to_dot(self, label="MSTG"):
+    mstg = self._graph.mstg
     def _to_str(v):
         return str(int(v))
 
@@ -435,6 +436,27 @@ def mstg_to_dot(mstg, label="MSTG"):
             tgt = _to_str(tgt)
 
         dot_graph.add_edge(pydot.Edge(src, tgt, **attrs))
+
+    if self.add_legend.get():
+        # add a new cluster with the legend
+        legend = pydot.Cluster(graph_name="legend", label="MSTG-Legend\n(Each box is a single core control flow?)")
+        dot_graph.add_subgraph(legend)
+
+        state = pydot.Node(name="state", label="OSState\n(Computation or Idle)", color="green")
+        legend.add_node(state)
+        syscall = pydot.Node(name="syscall", label="Syscall", shape="box", color="blue")
+        legend.add_node(syscall)
+
+        state2 = pydot.Node(name="state2", label="OSState", color="green")
+        legend.add_node(state2)
+        flow2 = pydot.Edge(src='state', dst='state2', label=' n\n to\n n')
+        legend.add_edge(flow2)
+
+        flow = pydot.Edge(src='state', dst='syscall', label=' 1\n to\n 1')
+        legend.add_edge(flow)
+
+
+        # TODO add syncpoints
 
     return dot_graph
 
@@ -670,7 +692,7 @@ class Printer(Step):
                             ty=Bool(),
                             default_value=True)
     add_legend = Option(name="add_legend",
-                            help="Add a legend pydot cluster to the graph. Currently only supports CFGs.",
+                            help="Add a legend pydot cluster to the graph. Currently only supports CFGs and MSTGs",
                             ty=Bool(),
                             default_value=False)
 
@@ -912,7 +934,7 @@ class Printer(Step):
 
     def print_mstg(self):
         name = self._print_init()
-        dot_graph = mstg_to_dot(self._graph.mstg, name)
+        dot_graph = mstg_to_dot(self, name)
         self._write_dot(dot_graph)
 
     def print_reduced_mstg(self):

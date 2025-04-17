@@ -32,6 +32,7 @@ from ara.os.os_base import (
 )
 from ara.os.os_util import set_next_abb
 from ara.os.interrupts import irq_schedule
+from ara.os.xen import XEN
 
 from .option import Option, String, Bool, Integer
 from .stats import StatsStep, StatData
@@ -260,6 +261,16 @@ class MultiSSE(StatsStep):
                               ty=Bool(),
                               default_value=False)
 
+    file_name_appendix = Option(name="file_name_appendix",
+                help="String that gets added to the file name of a dumped mstg to different mstgs.",
+                ty=String(),
+                default_value="")
+
+    add_legend = Option(name="add_legend",
+                help="Add a legend to the mstg.",
+                ty=Bool(),
+                default_value=False)
+
     log_single_core_transitions = Option(
         name="log_single_core_transitions",
         help="Log SSE transitions (logging in cfg_traversal.py)",
@@ -306,29 +317,56 @@ class MultiSSE(StatsStep):
         self._log.info(f"Init state: {os_state}")
         cpu_idx = max([x.id for x in os_state.cpus]) + 1
         instances = os_state.instances
-        # add interrupts
-        for _, irq in instances.get(IRQ):
-            # every irq gets an own CPU
-            ctx = os_state.context[irq]
-            if ctx.status == TaskStatus.running:
-                exec_state = CrossExecState.computation
-                cur_abb = ctx.abb
-            else:
-                exec_state = CrossExecState.idle
-                cur_abb = None
-            irq_cpu = IRQCPU(id=cpu_idx,
-                             irq=irq,
-                             reference_cpu_id=irq.cpu_id,
-                             irq_on=False,
-                             control_instance=instances.get_node(irq),
-                             abb=cur_abb,
-                             call_path=copy(ctx.call_path),
-                             exec_state=exec_state,
-                             analysis_context=None)
-            os_state.cpus[irq_cpu.id] = irq_cpu
-            # reassign irq
-            irq.cpu_id = irq_cpu.id
-            cpu_idx += 1
+
+        if self._graph.os == XEN:
+            for instances in XEN.instances_list:
+                # add interrupts
+                for _, irq in instances.get(IRQ):
+                    # every irq gets an own CPU
+                    ctx = os_state.context[irq]
+                    if ctx.status == TaskStatus.running:
+                        exec_state = CrossExecState.computation
+                        cur_abb = ctx.abb
+                    else:
+                        exec_state = CrossExecState.idle
+                        cur_abb = None
+                    irq_cpu = IRQCPU(id=cpu_idx,
+                                    irq=irq,
+                                    reference_cpu_id=irq.cpu_id,
+                                    irq_on=False,
+                                    control_instance=instances.get_node(irq),
+                                    abb=cur_abb,
+                                    call_path=copy(ctx.call_path),
+                                    exec_state=exec_state,
+                                    analysis_context=None)
+                    os_state.cpus[irq_cpu.id] = irq_cpu
+                    # reassign irq
+                    irq.cpu_id = irq_cpu.id
+                    cpu_idx += 1
+        else:
+            # add interrupts
+            for _, irq in instances.get(IRQ):
+                # every irq gets an own CPU
+                ctx = os_state.context[irq]
+                if ctx.status == TaskStatus.running:
+                    exec_state = CrossExecState.computation
+                    cur_abb = ctx.abb
+                else:
+                    exec_state = CrossExecState.idle
+                    cur_abb = None
+                irq_cpu = IRQCPU(id=cpu_idx,
+                                irq=irq,
+                                reference_cpu_id=irq.cpu_id,
+                                irq_on=False,
+                                control_instance=instances.get_node(irq),
+                                abb=cur_abb,
+                                call_path=copy(ctx.call_path),
+                                exec_state=exec_state,
+                                analysis_context=None)
+                os_state.cpus[irq_cpu.id] = irq_cpu
+                # reassign irq
+                irq.cpu_id = irq_cpu.id
+                cpu_idx += 1
 
         # initial sync point
         mstg = self._mstg.g
@@ -551,6 +589,9 @@ class MultiSSE(StatsStep):
         else:
             sub_log = None
 
+        if self._graph.os == XEN:
+            self._graph = XEN.graph_list[cpu_id]
+            self._graph.os = XEN
         run_sse(
             self._graph,
             IRQOS,
@@ -1544,21 +1585,27 @@ class MultiSSE(StatsStep):
         self._print_and_store(step_data)
 
         if self.dump.get():
+            fna = self.file_name_appendix.get()
+            if fna:
+                fna += "."
             self._step_manager.chain_step({
                 "name": "Printer",
-                "dot": self.dump_prefix.get() + "mstg.dot",
+                "dot": self.dump_prefix.get() + fna + "mstg.dot",
                 "graph_name": "MSTG",
                 "subgraph": "mstg",
+                "add_legend" : self.add_legend.get()
             })
             self._step_manager.chain_step({
                 "name": "Printer",
-                "dot": self.dump_prefix.get() + "mstg.reduced.dot",
+                "dot": self.dump_prefix.get() + fna + "mstg.reduced.dot",
                 "graph_name": "Reduced MSTG",
                 "subgraph": "reduced_mstg",
+                "add_legend" : self.add_legend.get()
             })
             self._step_manager.chain_step({
                 "name": "Printer",
-                "dot": self.dump_prefix.get() + "mstg.sps.dot",
+                "dot": self.dump_prefix.get() + fna + "mstg.sps.dot",
                 "graph_name": "SP MSTG",
                 "subgraph": "sp_mstg",
+                "add_legend" : self.add_legend.get()
             })

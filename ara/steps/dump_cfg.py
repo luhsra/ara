@@ -28,7 +28,7 @@ class DumpCFG(Step):
     def run(self):
         dot = self.dot.get()
         if dot:
-            abb_file = f'{self.dump_prefix.get()}{dot}..abbs.dot'
+            abb_file = f'{self.dump_prefix.get()}{dot}.abbs.dot'
             bb_file = f'{self.dump_prefix.get()}{dot}.bbs.dot'
         else:
             abb_file = f'{self.dump_prefix.get()}.abbs.dot'

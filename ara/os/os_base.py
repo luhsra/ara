@@ -227,8 +227,12 @@ class CPU:
         return hash((self.irq_on, ci, abb, self.call_path, self.exec_state))
 
     def __str__(self):
-        s = f"CPU: Id={self.id} irq_on={self.irq_on} control_instance={self.control_instance} Cfg-Abb={self.abb} " \
-            f"callpath={self.call_path} exec_state={self.exec_state.name}"
+        s = f"CPU: Id={self.id} irq_on={self.irq_on} control_instance={self.control_instance} "
+        try:
+            s += f"Cfg-Abb={self.abb} "
+        except ValueError:
+            s += f"Cfg-Abb=invalid "
+        s += f"callpath={self.call_path} exec_state={self.exec_state.name}"
         return s
 
 @dataclass
