@@ -444,6 +444,27 @@ def mstg_to_dot(mstg, label="MSTG", OS=AUTOSAR):
 
         dot_graph.add_edge(pydot.Edge(src, tgt, **attrs))
 
+    if self.add_legend.get():
+        # add a new cluster with the legend
+        legend = pydot.Cluster(graph_name="legend", label="MSTG-Legend\n(Each box is a single core control flow?)")
+        dot_graph.add_subgraph(legend)
+
+        state = pydot.Node(name="state", label="OSState\n(Computation or Idle)", color="green")
+        legend.add_node(state)
+        syscall = pydot.Node(name="syscall", label="Syscall", shape="box", color="blue")
+        legend.add_node(syscall)
+
+        state2 = pydot.Node(name="state2", label="OSState", color="green")
+        legend.add_node(state2)
+        flow2 = pydot.Edge(src='state', dst='state2', label=' n\n to\n n')
+        legend.add_edge(flow2)
+
+        flow = pydot.Edge(src='state', dst='syscall', label=' 1\n to\n 1')
+        legend.add_edge(flow)
+
+
+        # TODO add syncpoints
+
     return dot_graph
 
 
@@ -681,7 +702,7 @@ class Printer(Step):
                             ty=Bool(),
                             default_value=True)
     add_legend = Option(name="add_legend",
-                            help="Add a legend pydot cluster to the graph. Currently only supports CFGs.",
+                            help="Add a legend pydot cluster to the graph. Currently only supports CFGs and MSTGs",
                             ty=Bool(),
                             default_value=False)
 

@@ -78,7 +78,7 @@ class XEN(OSBase):
         # for 
         # cfg emtpy for now
         # TODO XEN [0]
-        state = OSState(cpus=CPUList(cpus), cfg=states[1].cfg, instances=states[1].instances)
+        state = OSState(cpus=CPUList(cpus), cfg=None, instances=None)
         state.hypersse_state(system_count=XEN.system_count, cfg_list=XEN.cfg_list, 
                              instances_list=XEN.instances_list)
 
@@ -157,7 +157,7 @@ class XEN(OSBase):
 
     @staticmethod
     def interpret(graph: Graph, state: OSState, cpu_id, categories=SyscallCategory.every) -> OSState:
-        # TODO XEN [0]
+
         logger.warning(f"Interpret: cpu_id: {cpu_id} System count: {XEN.system_count} {XEN.graph_list}\nCurrent graph: {graph}")
         return XEN.system_types[cpu_id].interpret(graph=XEN.graph_list[cpu_id], state=state, cpu_id=cpu_id, categories=categories)
 
@@ -181,6 +181,7 @@ class XEN(OSBase):
     @staticmethod
     def schedule(state: OSState, cpus=None) -> None:
 
+        logger.error(f"TODO Scheduling: {cpus}")
         if cpus is None:
             cpus = [cpu.id for cpu in state.cpus]
 

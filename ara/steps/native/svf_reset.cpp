@@ -57,7 +57,8 @@ namespace ara::step {
 		logger.debug() << "Released SVFG" << std::endl;
 		
 		// Other possible singeltons in svf, but (probaly) not used/set
-		// SymbolTableInfo::releaseSymbolInfo();
+		// fixed issue with kout breaking next iteration
+		SymbolTableInfo::releaseSymbolInfo();
 		// SVFGBuilder::releaseMemory();
 		
 		// FSMPTA::releaseFSMPTA();
