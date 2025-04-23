@@ -2,6 +2,7 @@
 # SPDX-FileCopyrightText: 2021 Bastian Fuhlenriede
 # SPDX-FileCopyrightText: 2022 Björn Fiedler <fiedler@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2025 Mareike Burg
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -45,6 +46,7 @@ from .multisse_helper.common import (
     find_cross_syscalls,
     get_reachable_states
 )
+from graph_tool import Vertex
 from .multisse_helper.constrained_sps import get_constrained_sps
 from .multisse_helper.equations import TimeRange
 from .multisse_helper.pairing_partner_search import (
@@ -320,8 +322,9 @@ class MultiSSE(StatsStep):
         instances = os_state.instances
 
         if self._graph.os == XEN:
-            for instances in XEN.instances_list:
+            for idx, instances in enumerate(XEN.instances_list):
                 # add interrupts
+                tmp_instances_list = []
                 for _, irq in instances.get(IRQ):
                     # every irq gets an own CPU
                     ctx = os_state.context[irq]
@@ -344,6 +347,13 @@ class MultiSSE(StatsStep):
                     # reassign irq
                     irq.cpu_id = irq_cpu.id
                     cpu_idx += 1
+                    
+                    XEN.cfg_list.append(XEN.cfg_list[idx])
+                    XEN.graph_list.append(XEN.graph_list[idx])
+                    tmp_instances_list.append(XEN.instances_list[idx])
+                    XEN.system_types.append(XEN.system_types[idx])
+                    XEN.system_count += 1
+            XEN.instances_list += tmp_instances_list
         else:
             # add interrupts
             for _, irq in instances.get(IRQ):
@@ -386,9 +396,8 @@ class MultiSSE(StatsStep):
         for cpu in multi_core_state.cpus:
             # restrict state to this cpu
 
-            if self.hyper_sse.get():
-                self._log.warning("hypersse _get_single_core_states")
-                state = multi_core_state.copy_index(cpu.id)
+            if multi_core_state.system_count:
+                state = XEN.state_copy_index(multi_core_state, cpu.id)
             else:
                 state = multi_core_state.copy()
             state.cpus = CPUList([cpu])
@@ -425,7 +434,7 @@ class MultiSSE(StatsStep):
             mstg.vp.type[other_state] = StateType.invalid
         return living_state
 
-    def _run_sse(self, cpu_id, entry):
+    def _run_sse(self, cpu_id: int, entry: OSState) -> OSState:
         """Run the single core SSE for the given entry.
 
         Collects all states within a metastate and returns it together with
@@ -590,7 +599,9 @@ class MultiSSE(StatsStep):
         else:
             sub_log = None
 
+        # sse expect full graph obj
         if self._graph.os == XEN:
+            old_graph = self._graph
             self._graph = XEN.graph_list[cpu_id]
             self._graph.os = XEN
         run_sse(
@@ -599,6 +610,10 @@ class MultiSSE(StatsStep):
             visitor=SSEVisitor(),
             logger=sub_log,
         )
+        # did not fix issue
+        # if self._graph.os == XEN:
+        #     # restore afterwards
+        #     self._graph = old_graph
 
         mstg = self._mstg.g
 
