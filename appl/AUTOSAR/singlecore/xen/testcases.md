@@ -26,16 +26,21 @@ ninja ara@@run_autosar_singlecore_xen_alarm_a_noopt_pi4
     "dom_oils" : ["../subprojects/ara/appl/AUTOSAR/singlecore/xen/alarm_test.json"]
 }
 
-# Mixed Test
-ninja ara@@run_autosar_singlecore_xen_multicore3_noopt_pi4
-ninja ara@@run_autosar_singlecore_xen_alarm_test_noopt_pi4
+# Complex Test
+2 Systems, one with alarm. Need to synchronsize both for shutdown, therefore complex SP.
+
+ninja ara@@run_autosar_singlecore_xen_complex_a_noopt_pi4 && ninja ara@@run_autosar_singlecore_xen_complex_b_noopt_pi4
+ninja ara@@run_autosar_singlecore_xen_complex_multi_core_noopt_pi4
+
 "HyperSSE": {
     "system_count": 2,
-    "dom_files" : ["subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_a2.pi4.ll",
-                "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_b2.pi4.ll"],
-    "dom_oils" : ["../subprojects/ara/appl/AUTOSAR/singlecore/xen/a2.json", 
-                    "../subprojects/ara/appl/AUTOSAR/singlecore/xen/b2.json"]
+    "dom_files" : ["subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_complex_a.pi4.ll",
+                "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_complex_b.pi4.ll"],
+    "dom_oils" : ["../subprojects/ara/appl/AUTOSAR/singlecore/xen/complex/a.json", 
+                    "../subprojects/ara/appl/AUTOSAR/singlecore/xen/complex/b.json"]
 }
 
 
 # Spinlock
+# IIT
+# Hypercalls
