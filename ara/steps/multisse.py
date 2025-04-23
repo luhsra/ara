@@ -321,38 +321,8 @@ class MultiSSE(StatsStep):
         instances = os_state.instances
 
         if self._graph.os == XEN:
-            for idx, instances in enumerate(XEN.instances_list):
-                # add interrupts
-                tmp_instances_list = []
-                for _, irq in instances.get(IRQ):
-                    # every irq gets an own CPU
-                    ctx = os_state.context[irq]
-                    if ctx.status == TaskStatus.running:
-                        exec_state = CrossExecState.computation
-                        cur_abb = ctx.abb
-                    else:
-                        exec_state = CrossExecState.idle
-                        cur_abb = None
-                    irq_cpu = IRQCPU(id=cpu_idx,
-                                    irq=irq,
-                                    reference_cpu_id=irq.cpu_id,
-                                    irq_on=False,
-                                    control_instance=instances.get_node(irq),
-                                    abb=cur_abb,
-                                    call_path=copy(ctx.call_path),
-                                    exec_state=exec_state,
-                                    analysis_context=None)
-                    os_state.cpus[irq_cpu.id] = irq_cpu
-                    # reassign irq
-                    irq.cpu_id = irq_cpu.id
-                    cpu_idx += 1
-                    
-                    XEN.cfg_list.append(XEN.cfg_list[idx])
-                    XEN.graph_list.append(XEN.graph_list[idx])
-                    tmp_instances_list.append(XEN.instances_list[idx])
-                    XEN.system_types.append(XEN.system_types[idx])
-                    XEN.system_count += 1
-            XEN.instances_list += tmp_instances_list
+            # xen already adds its interrups in get_inital_state
+            pass
         else:
             # add interrupts
             for _, irq in instances.get(IRQ):

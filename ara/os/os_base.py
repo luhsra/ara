@@ -294,6 +294,11 @@ class OSState:
     cfg_list: list[CFG] = None
     instances_list: list[InstanceGraph] = None
 
+    @staticmethod
+    def reset_id():
+        global _state_id
+        _state_id = 0
+
     def __str__(self):
         s = f"\nPrinting OSState: Id={self.id} #cpus={len(self.cpus)}"
         if self.system_count:

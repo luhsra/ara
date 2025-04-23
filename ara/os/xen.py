@@ -5,7 +5,7 @@
 from graph_tool import Graph
 from ara.util import get_logger
 
-import copy
+from copy import copy
 
 from .os_util import (
     syscall,
@@ -28,9 +28,11 @@ from .os_base import (
     ExecState,
     CPUBounded,
     IRQ,
+    IRQCPU,
     IRQContext,
     InterruptMissing,
 )
+from ara.steps.multisse_helper.common import CrossExecState
 
 logger = get_logger("XEN")
 
@@ -88,6 +90,47 @@ class XEN(OSBase):
             for k,v in new_context.items():
                 state.context[k] = v
 
+
+        # add interrupts
+        cpu_idx = max([x.id for x in state.cpus]) + 1
+        for idx, instances in enumerate(XEN.instances_list):
+            tmp_instances_list = []
+            for _, irq in instances.get(IRQ):
+                # every irq gets an own CPU
+                ctx = state.context[irq]
+                if ctx.status == TaskStatus.running:
+                    exec_state = CrossExecState.computation
+                    cur_abb = ctx.abb
+                else:
+                    exec_state = CrossExecState.idle
+                    cur_abb = None
+                irq_cpu = IRQCPU(id=cpu_idx,
+                                irq=irq,
+                                reference_cpu_id=irq.cpu_id,
+                                irq_on=False,
+                                control_instance=instances.get_node(irq),
+                                abb=cur_abb,
+                                call_path=copy(ctx.call_path),
+                                exec_state=exec_state,
+                                analysis_context=None)
+                state.cpus[irq_cpu.id] = irq_cpu
+                # reassign irq
+                irq.cpu_id = irq_cpu.id
+                cpu_idx += 1
+                
+                XEN.cfg_list.append(XEN.cfg_list[idx])
+                XEN.graph_list.append(XEN.graph_list[idx])
+                XEN.system_types.append(XEN.system_types[idx])
+                XEN.system_count += 1
+
+                # das ist alles ein bissel yikes
+                # IRQ Handling needs to find cpu core
+                XEN.instances_list[idx].vp.obj[irq.isr_handler].cpu_id = idx
+
+
+                tmp_instances_list.append(XEN.instances_list[idx])
+        XEN.instances_list += tmp_instances_list
+
         return state
 
     @staticmethod
@@ -131,12 +174,12 @@ class XEN(OSBase):
         #             break
         # else:
             
-        new_state = OSState(cpus=copy.copy(old_state.cpus),
+        new_state = OSState(cpus=copy(old_state.cpus),
                                 instances=old_state.instances_list[system_id],
                                 cfg=old_state.cfg_list[system_id])
         # new context for control instances
         for inst, ctx in old_state.context.items():
-            new_state.context[inst] = copy.copy(ctx)
+            new_state.context[inst] = copy(ctx)
         return new_state
 
 
@@ -163,8 +206,8 @@ class XEN(OSBase):
 
 
     @staticmethod
-    def get_global_contexts(contexts, instances):
-        """Get all contexts that affect multiple CPUs."""
+    def get_global_contexts(contexts, cpu_idinstances):
+        """Get all contexts that affct multiple CPUs."""
         
 
         local_contexts = []

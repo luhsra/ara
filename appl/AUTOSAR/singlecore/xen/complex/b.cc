@@ -2,7 +2,7 @@
 
 DeclareTask(B);
 DeclareCounter(C1);
-DeclareAlarm(A1);
+DeclareAlarm(ALARM);
 
 
 int main(void) {;
