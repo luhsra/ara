@@ -565,7 +565,8 @@ class AUTOSAR(OSBase):
         return []
 
     @staticmethod
-    def interpret(graph: Graph, state: OSState, cpu_id, categories=SyscallCategory.every) -> OSState:
+    # def interpret(graph: Graph, state: OSState, cpu_id, categories=SyscallCategory.every) -> OSState:
+    def interpret(graph: Graph, state: OSState, cpu_id, categories=None) -> OSState:
         if not categories:
             categories = {SyscallCategory.every}
         cfg = graph.cfg
