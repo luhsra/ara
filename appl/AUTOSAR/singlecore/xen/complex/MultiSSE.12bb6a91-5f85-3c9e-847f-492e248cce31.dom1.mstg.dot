@@ -1,0 +1,46 @@
+digraph G {
+label=MSTG;
+1 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">CPU 0</TD><TD PORT="c1">CPU 1</TD></TR></TABLE>>, shape=plaintext, tooltip=1];
+subgraph cluster_3 {
+label="M3 (CPU 0)";
+2 [color=green, fontsize=14, label=<State 10<br/><font point-size='12'><i>irq_on</i>: True<br/><i>instance</i>: Idle<br/><i>call_path</i>: CallPath()<br/><i>type</i>: idle<br/><i>abb</i>: None<br/><i>kernel</i>: None</font>>, tooltip=2];
+9 [color=green, fontsize=14, label=<State 16<br/><font point-size='12'><i>irq_on</i>: True<br/><i>instance</i>: B<br/><i>call_path</i>: CallPath()<br/><i>type</i>: computation<br/><i>abb</i>: ABB0 <br/><i>kernel</i>: None<br/><i>bcet/wcet</i>: 0/0</font>>, tooltip=9];
+10 [color=blue, fontsize=14, label=<State 17<br/><font point-size='12'><i>irq_on</i>: True<br/><i>instance</i>: B<br/><i>call_path</i>: CallPath()<br/><i>type</i>: syscall<br/><i>abb</i>: ABB2  (AUTOSAR_TerminateTask)<br/><i>kernel</i>: None<br/><i>bcet/wcet</i>: 0/0</font>>, shape=box, tooltip=10];
+}
+
+subgraph cluster_6 {
+label="M6 (CPU 1)";
+4 [color=green, fontsize=14, label=<State 11<br/><font point-size='12'><i>irq_on</i>: False<br/><i>instance</i>: IRQ C1<br/><i>call_path</i>: CallPath()<br/><i>type</i>: computation<br/><i>abb</i>: C1.iit <br/><i>kernel</i>: None<br/><i>bcet/wcet</i>: 0/9223372036854775807</font>>, tooltip=4];
+5 [color=blue, fontsize=14, label=<State 12<br/><font point-size='12'><i>irq_on</i>: False<br/><i>instance</i>: IRQ C1<br/><i>call_path</i>: CallPath()<br/><i>type</i>: syscall<br/><i>abb</i>: C1.sc  (C1.sc)<br/><i>kernel</i>: None<br/><i>bcet/wcet</i>: 0/0</font>>, shape=box, tooltip=5];
+}
+
+subgraph cluster_Metasync7 {
+label="";
+7 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">CPU 0</TD><TD PORT="c1">CPU 1</TD></TR></TABLE>>, shape=plaintext, tooltip=7];
+8 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">CPU 0</TD><TD PORT="c1">CPU 1</TD></TR></TABLE>>, shape=plaintext, tooltip=8];
+}
+
+1:c0 -> 2  [color=black];
+1:c1 -> 4  [color=black];
+1 -> 7  [color=darkred, style=dashed];
+1 -> 7  [color=darkgreen, label="0 - 0", style=dotted];
+2 -> 7:c0  [color=black];
+4 -> 5  [color=black];
+5 -> 7:c1  [color=black];
+7 -> 8  [color=black];
+8:c1 -> 4  [color=black];
+8:c0 -> 9  [color=black];
+8 -> 7  [color=darkred, style=dashed];
+8 -> 7  [color=darkgreen, label="0 - 0", style=dotted];
+9 -> 10  [color=black];
+10 -> 2  [color=black];
+subgraph cluster_legend {
+label="MSTG-Legend\n(Each box is a single core control flow?)";
+state [color=green, label="OSState\n(Computation or Idle)"];
+syscall [color=blue, label=Syscall, shape=box];
+state2 [color=green, label=OSState];
+state -> state2  [label=" n\n to\n n"];
+state -> syscall  [label=" 1\n to\n 1\nor\n1\n to \nn-SPs"];
+}
+
+}

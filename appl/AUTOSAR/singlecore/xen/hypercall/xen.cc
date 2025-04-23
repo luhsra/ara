@@ -1,10 +1,7 @@
 #include "autosar/os.h"
-// #include "events.h"
 
-DeclareTask(B);
-DeclareTask(B2);
-DeclareCounter(C1);
-DeclareAlarm(A1);
+DeclareTask(A);
+DeclareTask(A2);
 
 // evtchn_port_t local_port;
 
@@ -14,28 +11,24 @@ int main(void) {
 	StartOS(0);
 }
 
-TASK(B) {
-	kout << "Hello B."<< endl;
+TASK(A) {
+	kout << "Hello A."<< endl;
+
+	// notify_evtchn(local_port);
+
+	ActivateTask(A2);
+	TerminateTask();
+}
+
+TASK(A2) {
+	kout << "A done."<< endl;
+
 
 	// notify_evtchn(local_port);
 
 	TerminateTask();
 }
 
-TASK(B2) {
-	kout << "Recurring B2!"<< endl;
-
-	// notify_evtchn(local_port);
-
-	TerminateTask();
-}
-
-static unsigned c = 0;
 void PreIdleHook() {
-	c++;
-	if (c > 3){
-		kout << "B done" << endl;
-		ShutdownMachine();
-
-	}
+	ShutdownMachine();
 }

@@ -20,8 +20,10 @@
 	},
 
 	"HyperSSE": {
-		"system_count": 1,
-		"dom_files" : ["subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_alarm_a.pi4.ll"],
-		"dom_oils" : ["../subprojects/ara/appl/AUTOSAR/singlecore/xen/alarm/a.json"]
+		"system_count": 2,
+		"dom_files" : ["subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_complex_a.pi4.ll",
+					"subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_complex_b.pi4.ll"],
+		"dom_oils" : ["../subprojects/ara/appl/AUTOSAR/singlecore/xen/complex/a.json", 
+						"../subprojects/ara/appl/AUTOSAR/singlecore/xen/complex/b.json"]
 	}
 }

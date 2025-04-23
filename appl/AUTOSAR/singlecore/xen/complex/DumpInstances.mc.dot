@@ -1,0 +1,22 @@
+digraph G {
+label=Instances;
+0 [fontsize=14, label=<C1<br/><font point-size='12'><i>id</i>: <br/><i>branch</i>: False<br/><i>usually_taken</i>: False<br/><i>loop</i>: False<br/><i>recursive</i>: False<br/><i>after_scheduler</i>: False<br/><i>unique</i>: False<br/><i>soc</i>: 0<br/><i>llvm_soc</i>: 0<br/><i>is_control</i>: False<br/><i>file</i>: <br/><i>line</i>: 0<br/><i>specialization_level</i>: </font><br/><br/>>, tooltip=0];
+1 [fontsize=14, label=<A1Group<br/><font point-size='12'><i>id</i>: <br/><i>branch</i>: False<br/><i>usually_taken</i>: False<br/><i>loop</i>: False<br/><i>recursive</i>: False<br/><i>after_scheduler</i>: False<br/><i>unique</i>: False<br/><i>soc</i>: 0<br/><i>llvm_soc</i>: 0<br/><i>is_control</i>: False<br/><i>file</i>: <br/><i>line</i>: 0<br/><i>specialization_level</i>: </font><br/><br/>>, tooltip=1];
+2 [fillcolor="#6fbf87", fontsize=14, label=<A1<br/><font point-size='12'><i>id</i>: <br/><i>branch</i>: False<br/><i>usually_taken</i>: False<br/><i>loop</i>: False<br/><i>recursive</i>: False<br/><i>after_scheduler</i>: False<br/><i>unique</i>: False<br/><i>soc</i>: 0<br/><i>llvm_soc</i>: 0<br/><i>is_control</i>: True<br/><i>file</i>: <br/><i>line</i>: 0<br/><i>specialization_level</i>: </font><br/><br/><font point-size='12'><i>name</i>: A1<br/><i>autostart</i>: True<br/><i>priority</i>: 4<br/><i>cpu_id</i>: 0</font>>, shape=box, style=filled, tooltip=2];
+3 [fontsize=14, label=<A2Group<br/><font point-size='12'><i>id</i>: <br/><i>branch</i>: False<br/><i>usually_taken</i>: False<br/><i>loop</i>: False<br/><i>recursive</i>: False<br/><i>after_scheduler</i>: False<br/><i>unique</i>: False<br/><i>soc</i>: 0<br/><i>llvm_soc</i>: 0<br/><i>is_control</i>: False<br/><i>file</i>: <br/><i>line</i>: 0<br/><i>specialization_level</i>: </font><br/><br/>>, tooltip=3];
+4 [fillcolor="#6fbf87", fontsize=14, label=<A2<br/><font point-size='12'><i>id</i>: <br/><i>branch</i>: False<br/><i>usually_taken</i>: False<br/><i>loop</i>: False<br/><i>recursive</i>: False<br/><i>after_scheduler</i>: False<br/><i>unique</i>: False<br/><i>soc</i>: 0<br/><i>llvm_soc</i>: 0<br/><i>is_control</i>: True<br/><i>file</i>: <br/><i>line</i>: 0<br/><i>specialization_level</i>: </font><br/><br/><font point-size='12'><i>name</i>: A2<br/><i>autostart</i>: False<br/><i>priority</i>: 5<br/><i>cpu_id</i>: 0</font>>, shape=box, style=filled, tooltip=4];
+5 [fontsize=14, label=<BGroup<br/><font point-size='12'><i>id</i>: <br/><i>branch</i>: False<br/><i>usually_taken</i>: False<br/><i>loop</i>: False<br/><i>recursive</i>: False<br/><i>after_scheduler</i>: False<br/><i>unique</i>: False<br/><i>soc</i>: 0<br/><i>llvm_soc</i>: 0<br/><i>is_control</i>: False<br/><i>file</i>: <br/><i>line</i>: 0<br/><i>specialization_level</i>: </font><br/><br/>>, tooltip=5];
+6 [fillcolor="#6fbf87", fontsize=14, label=<B<br/><font point-size='12'><i>id</i>: <br/><i>branch</i>: False<br/><i>usually_taken</i>: False<br/><i>loop</i>: False<br/><i>recursive</i>: False<br/><i>after_scheduler</i>: False<br/><i>unique</i>: False<br/><i>soc</i>: 0<br/><i>llvm_soc</i>: 0<br/><i>is_control</i>: True<br/><i>file</i>: <br/><i>line</i>: 0<br/><i>specialization_level</i>: </font><br/><br/><font point-size='12'><i>name</i>: B<br/><i>autostart</i>: False<br/><i>priority</i>: 4<br/><i>cpu_id</i>: 1</font>>, shape=box, style=filled, tooltip=6];
+7 [fontsize=14, label=<ALARM<br/><font point-size='12'><i>id</i>: <br/><i>branch</i>: False<br/><i>usually_taken</i>: False<br/><i>loop</i>: False<br/><i>recursive</i>: False<br/><i>after_scheduler</i>: False<br/><i>unique</i>: False<br/><i>soc</i>: 0<br/><i>llvm_soc</i>: 0<br/><i>is_control</i>: False<br/><i>file</i>: <br/><i>line</i>: 0<br/><i>specialization_level</i>: </font><br/><br/>>, tooltip=7];
+8 [fontsize=14, label=<IRQ C1<br/><font point-size='12'><i>id</i>: IRQ C1.0<br/><i>branch</i>: False<br/><i>usually_taken</i>: False<br/><i>loop</i>: False<br/><i>recursive</i>: False<br/><i>after_scheduler</i>: False<br/><i>unique</i>: False<br/><i>soc</i>: 0<br/><i>llvm_soc</i>: 0<br/><i>is_control</i>: True<br/><i>file</i>: <br/><i>line</i>: 0<br/><i>specialization_level</i>: </font><br/><br/>>, tooltip=8];
+0 -> 7  [label=trigger];
+1 -> 2  [label=contains];
+2 -> 4  [label=ActivateTask];
+2 -> 2  [label=TerminateTask];
+3 -> 4  [label=contains];
+4 -> 4  [label=TerminateTask];
+5 -> 6  [label=contains];
+6 -> 6  [label=TerminateTask];
+7 -> 6  [label=activate];
+8 -> 0  [label=interrupts];
+}
