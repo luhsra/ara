@@ -1,0 +1,23 @@
+digraph G {
+label=MSTG;
+1 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">CPU 0</TD></TR></TABLE>>, shape=plaintext, tooltip=1];
+subgraph cluster_5 {
+label="M5 (CPU 0)";
+2 [color=green, fontsize=14, label=<State 2<br/><font point-size='12'><i>irq_on</i>: True<br/><i>instance</i>: A<br/><i>call_path</i>: CallPath()<br/><i>type</i>: computation<br/><i>abb</i>: ABB0 <br/><i>kernel</i>: None<br/><i>bcet/wcet</i>: 0/0</font>>, tooltip=2];
+3 [color=blue, fontsize=14, label=<State 3<br/><font point-size='12'><i>irq_on</i>: True<br/><i>instance</i>: A<br/><i>call_path</i>: CallPath()<br/><i>type</i>: syscall<br/><i>abb</i>: ABB2  (AUTOSAR_TerminateTask)<br/><i>kernel</i>: None<br/><i>bcet/wcet</i>: 0/0</font>>, shape=box, tooltip=3];
+4 [color=green, fontsize=14, label=<State 4<br/><font point-size='12'><i>irq_on</i>: True<br/><i>instance</i>: Idle<br/><i>call_path</i>: CallPath()<br/><i>type</i>: idle<br/><i>abb</i>: None<br/><i>kernel</i>: None</font>>, tooltip=4];
+}
+
+1:c0 -> 2  [color=black];
+2 -> 3  [color=black];
+3 -> 4  [color=black];
+subgraph cluster_legend {
+label="MSTG-Legend\n(Each box is a single core control flow?)";
+state [color=green, label="OSState\n(Computation or Idle)"];
+syscall [color=blue, label=Syscall, shape=box];
+state2 [color=green, label=OSState];
+state -> state2  [label=" n\n to\n n"];
+state -> syscall  [label=" 1\n to\n 1"];
+}
+
+}
