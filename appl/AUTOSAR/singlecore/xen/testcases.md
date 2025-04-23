@@ -41,6 +41,10 @@ ninja ara@@run_autosar_singlecore_xen_complex_multi_core_noopt_pi4
 }
 
 
-# Spinlock
 # IIT
 # Hypercalls
+
+
+# Spinlock
+ninja ara@@run_autosar_singlecore_xen_spinlock_spinlock_noopt_pi4
+-> braucht Hypercalls!
