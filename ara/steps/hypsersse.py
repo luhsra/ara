@@ -6,6 +6,7 @@
 import sys
 from ara.graph import ABBType, Graph, CFG, MSTGraph, MSTType, NodeLevel, StateType, HSTGraph, HSTType, HyperStateType
 from ara.os.autosar import AUTOSAR
+from ara.os.os_base import OSState
 from ara.stepmanager import StepManager
 import logging
 
@@ -253,6 +254,8 @@ class HyperSSE(Step):
             XEN.instances_list.append(graph.instances)
             XEN.system_count += 1
 
+
+        OSState.reset_id()
 
         self._step_manager.chain_step({"name": "MultiSSE", "with_times": False, "dump": True, 
                                        "log_level": "debug", "hyper_sse": True, "file_name_appendix": "hyper", "add_legend": True})

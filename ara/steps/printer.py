@@ -460,7 +460,7 @@ def mstg_to_dot(mstg, label="MSTG", OS=AUTOSAR):
         flow2 = pydot.Edge(src='state', dst='state2', label=' n\n to\n n')
         legend.add_edge(flow2)
 
-        flow = pydot.Edge(src='state', dst='syscall', label=' 1\n to\n 1')
+        flow = pydot.Edge(src='state', dst='syscall', label=' 1\n to\n 1\nor\n1\n to \nn-SPs')
         legend.add_edge(flow)
 
 
