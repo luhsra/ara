@@ -5,6 +5,8 @@
 from graph_tool import Graph
 from ara.util import get_logger
 
+import copy
+
 from .os_util import (
     syscall,
     Arg,
@@ -77,7 +79,6 @@ class XEN(OSBase):
 
         # for 
         # cfg emtpy for now
-        # TODO XEN [0]
         state = OSState(cpus=CPUList(cpus), cfg=None, instances=None)
         state.hypersse_state(system_count=XEN.system_count, cfg_list=XEN.cfg_list, 
                              instances_list=XEN.instances_list)
@@ -101,6 +102,43 @@ class XEN(OSBase):
 
         return XEN.merge_states(states)
 
+    @staticmethod
+    def find_system_id(state: OSState):
+        for idx, cfg in enumerate(XEN.cfg_list):
+            if cfg == state.cfg:
+                logger.info(f"Scheduling on cpu: {idx}.")
+
+    # used by MultiSSE in _get_single_core_states, to split multicore into singlecore states 
+    @staticmethod
+    def state_copy_index(old_state: OSState, system_id: int) -> OSState:
+
+        # TODO what happens when alarm is 2nd cpu and there is a third one
+        # so the alarm is not the last cpu
+
+        # if system_id >= XEN.system_count:
+        #     logger.info("Copy index out of range, only okay for irqcpu.")
+            
+        #     for inst, ctx in old_state.context.items():
+        #         if isinstance(inst, IRQ):
+        #             id = inst.cpu_id
+        #             matching_cfg = inst.cfg
+
+        #     for idx, cfg in enumerate(XEN.cfg_list):
+        #         if cfg == matching_cfg:
+        #             new_state = OSState(cpus=copy.copy(old_state.cpus),
+        #                     instances=XEN.instances_list[idx],
+        #                     cfg=XEN.cfg_list[idx])
+        #             break
+        # else:
+            
+        new_state = OSState(cpus=copy.copy(old_state.cpus),
+                                instances=old_state.instances_list[system_id],
+                                cfg=old_state.cfg_list[system_id])
+        # new context for control instances
+        for inst, ctx in old_state.context.items():
+            new_state.context[inst] = copy.copy(ctx)
+        return new_state
+
 
     @staticmethod
     def get_cpu_local_contexts(context: dict, cpu_id: int, instances: InstanceGraph) -> dict:
@@ -109,7 +147,13 @@ class XEN(OSBase):
         # instances is already set to the right graph
 
 
-        # TODO what happens when context contains 
+        # if cpu_id >= XEN.system_count:
+        #     logger.info("get_cpu_local_contexts index out of range, okay for irqcpu.")
+        #     # TODO how do handle different interupts from different os
+        #     new_context = XEN.system_types[0].get_cpu_local_contexts(context, cpu_id, instances)
+
+        # else:
+            # TODO what happens when context contains 
         new_context = XEN.system_types[cpu_id].get_cpu_local_contexts(context, cpu_id, instances)
 
         # for k, v in new_context.items():
@@ -121,10 +165,23 @@ class XEN(OSBase):
     @staticmethod
     def get_global_contexts(contexts, instances):
         """Get all contexts that affect multiple CPUs."""
-        raise NotImplementedError
+        
+
+        local_contexts = []
+        for inst, ctx in contexts.items():
+
+            # weird case of locks for one core
+            # if isinstance(inst, Spinlock):
+            #     cpus = AUTOSAR.get_cpus_of_spinlock(inst, instances)
+            #     if len(cpus) == 1:
+            #         continue
+            if not hasattr(inst, "cpu_id"):
+                local_contexts.append((inst, ctx))
+        return dict(local_contexts)
 
     @staticmethod
     def handle_irq(graph, state, cpu_id, irq):
+        return XEN.system_types[cpu_id].handle_irq(graph, state, cpu_id, irq)
         """Handle an (asynchronous) IRQ.
 
         Arguments:
@@ -136,7 +193,7 @@ class XEN(OSBase):
         Return:
         The follow up state or None if the IRQ is invalid.
         """
-        raise NotImplementedError
+        #raise NotImplementedError
 
     @staticmethod
     def handle_exit(graph, state, cpu_id):
@@ -181,15 +238,18 @@ class XEN(OSBase):
     @staticmethod
     def schedule(state: OSState, cpus=None) -> None:
 
-        logger.error(f"TODO Scheduling: {cpus}")
         if cpus is None:
             cpus = [cpu.id for cpu in state.cpus]
 
         if len(cpus) == 1:
-            XEN.system_types[0].schedule(state=state, cpus=cpus)
+            for idx, cfg in enumerate(XEN.cfg_list):
+                if cfg == state.cfg:
+                    logger.info(f"Scheduling on cpu: {idx}.")
+                    XEN.system_types[idx].schedule(state=state, cpus=cpus)
+                    break
 
         else:
-
+            logger.error(f"TODO Tried to schedule multicore cpu with: {cpus} cores.") 
             states = XEN.split_states(state=state)
 
             for idx, sc_state in enumerate(states):

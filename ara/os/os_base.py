@@ -2,6 +2,7 @@
 # SPDX-FileCopyrightText: 2021 Bastian Fuhlenriede
 # SPDX-FileCopyrightText: 2022 Jan Neugebauer
 # SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2025 Mareike Burg
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -15,8 +16,8 @@ import graph_tool
 
 from ara.graph import InstanceGraph, SyscallCategory, CallPath, CFG, ABBType
 
-# from ara.util import get_logger
-# logger = get_logger("OS_BASE")
+from ara.util import get_logger
+logger = get_logger("OS_BASE")
 
 
 @dataclass
@@ -151,6 +152,8 @@ class ControlContext:
                           call_path=copy.copy(self.call_path),
                           dyn_prio=list(self.dyn_prio))
 
+    def __str__(self):
+        return f"ControlContext: status={self.status.name} abb={self.abb} call_path={self.call_path} dyn_prio={self.dyn_prio}"
 
 @dataclass
 class CPUBounded:
@@ -189,6 +192,10 @@ class IRQ(ControlInstance):
         # add the name for extra safety
         return hash((self.id, self.name))
 
+    def __str__(self):
+        s = f"IRQ: id={self.id} name=\"{self.name}\" cpu_id={self.cpu_id} cfg={self.cfg} "
+        s += f"isr_handler={self.isr_handler} active={self.active} func={self.function}"
+        return s
 
 @dataclass
 class IRQContext(ControlContext):
@@ -196,6 +203,9 @@ class IRQContext(ControlContext):
 
     def __hash__(self):
         return super().__hash__()
+    
+    def __str__(self):
+        return super().__str__()
 
 
 @dataclass
@@ -254,6 +264,9 @@ class IRQCPU(CPU):
                       exec_state=self.exec_state,
                       irq=self.irq,
                       reference_cpu_id=self.reference_cpu_id)
+    
+    def __str__(self):
+        return "IRQ-" + super().__str__() + f" | irq={self.irq} ref_cpu_id {self.reference_cpu_id}"
 
 
 
@@ -293,7 +306,7 @@ class OSState:
             s += f"\n\t{str(cpu)}"
         s += "\n"
         for k, v in self.context.items():
-            s += f"\n\t{k} : {v}"
+            s += f"\n\t{k} --- {v}"
         s += "\n"
         return s
 
@@ -343,16 +356,6 @@ class OSState:
         new_state = OSState(cpus=copy.copy(self.cpus),
                             instances=self.instances,
                             cfg=self.cfg)
-        # new context for control instances
-        for inst, ctx in self.context.items():
-            new_state.context[inst] = copy.copy(ctx)
-        return new_state
-    
-    # used by MultiSSE in _get_single_core_states, to split multicore into singlecore states 
-    def copy_index(self, system_id: int):
-        new_state = OSState(cpus=copy.copy(self.cpus),
-                            instances=self.instances_list[system_id],
-                            cfg=self.cfg_list[system_id])
         # new context for control instances
         for inst, ctx in self.context.items():
             new_state.context[inst] = copy.copy(ctx)

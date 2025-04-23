@@ -4,6 +4,7 @@
 # SPDX-FileCopyrightText: 2022 Jan Neugebauer
 # SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2023 Andreas Kässens
+# SPDX-FileCopyrightText: 2025 Mareike Burg
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -326,6 +327,7 @@ class AUTOSAR(OSBase):
                 k.cpu_id = target_cpu_id
                 new_context[k] = v
             elif isinstance(k, IRQ):
+                k.cpu_id = target_cpu_id
                 new_context[k] = v
             else:
                 logger.error(f"move_context: Unkown context of type: {type(k)}")
