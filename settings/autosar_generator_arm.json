@@ -25,6 +25,7 @@
 	},
 	"MultiSSE": {
 		"with_times": false,
-		"log_level": "debug"
+		"log_level": "debug",
+		"dump": true
 	}
 }

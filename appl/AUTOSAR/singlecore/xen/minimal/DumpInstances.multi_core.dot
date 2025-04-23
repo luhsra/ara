@@ -1,0 +1,11 @@
+digraph G {
+label=Instances;
+0 [fontsize=14, label=<AGroup<br/><font point-size='12'><i>id</i>: <br/><i>branch</i>: False<br/><i>usually_taken</i>: False<br/><i>loop</i>: False<br/><i>recursive</i>: False<br/><i>after_scheduler</i>: False<br/><i>unique</i>: False<br/><i>soc</i>: 0<br/><i>llvm_soc</i>: 0<br/><i>is_control</i>: False<br/><i>file</i>: <br/><i>line</i>: 0<br/><i>specialization_level</i>: </font><br/><br/>>, tooltip=0];
+1 [fillcolor="#6fbf87", fontsize=14, label=<A<br/><font point-size='12'><i>id</i>: <br/><i>branch</i>: False<br/><i>usually_taken</i>: False<br/><i>loop</i>: False<br/><i>recursive</i>: False<br/><i>after_scheduler</i>: False<br/><i>unique</i>: False<br/><i>soc</i>: 0<br/><i>llvm_soc</i>: 0<br/><i>is_control</i>: True<br/><i>file</i>: <br/><i>line</i>: 0<br/><i>specialization_level</i>: </font><br/><br/><font point-size='12'><i>name</i>: A<br/><i>autostart</i>: True<br/><i>priority</i>: 4<br/><i>cpu_id</i>: 0</font>>, shape=box, style=filled, tooltip=1];
+2 [fontsize=14, label=<BGroup<br/><font point-size='12'><i>id</i>: <br/><i>branch</i>: False<br/><i>usually_taken</i>: False<br/><i>loop</i>: False<br/><i>recursive</i>: False<br/><i>after_scheduler</i>: False<br/><i>unique</i>: False<br/><i>soc</i>: 0<br/><i>llvm_soc</i>: 0<br/><i>is_control</i>: False<br/><i>file</i>: <br/><i>line</i>: 0<br/><i>specialization_level</i>: </font><br/><br/>>, tooltip=2];
+3 [fillcolor="#6fbf87", fontsize=14, label=<B<br/><font point-size='12'><i>id</i>: <br/><i>branch</i>: False<br/><i>usually_taken</i>: False<br/><i>loop</i>: False<br/><i>recursive</i>: False<br/><i>after_scheduler</i>: False<br/><i>unique</i>: False<br/><i>soc</i>: 0<br/><i>llvm_soc</i>: 0<br/><i>is_control</i>: True<br/><i>file</i>: <br/><i>line</i>: 0<br/><i>specialization_level</i>: </font><br/><br/><font point-size='12'><i>name</i>: B<br/><i>autostart</i>: True<br/><i>priority</i>: 5<br/><i>cpu_id</i>: 1</font>>, shape=box, style=filled, tooltip=3];
+0 -> 1  [label=contains];
+1 -> 1  [label=TerminateTask];
+2 -> 3  [label=contains];
+3 -> 3  [label=TerminateTask];
+}
