@@ -99,6 +99,8 @@ autosar_apps = [
   {'core': 'singlecore', 'path': 'xen' / 'spinlock',   'name': 'spinlock',            'oil': 'spinlock.json'},
   {'core': 'singlecore', 'path': 'xen' / 'spinlock',   'name': 'a',                     'oil': 'a.json'},
   {'core': 'singlecore', 'path': 'xen' / 'spinlock',   'name': 'b',                     'oil': 'b.json'},
+  {'core': 'singlecore', 'path': 'xen' / 'hypercall',   'name': 'a',                     'oil': 'a.json'},
+  {'core': 'singlecore', 'path': 'xen' / 'hypercall',   'name': 'b',                     'oil': 'b.json'},
   {'core': 'multicore',  'path': '',                   'name': 'minexample',            'oil': 'minexample.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'interrupts',        'name': 'a',                     'oil': 'a_system.json', 'mtrace': 'a_trace.json', 'timing': 'a_timings.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'interrupts',        'name': 'cross_alarms',          'oil': 'cross_alarms_system.json', 'mtrace': 'cross_alarms_trace.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},

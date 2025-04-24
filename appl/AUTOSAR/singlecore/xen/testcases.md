@@ -41,10 +41,23 @@ ninja ara@@run_autosar_singlecore_xen_complex_multi_core_noopt_pi4
 }
 
 
-# IIT
 # Hypercalls
+2 Systems, one sends an hypercall to the other one and starts a task.
+
+ninja ara@@run_autosar_singlecore_xen_hypercall_a_noopt_pi4 && ninja ara@@run_autosar_singlecore_xen_hypercall_b_noopt_pi4
+
+"HyperSSE": {
+    "system_count": 2,
+    "dom_files" : ["subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_a.pi4.ll",
+                "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_b.pi4.ll"],
+    "dom_oils" : ["../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercall/a.json", 
+                    "../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercall/b.json"]
+}
+
 
 
 # Spinlock
 ninja ara@@run_autosar_singlecore_xen_spinlock_spinlock_noopt_pi4
 -> braucht Hypercalls!
+
+# IIT
