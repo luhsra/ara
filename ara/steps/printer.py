@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 """Container for Printer."""
-from ara.graph import (ABBType, CFType, CFGView, HSTGraph, HSTType, HyperStateType, MSTType, StateType,
+from ara.graph import (ABBType, CFType, CFG, CFGView, HSTGraph, HSTType, HyperStateType, MSTType, StateType,
                        single_check, vertex_types)
 from ara.os.os_base import ExecState, IRQCPU
 
@@ -46,11 +46,19 @@ _sysshort = {
 # log = get_logger("Printer")
 
 
-def _abb_name(cfg, abb):
+def _abb_name(cfg: CFG | list[CFG], abb) -> str:
     """Get an ABB as str."""
     if abb is None:
         return 'None'
-    return cfg.vp.name[abb]
+    # Xen os does not have one complete cfg, therefore it passes a list of cfgs
+    if isinstance(cfg, list):
+        for cfg in cfg:
+            for v in cfg.vertices():
+                if v == abb:
+                    return cfg.vp.name[abb]
+        return "ERROR-ABB-NAME"
+    else:
+        return cfg.vp.name[abb]
 
 def remap(x, in_min=0.0, in_max=1.0, out_min=0.0, out_max=1.0):
     '''remap taken from https://stackoverflow.com/a/43567380'''

@@ -365,6 +365,7 @@ class MultiSSE(StatsStep):
         for cpu in multi_core_state.cpus:
             # restrict state to this cpu
 
+            # if system count is present it is a XEN state and needs a differnt copy
             if multi_core_state.system_count:
                 state = XEN.state_copy_index(multi_core_state, cpu.id)
             else:
@@ -570,7 +571,6 @@ class MultiSSE(StatsStep):
 
         # sse expect full graph obj
         if self._graph.os == XEN:
-            old_graph = self._graph
             self._graph = XEN.graph_list[cpu_id]
             self._graph.os = XEN
         run_sse(
@@ -579,10 +579,6 @@ class MultiSSE(StatsStep):
             visitor=SSEVisitor(),
             logger=sub_log,
         )
-        # did not fix issue
-        # if self._graph.os == XEN:
-        #     # restore afterwards
-        #     self._graph = old_graph
 
         mstg = self._mstg.g
 
@@ -1571,6 +1567,11 @@ class MultiSSE(StatsStep):
 
         if self.dump.get():
             fna = self.file_name_appendix.get()
+            
+            # printer extracts name of abbs out of cfg, for XEN need to provide multiple cfgs
+            if self._graph.os == XEN:
+                self._graph.cfg = XEN.cfg_list
+
             if fna:
                 fna += "."
             self._step_manager.chain_step({
