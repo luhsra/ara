@@ -71,16 +71,13 @@ class XEN(OSBase):
     @staticmethod
     def merge_states(states: list[OSState]) -> OSState:
         cpus: list[CPU] = []
-        # instances = InstanceGraph TODO
+        # instances = InstanceGraph 
         for idx, s in enumerate(states):
             assert len(s.cpus) == 1, f"Tried to merge state that is already multicore {len(s.cpus)}."
             cpu: CPU = s.cpus.one()
             cpu.id = idx
             cpus.append(cpu)
 
-
-        # for 
-        # cfg emtpy for now
         state = OSState(cpus=CPUList(cpus), cfg=None, instances=None)
         state.hypersse_state(system_count=XEN.system_count, cfg_list=XEN.cfg_list, 
                              instances_list=XEN.instances_list)
@@ -90,8 +87,11 @@ class XEN(OSBase):
             for k,v in new_context.items():
                 state.context[k] = v
 
+        return state
 
-        # add interrupts
+    @staticmethod
+    # iterate over all systems and find each local interrupts
+    def add_interrupts(state: OSState):
         cpu_idx = max([x.id for x in state.cpus]) + 1
         for idx, instances in enumerate(XEN.instances_list):
             tmp_instances_list = []
@@ -131,7 +131,6 @@ class XEN(OSBase):
                 tmp_instances_list.append(XEN.instances_list[idx])
         XEN.instances_list += tmp_instances_list
 
-        return state
 
     @staticmethod
     def get_initial_state(cfg: CFG, instances: InstanceGraph) -> OSState:
