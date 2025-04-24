@@ -314,40 +314,44 @@ class MultiSSE(StatsStep):
             dot_graph.write(dot_path)
         self._log.info(f"Write reduced MSTG to {dot_path}.")
 
+    @staticmethod
+    def _add_interrupts(state: OSState):
+        cpu_idx = max([x.id for x in state.cpus]) + 1
+        instances = state.instances
+        # add interrupts
+        for _, irq in instances.get(IRQ):
+            # every irq gets an own CPU
+            ctx = state.context[irq]
+            if ctx.status == TaskStatus.running:
+                exec_state = CrossExecState.computation
+                cur_abb = ctx.abb
+            else:
+                exec_state = CrossExecState.idle
+                cur_abb = None
+            irq_cpu = IRQCPU(id=cpu_idx,
+                            irq=irq,
+                            reference_cpu_id=irq.cpu_id,
+                            irq_on=False,
+                            control_instance=instances.get_node(irq),
+                            abb=cur_abb,
+                            call_path=copy(ctx.call_path),
+                            exec_state=exec_state,
+                            analysis_context=None)
+            state.cpus[irq_cpu.id] = irq_cpu
+            # reassign irq
+            irq.cpu_id = irq_cpu.id
+            cpu_idx += 1
+
     def _get_initial_state(self):
         os_state = self._graph.os.get_initial_state(self._graph.cfg,
                                                     self._graph.instances)
         self._log.info(f"Init state: {os_state}")
-        cpu_idx = max([x.id for x in os_state.cpus]) + 1
-        instances = os_state.instances
 
         if self._graph.os == XEN:
-            # xen already adds its interrups in get_inital_state
-            pass
+            # xen has a slightly different method for adding interrupts
+            XEN.add_interrupts(os_state)
         else:
-            # add interrupts
-            for _, irq in instances.get(IRQ):
-                # every irq gets an own CPU
-                ctx = os_state.context[irq]
-                if ctx.status == TaskStatus.running:
-                    exec_state = CrossExecState.computation
-                    cur_abb = ctx.abb
-                else:
-                    exec_state = CrossExecState.idle
-                    cur_abb = None
-                irq_cpu = IRQCPU(id=cpu_idx,
-                                irq=irq,
-                                reference_cpu_id=irq.cpu_id,
-                                irq_on=False,
-                                control_instance=instances.get_node(irq),
-                                abb=cur_abb,
-                                call_path=copy(ctx.call_path),
-                                exec_state=exec_state,
-                                analysis_context=None)
-                os_state.cpus[irq_cpu.id] = irq_cpu
-                # reassign irq
-                irq.cpu_id = irq_cpu.id
-                cpu_idx += 1
+            MultiSSE._add_interrupts(os_state)
 
         # initial sync point
         mstg = self._mstg.g
