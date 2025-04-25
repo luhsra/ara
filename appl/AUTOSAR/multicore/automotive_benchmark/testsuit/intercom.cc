@@ -1,9 +1,18 @@
+// SPDX-FileCopyrightText: 2025 Mareike Burg
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #include "os.h"
 #include "test/test.h"
 #include "arch/arm/platforms/raspberry/perf.cc"
 #include "parameters.h"
+#include "helper.h"
 
-DeclareTask(SCHED1);
+DeclareTask(INIT);
+DeclareTask(SCHED);
+DeclareCounter(C1);
+DeclareAlarm(A1);
+
 DeclareTask(MS1);
 DeclareTask(MS2);
 DeclareTask(MS5);
@@ -13,220 +22,749 @@ DeclareTask(MS50);
 DeclareTask(MS100);
 DeclareTask(MS200);
 DeclareTask(MS1000);
-DeclareTask(MSANGLE);
 
-TEST_MAKE_OS_MAIN(StartOS(0))
+int main(void) {                                                                                                   
+	StartOS(0);
+}
 
 /**
  * Test large number of runnables that get started in predifined periods
  * and allocate lables -> memory to them
+ * and simulate communications between them.
+ * Since memory and its access time are hw-specific, this benchmark needs to be scaled acording to hw. 
+ * Tested with Raspberry Pi 4
  * FROM: REAL WORLD AUTOMOTIVE BENCHMARKS FOR FREE
  */
 
+// current cycle of scheduling
+static unsigned cycle = 0;
+// the time when a running task is done with its calculations, gets changed when tasks is preempt
+static uint32_t calculate_until[TASK_COUNT] = {0};
+// keep track what time it was when the task entered its PostTaskHook
+static uint32_t time_when_stopped[TASK_COUNT] = {0};
+
+// read only memory
+static unsigned ro_mem[RO_MEMORY] = {0};
+static unsigned volatile ro_mem_results[TASK_COUNT] = {0};
+
+// intercom memory
+// somehow are more idle cycles there when intercom_mem is added and filled
+static unsigned volatile intercom_mem[INTERCOM_MEMORY] = {0};
+
+void fill_mem() {
+
+    ara_timing_info(1, 5);
+
+	for (unsigned i = 0; i < RO_MEMORY; i++){
+		ro_mem[i] = i;
+	}
+	for (unsigned i = 0; i < INTERCOM_MEMORY; i++){
+		intercom_mem[i] = i;
+	}
+}
 
 /**
- ******************** SCHEDULER ********************
- startup + control Task, lowest scheduling priority
+ ******************** OS TASKS ********************
  */
+// Small Init Task
+TASK(INIT) {
+	
+	fill_mem();
 
-unsigned cycle = 0;
-TASK(SCHED1) {
-	arch::Perf::start();
+    setup_and_print("intercom");
+    ara_timing_info(1, 5);
 
-	kout << "\nIntercom Testcase" << endl;
-	kout_run_info();
+	
+    TerminateTask();
+}
 
-	#ifndef QEMU
-	micro_sec_wait(3000000);
+// Main Scheduler, activated by AUTOSAR Counter
+TASK(SCHED) {
+    ara_timing_info(10, 20);
+
+    if (cycle >= CYCLES) {
+
+		print_results();
+
+		ara_timing_info(15, 25);
+        ShutdownMachine();
+    }
+
+	#if defined(PRINT_CYCLE_TIMING) || defined(PRINT_HOOK_STATS) || defined(PRINT_IDLE)
+		uint32_t t = arch::Perf::get_cycles();
 	#endif
 
-	for (; cycle < CYCLES; cycle++) {
+	#ifdef PRINT_CYCLE_TIMING
+		cycle_diff[cycle] = t - prev;
+		prev = t;
+	#endif
+	
+	#ifdef PRINT_HOOK_STATS
+		hooks[hookcounter][0] = hook_type::sched;
+		hooks[hookcounter][1] = cycle;
+		hooks[hookcounter][2] = t;
+		hooks[hookcounter][3] = hook_idle;
+		hooks[hookcounter][4] = t - hook_start_of_idle;
+		hookcounter++;
+	#endif
 
-		uint32_t start_cycle = arch::Perf::get_cycles();
+	#ifdef PRINT_IDLE
+		if (WARMUP <= cycle && cycle <= COOLDOWN){
+			if (idle == true){
+				idle_total += t - start_of_idle;
+			}
+		}
+	#endif
 
-		if (cycle % RUNABLES_PERIOD[MS1_id] == 0) {
-			memory_pos = memory_positions[MS1_id];
-			ActivateTask(MS1);
+	StatusType res;
+	if (WARMUP <= cycle && cycle < COOLDOWN){
+
+		if (TASK_COUNT >= 1) {
+			if (cycle % RUNABLES_PERIOD[MS1_id] == 0) {
+				ara_timing_info(4, 5);
+				res = ActivateTask(MS1);
+				#ifdef PRINT_RUN_STATS
+					start_counter[MS1_id]++;
+				#endif
+				if (res == StatusType::E_OS_LIMIT) {
+					#ifdef PRINT_RUN_STATS
+						blocked_counter[MS1_id]++;
+					#endif
+				}
+			}
+		}
+		if (TASK_COUNT >= 2) {
+			if (cycle % RUNABLES_PERIOD[MS2_id] == 0) {
+				ara_timing_info(4, 5);
+				res = ActivateTask(MS2);
+				#ifdef PRINT_RUN_STATS
+					start_counter[MS2_id]++;
+				#endif
+				if (res == StatusType::E_OS_LIMIT) {
+					#ifdef PRINT_RUN_STATS
+						blocked_counter[MS2_id]++;
+					#endif
+				}
+			}
+		}
+		if (TASK_COUNT >= 3) {
+			if (cycle % RUNABLES_PERIOD[MS5_id] == 0) {
+				ara_timing_info(4, 5);
+				res = ActivateTask(MS5);
+				#ifdef PRINT_RUN_STATS
+					start_counter[MS5_id]++;
+				#endif
+				if (res == StatusType::E_OS_LIMIT) {
+					#ifdef PRINT_RUN_STATS
+						blocked_counter[MS5_id]++;
+					#endif
+				}
+			}
+		}
+		if (TASK_COUNT >= 4) {
+			if (cycle % RUNABLES_PERIOD[MS10_id] == 0) {
+				ara_timing_info(4, 5);
+				res = ActivateTask(MS10);
+				#ifdef PRINT_RUN_STATS
+					start_counter[MS10_id]++;
+				#endif
+				if (res == StatusType::E_OS_LIMIT) {
+					#ifdef PRINT_RUN_STATS
+						blocked_counter[MS10_id]++;
+					#endif
+				}
+			}
+		
+		}
+		if (TASK_COUNT >= 5) {
+			if (cycle % RUNABLES_PERIOD[MS20_id] == 0) {
+				ara_timing_info(4, 5);
+				res = ActivateTask(MS20);
+				#ifdef PRINT_RUN_STATS
+					start_counter[MS20_id]++;
+				#endif
+				if (res == StatusType::E_OS_LIMIT) {
+					#ifdef PRINT_RUN_STATS
+						blocked_counter[MS20_id]++;
+					#endif
+				}
+			}
+		}
+		if (TASK_COUNT >= 6) {
+			if (cycle % RUNABLES_PERIOD[MS50_id] == 0) {
+				ara_timing_info(4, 5);
+				res = ActivateTask(MS50);
+				#ifdef PRINT_RUN_STATS
+					start_counter[MS50_id]++;
+				#endif
+				if (res == StatusType::E_OS_LIMIT) {
+					#ifdef PRINT_RUN_STATS
+						blocked_counter[MS50_id]++;
+					#endif
+				}
+			}
+		}
+		if (TASK_COUNT >= 7) {
+			if (cycle % RUNABLES_PERIOD[MS100_id] == 0) {
+				ara_timing_info(4, 5);
+				res = ActivateTask(MS100);
+				#ifdef PRINT_RUN_STATS
+					start_counter[MS100_id]++;
+				#endif
+				if (res == StatusType::E_OS_LIMIT) {
+					#ifdef PRINT_RUN_STATS
+						blocked_counter[MS100_id]++;
+					#endif
+				}
+			}
 		}	
-		if (cycle % RUNABLES_PERIOD[MS2_id] == 0) {
-			memory_pos = memory_positions[MS2_id];
-			ActivateTask(MS2);
+		if (TASK_COUNT >= 8) {
+			if (cycle % RUNABLES_PERIOD[MS200_id] == 0) {
+				ara_timing_info(4, 5);
+				res = ActivateTask(MS200);
+				#ifdef PRINT_RUN_STATS
+					start_counter[MS200_id]++;
+				#endif
+				if (res == StatusType::E_OS_LIMIT) {
+					#ifdef PRINT_RUN_STATS
+						blocked_counter[MS200_id]++;
+					#endif
+				}
+			}
 		}
-		if (cycle % RUNABLES_PERIOD[MS5_id] == 0) {
-			memory_pos = memory_positions[MS5_id];
-			ActivateTask(MS5);
+		if (TASK_COUNT >= 9) {
+			if (cycle % RUNABLES_PERIOD[MS1000_id] == 0) {
+				ara_timing_info(4, 5);
+				res = ActivateTask(MS1000);
+				#ifdef PRINT_RUN_STATS
+					start_counter[MS1000_id]++;
+				#endif
+				if (res == StatusType::E_OS_LIMIT) {
+					#ifdef PRINT_RUN_STATS
+						blocked_counter[MS1000_id]++;
+					#endif
+				}
+			}
 		}
-		if (cycle % RUNABLES_PERIOD[MS10_id] == 0) {
-			memory_pos = memory_positions[MS10_id];
-			ActivateTask(MS10);
-		}
-		if (cycle % RUNABLES_PERIOD[MS20_id] == 0) {
-			memory_pos = memory_positions[MS20_id];
-			ActivateTask(MS20);
-		}
-		if (cycle % RUNABLES_PERIOD[MS50_id] == 0) {
-			memory_pos = memory_positions[MS50_id];
-			ActivateTask(MS50);
-		}
-		if (cycle % RUNABLES_PERIOD[MS100_id] == 0) {
-			memory_pos = memory_positions[MS100_id];
-			ActivateTask(MS100);
-		}
-		if (cycle % RUNABLES_PERIOD[MS200_id] == 0) {
-			memory_pos = memory_positions[MS200_id];
-			ActivateTask(MS200);
-		}
-		if (cycle % RUNABLES_PERIOD[MS1000_id] == 0) {
-			memory_pos = memory_positions[MS1000_id];
-			ActivateTask(MS1000);
-		}
-
-		uint32_t end_cycle = arch::Perf::get_cycles();
-
-		bool in_time = micro_sec_wait_upto(start_cycle, SCHEDUL_INTERVAL);
-		in_time ? test_trace('1') : test_trace('0');
-
-		// Debug help
-		
-		if (!in_time) {
-			kout << "Cycle:\t" << cycle << "\tfailed its timing!" << endl;
-		}
-		
-		/*
-		kout << "Max_time: " << SCHEDUL_INTERVAL * WAIT_FREQUENCE << "\tused: " << end_cycle - start_cycle << endl;	
-		kout << "start_cycle: " << start_cycle << "\tend_cycle: " << end_cycle << endl;	
-		kout << "Cycle Nr:\t" << cycle << "\tIn time? " << in_time << "\n" << endl;
-		*/
 	}
+    cycle++;
 
 	TerminateTask();
 }
 
-void workTask(task_id task) {
+/**
+ ******************** HOOKS ********************
+ */
+// called on context switch, still in old task 
+void PostTaskHook() {
+	TaskRefType trt;
+	uint32_t id;
+	trt = &id;
+	GetTaskID(trt);
+	task_id t_id = translate_task_type(id);
 
-	uint32_t start_cycle = arch::Perf::get_cycles();
+	// ignore hooks from scheduler
+	if (t_id != task_id::MS_LAST_id) {
 
-	const unsigned number_of_runnables_in_task = (NUMBER_OF_RUNNABLES/100) * RUNABLES_SHARE[task];
-	const unsigned time_for_whole_task = number_of_runnables_in_task * TIME_PER_RUNNABLE[task];
-	
-	const unsigned reads = number_of_runnables_in_task * READ_ACCESSES_PER_RUNNABLE;
-	const unsigned writes = number_of_runnables_in_task * WRITE_ACCESSES_PER_RUNNABLE;
-	const unsigned read_writes = number_of_runnables_in_task * RW_ACCESSES_PER_RUNNABLE;
+		uint32_t t = arch::Perf::get_cycles();
+		#ifdef PRINT_HOOK_STATS
+			hooks[hookcounter][0] = hook_type::post;
+			hooks[hookcounter][1] = t_id;
+			hooks[hookcounter][2] = t;
+			hooks[hookcounter][3] = calculate_until[t_id];
+			hookcounter++;
 
-	uint8_t tmp = 1;
-	// READS
-	for (unsigned i = 0; i < reads; memory_pos++, i++) {
-		tmp += communication[memory_pos];
-	}
+			hook_idle = true;
+			hook_start_of_idle = t;
+		#endif
 
-	// WRITES
-	for (unsigned i = 0; i < writes; memory_pos++, i++) {
-		communication[memory_pos] = tmp;
-	}
+		#ifdef PRINT_IDLE
+			idle = true;
+			start_of_idle = t;
+		#endif
 
-	// READ + WRITES
+		// when calculate_until is set, this task was still in calculation.
+		if (calculate_until[t_id] != 0) {
+			time_when_stopped[t_id] = t;
 
-	// first write into memory of the tasks of the first activation period
-	unsigned receiver_task = 0;
-	unsigned labels_send_to_receiver = 0;
-	unsigned receiver_memory_pos = memory_positions[receiver_task];
-	for (unsigned i = 0; i < read_writes; memory_pos++, i++) {
+			#ifdef PRINT_HOOK_STATS
+				hook_idle = false;
+			#endif
 
-		// Debugging help
-		// kout << "task: " << task << "rw: " << read_writes <<  " i: " << i << " receiver_task " << receiver_task << endl;
-		// kout << "memory_pos: " << memory_pos << "labels_send_to_receiver: " << labels_send_to_receiver <<  " receiver_memory_pos: " << receiver_memory_pos << endl;
+			#ifdef PRINT_IDLE
+				idle = false;
+			#endif
 
-		// Interprocess communication, receiver_task == 10 means all remaining communication goes to intraprocess
-		if (receiver_task < NR_TASKS) {
-
-			// read from senders runnable memory, write to receiver runnable memory
-			tmp = communication[memory_pos] + 1;
-			communication[receiver_memory_pos] = tmp;
-
-			receiver_memory_pos++;
-			labels_send_to_receiver++;
-
-			if (labels_send_to_receiver >= INTER_TASK_RATIO[task][receiver_task]) {
-				receiver_task++;
-				labels_send_to_receiver = 0;
-				receiver_memory_pos = memory_positions[receiver_task];
-			}
-
-			// Debugging help
-			// kout << "Waiting!" <<  endl;
-			// micro_sec_wait(500000);
-
-		// Intraprocess communication
-		} else {
-			tmp = communication[memory_pos] + 1;
-			communication[memory_pos] = tmp;
 		}
 
 	}
-	
-	bool in_time = micro_sec_wait_upto(start_cycle, time_for_whole_task);
-	if (!in_time) {
-		kout << "Cycle:\t" << cycle << "\t" << taskStrings[task] << "\ttook longer because of memory" << endl;
+}
+
+// called on context switch, before entering new task
+void PreTaskHook() {
+	TaskRefType trt;
+	uint32_t id;
+	trt = &id;
+	GetTaskID(trt);
+	task_id t_id = translate_task_type(id);
+
+	// ignore hooks from scheduler
+	if (t_id != task_id::MS_LAST_id) {
+
+		uint32_t t = arch::Perf::get_cycles();
+		#ifdef PRINT_HOOK_STATS
+			hooks[hookcounter][0] = hook_type::pre;
+			hooks[hookcounter][1] = t_id;
+			hooks[hookcounter][2] = t;
+			hooks[hookcounter][3] = calculate_until[t_id];
+		#endif
+
+		// when time_when_stopped is set, this task was preempted in calculation.
+		if (time_when_stopped[t_id] != 0) {
+			calculate_until[t_id] += t - time_when_stopped[t_id];
+			time_when_stopped[t_id] = 0;
+		}
+
+		#ifdef PRINT_HOOK_STATS
+			hooks[hookcounter][4] = calculate_until[t_id];
+			hookcounter++;
+		#endif
 	}
 }
 
 
+/**
+ ******************** WORKER TASKS ********************
+ */
 TASK(MS1) {
-	workTask(task_id::MS1_id);
+	const task_id id = MS1_id;
+	ara_timing_info(TOTAL_RUNTIME[id], TOTAL_RUNTIME[id] + 1);
+
+	#ifdef PRINT_TASK_TIMING
+		unsigned int c = arch::Perf::get_cycles();
+	#endif
+	
+	// read mem
+	unsigned memory_pos = ro_memory_offset[id];
+	for(unsigned i = 0; i < ro_memory_size[id]; i++, memory_pos++)
+		ro_mem_results[id] += ro_mem[memory_pos];
+			
+	// read intercom_mem
+	unsigned data = 0;
+	memory_pos = intercom_memory_offset[id];
+	for(unsigned i = 0; i < intercom_memory_size[id]; i++, memory_pos++)
+		data += intercom_mem[memory_pos];
+
+	// create pointer, so end_times can be modified in hooks
+	uint32_t* end_time = &calculate_until[id];
+	micro_sec_wait_end_time(TOTAL_RUNTIME[id], end_time);
+
+	// Iterate over all tasks to "send" intercom
+	unsigned count;
+	for (unsigned t = 0; t < TASK_COUNT; t++) {
+		count = 0;
+		memory_pos = intercom_memory_offset[t];
+		// check if still inside the memory of that task and 
+		while (memory_pos < intercom_memory_offset[t+1] && count < INTER_TASK_RATIO[id][t]) {
+			// send message
+			intercom_mem[memory_pos] = data;
+			memory_pos++;
+			count++;
+		}
+	}
+
+	#ifdef PRINT_TASK_TIMING
+		task_time[id][cycle_count[id]] = arch::Perf::get_cycles() - c;
+		cycle_count[id]++;
+	#endif
+	
+	#ifdef PRINT_RUN_STATS
+		finish_counter[id]++;
+	#endif
+
 	TerminateTask();
 }
 TASK(MS2) {
-	workTask(task_id::MS2_id);
+	const task_id id = MS2_id;
+	ara_timing_info(TOTAL_RUNTIME[id], TOTAL_RUNTIME[id] + 1);
+
+	#ifdef PRINT_TASK_TIMING
+		unsigned int c = arch::Perf::get_cycles();
+	#endif
+	
+	// read mem
+	unsigned memory_pos = ro_memory_offset[id];
+	for(unsigned i = 0; i < ro_memory_size[id]; i++, memory_pos++)
+		ro_mem_results[id] += ro_mem[memory_pos];
+			
+	// read intercom_mem
+	unsigned data = 0;
+	memory_pos = intercom_memory_offset[id];
+	for(unsigned i = 0; i < intercom_memory_size[id]; i++, memory_pos++)
+		data += intercom_mem[memory_pos];
+
+	// create pointer, so end_times can be modified in hooks
+	uint32_t* end_time = &calculate_until[id];
+	micro_sec_wait_end_time(TOTAL_RUNTIME[id], end_time);
+
+	// Iterate over all tasks to "send" intercom
+	unsigned count;
+	for (unsigned t = 0; t < TASK_COUNT; t++) {
+		count = 0;
+		memory_pos = intercom_memory_offset[t];
+		// check if still inside the memory of that task and 
+		while (memory_pos < intercom_memory_offset[t+1] && count < INTER_TASK_RATIO[id][t]) {
+			// send message
+			intercom_mem[memory_pos] = data;
+			memory_pos++;
+			count++;
+		}
+	}
+
+	#ifdef PRINT_TASK_TIMING
+		task_time[id][cycle_count[id]] = arch::Perf::get_cycles() - c;
+		cycle_count[id]++;
+	#endif
+	
+	#ifdef PRINT_RUN_STATS
+		finish_counter[id]++;
+	#endif
+
 	TerminateTask();
 }
 TASK(MS5) {
-	workTask(task_id::MS5_id);
+	const task_id id = MS5_id;
+	ara_timing_info(TOTAL_RUNTIME[id], TOTAL_RUNTIME[id] + 1);
+
+	#ifdef PRINT_TASK_TIMING
+		unsigned int c = arch::Perf::get_cycles();
+	#endif
+	
+	// read mem
+	unsigned memory_pos = ro_memory_offset[id];
+	for(unsigned i = 0; i < ro_memory_size[id]; i++, memory_pos++)
+		ro_mem_results[id] += ro_mem[memory_pos];
+			
+	// read intercom_mem
+	unsigned data = 0;
+	memory_pos = intercom_memory_offset[id];
+	for(unsigned i = 0; i < intercom_memory_size[id]; i++, memory_pos++)
+		data += intercom_mem[memory_pos];
+
+	// create pointer, so end_times can be modified in hooks
+	uint32_t* end_time = &calculate_until[id];
+	micro_sec_wait_end_time(TOTAL_RUNTIME[id], end_time);
+
+	// Iterate over all tasks to "send" intercom
+	unsigned count;
+	for (unsigned t = 0; t < TASK_COUNT; t++) {
+		count = 0;
+		memory_pos = intercom_memory_offset[t];
+		// check if still inside the memory of that task and 
+		while (memory_pos < intercom_memory_offset[t+1] && count < INTER_TASK_RATIO[id][t]) {
+			// send message
+			intercom_mem[memory_pos] = data;
+			memory_pos++;
+			count++;
+		}
+	}
+
+	#ifdef PRINT_TASK_TIMING
+		task_time[id][cycle_count[id]] = arch::Perf::get_cycles() - c;
+		cycle_count[id]++;
+	#endif
+	
+	#ifdef PRINT_RUN_STATS
+		finish_counter[id]++;
+	#endif
+
 	TerminateTask();
 }
 TASK(MS10) {
-	workTask(task_id::MS10_id);
+	const task_id id = MS10_id;
+	ara_timing_info(TOTAL_RUNTIME[id], TOTAL_RUNTIME[id] + 1);
+
+	#ifdef PRINT_TASK_TIMING
+		unsigned int c = arch::Perf::get_cycles();
+	#endif
+	
+	// read mem
+	unsigned memory_pos = ro_memory_offset[id];
+	for(unsigned i = 0; i < ro_memory_size[id]; i++, memory_pos++)
+		ro_mem_results[id] += ro_mem[memory_pos];
+			
+	// read intercom_mem
+	unsigned data = 0;
+	memory_pos = intercom_memory_offset[id];
+	for(unsigned i = 0; i < intercom_memory_size[id]; i++, memory_pos++)
+		data += intercom_mem[memory_pos];
+
+	// create pointer, so end_times can be modified in hooks
+	uint32_t* end_time = &calculate_until[id];
+	micro_sec_wait_end_time(TOTAL_RUNTIME[id], end_time);
+
+	// Iterate over all tasks to "send" intercom
+	unsigned count;
+	for (unsigned t = 0; t < TASK_COUNT; t++) {
+		count = 0;
+		memory_pos = intercom_memory_offset[t];
+		// check if still inside the memory of that task and 
+		while (memory_pos < intercom_memory_offset[t+1] && count < INTER_TASK_RATIO[id][t]) {
+			// send message
+			intercom_mem[memory_pos] = data;
+			memory_pos++;
+			count++;
+		}
+	}
+
+	#ifdef PRINT_TASK_TIMING
+		task_time[id][cycle_count[id]] = arch::Perf::get_cycles() - c;
+		cycle_count[id]++;
+	#endif
+	
+	#ifdef PRINT_RUN_STATS
+		finish_counter[id]++;
+	#endif
+
 	TerminateTask();
 }
 TASK(MS20) {
-	workTask(task_id::MS20_id);
+	const task_id id = MS20_id;
+	ara_timing_info(TOTAL_RUNTIME[id], TOTAL_RUNTIME[id] + 1);
+
+	#ifdef PRINT_TASK_TIMING
+		unsigned int c = arch::Perf::get_cycles();
+	#endif
+	
+	// read mem
+	unsigned memory_pos = ro_memory_offset[id];
+	for(unsigned i = 0; i < ro_memory_size[id]; i++, memory_pos++)
+		ro_mem_results[id] += ro_mem[memory_pos];
+			
+	// read intercom_mem
+	unsigned data = 0;
+	memory_pos = intercom_memory_offset[id];
+	for(unsigned i = 0; i < intercom_memory_size[id]; i++, memory_pos++)
+		data += intercom_mem[memory_pos];
+
+	// create pointer, so end_times can be modified in hooks
+	uint32_t* end_time = &calculate_until[id];
+	micro_sec_wait_end_time(TOTAL_RUNTIME[id], end_time);
+
+	// Iterate over all tasks to "send" intercom
+	unsigned count;
+	for (unsigned t = 0; t < TASK_COUNT; t++) {
+		count = 0;
+		memory_pos = intercom_memory_offset[t];
+		// check if still inside the memory of that task and 
+		while (memory_pos < intercom_memory_offset[t+1] && count < INTER_TASK_RATIO[id][t]) {
+			// send message
+			intercom_mem[memory_pos] = data;
+			memory_pos++;
+			count++;
+		}
+	}
+
+	#ifdef PRINT_TASK_TIMING
+		task_time[id][cycle_count[id]] = arch::Perf::get_cycles() - c;
+		cycle_count[id]++;
+	#endif
+	
+	#ifdef PRINT_RUN_STATS
+		finish_counter[id]++;
+	#endif
+
 	TerminateTask();
 }
 TASK(MS50) {
-	workTask(task_id::MS50_id);
+	const task_id id = MS50_id;
+	ara_timing_info(TOTAL_RUNTIME[id], TOTAL_RUNTIME[id] + 1);
+
+	#ifdef PRINT_TASK_TIMING
+		unsigned int c = arch::Perf::get_cycles();
+	#endif
+	
+	// read mem
+	unsigned memory_pos = ro_memory_offset[id];
+	for(unsigned i = 0; i < ro_memory_size[id]; i++, memory_pos++)
+		ro_mem_results[id] += ro_mem[memory_pos];
+			
+	// read intercom_mem
+	unsigned data = 0;
+	memory_pos = intercom_memory_offset[id];
+	for(unsigned i = 0; i < intercom_memory_size[id]; i++, memory_pos++)
+		data += intercom_mem[memory_pos];
+
+	// create pointer, so end_times can be modified in hooks
+	uint32_t* end_time = &calculate_until[id];
+	micro_sec_wait_end_time(TOTAL_RUNTIME[id], end_time);
+
+	// Iterate over all tasks to "send" intercom
+	unsigned count;
+	for (unsigned t = 0; t < TASK_COUNT; t++) {
+		count = 0;
+		memory_pos = intercom_memory_offset[t];
+		// check if still inside the memory of that task and 
+		while (memory_pos < intercom_memory_offset[t+1] && count < INTER_TASK_RATIO[id][t]) {
+			// send message
+			intercom_mem[memory_pos] = data;
+			memory_pos++;
+			count++;
+		}
+	}
+
+	#ifdef PRINT_TASK_TIMING
+		task_time[id][cycle_count[id]] = arch::Perf::get_cycles() - c;
+		cycle_count[id]++;
+	#endif
+	
+	#ifdef PRINT_RUN_STATS
+		finish_counter[id]++;
+	#endif
+
 	TerminateTask();
 }
 TASK(MS100) {
-	workTask(task_id::MS100_id);
+	const task_id id = MS100_id;
+	ara_timing_info(TOTAL_RUNTIME[id], TOTAL_RUNTIME[id] + 1);
+
+	#ifdef PRINT_TASK_TIMING
+		unsigned int c = arch::Perf::get_cycles();
+	#endif
+	
+	// read mem
+	unsigned memory_pos = ro_memory_offset[id];
+	for(unsigned i = 0; i < ro_memory_size[id]; i++, memory_pos++)
+		ro_mem_results[id] += ro_mem[memory_pos];
+			
+	// read intercom_mem
+	unsigned data = 0;
+	memory_pos = intercom_memory_offset[id];
+	for(unsigned i = 0; i < intercom_memory_size[id]; i++, memory_pos++)
+		data += intercom_mem[memory_pos];
+
+	// create pointer, so end_times can be modified in hooks
+	uint32_t* end_time = &calculate_until[id];
+	micro_sec_wait_end_time(TOTAL_RUNTIME[id], end_time);
+
+	// Iterate over all tasks to "send" intercom
+	unsigned count;
+	for (unsigned t = 0; t < TASK_COUNT; t++) {
+		count = 0;
+		memory_pos = intercom_memory_offset[t];
+		// check if still inside the memory of that task and 
+		while (memory_pos < intercom_memory_offset[t+1] && count < INTER_TASK_RATIO[id][t]) {
+			// send message
+			intercom_mem[memory_pos] = data;
+			memory_pos++;
+			count++;
+		}
+	}
+
+	#ifdef PRINT_TASK_TIMING
+		task_time[id][cycle_count[id]] = arch::Perf::get_cycles() - c;
+		cycle_count[id]++;
+	#endif
+	
+	#ifdef PRINT_RUN_STATS
+		finish_counter[id]++;
+	#endif
+
 	TerminateTask();
 }
 TASK(MS200) {
-	workTask(task_id::MS200_id);
+	const task_id id = MS200_id;
+	ara_timing_info(TOTAL_RUNTIME[id], TOTAL_RUNTIME[id] + 1);
+
+	#ifdef PRINT_TASK_TIMING
+		unsigned int c = arch::Perf::get_cycles();
+	#endif
+	
+	// read mem
+	unsigned memory_pos = ro_memory_offset[id];
+	for(unsigned i = 0; i < ro_memory_size[id]; i++, memory_pos++)
+		ro_mem_results[id] += ro_mem[memory_pos];
+			
+	// read intercom_mem
+	unsigned data = 0;
+	memory_pos = intercom_memory_offset[id];
+	for(unsigned i = 0; i < intercom_memory_size[id]; i++, memory_pos++)
+		data += intercom_mem[memory_pos];
+
+	// create pointer, so end_times can be modified in hooks
+	uint32_t* end_time = &calculate_until[id];
+	micro_sec_wait_end_time(TOTAL_RUNTIME[id], end_time);
+
+	// Iterate over all tasks to "send" intercom
+	unsigned count;
+	for (unsigned t = 0; t < TASK_COUNT; t++) {
+		count = 0;
+		memory_pos = intercom_memory_offset[t];
+		// check if still inside the memory of that task and 
+		while (memory_pos < intercom_memory_offset[t+1] && count < INTER_TASK_RATIO[id][t]) {
+			// send message
+			intercom_mem[memory_pos] = data;
+			memory_pos++;
+			count++;
+		}
+	}
+
+	#ifdef PRINT_TASK_TIMING
+		task_time[id][cycle_count[id]] = arch::Perf::get_cycles() - c;
+		cycle_count[id]++;
+	#endif
+	
+	#ifdef PRINT_RUN_STATS
+		finish_counter[id]++;
+	#endif
+
 	TerminateTask();
 }
 TASK(MS1000) {
-	workTask(task_id::MS1000_id);
+	const task_id id = MS1000_id;
+	ara_timing_info(TOTAL_RUNTIME[id], TOTAL_RUNTIME[id] + 1);
+
+	#ifdef PRINT_TASK_TIMING
+		unsigned int c = arch::Perf::get_cycles();
+	#endif
+	
+	// read mem
+	unsigned memory_pos = ro_memory_offset[id];
+	for(unsigned i = 0; i < ro_memory_size[id]; i++, memory_pos++)
+		ro_mem_results[id] += ro_mem[memory_pos];
+			
+	// read intercom_mem
+	unsigned data = 0;
+	memory_pos = intercom_memory_offset[id];
+	for(unsigned i = 0; i < intercom_memory_size[id]; i++, memory_pos++)
+		data += intercom_mem[memory_pos];
+
+	// create pointer, so end_times can be modified in hooks
+	uint32_t* end_time = &calculate_until[id];
+	micro_sec_wait_end_time(TOTAL_RUNTIME[id], end_time);
+
+	// Iterate over all tasks to "send" intercom
+	unsigned count;
+	for (unsigned t = 0; t < TASK_COUNT; t++) {
+		count = 0;
+		memory_pos = intercom_memory_offset[t];
+		// check if still inside the memory of that task and 
+		while (memory_pos < intercom_memory_offset[t+1] && count < INTER_TASK_RATIO[id][t]) {
+			// send message
+			intercom_mem[memory_pos] = data;
+			memory_pos++;
+			count++;
+		}
+	}
+
+	#ifdef PRINT_TASK_TIMING
+		task_time[id][cycle_count[id]] = arch::Perf::get_cycles() - c;
+		cycle_count[id]++;
+	#endif
+	
+	#ifdef PRINT_RUN_STATS
+		finish_counter[id]++;
+	#endif
+
 	TerminateTask();
-}
-TASK(MSANGLE) {
-	workTask(MSANGLE_id);
-	TerminateTask();
-}
-
-void PreIdleHook() {
-       
-    kout << "\n*******************" << endl;
-
-	kout_task_data();
-	kout_intercom_data();
-
-	kout << "\nFrom: " << CYCLES << " Cycles are:" << endl;
-	kout << "\t# in Time: " << count_trace('1') << "\t\t| Failed: " << count_trace('0') << "\n" << endl;
-#ifndef QEMU
-	// to better see results on PI wait at the end before rebooting
-	micro_sec_wait(5000000);
-#endif
-
-	test_finish();
-	ShutdownMachine();
-
 }

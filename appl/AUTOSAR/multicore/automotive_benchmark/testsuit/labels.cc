@@ -44,16 +44,20 @@ static uint32_t time_when_stopped[TASK_COUNT] = {0};
 
 // read only memory
 static unsigned ro_mem[RO_MEMORY] = {0};
-static unsigned ro_mem_results[TASK_COUNT] = {0};
+static unsigned volatile ro_mem_results[TASK_COUNT] = {0};
 
 // // write only memory
 // static unsigned wo_mem[RO_MEMORY] = {0};
 // static unsigned wo_mem_results[TASK_COUNT] = {0};
+static unsigned volatile intercom_mem[INTERCOM_MEMORY] = {0};
 
 void fill_ro_mem() {
 
 	for (unsigned i = 0; i < RO_MEMORY; i++){
 		ro_mem[i] = i;
+	}
+	for (unsigned i = 0; i < INTERCOM_MEMORY; i++){
+		intercom_mem[i] = i;
 	}
 }
 
@@ -77,15 +81,9 @@ TASK(SCHED) {
     ara_timing_info(10, 20);
 
     if (cycle >= CYCLES) {
-
 	
 		print_results();
 
-		kout << "Dump mem so it doesnt get optimized by compliter" << endl;
-		for (unsigned i = 0; i < TASK_COUNT; i++){
-			kout << "Read only Mem Result for: " << i << " " << ro_mem_results[i] << endl;
-			// kout << "Write only Mem Result for: " << i << " " << wo_mem_results[i] << endl;
-		}
 		ara_timing_info(15, 25);
         ShutdownMachine();
     }
@@ -592,39 +590,4 @@ TASK(MS1000) {
 	#endif
 
 	TerminateTask();
-}
-
-void workTask(task_id task) {
-
-	uint32_t start_cycle = arch::Perf::get_cycles();
-
-	const unsigned number_of_runnables_in_task = (NUMBER_OF_RUNABLES/100) * RUNABLES_SHARE[task];
-	const unsigned time_for_whole_task = number_of_runnables_in_task * TIME_PER_RUNABLE[task];
-	
-	const unsigned reads = number_of_runnables_in_task * READ_ACCESSES_PER_RUNNABLE;
-	const unsigned writes = number_of_runnables_in_task * WRITE_ACCESSES_PER_RUNNABLE;
-	const unsigned read_writes = number_of_runnables_in_task * RW_ACCESSES_PER_RUNNABLE;
-
-	uint8_t tmp = 1;
-	// READS
-	for (unsigned i = 0; i < reads; memory_pos++, i++) {
-		tmp += communication[memory_pos];
-	}
-
-	// WRITES
-	for (unsigned i = 0; i < writes; memory_pos++, i++) {
-		communication[memory_pos] = tmp;
-	}
-
-	// READ + WRITES
-	for (unsigned i = 0; i < read_writes; memory_pos++, i++) {
-
-		tmp = communication[memory_pos] + 1;
-		communication[memory_pos] = tmp;
-	}
-	
-	bool in_time = micro_sec_wait_upto(start_cycle, time_for_whole_task);
-	if (!in_time) {
-		kout << "Task: " << taskStrings[task] << "\t in Cycle: " << cycle << "\ttook longer because of memory." << endl;
-	}
 }

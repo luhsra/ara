@@ -171,12 +171,12 @@ constexpr unsigned LABELS_PER_RUNABLE = NUMBER_OF_LABELS / NUMBER_OF_RUNABLES;
 
 // Of that: 40% read, 10% write, 50% read/write
 constexpr unsigned RO_SHARE = 40;
-constexpr unsigned WO_SHARE = 10;
+// constexpr unsigned WO_SHARE = 10;
 constexpr unsigned RW_SHARE = 50;
 
 constexpr unsigned RO_MEMORY = (NUMBER_OF_LABELS / 100) * RO_SHARE * AVAERAGE_LABEL_SIZE;
-constexpr unsigned WO_MEMORY = (NUMBER_OF_LABELS / 100) * WO_SHARE * AVAERAGE_LABEL_SIZE;
-constexpr unsigned RW_MEMORY = (NUMBER_OF_LABELS / 100) * RW_SHARE * AVAERAGE_LABEL_SIZE;
+// constexpr unsigned WO_MEMORY = (NUMBER_OF_LABELS / 100) * WO_SHARE * AVAERAGE_LABEL_SIZE;
+constexpr unsigned INTERCOM_MEMORY = (NUMBER_OF_LABELS / 100) * RW_SHARE * AVAERAGE_LABEL_SIZE;
 
 constexpr unsigned ro_memory_size[NR_TASKS] = {
 	(RO_MEMORY / 100) * RUNABLES_SHARE[MS1_id],
@@ -220,7 +220,7 @@ constexpr unsigned ro_memory_offset[NR_TASKS + 1] = {
 // 	(WO_MEMORY / 100) * RUNABLES_SHARE[MSANGLE_id]
 // };
 
-// // Final one is end of memory -> cant write further
+// Final one is end of memory -> cant write further
 // constexpr unsigned wo_memory_offset[NR_TASKS + 1] = {
 // 	0,
 // 	wo_memory_offset[0] + wo_memory_size[MS1_id],
@@ -235,14 +235,34 @@ constexpr unsigned ro_memory_offset[NR_TASKS + 1] = {
 // 	wo_memory_offset[9] + wo_memory_size[MSANGLE_id]
 // };
 
-constexpr unsigned READ_ACCESSES_PER_RUNNABLE = AVAERAGE_LABEL_SIZE * 40 * (NUMBER_OF_LABELS / NUMBER_OF_RUNABLES) / 100;
-constexpr unsigned WRITE_ACCESSES_PER_RUNNABLE = AVAERAGE_LABEL_SIZE* 10 * (NUMBER_OF_LABELS / NUMBER_OF_RUNABLES) / 100;
-constexpr unsigned RW_ACCESSES_PER_RUNNABLE = AVAERAGE_LABEL_SIZE * 50 * (NUMBER_OF_LABELS / NUMBER_OF_RUNABLES) / 100;
-constexpr unsigned MEMORY_PER_RUNNABLE = READ_ACCESSES_PER_RUNNABLE + WRITE_ACCESSES_PER_RUNNABLE + RW_ACCESSES_PER_RUNNABLE;
+// Total number of bytes of each task for intercom
+constexpr unsigned intercom_memory_size[NR_TASKS] = {
+	(INTERCOM_MEMORY / 100) * RUNABLES_SHARE[MS1_id],
+	(INTERCOM_MEMORY / 100) * RUNABLES_SHARE[MS2_id],
+	(INTERCOM_MEMORY / 100) * RUNABLES_SHARE[MS5_id],
+	(INTERCOM_MEMORY / 100) * RUNABLES_SHARE[MS10_id],
+	(INTERCOM_MEMORY / 100) * RUNABLES_SHARE[MS20_id],
+	(INTERCOM_MEMORY / 100) * RUNABLES_SHARE[MS50_id],
+	(INTERCOM_MEMORY / 100) * RUNABLES_SHARE[MS100_id],
+	(INTERCOM_MEMORY / 100) * RUNABLES_SHARE[MS200_id],
+	(INTERCOM_MEMORY / 100) * RUNABLES_SHARE[MS1000_id],
+	(INTERCOM_MEMORY / 100) * RUNABLES_SHARE[MSANGLE_id]
+};
 
-uint8_t communication[NUMBER_OF_LABELS * AVAERAGE_LABEL_SIZE];
-uint16_t memory_pos = 0;
-
+// Final one is end of memory -> cant write further, position in array
+constexpr unsigned intercom_memory_offset[NR_TASKS + 1] = {
+	0,
+	intercom_memory_offset[0] + intercom_memory_size[MS1_id],
+	intercom_memory_offset[1] + intercom_memory_size[MS2_id],
+	intercom_memory_offset[2] + intercom_memory_size[MS5_id],
+	intercom_memory_offset[3] + intercom_memory_size[MS10_id],
+	intercom_memory_offset[4] + intercom_memory_size[MS20_id],
+	intercom_memory_offset[5] + intercom_memory_size[MS50_id],
+	intercom_memory_offset[6] + intercom_memory_size[MS100_id],
+	intercom_memory_offset[7] + intercom_memory_size[MS200_id],
+	intercom_memory_offset[8] + intercom_memory_size[MS1000_id],
+	intercom_memory_offset[9] + intercom_memory_size[MSANGLE_id]
+};
 
 // InterTask Communication Patter
 // with MS1 MS2 MS5 MS10 MS20 MS50 MS100 MS200 MS1000
@@ -261,11 +281,16 @@ constexpr unsigned INTER_TASK_RATIO[NR_TASKS][NR_TASKS] = {
 										};
 
 
-
 // [ANGLESYNC]
-// Angle Sync Values, assume the worst case, so the shortest period. So a bit car with 8 Cylinders and 5000 rpm
-unsigned CYLINDERS = 8;
-unsigned RPM = 5000;
-// Formular is 60/(CYLINDERS*RPM) -> then convert into s (*60) -> then into milliseconds * 1000
-unsigned ANGLE_SYNC_PERIOD = (1000*60*60)/(CYLINDERS * RPM);
+// Angle Sync Values, assume the worst case, so the shortest period.
+constexpr unsigned CYLINDERS = 4;
+constexpr unsigned MIN_RPM = 1000;
+constexpr unsigned MAX_RPM = 3000;
+// Formular is 120/(CYLINDERS*RPM)
+
+// in ms -> every 40ms angle sync calculation is needed
+constexpr unsigned LONGEST_ANGLE_SYNC_PERIOD = 1000 * 120 / (CYLINDERS * MIN_RPM);
+
+// in ms -> every 3ms angle sync calculation is needed
+constexpr unsigned SHORTEST_ANGLE_SYNC_PERIOD = 1000 * 120 / (CYLINDERS * MAX_RPM);
 
