@@ -4,6 +4,7 @@
 # SPDX-FileCopyrightText: 2022 Jan Neugebauer
 # SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2023 Andreas Kässens
+# SPDX-FileCopyrightText: 2025 Mareike Burg
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -19,6 +20,7 @@ from graph_tool import GraphView
 from graph_tool.search import dfs_iterator
 
 import pyllco
+import math
 
 from ara.util import get_logger, has_path
 from ara.graph import CallPath, SyscallCategory, SigType, single_check, edge_types
@@ -226,6 +228,10 @@ class ISR(AUTOSARInstance, ControlInstance):
     priority: int
     category: int
     device: int
+
+    # Time in ms, this range indicates how often this ISR is triggered
+    min_activation_time: int = math.inf
+    max_activation_time: int = math.inf
 
     def __hash__(self):
         return AUTOSARInstance.__hash__(self)

@@ -110,7 +110,7 @@ constexpr unsigned NR_TASKS = 10;
 // Used to reduce the number o task, removing the ones with the longest scheduling intervals.
 // With all tasks the analysis might take very long!
 // for 7 Tasks ~200s, for 8 Tasks 1340s
-constexpr unsigned TASK_COUNT = 3;
+constexpr unsigned TASK_COUNT = 5;
 static_assert(TASK_COUNT <= NR_TASKS);
 
 
@@ -298,3 +298,4 @@ constexpr unsigned LONGEST_ANGLE_SYNC_PERIOD = 1000 * 120 / (CYLINDERS * MIN_RPM
 // in ms -> every 3ms angle sync calculation is needed
 constexpr unsigned SHORTEST_ANGLE_SYNC_PERIOD = 1000 * 120 / (CYLINDERS * MAX_RPM);
 
+constexpr unsigned ANGLE_SYNC_PERIOD = (SHORTEST_ANGLE_SYNC_PERIOD + LONGEST_ANGLE_SYNC_PERIOD) / 2;

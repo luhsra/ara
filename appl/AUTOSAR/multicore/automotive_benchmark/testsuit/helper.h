@@ -11,6 +11,8 @@
 	static unsigned finish_counter[TASK_COUNT] = {0};
 
 	#ifdef ANGLE
+		static unsigned angle_start_counter = 0;
+		static unsigned angle_blocked_counter = 0;
 		static unsigned angle_finish_counter = 0;
 	#endif
 #endif
@@ -236,7 +238,7 @@ void print_results() {
 			kout << blocked_counter[i] << "/" << (100 * blocked_counter[i]) / start_counter[i] << endl;
 		}
 		#ifdef ANGLE
-			kout << "MSANGLE | -             | " << angle_finish_counter << "\t\t | -" << endl;
+			kout << "MSANGLE | " << angle_start_counter << "\t\t| " << angle_finish_counter << "\t\t | " << angle_blocked_counter << endl;
 		#endif
 		kout << "*******************\r\n" << endl;
 	#endif

@@ -12,7 +12,6 @@ DeclareTask(INIT);
 DeclareTask(SCHED);
 DeclareCounter(C1);
 DeclareAlarm(A1);
-DeclareAlarm(A2);
 
 DeclareTask(MS1);
 DeclareTask(MS2);
@@ -220,11 +219,32 @@ TASK(SCHED) {
 				}
 			}
 		}
+		#ifdef ANGLE
+		if (cycle % ANGLE_SYNC_PERIOD == 0) {
+			ara_timing_info(4, 5);
+			res = ActivateTask(MSANGLE);
+			#ifdef PRINT_RUN_STATS
+				angle_start_counter++;
+			#endif
+			if (res == StatusType::E_OS_LIMIT) {
+				#ifdef PRINT_RUN_STATS
+					angle_blocked_counter++;
+				#endif
+			}
+		}
+		#endif
 	}
     cycle++;
 
 	TerminateTask();
 }
+
+// ISR to start Angle Sync Task, would be triggered externally
+// ISR2 because of 2nd Category, Name is ISR1
+ISR2(ISR1) {
+	ActivateTask(MSANGLE);
+}
+
 
 /**
  ******************** HOOKS ********************
@@ -570,4 +590,3 @@ TASK(MSANGLE) {
 
 	TerminateTask();
 }
-

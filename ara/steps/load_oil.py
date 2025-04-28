@@ -6,6 +6,7 @@
 # SPDX-FileCopyrightText: 2022 Björn Fiedler <fiedler@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2023 Andreas Kässens
 # SPDX-FileCopyrightText: 2024 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2025 Mareike Burg
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -328,7 +329,9 @@ class LoadOIL(Step):
                         priority=isr["priority"],
                         category=isr["category"],
                         device=isr["device"],
-                        artificial=False
+                        artificial=False,
+                        min_activation_time=isr["min_activation_time"],
+                        max_activation_time=isr["max_activation_time"]
                 )
                 instances.vp.is_control[i] = True
                 instances.vp.label[i] = i_name
@@ -364,6 +367,12 @@ class LoadOIL(Step):
 
                 if active == False:
                     continue
+
+            if isinstance(obj, _autosar.ISR):
+                first_activation = obj.min_activation_time
+                shortest_cycletime = obj.max_activation_time
+                self._log.info(f"Added isr with activation intervall between: {isr['min_activation_time']} to {isr['max_activation_time']} us.")
+
 
             # only add counter if there is any alarm attached
             # breakpoint()
