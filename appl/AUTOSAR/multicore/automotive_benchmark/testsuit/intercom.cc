@@ -74,7 +74,6 @@ TASK(INIT) {
     setup_and_print("intercom");
     ara_timing_info(1, 5);
 
-	
     TerminateTask();
 }
 
@@ -85,7 +84,6 @@ TASK(SCHED) {
     if (cycle >= CYCLES) {
 
 		print_results();
-
 		ara_timing_info(15, 25);
         ShutdownMachine();
     }

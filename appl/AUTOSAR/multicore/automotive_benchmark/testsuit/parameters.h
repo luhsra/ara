@@ -93,6 +93,10 @@ constexpr unsigned COUNTED_CYCLES = COOLDOWN- WARMUP;
 // #define PRINT_MEM_STATS
 
 
+// Activate angle sync task
+#define ANGLE
+
+
 /**
  ******************** Static Variables ********************
  from Paper: REAL WORLD AUTOMOTIVE BENCHMARKS FOR FREE

@@ -192,7 +192,9 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'w_time_newSched',                 'timing': 'BB', 'oil': 'w_time_newSched_system.json'},
   {'core': 'multicore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'labels',         'timing': 'BB', 'oil': 'scheduler_system.json',    'variants': ['BASIC', 'LARGE', 'TINY', 'LONG', 'CUSTOM']},
   {'core': 'multicore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'intercom',       'timing': 'BB', 'oil': 'scheduler_system.json',    'variants': ['BASIC', 'LARGE', 'TINY', 'LONG', 'CUSTOM']},
-  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'scheduler',       'timing': 'BB', 'oil': 'scheduler_system.json',    'variants': ['BASIC', 'LARGE', 'TINY', 'LONG', 'CUSTOM']},
+  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'scheduler',      'timing': 'BB', 'oil': 'scheduler_system.json',    'variants': ['BASIC', 'LARGE', 'TINY', 'LONG', 'CUSTOM']},
+  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'angle',          'timing': 'BB', 'oil': 'angle.json',               'variants': ['BASIC', 'LARGE', 'TINY', 'LONG', 'CUSTOM']},
+  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'trig-angle',     'timing': 'BB', 'oil': 'trig-angle.json',               'variants': ['BASIC', 'LARGE', 'TINY', 'LONG', 'CUSTOM']},
 ]
 subdir('multicore' / 'trampoline')
 

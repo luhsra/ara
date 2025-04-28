@@ -9,6 +9,10 @@
 	static unsigned start_counter[TASK_COUNT] = {0};
 	static unsigned blocked_counter[TASK_COUNT] = {0};
 	static unsigned finish_counter[TASK_COUNT] = {0};
+
+	#ifdef ANGLE
+		static unsigned angle_finish_counter = 0;
+	#endif
 #endif
 
 #ifdef PRINT_CYCLE_TIMING
@@ -19,6 +23,10 @@
 #ifdef PRINT_TASK_TIMING
 	static unsigned int cycle_count[TASK_COUNT] = {0};
 	static unsigned int task_time[TASK_COUNT][CYCLES] = {0};
+	#ifdef ANGLE
+		static unsigned int angle_cycle_count = 0;
+		static unsigned int angle_task_time[CYCLES] = {0};
+	#endif
 #endif
 
 #ifdef PRINT_HOOK_STATS
@@ -69,6 +77,8 @@ task_id translate_task_type(uint32_t task) {
 			return task_id::MS200_id;
 		case 11:
 			return task_id::MS1000_id;
+		case 12:
+			return task_id::MSANGLE_id;
 		default:
 			return task_id::MS_LAST_id;
 	}
@@ -193,7 +203,7 @@ void print_results() {
 		unsigned exp_runtime = 0;
 		unsigned runables = 0;
 		unsigned rt_si = 0;
-		kout << "TASK     | % of RUNNABLES | #RUNNABLES \t| SINGLE RUNTIME | TASK RUNTIME | EXPECTED RUNTIME per SCHEDUL_INTERVAL" << endl;
+		kout << "TASK     | % of RUNNABLES | #RUNNABLES \t| PERIODE \t| TASK RUNTIME | EXPECTED RUNTIME per SCHEDUL_INTERVAL" << endl;
 		kout << "-----------------------------------------------------------------------------------------------" << endl;
 		for (unsigned i = 0; i < TASK_COUNT; i++) {
 			runables += (NUMBER_OF_RUNABLES / 100) * RUNABLES_SHARE[i];
@@ -203,8 +213,17 @@ void print_results() {
 			kout <<  RUNABLES_PERIOD[i] << "\tus\t | " << exp_runtime << "\tus";
 			kout << "\t| " << exp_runtime / RUNABLES_PERIOD[i] << "\tus" << endl;
 		}
+
+		#ifdef ANGLE
+			runables += (NUMBER_OF_RUNABLES / 100) * RUNABLES_SHARE[MSANGLE_id];
+			exp_runtime = TOTAL_RUNTIME[MSANGLE_id];
+			kout << taskStrings[MSANGLE_id] << "\t | " << RUNABLES_SHARE[MSANGLE_id] << "\t\t  | " << (NUMBER_OF_RUNABLES / 100) * RUNABLES_SHARE[MSANGLE_id] << "\t\t| ";
+			kout <<  SHORTEST_ANGLE_SYNC_PERIOD << "-" << LONGEST_ANGLE_SYNC_PERIOD << " (" << ((SHORTEST_ANGLE_SYNC_PERIOD + LONGEST_ANGLE_SYNC_PERIOD) / 2) << ")";
+			kout << " us\t | " << exp_runtime << "\tus";
+			kout << "\t| ~" << exp_runtime / ((SHORTEST_ANGLE_SYNC_PERIOD + LONGEST_ANGLE_SYNC_PERIOD) / 2) << "\tus" << endl;
+		#endif
 		kout << "Active number of runnables=" << runables << " | Needed runtime per interval=" << rt_si;
-		kout  << "us (available_interval=" << SCHEDUL_INTERVAL << "us) | Load=" << rt_si / (SCHEDUL_INTERVAL / 100) << "%" << endl;
+		kout  << "us (available_interval=" << SCHEDUL_INTERVAL << "us) | Load=" << rt_si / (SCHEDUL_INTERVAL / 100) << "% (Excluding Angle Sync)" << endl;
 		kout << "*******************\r\n" << endl;
 	#endif
 
@@ -216,7 +235,9 @@ void print_results() {
 			kout << taskStrings[i] << "\t| " << start_counter[i] << "\t\t| " << finish_counter[i] << "\t\t | ";
 			kout << blocked_counter[i] << "/" << (100 * blocked_counter[i]) / start_counter[i] << endl;
 		}
-		
+		#ifdef ANGLE
+			kout << "MSANGLE | -             | " << angle_finish_counter << "\t\t | -" << endl;
+		#endif
 		kout << "*******************\r\n" << endl;
 	#endif
 
@@ -252,25 +273,3 @@ void print_results() {
 		micro_sec_wait(5000000);
 	#endif
 }
-
-
-/*
-TODO 
-void kout_intercom_data() {
-
-	kout << "\nInter-Task Communication Matrix\nLeft column is sender, the others are receiving tasks" << endl;
-	for (unsigned i = 0; i < NR_TASKS; i++) {
-		kout <<  taskStrings[i] << "\t";
-	}
-	kout << "\n-------------------------------------------------------------------------" << endl;
-	for (unsigned i = 0; i < NR_TASKS; i++) {
-		kout << taskStrings[i] << "\t";
-		for (unsigned j = 0; j < NR_TASKS; j++) {
-			kout << INTER_TASK_RATIO[i][j] << "\t";
-		}
-		kout << endl;
-	}
-	kout << endl;
-	
-}*/
-	
