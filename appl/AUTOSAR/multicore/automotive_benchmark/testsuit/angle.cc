@@ -55,11 +55,10 @@ TASK(INIT) {
 
 // Main Scheduler, activated by AUTOSAR Counter
 TASK(SCHED) {
-    ara_timing_info(10, 20);
+    ara_timing_info(10, 25);
 
     if (cycle >= CYCLES) {
 		print_results();
-		ara_timing_info(15, 25);
         ShutdownMachine();
     }
 

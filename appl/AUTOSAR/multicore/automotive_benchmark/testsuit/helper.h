@@ -156,6 +156,13 @@ void print_results() {
 				}
 			}
 		}
+		#ifdef ANGLE
+			for (unsigned i = 0; i < CYCLES; i++) {
+				if (angle_task_time[i] != 0){
+					kout << taskStrings[MSANGLE_id] << "\t| " << i << "\t\t| " << angle_task_time[i] / WAIT_FREQUENCE << "us" << endl;
+				}
+			}
+		#endif
 		kout << "*******************\r\n" << endl;
 	#endif
 
@@ -246,14 +253,20 @@ void print_results() {
 	#ifdef PRINT_MEM_STATS
 		kout << "*******************\r\nMemory Analysis for up to " << NUMBER_OF_LABELS << " labels with each ";
 		kout << AVAERAGE_LABEL_SIZE << " bytes:" << endl;
-		kout << "Read-only: " << RO_SHARE << "% | Write-only: " << WO_SHARE << "% | Intercom: " << RW_SHARE << "%." << endl;
-		kout << "TASK\t| RO_SIZE (Bytes) | Start of Mem"<< endl;
+		kout << "Read-only: " << RO_SHARE << "% | Write-only: - | Intercom: " << RW_SHARE << "%." << endl;
+		kout << "TASK\t| RO_SIZE (Bytes) | RO_Offset | INTERCOM_SIZE (Bytes) | INTERCOM_Offset"<< endl;
 		kout << "--------------------------------------------------------" << endl;
 		unsigned labels = 0;
 		for (unsigned i = 0; i < TASK_COUNT; i++) {
 			labels += ro_memory_size[i];
-			kout << taskStrings[i] << "\t| " << ro_memory_size[i] << "\t\t  | " << ro_memory_offset[i] << endl;
+			labels += intercom_memory_size[i];
+			kout << taskStrings[i] << "\t| " << ro_memory_size[i] << "\t\t| " << ro_memory_offset[i];
+			kout << "\t\t| " << intercom_memory_size[i] << "\t\t  | " << intercom_memory_offset[i] << endl;
 		}
+		#ifdef ANGLE
+			kout << taskStrings[MSANGLE_id] << "\t| " << ro_memory_size[MSANGLE_id] << "\t\t  | " << ro_memory_offset[MSANGLE_id];
+			kout << "\t| " << intercom_memory_size[MSANGLE_id] << "\t\t| " << intercom_memory_offset[MSANGLE_id] << endl;
+		#endif
 		kout << "Total used: " << labels << " bytes." << endl;
 		kout << "*******************\r\n" << endl;
 	#endif
