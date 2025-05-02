@@ -13,7 +13,14 @@
       "resources": {},
       "events": {},
       "counters": {},
-      "alarms": {}
+      "alarms": {},
+      "isrs": {
+        "ISR1": {
+          "category": 2,
+          "device": 14,
+          "priority": 3
+        }
+      }
     }
   ]
 }

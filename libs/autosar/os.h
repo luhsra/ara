@@ -5,6 +5,7 @@
 // SPDX-FileCopyrightText: 2020 Björn Fiedler <fiedler@sra.uni-hannover.de>
 // SPDX-FileCopyrightText: 2020 Gerion Entrup <entrup@sra.uni-hannover.de>
 // SPDX-FileCopyrightText: 2023 Andreas Kässens
+// SPDX-FileCopyrightText: 2025 Mareike Burg
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -109,6 +110,11 @@
 #define StartCore(core, status) AUTOSAR_StartCore(core, status)
 
 #define GetNumberOfActivatedCores() AUTOSAR_GetNumberOfActivatedCores()
+
+// For XEN hypercalls
+#define test_sender_event_channel(port) XEN_test_sender_event_channel(port)
+#define test_notify_evtchn(port) XEN_test_notify_evtchn(port)
+#define test_recive_event_channel(port, cb) XEN_test_recive_event_channel(port, cb)
 
 #define OS_CORE_ID_0 0
 #define OS_CORE_ID_1 1
@@ -343,6 +349,12 @@ extern void AUTOSAR_SuspendAllInterrupts();
 extern void AUTOSAR_ResumeAllInterrupts();
 extern void AUTOSAR_SuspendOSInterrupts();
 extern void AUTOSAR_ResumeOSInterrupts();
+
+// for XEN hypercalls
+void XEN_test_sender_event_channel(EventChannelPortType port);
+void XEN_test_notify_evtchn(EventChannelPortType port);
+void XEN_test_recive_event_channel(EventChannelPortType port, EventChannelCallbackType cb);
+
 
 /******************************************************************************
  *                                                                            *

@@ -566,7 +566,7 @@ class AUTOSAR(OSBase):
 
     @staticmethod
     # def interpret(graph: Graph, state: OSState, cpu_id, categories=SyscallCategory.every) -> OSState:
-    def interpret(graph: Graph, state: OSState, cpu_id, categories=None) -> OSState:
+    def interpret(graph: Graph, state: OSState, cpu_id: int, categories=None) -> OSState:
         if not categories:
             categories = {SyscallCategory.every}
         cfg = graph.cfg
@@ -1249,4 +1249,26 @@ class AUTOSAR(OSBase):
             state, cpu_id, args.event_mask, "WaitEvent", InstanceEdge.wait
         )
 
+        return state
+
+
+
+    @syscall(categories={SyscallCategory.comm}, signature=tuple())
+    def XEN_test_sender_event_channel(cfg: CFG, state: OSState, cpu_id: int, args, va) -> OSState:
+        # placeholder for XEN syscalls
+        pass
+        return state
+
+
+    @syscall(categories={SyscallCategory.comm}, signature=tuple())
+    def XEN_test_notify_evtchn(cfg: CFG, state: OSState, cpu_id: int, args, va) -> OSState:
+        # placeholder for XEN syscalls
+        pass
+        return state
+
+
+    @syscall(categories={SyscallCategory.comm}, signature=tuple())
+    def XEN_test_recive_event_channel(cfg: CFG, state: OSState, cpu_id: int, args, va) -> OSState:
+        # placeholder for XEN syscalls
+        pass
         return state

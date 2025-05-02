@@ -7,12 +7,19 @@ int main(void) {
 	StartOS(0);
 }
 
+// recv hypercall
+ISR2(ISR1) {
+	ActivateTask(B);
+}
+
 TASK(B) {
 	kout << "Hello B."<< endl;
 
-	TerminateTask();
-}
+	test_recive_event_channel(10, AUTOSAR_ISR_ISR1);
+	//regitser(port, Interupt nr);
 
-void PreIdleHook() {
+	// TerminateTask();
 	ShutdownMachine();
 }
+
+

@@ -309,6 +309,9 @@ class OSState:
             s += "\n\t" + str(self.cfg) + " " + str(self.instances)
         for cpu in self.cpus:
             s += f"\n\t{str(cpu)}"
+            # for syscalls print name of syscall aswell
+            if cpu.exec_state == ExecState.syscall:
+                s += " syscall=" + self.cfg.get_syscall_name(cpu.abb)
         s += "\n"
         for k, v in self.context.items():
             s += f"\n\t{k} --- {v}"
@@ -326,6 +329,13 @@ class OSState:
         self.cfg_list = cfg_list
         self.instances_list = instances_list
 
+    # helper function used in interpret
+    def get_syscall_name(self, cpu_id: int) -> str:
+        abb = self.cpus[cpu_id].abb
+        syscall = self.cfg.get_syscall_name(abb)
+        assert(syscall, f"Tried to get syscall name of a state that is not in a syscall, cpud_id={cpu_id}, state={self}")
+        return syscall
+    
     # def choose_cfg(self, system_id: int) -> CFG:
     #     assert(system_id <= self.system_count, f"Choose cfg_id {system_id} to high")
     #     return self.cfg_list[system_id]
