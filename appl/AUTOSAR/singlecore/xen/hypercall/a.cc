@@ -3,18 +3,18 @@
 
 DeclareTask(A);
 
-evtchn_port_t local_port;
+evtchn_port_t port = 42;
 
 int main(void) {
-	xen_events_init();
-	local_port = bind_interdomain_event_channel(0, 42, nullptr, nullptr);
+	// xen_events_init();
+	test_sender_event_channel(port);
 	StartOS(0);
 }
 
 TASK(A) {
 	kout << "Hello A."<< endl;
 
-	notify_evtchn(local_port);
+	test_notify_evtchn(port);
 
 	TerminateTask();
 }

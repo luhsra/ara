@@ -15,7 +15,7 @@ from .os_util import (
     find_instance_node,
     Parenthesis,
 )
-from ara.graph import CFG, InstanceGraph, SyscallCategory
+from ara.graph import CFG, InstanceGraph, SyscallCategory, SigType
 from .os_base import (
     OSBase,
     OSState,
@@ -252,13 +252,23 @@ class XEN(OSBase):
         Return:
         A list of follow up states.
         """
+        return XEN.system_types[cpu_id].handle_exit(graph, state, cpu_id)
         raise NotImplementedError
 
     @staticmethod
     def interpret(graph: Graph, state: OSState, cpu_id, categories=SyscallCategory.every) -> OSState:
 
         logger.warning(f"Interpret: cpu_id: {cpu_id} System count: {XEN.system_count} {XEN.graph_list}\nCurrent graph: {graph}")
-        return XEN.system_types[cpu_id].interpret(graph=XEN.graph_list[cpu_id], state=state, cpu_id=cpu_id, categories=categories)
+        syscall = state.get_syscall_name(cpu_id)
+
+
+        if XEN.is_syscall(syscall):
+            logger.warning(f"Interpret a xen syscall: {syscall}")
+            syscall_function = getattr(XEN, syscall)
+        
+            return syscall_function(graph, state, cpu_id)
+        else:
+            return XEN.system_types[cpu_id].interpret(graph=XEN.graph_list[cpu_id], state=state, cpu_id=cpu_id, categories=categories)
 
     @staticmethod
     def split_states(state: OSState) -> list[OSState]:
@@ -299,3 +309,25 @@ class XEN(OSBase):
                 # TODO XEN [0]
                 XEN.system_types[idx].schedule(state=sc_state, cpus=cpus)
 
+
+    @syscall(categories={SyscallCategory.comm}, signature=tuple())
+    def XEN_test_sender_event_channel(cfg: CFG, state: OSState, cpu_id: int, args, va) -> OSState:
+        
+        pass
+        
+        return state
+
+
+    @syscall(categories={SyscallCategory.comm}, signature=tuple())
+    def XEN_test_notify_evtchn(cfg: CFG, state: OSState, cpu_id: int, args, va) -> OSState:
+
+        pass
+        # todo sync point mit zieltask machen
+        return state
+
+
+    @syscall(categories={SyscallCategory.comm}, signature=tuple())
+    def XEN_test_recive_event_channel(cfg: CFG, state: OSState, cpu_id: int, args, va) -> OSState:
+
+        pass
+        return state

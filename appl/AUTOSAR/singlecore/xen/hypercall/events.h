@@ -9,11 +9,11 @@
 
 #include "event_channel.h"
 
-typedef void (*evtchn_cb_t)(void *priv);
+typedef void (*evtchn_cb_t)();
 
 struct event_channel_handle {
 	evtchn_cb_t cb;
-	void *priv;
+	// void *priv;
 };
 typedef struct event_channel_handle evtchn_handle_t;
 
@@ -63,6 +63,18 @@ int bind_interdomain_event_channel(domid_t remote_dom, evtchn_port_t remote_port
 		evtchn_cb_t cb, void *data)
 {
 	return 10; //TODO
+}
+
+void test_sender_event_channel(evtchn_port_t port) {
+	return;
+}
+
+void test_notify_evtchn(evtchn_port_t port) {
+	return;
+}
+
+void test_recive_event_channel(evtchn_port_t port, evtchn_cb_t cb) {
+	return;
 }
 
 /*
