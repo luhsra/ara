@@ -4,6 +4,7 @@
 DeclareTask(B);
 
 int main(void) {
+	test_recive_event_channel(10, AUTOSAR_ISR_ISR1);
 	StartOS(0);
 }
 
@@ -13,10 +14,7 @@ ISR2(ISR1) {
 }
 
 TASK(B) {
-	kout << "Hello B."<< endl;
-
-	test_recive_event_channel(10, AUTOSAR_ISR_ISR1);
-	//regitser(port, Interupt nr);
+	kout << "B"<< endl;
 
 	// TerminateTask();
 	ShutdownMachine();

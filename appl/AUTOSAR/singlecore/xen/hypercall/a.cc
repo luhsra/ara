@@ -12,13 +12,10 @@ int main(void) {
 }
 
 TASK(A) {
-	kout << "Hello A."<< endl;
+	kout << "A"<< endl;
 
 	test_notify_evtchn(port);
 
-	TerminateTask();
-}
-
-void PreIdleHook() {
+	// TerminateTask();
 	ShutdownMachine();
 }
