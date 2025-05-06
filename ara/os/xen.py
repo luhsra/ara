@@ -311,23 +311,26 @@ class XEN(OSBase):
 
 
     @syscall(categories={SyscallCategory.comm}, signature=tuple())
-    def XEN_test_sender_event_channel(cfg: CFG, state: OSState, cpu_id: int, args, va) -> OSState:
+    def XEN_test_sender_event_channel(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
         
+        # TODO 
         pass
         
         return state
 
 
     @syscall(categories={SyscallCategory.comm}, signature=tuple())
-    def XEN_test_notify_evtchn(cfg: CFG, state: OSState, cpu_id: int, args, va) -> OSState:
-
+    def XEN_test_notify_evtchn(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
+        # TODO aus args den port ziehen
+        
+        # handle_irq()
         pass
         # todo sync point mit zieltask machen
         return state
 
 
     @syscall(categories={SyscallCategory.comm}, signature=tuple())
-    def XEN_test_recive_event_channel(cfg: CFG, state: OSState, cpu_id: int, args, va) -> OSState:
-
+    def XEN_test_recive_event_channel(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
+        # TODO 
         pass
         return state

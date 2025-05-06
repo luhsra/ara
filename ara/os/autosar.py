@@ -1254,21 +1254,21 @@ class AUTOSAR(OSBase):
 
 
     @syscall(categories={SyscallCategory.comm}, signature=tuple())
-    def XEN_test_sender_event_channel(cfg: CFG, state: OSState, cpu_id: int, args, va) -> OSState:
+    def XEN_test_sender_event_channel(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
         # placeholder for XEN syscalls
         pass
         return state
 
 
     @syscall(categories={SyscallCategory.comm}, signature=tuple())
-    def XEN_test_notify_evtchn(cfg: CFG, state: OSState, cpu_id: int, args, va) -> OSState:
+    def XEN_test_notify_evtchn(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
         # placeholder for XEN syscalls
         pass
         return state
 
 
     @syscall(categories={SyscallCategory.comm}, signature=tuple())
-    def XEN_test_recive_event_channel(cfg: CFG, state: OSState, cpu_id: int, args, va) -> OSState:
+    def XEN_test_recive_event_channel(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
         # placeholder for XEN syscalls
         pass
         return state
