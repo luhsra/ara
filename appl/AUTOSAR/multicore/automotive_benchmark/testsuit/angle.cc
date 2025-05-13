@@ -13,6 +13,10 @@ DeclareTask(SCHED);
 DeclareCounter(C1);
 DeclareAlarm(A1);
 
+// für Multicore
+// DeclareTask(MS1-a);
+// DeclareTask(MS1-a);
+DeclareTask(MS1);
 DeclareTask(MS1);
 DeclareTask(MS2);
 DeclareTask(MS5);

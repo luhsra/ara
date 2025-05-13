@@ -1,12 +1,14 @@
 # SPDX-FileCopyrightText: 2024 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2025 Mareike Burg
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 """All common functions regarding interrupt handling in the models."""
 import math
 
-from ara.graph import NodeLevel, ABBType, CFType, SyscallCategory
+from ara.graph import NodeLevel, ABBType, CFType, SyscallCategory, CFG, Callgraph
 from ara.util import get_child_logger_or_none
+from ara.os.os_base import OSBase
 
 from .os_base import IRQCPU, TaskStatus, ExecState
 
@@ -16,18 +18,13 @@ class IntrSyscall:
 
 
 # def fake_interrupt_function(temp_printer, cfg, callgraph, os, name, alarmtime, cycletime):
-def fake_interrupt_function(cfg, callgraph, os, name, alarmtime_ms, cycletime_ms):
+def fake_interrupt_function(cfg: CFG, callgraph: Callgraph, os: OSBase, name: str, 
+                            iit_startup_bcet: int = 1, iit_startup_wcet: int = math.inf, 
+                            iit_cycle_bcet: int = 1, iit_cycle_wcet: int = math.inf):
     """Fake an interrupt control flow.
 
     Apply the interrupt interarrival time (iit) if given.
     """
-
-    # If true use given iit, else set range to (1, inf)
-    do_iit = True
-
-    # Autosar increments counter with a 1 kHz Timer, but other timing measurement is done with us precision
-    alarmtime_us = alarmtime_ms * 1000
-    cycletime_us = cycletime_ms * 1000
 
     syscall_name = name + '.sc'
 
@@ -41,7 +38,7 @@ def fake_interrupt_function(cfg, callgraph, os, name, alarmtime_ms, cycletime_ms
     # Add a vertex as startpoint, its time is defined by "alarmtime", the time before the alarm is first triggered
     startup_v = cfg.add_vertex()
     cfg.vp.artificial[startup_v] = True
-    cfg.vp.name[startup_v] = "Startup(Alarmtime)"
+    cfg.vp.name[startup_v] = "Startup"
     cfg.vp.level[startup_v] = NodeLevel.abb
     cfg.vp.type[startup_v] = ABBType.computation
     # add edge to func
@@ -55,12 +52,8 @@ def fake_interrupt_function(cfg, callgraph, os, name, alarmtime_ms, cycletime_ms
     cfg.vp.artificial[alarmtime_bb] = True
     cfg.vp.name[alarmtime_bb] = "alarmtime_bb"
     cfg.vp.level[alarmtime_bb] = NodeLevel.bb
-    if do_iit:
-        cfg.set_bcet(alarmtime_bb, alarmtime_us)
-        cfg.set_wcet(alarmtime_bb, alarmtime_us)
-    else:
-        cfg.set_bcet(alarmtime_bb, 1)
-        cfg.set_wcet(alarmtime_bb, math.inf)
+    cfg.set_bcet(alarmtime_bb, iit_startup_bcet)
+    cfg.set_wcet(alarmtime_bb, iit_startup_wcet)
 
     # cfg.set_wcet(alarmtime_bb, math.inf)
     fl = cfg.add_edge(startup_v, alarmtime_bb)
@@ -111,12 +104,9 @@ def fake_interrupt_function(cfg, callgraph, os, name, alarmtime_ms, cycletime_ms
     cfg.vp.name[cycletime_bb] = "alarmtime_bb"
     cfg.vp.level[cycletime_bb] = NodeLevel.bb
 
-    if do_iit:
-        cfg.set_bcet(cycletime_bb, cycletime_us)
-        cfg.set_wcet(cycletime_bb, cycletime_us)
-    else:
-        cfg.set_bcet(cycletime_bb, 1)
-        cfg.set_wcet(cycletime_bb, math.inf)
+    cfg.set_bcet(cycletime_bb, iit_cycle_bcet)
+    cfg.set_wcet(cycletime_bb, iit_cycle_wcet)
+
     # cfg.set_wcet(cycletime_bb, math.inf)
     fl = cfg.add_edge(cycletime_v, cycletime_bb)
     cfg.ep.type[fl] = CFType.a2b

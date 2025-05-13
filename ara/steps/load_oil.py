@@ -367,18 +367,28 @@ class LoadOIL(Step):
 
                 if active == False:
                     continue
+                
+                # Autosar increments counter with a 1 kHz Timer, but other timing measurement is done with microsecond precision
+                # therefore it is converted here
+                first_activation = first_activation * 1000
+                shortest_cycletime = shortest_cycletime * 1000
+                func_v = fake_interrupt_function(cfg, callgraph, os, obj.name, iit_cycle_bcet=shortest_cycletime, 
+                    iit_cycle_wcet=shortest_cycletime, iit_startup_bcet=first_activation, iit_startup_wcet=first_activation)
 
             if isinstance(obj, _autosar.ISR):
-                first_activation = obj.min_activation_time
-                shortest_cycletime = obj.max_activation_time
-                self._log.info(f"Added isr with activation intervall between: {isr['min_activation_time']} to {isr['max_activation_time']} us.")
+                # * 1000 same as above
+                bcet = obj.min_activation_time * 1000
+                wcet = obj.max_activation_time * 1000
+                self._log.info(f"Added isr with activation intervall between: {bcet} to {wcet} us.")
+                func_v = fake_interrupt_function(cfg, callgraph, os, obj.name, iit_cycle_bcet=bcet, iit_cycle_wcet=wcet,
+                                                 iit_startup_bcet=1, iit_startup_wcet=1)
+            
 
 
             # only add counter if there is any alarm attached
-            # breakpoint()
+
             # temp_printer = Printer(self._graph, self._step_manager)
             # func_v = fake_interrupt_function(temp_printer, cfg, callgraph, os, obj.name, alarmtime=first_activation, cycletime=shortest_cycletime)
-            func_v = fake_interrupt_function(cfg, callgraph, os, obj.name, alarmtime_ms=first_activation, cycletime_ms=shortest_cycletime)
 
             irq = IRQ(
                 id=v,
