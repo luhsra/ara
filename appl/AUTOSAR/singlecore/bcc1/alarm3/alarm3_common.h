@@ -1,7 +1,7 @@
 #ifndef __ALARM3_COMMON_H__
 #define __ALARM3_COMMON_H__
 
-#define WAIT_FOR_IRQ_MAX 200000000
+#define WAIT_FOR_IRQ_MAX 300000000
 
 volatile bool stop = true;
 
