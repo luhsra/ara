@@ -81,7 +81,9 @@ class BeagleVExperiment:
         values = {}
         diffs = {}
 
-        raw_application_output = serial_result.split("NEWRUN", maxsplit=1)[1]
+        try:
+            raw_application_output = serial_result.split("NEWRUN", maxsplit=1)[1]
+        except: print(serial_result)
         for line in raw_application_output.splitlines():
             if line.startswith("RAW"):
                 continue
@@ -131,7 +133,7 @@ if __name__ == "__main__":
     BUILD_DIR = "/srv/scratch/mau.hoeppner/Bachelorthesis/ara-test/ara/build"
     RESTART_CMD = "/srv/scratch/mau.hoeppner/Bachelorthesis/power2.py NET2 CYCLE"
     REMOTE_HOST ="lab-pc60"
-    REPEATS = 2
+    REPEATS = 20
     
     timestr = time.strftime("%Y%m%d-%H%M%S")
     
