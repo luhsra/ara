@@ -185,4 +185,12 @@ class RiscVArch(GenericArch):
 
     def generate_kernelspace(self, userspace, abb, arguments):
         # Use the inline kernelspace variant
-        return self.generate_kernelspace__inline(userspace, abb, arguments)
+        # return self.generate_kernelspace__inline(userspace, abb, arguments)
+    
+        kernelspace = self.generate_kernelspace__inline(
+            userspace, abb, arguments)
+
+        if self.PERF_TRACE == TracePerf.SYSCALL:
+            self.call(kernelspace.pre_hook, "arch::Perf::trace_cycles")
+        
+        return kernelspace

@@ -14,6 +14,9 @@
 #include "hardware_threads.h"
 
 
+#include "perf.h"
+
+
 /**
  *  @ingroup arch
  *  @defgroup posix Posix "Hardware" abstraction
@@ -159,6 +162,8 @@ public:
 	 */
 	static forceinline void trigger_interrupt(uint8_t irq_, uint8_t cpuid = 0, bool sync = false) {
 		
+		arch::Perf::trace_cycles();
+
 		if(core_is_ready[cpuid] == false) {
 			debug_core << "Target CPU " << (int) cpuid << " is offline" << endl;
 			//return;
@@ -179,12 +184,13 @@ public:
 		
 		ipi_cleared[cpuid] = false;
 		debug_core << "Triggering IPI-Sync on core " << (int) cpuid << endl;
-		*(OTHER_HLS(cpuid)->ipi) = 1;
 
+		*(OTHER_HLS(cpuid)->ipi) = 1;
+		arch::Perf::trace_cycles();
 		while (!ipi_cleared[cpuid]) {
 			Machine::nop();
 		}
-
+		arch::Perf::trace_cycles();
 		if (interrupts) { enable_interrupts(); }
 		
 	}
