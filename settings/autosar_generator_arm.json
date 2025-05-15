@@ -1,14 +1,15 @@
 {
 	"steps": [
 		"ApplyTimings",
-    "LoadOIL",
-    "DumpCFG", 
-    "DumpCallgraph",
-    "DumpInstances",
+		"LoadOIL",
+		"DumpCFG", 
+		"DumpCallgraph",
+		"DumpInstances",
 		"IPIAvoidance",
 		"LockElision",
 		"AutosarGeneratorIR",
 		"IRWriter",
+		"MSTGStats",
 		"Generator"
 	],
 	"AutosarGeneratorIR": {
@@ -27,7 +28,7 @@
 	},
 	"MultiSSE": {
 		"with_times": true,
-    "dump" : true
+    	"dump" : true
 	}
 
 }

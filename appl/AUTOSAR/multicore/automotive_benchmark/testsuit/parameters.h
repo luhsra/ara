@@ -69,13 +69,13 @@ constexpr unsigned COUNTED_CYCLES = COOLDOWN- WARMUP;
  */
 
 // At start of run print variant and its values
-#define PRINT_VARIANT
+// #define PRINT_VARIANT
 
 // At end of run print stats about the runned tasks
-#define PRINT_TASK_DATA
+// #define PRINT_TASK_DATA
 
 // At end of run print how often each task completed or got blocked because the previous run was still running
-#define PRINT_RUN_STATS
+// #define PRINT_RUN_STATS
 
 // At end of run print time spend between each call of TASK(SCHED), should be equal to SCHEDUL_INTERVAL
 // #define PRINT_CYCLE_TIMING
@@ -87,14 +87,18 @@ constexpr unsigned COUNTED_CYCLES = COOLDOWN- WARMUP;
 // #define PRINT_HOOK_STATS
 
 // At end of run print time spent idling
-#define PRINT_IDLE
+// #define PRINT_IDLE
 
 // At end of run print memory setup
 // #define PRINT_MEM_STATS
 
+// prints the result for the automated benchmark
+#define BENCHMARK
+
+
 
 // Activate angle sync task
-#define ANGLE
+// #define ANGLE
 
 
 /**

@@ -13,10 +13,6 @@ DeclareTask(SCHED);
 DeclareCounter(C1);
 DeclareAlarm(A1);
 
-// für Multicore
-// DeclareTask(MS1-a);
-// DeclareTask(MS1-a);
-DeclareTask(MS1);
 DeclareTask(MS1);
 DeclareTask(MS2);
 DeclareTask(MS5);
@@ -28,14 +24,13 @@ DeclareTask(MS200);
 DeclareTask(MS1000);
 DeclareTask(MSANGLE);
 
-int main(void) {                                                                                                   
+int main(void) {
 	StartOS(0);
 }
 
 /**
  * Testcase with new scheduler and seperate angle sync tasks
  */
-
 
 // current cycle of scheduling
 static unsigned cycle = 0;
