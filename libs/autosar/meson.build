@@ -50,7 +50,7 @@ endif
 # RISC-V
 if riscv_enabled
   autosar_riscv_clang_flags = [
-    #libplatform_proj.get_variable('beaglev_clang_flags'),
+    libplatform_proj.get_variable('beaglev_clang_flags'),
     '--target=riscv64-unknown-elf', # 64 bit Architektur
     '-march=rv64imac',              # Spezifikation der genauen Architektur
     '-O3',                          # Optimierungsstufe
