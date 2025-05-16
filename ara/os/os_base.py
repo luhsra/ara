@@ -172,7 +172,7 @@ class ControlInstance(CPUBounded):
     """
     cfg: CFG
     artificial: bool
-    function: graph_tool.Vertex
+    function: graph_tool.libgraph_tool_core.Vertex
 
 
 @dataclass(kw_only=True)
@@ -194,7 +194,7 @@ class IRQ(ControlInstance):
 
     def __str__(self):
         s = f"IRQ: id={self.id} name=\"{self.name}\" cpu_id={self.cpu_id} cfg={self.cfg} "
-        s += f"isr_handler={self.isr_handler} active={self.active} func={self.function}"
+        s += f"isr_handler={self.isr_handler} active={self.active} func={self.cfg.vertex_index[self.function]}"
         return s
 
 @dataclass
@@ -212,8 +212,8 @@ class IRQContext(ControlContext):
 class CPU:
     id: int
     irq_on: bool  # in a more general form, this would be the hardware state
-    control_instance: graph_tool.Vertex
-    abb: graph_tool.Vertex
+    control_instance: int   # this is a graphtool.libgraph_tool_core.Vertex
+    abb: int                # this is a graphtool.libgraph_tool_core.Vertex
     call_path: CallPath
     exec_state: ExecState
     analysis_context: Any  # analysis specific context information
@@ -333,7 +333,7 @@ class OSState:
     def get_syscall_name(self, cpu_id: int) -> str:
         abb = self.cpus[cpu_id].abb
         syscall = self.cfg.get_syscall_name(abb)
-        assert(syscall, f"Tried to get syscall name of a state that is not in a syscall, cpud_id={cpu_id}, state={self}")
+        assert syscall, f"Tried to get syscall name of a state that is not in a syscall, cpud_id={cpu_id}, state={self}"
         return syscall
     
     # def choose_cfg(self, system_id: int) -> CFG:
