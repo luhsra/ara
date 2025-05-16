@@ -202,11 +202,11 @@ class HyperSSE(Step):
             extra["HyperSSE"]["oil_files"] = self.dom_oils.get()
             extra["DumpCFG"] = {}
             extra["DumpCFG"]["dot"] = "dom" + str(HyperSSE.runid)
-            extra["DumpCFG"]["add_legend"] = True
+            extra["DumpCFG"]["add_legend"] = False
             extra["DumpInstances"] = {}
             extra["DumpInstances"]["dot"] = "dom" + str(HyperSSE.runid)
             extra["MultiSSE"]["file_name_appendix"] = "dom" + str(HyperSSE.runid)
-            extra["MultiSSE"]["add_legend"] = True
+            extra["MultiSSE"]["add_legend"] = False
 
             # readd steps that are completed
             extra["steps"] = ['MultiSSE', 'DumpCFG', 'DumpInstances', 'SVFReset', 'HyperSSE']
@@ -258,7 +258,7 @@ class HyperSSE(Step):
         OSState.reset_id()
 
         self._step_manager.chain_step({"name": "MultiSSE", "with_times": False, "dump": True, 
-                                       "log_level": "debug", "hyper_sse": True, "file_name_appendix": "hyper", "add_legend": True})
+                                       "log_level": "debug", "hyper_sse": True, "file_name_appendix": "hyper", "add_legend": False})
 
         log.error("Done with single MultiSSEs, starting HyperSSE MultiSSE now!")
         HyperSSE.done = True

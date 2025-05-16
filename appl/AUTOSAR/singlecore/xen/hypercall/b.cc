@@ -2,16 +2,13 @@
 #include "events.h"
 
 DeclareTask(B);
+evtchn_port_t port = 42;
 
 int main(void) {
-	test_recive_event_channel(10, AUTOSAR_ISR_ISR1);
+	test_recive_event_channel(port, AUTOSAR_TASK_FUNC_B);
 	StartOS(0);
 }
 
-// recv hypercall
-ISR2(ISR1) {
-	ActivateTask(B);
-}
 
 TASK(B) {
 	kout << "B"<< endl;
