@@ -230,21 +230,8 @@ void Scheduler::Reschedule() {
     // update current_task
     tlist.head(current_task, current_prio);
     
-    // Dirty solution to have checkpoints at same spot,
-    // will be removed in next commit
-    // Be sure to delete all build files related to ipi_recv
-    if(arch::get_cpuid() == 0) {
-        arch::Perf::trace_cycles();
-    }
-
     // reset other cores request to reschedule (IPIs)
     ipi_cleared[arch::get_cpuid()] = true;
-
-    // Dirty solution, will be removed in next commit
-    if(arch::get_cpuid() == 0) {
-        arch::Perf::trace_cycles();
-    }
-
 
     // dispatch
     dispatchToCurrentTask();

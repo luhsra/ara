@@ -192,5 +192,6 @@ class RiscVArch(GenericArch):
 
         if self.PERF_TRACE == TracePerf.SYSCALL:
             self.call(kernelspace.pre_hook, "arch::Perf::trace_cycles")
+            self.call(kernelspace.post_hook, "arch::Perf::trace_cycles")
         
         return kernelspace

@@ -125,9 +125,9 @@ class BeagleVExperiment:
 if __name__ == "__main__":
     
     targets = [
-        #"tftp_autosar_multicore_andreas_pmu_get_spinlock_riscv",
+        "tftp_autosar_multicore_andreas_pmu_get_spinlock_riscv",
         #"tftp_autosar_multicore_andreas_pmu_ipi_send_riscv",
-        "tftp_autosar_multicore_andreas_pmu_ipi_recv_riscv",
+        #"tftp_autosar_multicore_andreas_pmu_ipi_recv_riscv",
     ]
     
     BUILD_DIR = "/srv/scratch/mau.hoeppner/Bachelorthesis/ara-test/ara/build"
