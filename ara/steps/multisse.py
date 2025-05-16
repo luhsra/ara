@@ -1591,21 +1591,24 @@ class MultiSSE(StatsStep):
             self._step_manager.chain_step({
                 "name": "Printer",
                 "dot": self.dump_prefix.get() + fna + "mstg.dot",
-                "graph_name": "MSTG",
+                "graph_name": "MSTG" + "-" + fna[:-1],
                 "subgraph": "mstg",
-                "add_legend" : self.add_legend.get()
+                "add_legend" : self.add_legend.get(),
+                "reduced" : True
             })
             self._step_manager.chain_step({
                 "name": "Printer",
                 "dot": self.dump_prefix.get() + fna + "mstg.reduced.dot",
-                "graph_name": "Reduced MSTG",
+                "graph_name": "Reduced MSTG" + fna,
                 "subgraph": "reduced_mstg",
-                "add_legend" : self.add_legend.get()
+                "add_legend" : self.add_legend.get(),
+                "reduced" : True
             })
             self._step_manager.chain_step({
                 "name": "Printer",
                 "dot": self.dump_prefix.get() + fna + "mstg.sps.dot",
-                "graph_name": "SP MSTG",
+                "graph_name": "SP MSTG" + fna,
                 "subgraph": "sp_mstg",
-                "add_legend" : self.add_legend.get()
+                "add_legend" : self.add_legend.get(),
+                "reduced" : True
             })

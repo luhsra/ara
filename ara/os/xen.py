@@ -322,8 +322,18 @@ class XEN(OSBase):
     @syscall(categories={SyscallCategory.comm}, signature=tuple())
     def XEN_test_notify_evtchn(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
         # TODO aus args den port ziehen
-        
+        # aus args
+        target_id = 1
+        pass
         # handle_irq()
+        # TODO require an ActivateTask from each os
+        # XEN.system_types[cpu_id].ActivateTask()
+
+        # cpuid sagt mit welchem Kern syncen
+        # welchen Callback auf diesem Kern
+
+        # TODO brauchen Callback obj -> steht im state.ctx drinnen als mögliches event (aus args) 
+        #raise CrossCoreAction(set([cpu_id]))
         pass
         # todo sync point mit zieltask machen
         return state

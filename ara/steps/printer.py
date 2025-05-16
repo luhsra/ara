@@ -137,13 +137,13 @@ def _sstg_state_as_dot(sstg, state_vert, OS=AUTOSAR):
         [
             f"<i>{k}</i>: {html.escape(str(v))}"
             for k, v in [
-                ("irq_on", cpu.irq_on),
+                # ("irq_on", cpu.irq_on),
                 ("instance", instance),
-                ("call_path", cpu.call_path),
+                # ("call_path", cpu.call_path),
                 ("type", ExecState(cpu.exec_state).name),
                 ("abb", abb),
-                ("kernel", str(kernel)),
-            ] + xcet
+                # ("kernel", str(kernel)),
+            ] #+ xcet
         ] + [
             f"<i>{k}</i>: {str(v)}"
             for k, v in [
@@ -455,21 +455,24 @@ def mstg_to_dot(mstg, label="MSTG", OS=AUTOSAR):
 
     if self.add_legend.get():
         # add a new cluster with the legend
-        legend = pydot.Cluster(graph_name="legend", label="MSTG-Legend\n(Each box is a single core control flow?)")
+        legend = pydot.Cluster(graph_name="legend", label="Legend")
         dot_graph.add_subgraph(legend)
 
-        state = pydot.Node(name="state", label="OSState\n(Computation or Idle)", color="green")
-        legend.add_node(state)
-        syscall = pydot.Node(name="syscall", label="Syscall", shape="box", color="blue")
-        legend.add_node(syscall)
+        metastate = pydot.Cluster(graph_name="metastate", label="Metastate - core local control flow")
+        legend.add_subgraph(metastate)
 
-        state2 = pydot.Node(name="state2", label="OSState", color="green")
-        legend.add_node(state2)
-        flow2 = pydot.Edge(src='state', dst='state2', label=' n\n to\n n')
-        legend.add_edge(flow2)
+        state = pydot.Node(name="state", label="OS-State\n(e.g. Computation)", color="green")
+        metastate.add_node(state)
+        syscall = pydot.Node(name="syscall", label="Syscall\n(e.g. Terminate Task)", shape="box", color="blue")
+        metastate.add_node(syscall)
 
-        flow = pydot.Edge(src='state', dst='syscall', label=' 1\n to\n 1\nor\n1\n to \nn-SPs')
-        legend.add_edge(flow)
+        state2 = pydot.Node(name="state2", label="OSState\n(e.g Idle)", color="green")
+        metastate.add_node(state2)
+        flow2 = pydot.Edge(src='syscall', dst='state2')
+        metastate.add_edge(flow2)
+
+        flow = pydot.Edge(src='state', dst='syscall')
+        metastate.add_edge(flow)
 
 
         # TODO add syncpoints
@@ -722,6 +725,8 @@ class Printer(Step):
             self._fail("dot file path must be given.")
 
         name = self.graph_name.get()
+        # Overwrite name here
+        # name = "ABBs-dom1"
         if not name:
             name = ''
         return name
