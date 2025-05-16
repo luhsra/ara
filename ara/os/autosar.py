@@ -136,7 +136,7 @@ class Task(AUTOSARInstance, ControlInstance):
 
     def __str__(self):
         s = f"Task: name={self.name} cpu_id={self.cpu_id} prio={self.priority} autoS={self.autostart} "
-        s += f"cfg={self.cfg} func={self.function} ..."
+        s += f"cfg={self.cfg} func={self.cfg.vertex_index[self.function]} ..."
         return s
 
 
@@ -388,8 +388,8 @@ class AUTOSAR(OSBase):
                     CPU(
                         id=cpu_id,
                         irq_on=True,
-                        control_instance=prio_vert,
-                        abb=entry_abb,
+                        control_instance=int(prio_vert),
+                        abb=int(entry_abb),
                         call_path=CallPath(),
                         exec_state=ExecState.from_abbtype(cfg.vp.type[entry_abb]),
                         analysis_context=None,
@@ -732,9 +732,9 @@ class AUTOSAR(OSBase):
             raise CrossCoreAction(set([cpu_id]))
 
     @staticmethod
-    def ActivateTask(state, cpu_id, task):
+    def ActivateTask(state: OSState, cpu_id: int, task: Task):
         assert isinstance(task, Task)
-        logger.debug(f"Setting Task {task} ready.")
+        logger.debug(f"Setting {task} ready.")
 
         AUTOSAR.check_cpu(state, task.cpu_id)
         ctx = state.context[task]

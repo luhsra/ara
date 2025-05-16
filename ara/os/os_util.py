@@ -197,7 +197,7 @@ def set_next_abb(state, cpu_id):
         if idx > 1:
             raise RuntimeError(
                 "A syscall must not have more than one successor.")
-        cpu.abb = next_abb
+        cpu.abb = int(next_abb)
         cpu.exec_state = ExecState.from_abbtype(state.cfg.vp.type[next_abb])
 
 
