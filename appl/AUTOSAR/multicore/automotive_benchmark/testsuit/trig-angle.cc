@@ -7,6 +7,7 @@
 #include "arch/arm/platforms/raspberry/perf.cc"
 #include "parameters.h"
 #include "helper.h"
+#include "angle-helper.h"
 
 DeclareTask(INIT);
 DeclareTask(SCHED);
@@ -63,7 +64,7 @@ TASK(SCHED) {
         ShutdownMachine();
     }
 
-	#if defined(PRINT_CYCLE_TIMING) || defined(PRINT_HOOK_STATS) || defined(PRINT_IDLE)
+	#if defined(PRINT_CYCLE_TIMING) || defined(PRINT_HOOK_STATS) || defined(PRINT_MEASURED_LOAD)
 		uint32_t t = arch::Perf::get_cycles();
 	#endif
 
@@ -81,8 +82,8 @@ TASK(SCHED) {
 		hookcounter++;
 	#endif
 
-	#ifdef PRINT_IDLE
-		if (WARMUP <= cycle && cycle <= COOLDOWN){
+	#ifdef PRINT_MEASURED_LOAD
+		if (FIRST_CYCLE <= cycle && cycle <= LAST_CYCLE){
 			if (idle == true){
 				idle_total += t - start_of_idle;
 			}
@@ -90,7 +91,7 @@ TASK(SCHED) {
 	#endif
 
 	StatusType res;
-	if (WARMUP <= cycle && cycle < COOLDOWN){
+	if (FIRST_CYCLE <= cycle && cycle < LAST_CYCLE){
 
 		if (TASK_COUNT >= 1) {
 			if (cycle % RUNABLES_PERIOD[MS1_id] == 0) {
@@ -278,7 +279,7 @@ void PostTaskHook() {
 			hook_start_of_idle = t;
 		#endif
 
-		#ifdef PRINT_IDLE
+		#ifdef PRINT_MEASURED_LOAD
 			idle = true;
 			start_of_idle = t;
 		#endif
@@ -292,7 +293,7 @@ void PostTaskHook() {
 					hook_idle = false;
 				#endif
 	
-				#ifdef PRINT_IDLE
+				#ifdef PRINT_MEASURED_LOAD
 					idle = false;
 				#endif
 	
@@ -306,7 +307,7 @@ void PostTaskHook() {
 					hook_idle = false;
 				#endif
 	
-				#ifdef PRINT_IDLE
+				#ifdef PRINT_MEASURED_LOAD
 					idle = false;
 				#endif
 	

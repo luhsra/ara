@@ -88,7 +88,7 @@ TASK(SCHED) {
         ShutdownMachine();
     }
 
-	#if defined(PRINT_CYCLE_TIMING) || defined(PRINT_HOOK_STATS) || defined(PRINT_IDLE)
+	#if defined(PRINT_CYCLE_TIMING) || defined(PRINT_HOOK_STATS) || defined(PRINT_MEASURED_LOAD)
 		uint32_t t = arch::Perf::get_cycles();
 	#endif
 
@@ -106,7 +106,7 @@ TASK(SCHED) {
 		hookcounter++;
 	#endif
 
-	#ifdef PRINT_IDLE
+	#ifdef PRINT_MEASURED_LOAD
 		if (WARMUP <= cycle && cycle <= COOLDOWN){
 			if (idle == true){
 				idle_total += t - start_of_idle;
@@ -276,7 +276,7 @@ void PostTaskHook() {
 			hook_start_of_idle = t;
 		#endif
 
-		#ifdef PRINT_IDLE
+		#ifdef PRINT_MEASURED_LOAD
 			idle = true;
 			start_of_idle = t;
 		#endif
@@ -289,7 +289,7 @@ void PostTaskHook() {
 				hook_idle = false;
 			#endif
 
-			#ifdef PRINT_IDLE
+			#ifdef PRINT_MEASURED_LOAD
 				idle = false;
 			#endif
 

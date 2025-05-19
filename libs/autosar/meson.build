@@ -22,7 +22,7 @@ if arm_enabled
   ]
 
   # For QEMU: pi4 is cortex-a72, but this makes it work in QEMU
-  # autosar_pi4_clang_flags += [ '-mcpu=cortex-a7', '-DQEMU', ]
+  autosar_pi4_clang_flags += [ '-mcpu=cortex-a7', '-DQEMU', ]
 
   autosar_pi4_ld_flags = [
     libplatform_proj.get_variable('arm_ld_flags')

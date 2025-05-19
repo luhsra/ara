@@ -6,6 +6,7 @@
 #include "test/test.h"
 #include "arch/arm/platforms/raspberry/perf.cc"
 #include "parameters.h"
+#include "angle-helper.h"
 #include "helper.h"
 
 DeclareTask(INIT);
@@ -24,23 +25,14 @@ DeclareTask(MS200);
 DeclareTask(MS1000);
 DeclareTask(MSANGLE);
 
-int main(void) {
-	StartOS(0);
-}
-
 /**
  * Testcase with new scheduler and seperate angle sync tasks
  */
 
-// current cycle of scheduling
-static unsigned cycle = 0;
-// the time when a running task is done with its calculations, gets changed when tasks is preempt
-static uint32_t calculate_until[TASK_COUNT] = {0};
-// keep track what time it was when the task entered its PostTaskHook
-static uint32_t time_when_stopped[TASK_COUNT] = {0};
+int main(void) {
+	StartOS(0);
+}
 
-static uint32_t angle_calculate_until = 0;
-static uint32_t angle_time_when_stopped = 0;
 /**
  ******************** OS TASKS ********************
  */
@@ -50,18 +42,16 @@ TASK(INIT) {
     ara_timing_info(1, 5);
     TerminateTask();
 }
-
-
 // Main Scheduler, activated by AUTOSAR Counter
 TASK(SCHED) {
     ara_timing_info(10, 25);
 
-    if (cycle >= CYCLES) {
+    if (cycle >= TOTAL_CYLES) {
 		print_results();
         ShutdownMachine();
     }
 
-	#if defined(PRINT_CYCLE_TIMING) || defined(PRINT_HOOK_STATS) || defined(PRINT_IDLE)
+	#if defined(PRINT_CYCLE_TIMING) || defined(PRINT_HOOK_STATS) || defined(PRINT_MEASURED_LOAD)
 		uint32_t t = arch::Perf::get_cycles();
 	#endif
 
@@ -79,8 +69,8 @@ TASK(SCHED) {
 		hookcounter++;
 	#endif
 
-	#ifdef PRINT_IDLE
-		if (WARMUP <= cycle && cycle <= COOLDOWN){
+	#ifdef PRINT_MEASURED_LOAD
+		if (FIRST_CYCLE <= cycle && cycle <= LAST_CYCLE){
 			if (idle == true){
 				idle_total += t - start_of_idle;
 			}
@@ -88,7 +78,7 @@ TASK(SCHED) {
 	#endif
 
 	StatusType res;
-	if (WARMUP <= cycle && cycle < COOLDOWN){
+	if (FIRST_CYCLE <= cycle && cycle < LAST_CYCLE){
 
 		if (TASK_COUNT >= 1) {
 			if (cycle % RUNABLES_PERIOD[MS1_id] == 0) {
@@ -220,6 +210,8 @@ TASK(SCHED) {
 	}
     cycle++;
 
+
+	
 	TerminateTask();
 }
 
@@ -262,7 +254,7 @@ void PostTaskHook() {
 			hook_start_of_idle = t;
 		#endif
 
-		#ifdef PRINT_IDLE
+		#ifdef PRINT_MEASURED_LOAD
 			idle = true;
 			start_of_idle = t;
 		#endif
@@ -276,7 +268,7 @@ void PostTaskHook() {
 					hook_idle = false;
 				#endif
 	
-				#ifdef PRINT_IDLE
+				#ifdef PRINT_MEASURED_LOAD
 					idle = false;
 				#endif
 	
@@ -290,7 +282,7 @@ void PostTaskHook() {
 					hook_idle = false;
 				#endif
 	
-				#ifdef PRINT_IDLE
+				#ifdef PRINT_MEASURED_LOAD
 					idle = false;
 				#endif
 	

@@ -3,34 +3,26 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /**
+ ******************** RUN VARIABLES ********************
+ */
+// current cycle of scheduling
+static unsigned cycle = 0;
+// the time when a running task is done with its calculations, gets changed when tasks is preempt
+static uint32_t calculate_until[TASK_COUNT] = {0};
+// keep track what time it was when the task entered its PostTaskHook
+static uint32_t time_when_stopped[TASK_COUNT] = {0};
+
+/**
  ******************** DEBUG VARIABLES ********************
  */
-#ifdef PRINT_RUN_STATS 
-	static unsigned start_counter[TASK_COUNT] = {0};
-	static unsigned blocked_counter[TASK_COUNT] = {0};
-	static unsigned finish_counter[TASK_COUNT] = {0};
-
-	#ifdef ANGLE
-		static unsigned angle_start_counter = 0;
-		static unsigned angle_blocked_counter = 0;
-		static unsigned angle_finish_counter = 0;
-	#endif
-#endif
-
 #ifdef PRINT_CYCLE_TIMING
 	static unsigned int prev = 0;
-	static unsigned int cycle_diff[CYCLES] = {0};
+	static unsigned int cycle_diff[TOTAL_CYLES] = {0};
 #endif
-
 #ifdef PRINT_TASK_TIMING
 	static unsigned int cycle_count[TASK_COUNT] = {0};
 	static unsigned int task_time[TASK_COUNT][CYCLES] = {0};
-	#ifdef ANGLE
-		static unsigned int angle_cycle_count = 0;
-		static unsigned int angle_task_time[CYCLES] = {0};
-	#endif
 #endif
-
 #ifdef PRINT_HOOK_STATS
 	static unsigned int hookcounter = 0;
 	// how many things get tracked in each hook
@@ -43,7 +35,12 @@
 	static uint32_t hook_start_of_idle = 0;
 #endif
 
-#ifdef PRINT_IDLE
+#ifdef PRINT_RUN_STATS 
+	static unsigned start_counter[TASK_COUNT] = {0};
+	static unsigned blocked_counter[TASK_COUNT] = {0};
+	static unsigned finish_counter[TASK_COUNT] = {0};
+#endif
+#ifdef PRINT_MEASURED_LOAD
 	// tracks if any tasks is still running when scheduler starts
 	static bool idle = false;
 	// used to calculate how long one idle window is
@@ -95,50 +92,38 @@ void setup_and_print(const char* name) {
 
     arch::Perf::start();
 
-    kout << "Run " << name << " testsuit." << endl;
-
-	#ifdef PRINT_VARIANT
-		kout << "*******************" << endl;
-		#if defined(VARIANT_BASIC)
-			kout << "VARIANT_BASIC" << endl;
-		#elif defined(VARIANT_LARGE)
-			kout << "VARIANT_LARGE" << endl;
-		#elif defined(VARIANT_TINY)
-			kout << "VARIANT_TINY" << endl;
-		#elif defined(VARIANT_LONG)
-			kout << "VARIANT_LONG" << endl;
-		#elif defined(VARIANT_CUSTOM)
-			kout << "VARIANT_CUSTOM" << endl;
-		#else
-			kout << "VARIANT_UNKNOWN" << endl;
-		#endif
-
-		kout << "#CYCLES total/benchmarked: " << CYCLES << "/" << COOLDOWN - WARMUP << endl;
-		kout << "#RUNNABLES               : " << NUMBER_OF_RUNABLES << endl;
-		kout << "#LABELS (if benchmarked) : " << NUMBER_OF_LABELS << endl;
-		kout << "*******************\r\n" << endl;
+    kout << "Run " << name << " testsuit with "<< TASK_COUNT << " Tasks";
+	#ifdef ANGLE
+		kout << " and Angle-Sync Task";
 	#endif
+	kout << "." << endl;
+	kout << "#CYCLES total/benchmarked: " << TOTAL_CYLES << "/" << CYCLES << endl;
+	kout << "#RUNNABLES               : " << NUMBER_OF_RUNABLES << endl;
+	#ifdef MEMORY
+		kout << "#LABELS (if benchmarked) : " << NUMBER_OF_LABELS << endl;
+	#endif
+	kout << "*******************\r\n" << endl;
 
 	// to better see results on PI wait at the beginning
 	#ifndef QEMU
 		micro_sec_wait(2000000);
 	#endif
 
-	kout << "\r\n*******************\r\nStart" << endl;
+	kout << "\r\n****************\r\nStart" << endl;
 }
 
 // After end of run show results, depends on ifdef in parameters.h
 void print_results() {
 
-	kout << "End\r\n*******************\r\n" << endl;
+	kout << "End\r\n****************\r\n\n" << endl;
 	
 	#ifdef PRINT_CYCLE_TIMING
 		kout << "*******************\r\nTime between scheduling cycles (expected: " << SCHEDUL_INTERVAL << "us):" << endl;
-		for (unsigned i = 0; i < CYCLES; i++){
+		for (unsigned i = 0; i < TOTAL_CYLES; i++){
 			kout << "Round: " << i << " c: " << cycle_diff[i] / WAIT_FREQUENCE << "us" << endl;
-			if (i == WARMUP) {
+			if (i == FIRST_CYCLE) {
 				kout << "Start of run" << endl;
-			} else if (i == COOLDOWN) {
+			} else if (i == LAST_CYCLE) {
 				kout << "End of run" << endl;
 			}
 		}
@@ -194,7 +179,7 @@ void print_results() {
 				kout << endl;
 
 			} else if (hooks[t][0] == hook_type::sched) {
-				if (WARMUP <= hooks[t][1] &&  hooks[t][1] <= COOLDOWN){
+				if (FIRST_CYCLE <= hooks[t][1] &&  hooks[t][1] <= LAST_CYCLE){
 					kout << "Sched round: " << hooks[t][1] << "  | " << hooks[t][2]/WAIT_FREQUENCE << " us";
 					if (hooks[t][3] == true) {
 						kout << " Idle for: " << hooks[t][4]/WAIT_FREQUENCE << " us" << endl;
@@ -222,7 +207,6 @@ void print_results() {
 			kout <<  RUNABLES_PERIOD[i] << "\tus\t | " << exp_runtime << "\tus";
 			kout << "\t| " << exp_runtime / RUNABLES_PERIOD[i] << "\tus" << endl;
 		}
-
 		#ifdef ANGLE
 			runables += (NUMBER_OF_RUNABLES / 100) * RUNABLES_SHARE[MSANGLE_id];
 			exp_runtime = TOTAL_RUNTIME[MSANGLE_id];
@@ -232,25 +216,13 @@ void print_results() {
 			kout << "\t| ~" << exp_runtime / ((SHORTEST_ANGLE_SYNC_PERIOD + LONGEST_ANGLE_SYNC_PERIOD) / 2) << "\tus" << endl;
 		#endif
 		kout << "Active number of runnables=" << runables << " | Needed runtime per interval=" << rt_si;
+		// unsigned p = (rt_si * 100) / (SCHEDUL_INTERVAL / 100) / 100;
 		kout  << "us (available_interval=" << SCHEDUL_INTERVAL << "us) | Load=" << rt_si / (SCHEDUL_INTERVAL / 100) << "% (Excluding Angle Sync)" << endl;
 		kout << "*******************\r\n" << endl;
 	#endif
 
-	#ifdef PRINT_RUN_STATS
-	kout << "*******************\r\nResults for " << COUNTED_CYCLES << " scheduling cycles:" << endl;
-		kout << "TASK\t| #started_runs | #finished_runs | blocked_runs #/%"<< endl;
-		kout << "--------------------------------------------------------" << endl;
-		for (unsigned i = 0; i < TASK_COUNT; i++) {
-			kout << taskStrings[i] << "\t| " << start_counter[i] << "\t\t| " << finish_counter[i] << "\t\t | ";
-			kout << blocked_counter[i] << "/" << (100 * blocked_counter[i]) / start_counter[i] << endl;
-		}
-		#ifdef ANGLE
-			kout << "MSANGLE | " << angle_start_counter << "\t\t| " << angle_finish_counter << "\t\t | " << angle_blocked_counter << endl;
-		#endif
-		kout << "*******************\r\n" << endl;
-	#endif
 
-	#ifdef PRINT_MEM_STATS
+	#if defined(PRINT_MEM_STATS) && defined(MEMORY)
 		kout << "*******************\r\nMemory Analysis for up to " << NUMBER_OF_LABELS << " labels with each ";
 		kout << AVAERAGE_LABEL_SIZE << " bytes:" << endl;
 		kout << "Read-only: " << RO_SHARE << "% | Write-only: - | Intercom: " << RW_SHARE << "%." << endl;
@@ -271,10 +243,24 @@ void print_results() {
 		kout << "*******************\r\n" << endl;
 	#endif
 
-	#ifdef PRINT_IDLE
+	#ifdef PRINT_RUN_STATS
+	kout << "*******************\r\nResults for " << CYCLES << " scheduling cycles:" << endl;
+		kout << "TASK\t| #started_runs | #finished_runs | blocked_runs #/%"<< endl;
+		kout << "--------------------------------------------------------" << endl;
+		for (unsigned i = 0; i < TASK_COUNT; i++) {
+			kout << taskStrings[i] << "\t| " << start_counter[i] << "\t\t| " << finish_counter[i] << "\t\t | ";
+			kout << blocked_counter[i] << "/" << (100 * blocked_counter[i]) / start_counter[i] << endl;
+		}
+		#ifdef ANGLE
+			kout << "MSANGLE | " << angle_start_counter << "\t\t| " << angle_finish_counter << "\t\t | " << angle_blocked_counter << endl;
+		#endif
+		kout << "*******************\r\n" << endl;
+	#endif
+
+	#ifdef PRINT_MEASURED_LOAD
 		kout << "*******************\r\n" << "Idle time:" << endl;
 		unsigned long long idle_time = idle_total / WAIT_FREQUENCE;
-		unsigned long long runtime = SCHEDUL_INTERVAL * COUNTED_CYCLES;
+		unsigned long long runtime = SCHEDUL_INTERVAL * CYCLES;
 		kout << "Total Idle Time was: " << (unsigned) idle_time << " us, of a total runtime of: " << (unsigned) runtime << " us." << endl;
 		kout << "Idle Cycles were: " << (unsigned) idle_total << " of " << (unsigned) runtime * WAIT_FREQUENCE << endl;
 		// care with overflow here

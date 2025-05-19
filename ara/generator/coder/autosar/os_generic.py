@@ -7,7 +7,6 @@ from ..elements import *
 from ..base import BaseCoder
 #from generator.analysis.Function import Function as GraphFunction
 from .implementations import *
-import logging
 
 from collections import namedtuple
 
@@ -254,7 +253,7 @@ class GenericOS(BaseCoder):
                 self.call(hook_function, user_defined, "void",
                           hook_function.arguments_names())
                 if hook == "PostTaskHook":
-                    logging.warning(
+                    self._log.warning(
                         "Be aware that PostTaskHooks are only partialy implemented. They work for counter/alarms and Activate/Terminate Tasks"
                     )
 
