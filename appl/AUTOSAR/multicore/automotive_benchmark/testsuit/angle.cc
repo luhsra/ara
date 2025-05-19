@@ -7,7 +7,7 @@
 #include "arch/arm/platforms/raspberry/perf.cc"
 #include "parameters.h"
 #include "angle-helper.h"
-#include "helper.h"
+#include "tasks-helper.h"
 
 DeclareTask(INIT);
 DeclareTask(SCHED);
@@ -259,7 +259,6 @@ void PostTaskHook() {
 			else {
 				hooks[hookcounter][3] = calculate_until[t_id];
 			}
-			
 			hookcounter++;
 
 			hook_idle = true;

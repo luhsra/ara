@@ -103,20 +103,23 @@ void setup_and_print(const char* name) {
 
     arch::Perf::start();
 
-    kout << "Starting benchmark" << endl;
-	kout << "- " << name << endl;
+    kout << "Starting benchmark: " << name <<  endl;
 	kout << "- #Task(s): "<< TASK_COUNT << endl;
 	#ifdef ANGLE
 		kout << "- with Angle-Sync";
 		#ifdef TRIG_ANGLE
 			kout << " (triggered)";
 		#endif
+		kout << endl;
 	#endif
-	kout << endl;
 	kout << "- #Cycles benchmark/total: " << CYCLES << "/" << TOTAL_CYLES << endl;
 	kout << "- #Runnables             : " << NUMBER_OF_RUNABLES << endl;
 	#ifdef MEMORY
-		kout << "#Labels (if benchmarked) : " << NUMBER_OF_LABELS << endl;
+		kout << "- #Labels                : " << NUMBER_OF_LABELS;
+		#ifdef READ_ONLY
+			kout << " (read-only)";
+		#endif
+		kout << endl;
 	#endif
 	kout << "*******************\r\n" << endl;
 

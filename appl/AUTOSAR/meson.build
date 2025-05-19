@@ -190,11 +190,9 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'virt_counter_multicore',                   'timing': 'BB','oil': 'virt_counter_multicore_system.json'},
   {'core': 'multicore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'hw_counter_multicore',                   'timing': 'BB','oil': 'hw_counter_multicore_system.json'},
   {'core': 'multicore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'w_time_newSched',                 'timing': 'BB', 'oil': 'w_time_newSched_system.json'},
-  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'labels',         'timing': 'BB', 'oil': 'scheduler_system.json',    'variants': ['MIN', 'SMALL', 'BIG', 'FULL']},
-  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'intercom',       'timing': 'BB', 'oil': 'scheduler_system.json',    'variants': ['MIN', 'SMALL', 'BIG', 'FULL']},
-  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'scheduler',      'timing': 'BB', 'oil': 'scheduler_system.json',    'variants': ['MIN', 'SMALL', 'BIG', 'FULL']},
-  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'angle',          'timing': 'BB', 'oil': 'angle.json',               'variants': ['MIN', 'SMALL', 'BIG', 'FULL']},
-  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'trig-angle',     'timing': 'BB', 'oil': 'angle.json',               'variants': ['MIN', 'SMALL', 'BIG', 'FULL']},
+  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'tasks',          'timing': 'BB', 'oil': 'tasks.json',    'variants': ['MIN', 'SMALL', 'BIG', 'FULL']},
+  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'labels',         'timing': 'BB', 'oil': 'tasks.json',    'variants': ['MIN', 'SMALL', 'BIG', 'FULL']},
+  {'core': 'multicore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'angle',          'timing': 'BB', 'oil': 'angle.json',    'variants': ['MIN', 'SMALL', 'BIG', 'FULL']},
 ]
 subdir('multicore' / 'trampoline')
 
