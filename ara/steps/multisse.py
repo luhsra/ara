@@ -58,6 +58,7 @@ from .multisse_helper.wcet_calculation import (
 
 AMOUNT_OF_EMPTY_REEVALS_PER_SP = 2
 
+from ara.os.zephyr import Zephyr # for enable_sse only
 
 @dataclass(frozen=True)
 class NewNodeReevaluation:
@@ -789,6 +790,10 @@ class MultiSSE(StatsStep):
         affected_cores = self._mstg.cross_core_map[cross_state]
         current_core = mstg.vp.cpu_id[cross_state]
 
+        #if (affected_cores[0] < 0):
+        #    self._log.warning(f"cross_core_map incorrect, affected_cores = {affected_cores}, assuming 0")
+        affected_cores = [0]
+
         time = None
         if self.with_times.get():
             time = self._timings.get_relative_time(last_sp, cross_state)
@@ -1131,6 +1136,9 @@ class MultiSSE(StatsStep):
         else:
             cross_syscalls = list(metastate.cross_syscalls)
 
+        #if cross_syscalls:
+        #    cross_syscalls = [] # TODO remove this again and fix CCS
+
         s_from = f", start from {int(start_from)}" if start_from else ''
         self._log.debug("Search for candidates for the cross syscalls: "
                         f"{[int(x) for x in metastate.cross_syscalls]} "
@@ -1171,6 +1179,8 @@ class MultiSSE(StatsStep):
                                                            multi_state,
                                                            sc_cpu.reference_cpu_id,
                                                            sc_cpu.irq)
+                            if not isinstance(irq_exit_states, list):
+                                irq_exit_states = [irq_exit_states]
                             if irq_exit_states is None:
                                 self._log.info("IRQ %s cannot be handled.",
                                                sc_cpu.irq.id)
@@ -1381,6 +1391,9 @@ class MultiSSE(StatsStep):
 
         # map between a state (the hash of it) and the vertex in the MSTG
         self._state_map = {}
+
+        # TODO: move this elsewhere, also sse.py ?
+        Zephyr.enable_sse = True
 
         # initialize stack
         sync_point = self._get_initial_state()

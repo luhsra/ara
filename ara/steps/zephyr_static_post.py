@@ -14,6 +14,7 @@ from ara.os.zephyr import Queue, QueueType, ZephyrInstance, Thread, ZephyrKernel
 from ara.os.os_base import ControlInstance
 from .option import Bool, Option, String
 from ara.util import KConfigFile, get_logger
+from ara.os.interrupts import fake_interrupt_function
 
 logger = get_logger("ZephyrStaticPost")
 
@@ -68,7 +69,12 @@ class ZephyrStaticPost(Step):
 
         Zephyr.config = KConfigFile(self.kconfigfile.get())
 
+        # artificial CPU ids starting at 1
+        fake_cpuid = 1
+
         cfg = self._graph.cfg
+        callgraph = self._graph.callgraph
+        os = self._graph.os
 
         # Iterate over all statically created instances and convert their dict datatype to the matching datatype.
         # Also fill missing fields in control instances.
@@ -96,18 +102,21 @@ class ZephyrStaticPost(Step):
                 inst.cfg = cfg
                 inst.function = function
             if issubclass(instance_type, ISR): # user defined ISRs from .intList
-
+                
+                func_v = fake_interrupt_function(cfg, callgraph, os, "fake_"+inst.entry_name)
+                
                 # create the missing IRQ for analysis
                 irq = ZephyrIRQ(
-                    cpu_id=-1,
+                    cpu_id=fake_cpuid,
                     cfg=cfg,
                     artificial=True,
-                    function=None,
+                    function=func_v, #inst.function,
                     id=inst.irq_number,
                     name="IRQCONNECT_"+inst.entry_name,
                     isr_handler=inst,
                     active=True, # the IRQ_CONNECT emits an arch dependent irq registration. irq_enable is then used afterwards
                 )
+                fake_cpuid += 1
 
                 ZephyrStaticPost.create_static_instance(self._graph.instances, "IRQ", irq, "IRQCONNECT_"+inst.entry_name, False)
 
@@ -233,7 +242,7 @@ class ZephyrStaticPost(Step):
             id=0,
             name='sys_clock_announce',
             isr_handler=isr_sys_clock_announce,
-            active=True,
+            active=False, # TODO: reenable
         )
 
         ZephyrStaticPost.create_static_instance(self._graph.instances, "IRQ", irq_sys_clock_announce, "IRQ_sys_clock_announce", False)

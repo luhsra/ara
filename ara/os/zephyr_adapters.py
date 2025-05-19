@@ -148,25 +148,6 @@ class ThreadContext(ControlContext):
             sched_locked=self.sched_locked,
         )
 
-
-@dataclass
-class IRQContext:
-    enabled: bool = field(default=False)
-    def __hash__(self):
-        return hash(
-            (
-                "IRQContext",
-                self.enabled,
-            )
-        )
-
-    def __copy__(self):
-        return IRQContext(
-            enabled=self.enabled,
-
-        )
-
-
 @dataclass
 class ISRContext(ControlContext):
     def __hash__(self):
@@ -857,7 +838,7 @@ class InterpreterContext:
 
         proxy.get(_kernel)
         cpu = state.cpus[cpu_id]
-        _kernel.cpus[cpu_id].nested = cpu.analysis_context.nested # restore ISR lock
+        #_kernel.cpus[cpu_id].nested = cpu.analysis_context.nested # restore ISR lock TODO why is it -1?
         proxy.put(_kernel)
         proxy.get(_kernel)
 

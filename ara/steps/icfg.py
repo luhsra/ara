@@ -52,7 +52,7 @@ class ICFG(Step):
         }
 
         for cur_func in cfg.reachable_functs(entry_func, cg):
-            self._log.debug(f"Analyzing function {cfg.vp.name[cur_func]}.")
+            self._log.info(f"Analyzing function {cfg.vp.name[cur_func]}.")
 
             to_be_linked = []
             skip_func = False

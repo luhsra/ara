@@ -104,7 +104,7 @@ class CreateABBs(Step):
         cfg.ep.type[edge] = CFType.f2a
         cfg.ep.is_entry[edge] = cfg.ep.is_entry[cfg.edge(func, entry)]
 
-        self._log.debug(f"Create abb {name[abb]} (Node {abb}), entry: {name[entry]}, exit: {name[exit_v]}, "
+        self._log.info(f"Create abb {name[abb]} (Node {abb}), entry: {name[entry]}, exit: {name[exit_v]}, "
                         "consisting of "
                         f"{', '.join([name[x] for x in all_bbs])}")
 

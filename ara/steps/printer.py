@@ -483,7 +483,7 @@ def sp_mstg_to_dot(mstg, cfg, label="SyncPoints MSTG"):
         entry_lbl = "en: " + _prettify_abbs(entry_abbs)
         label = f"c{core}, s{int(sys_state)}"
         if irq >= 0:
-            irq_name = mstg.vp.state[sys_state].instances.vp.obj[irq].name
+            irq_name = "TEST" #mstg.vp.state[sys_state].instances.vp.obj[irq].name
             label += " (\u26A1" + f"{irq_name})"
         else:
             sys_name = mstg.get_syscall_name(sys_state)
