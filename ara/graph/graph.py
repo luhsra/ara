@@ -7,12 +7,14 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from typing import Generator
 import graph_tool
 import graph_tool.util
 import math
 
 from graph_tool.search import bfs_iterator
 from graph_tool.topology import label_out_component
+from graph_tool.libgraph_tool_core import Vertex
 
 from .graph_data import PyGraphData, _get_llvm_obj
 from .mix import ABBType, CFType, SyscallCategory, NodeLevel, StateType, MSTType
@@ -196,12 +198,12 @@ class CFG(graph_tool.Graph):
             return math.inf
         return time
 
-    def get_function_by_name(self, name: str):
+    def get_function_by_name(self, name: str) -> int:
         """Find a specific function."""
         func = graph_tool.util.find_vertex(self, self.vp["name"], name)
         assert len(func) == 1, f'function {name} not unambiguous: {func}'
         assert self.vp.level[func[0]] == NodeLevel.function
-        return func[0]
+        return self.vertex_index[func[0]]
 
     def get_llvm_obj(self, vertex):
         """Return the LLVM object that belongs to the specified vertex.
@@ -211,7 +213,7 @@ class CFG(graph_tool.Graph):
         """
         return _get_llvm_obj(self, vertex)
 
-    def _get_function_generic(self, xbb, edge_type):
+    def _get_function_generic(self, xbb: Vertex | int, edge_type: CFType) -> int | None:
         """Get the function node for an ABB or BB."""
         xbb = self.vertex(xbb)
 
@@ -221,7 +223,7 @@ class CFG(graph_tool.Graph):
         entry = list(filter(is_func, xbb.in_edges()))
         if entry:
             assert len(entry) == 1
-            return entry[0].source()
+            return self.vertex_index[entry[0].source()]
         return None
 
     def get_function(self, abb):
@@ -232,8 +234,9 @@ class CFG(graph_tool.Graph):
         """Get the function node for an BB."""
         return self._get_function_generic(bb, CFType.f2b)
 
-    def get_abbs(self, function):
+    def get_abbs(self, function: Vertex | int) -> Vertex:
         """Get the ABBs of the functions."""
+        function = self.vertex(function)
         for edge in self.vertex(function).out_edges():
             if self.ep.type[edge] == CFType.f2a:
                 yield edge.target()
@@ -246,11 +249,12 @@ class CFG(graph_tool.Graph):
         except StopIteration:
             return False
 
-    def _get_function_xbbs(self, function, edge_type):
+    def _get_function_xbbs(self, function: Vertex | int, edge_type: CFType) -> Generator[int, None, None]:
         """Get all XBBs of a function."""
+        function = self.vertex(function)
         e_type = edge_types(self, self.ep.type, edge_type)
         for neighbor in e_type.vertex(function).out_neighbors():
-            yield neighbor
+            yield self.vertex_index[neighbor]
 
     def get_function_bbs(self, function):
         """Get all BBs of a function."""
@@ -293,7 +297,7 @@ class CFG(graph_tool.Graph):
             raise CFGError("No BB found.")
         return ret
 
-    def _get_entry(self, block, edge_type=CFType.f2a):
+    def _get_entry(self, block: Vertex | int, edge_type=CFType.f2a) -> int:
         """Return the entry block of the given function or block."""
         def is_entry(block):
             return self.ep.is_entry[block] and self.ep.type[block] == edge_type
@@ -309,7 +313,7 @@ class CFG(graph_tool.Graph):
 
         entry = list(filter(is_entry, block.out_edges()))
         assert len(entry) == 1
-        return entry[0].target()
+        return self.vertex_index[entry[0].target()]
 
     def get_entry_abb(self, function):
         """Return the entry abb of the given function."""
