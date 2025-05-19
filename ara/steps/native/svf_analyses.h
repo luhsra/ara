@@ -26,6 +26,11 @@ namespace ara::step {
 		    "translation_map", "List of filepaths with a manual function pointer mapping.\n"
 		                       "For the format see resolve_function_pointer.h"};
 		option::TOptEntity<option::List<option::String>> translation_map;
+		const static inline option::TOption<option::Bool> hide_svf_output_template{
+		    "hide_svf_output", "Disables the output of the svf to the logger.", /* type = */ option::Bool(),
+		    /* default_value = */ false};
+		option::TOptEntity<option::Bool> hide_svf_output;
+		
 		virtual void init_options() override;
 
 		void apply_translation_map(SVF::PTACallGraph& callgraph);
