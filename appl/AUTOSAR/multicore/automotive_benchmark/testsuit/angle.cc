@@ -38,7 +38,7 @@ int main(void) {
  */
 // Small Init Task
 TASK(INIT) {
-    setup_and_print("angle sync no mem");
+    setup_and_print("Angle Sync, no Memory");
     ara_timing_info(1, 5);
     TerminateTask();
 }
@@ -51,7 +51,7 @@ TASK(SCHED) {
         ShutdownMachine();
     }
 
-	#if defined(PRINT_CYCLE_TIMING) || defined(PRINT_HOOK_STATS) || defined(PRINT_MEASURED_LOAD)
+	#if defined(PRINT_CYCLE_TIMING) || defined(PRINT_HOOK_STATS) || defined(PRINT_MEASURED_LOAD) || defined(BENCHMARK)
 		uint32_t t = arch::Perf::get_cycles();
 	#endif
 
@@ -69,7 +69,7 @@ TASK(SCHED) {
 		hookcounter++;
 	#endif
 
-	#ifdef PRINT_MEASURED_LOAD
+	#if defined(PRINT_MEASURED_LOAD) || defined(BENCHMARK)
 		if (FIRST_CYCLE <= cycle && cycle <= LAST_CYCLE){
 			if (idle == true){
 				idle_total += t - start_of_idle;
@@ -84,11 +84,11 @@ TASK(SCHED) {
 			if (cycle % RUNABLES_PERIOD[MS1_id] == 0) {
 				ara_timing_info(4, 5);
 				res = ActivateTask(MS1);
-				#ifdef PRINT_RUN_STATS
+				#if defined(PRINT_RUN_STATS) || defined(BENCHMARK)
 					start_counter[MS1_id]++;
 				#endif
 				if (res == StatusType::E_OS_LIMIT) {
-					#ifdef PRINT_RUN_STATS
+					#if defined(PRINT_RUN_STATS) || defined(BENCHMARK)
 						blocked_counter[MS1_id]++;
 					#endif
 				}
@@ -98,11 +98,11 @@ TASK(SCHED) {
 			if (cycle % RUNABLES_PERIOD[MS2_id] == 0) {
 				ara_timing_info(4, 5);
 				res = ActivateTask(MS2);
-				#ifdef PRINT_RUN_STATS
+				#if defined(PRINT_RUN_STATS) || defined(BENCHMARK)
 					start_counter[MS2_id]++;
 				#endif
 				if (res == StatusType::E_OS_LIMIT) {
-					#ifdef PRINT_RUN_STATS
+					#if defined(PRINT_RUN_STATS) || defined(BENCHMARK)
 						blocked_counter[MS2_id]++;
 					#endif
 				}
@@ -112,11 +112,11 @@ TASK(SCHED) {
 			if (cycle % RUNABLES_PERIOD[MS5_id] == 0) {
 				ara_timing_info(4, 5);
 				res = ActivateTask(MS5);
-				#ifdef PRINT_RUN_STATS
+				#if defined(PRINT_RUN_STATS) || defined(BENCHMARK)
 					start_counter[MS5_id]++;
 				#endif
 				if (res == StatusType::E_OS_LIMIT) {
-					#ifdef PRINT_RUN_STATS
+					#if defined(PRINT_RUN_STATS) || defined(BENCHMARK)
 						blocked_counter[MS5_id]++;
 					#endif
 				}
@@ -126,11 +126,11 @@ TASK(SCHED) {
 			if (cycle % RUNABLES_PERIOD[MS10_id] == 0) {
 				ara_timing_info(4, 5);
 				res = ActivateTask(MS10);
-				#ifdef PRINT_RUN_STATS
+				#if defined(PRINT_RUN_STATS) || defined(BENCHMARK)
 					start_counter[MS10_id]++;
 				#endif
 				if (res == StatusType::E_OS_LIMIT) {
-					#ifdef PRINT_RUN_STATS
+					#if defined(PRINT_RUN_STATS) || defined(BENCHMARK)
 						blocked_counter[MS10_id]++;
 					#endif
 				}
@@ -141,11 +141,11 @@ TASK(SCHED) {
 			if (cycle % RUNABLES_PERIOD[MS20_id] == 0) {
 				ara_timing_info(4, 5);
 				res = ActivateTask(MS20);
-				#ifdef PRINT_RUN_STATS
+				#if defined(PRINT_RUN_STATS) || defined(BENCHMARK)
 					start_counter[MS20_id]++;
 				#endif
 				if (res == StatusType::E_OS_LIMIT) {
-					#ifdef PRINT_RUN_STATS
+					#if defined(PRINT_RUN_STATS) || defined(BENCHMARK)
 						blocked_counter[MS20_id]++;
 					#endif
 				}
@@ -155,11 +155,11 @@ TASK(SCHED) {
 			if (cycle % RUNABLES_PERIOD[MS50_id] == 0) {
 				ara_timing_info(4, 5);
 				res = ActivateTask(MS50);
-				#ifdef PRINT_RUN_STATS
+				#if defined(PRINT_RUN_STATS) || defined(BENCHMARK)
 					start_counter[MS50_id]++;
 				#endif
 				if (res == StatusType::E_OS_LIMIT) {
-					#ifdef PRINT_RUN_STATS
+					#if defined(PRINT_RUN_STATS) || defined(BENCHMARK)
 						blocked_counter[MS50_id]++;
 					#endif
 				}
@@ -169,11 +169,11 @@ TASK(SCHED) {
 			if (cycle % RUNABLES_PERIOD[MS100_id] == 0) {
 				ara_timing_info(4, 5);
 				res = ActivateTask(MS100);
-				#ifdef PRINT_RUN_STATS
+				#if defined(PRINT_RUN_STATS) || defined(BENCHMARK)
 					start_counter[MS100_id]++;
 				#endif
 				if (res == StatusType::E_OS_LIMIT) {
-					#ifdef PRINT_RUN_STATS
+					#if defined(PRINT_RUN_STATS) || defined(BENCHMARK)
 						blocked_counter[MS100_id]++;
 					#endif
 				}
@@ -183,11 +183,11 @@ TASK(SCHED) {
 			if (cycle % RUNABLES_PERIOD[MS200_id] == 0) {
 				ara_timing_info(4, 5);
 				res = ActivateTask(MS200);
-				#ifdef PRINT_RUN_STATS
+				#if defined(PRINT_RUN_STATS) || defined(BENCHMARK)
 					start_counter[MS200_id]++;
 				#endif
 				if (res == StatusType::E_OS_LIMIT) {
-					#ifdef PRINT_RUN_STATS
+					#if defined(PRINT_RUN_STATS) || defined(BENCHMARK)
 						blocked_counter[MS200_id]++;
 					#endif
 				}
@@ -197,21 +197,33 @@ TASK(SCHED) {
 			if (cycle % RUNABLES_PERIOD[MS1000_id] == 0) {
 				ara_timing_info(4, 5);
 				res = ActivateTask(MS1000);
-				#ifdef PRINT_RUN_STATS
+				#if defined(PRINT_RUN_STATS) || defined(BENCHMARK)
 					start_counter[MS1000_id]++;
 				#endif
 				if (res == StatusType::E_OS_LIMIT) {
-					#ifdef PRINT_RUN_STATS
+					#if defined(PRINT_RUN_STATS) || defined(BENCHMARK)
 						blocked_counter[MS1000_id]++;
 					#endif
 				}
 			}
-		}
+		}		
+		#ifdef TRIG_ANGLE
+			if (cycle % ANGLE_SYNC_PERIOD == 0) {
+				ara_timing_info(4, 5);
+				res = ActivateTask(MSANGLE);
+				#if defined(PRINT_RUN_STATS) || defined(BENCHMARK)
+					angle_start_counter++;
+				#endif
+				if (res == StatusType::E_OS_LIMIT) {
+					#if defined(PRINT_RUN_STATS) || defined(BENCHMARK)
+						angle_blocked_counter++;
+					#endif
+				}
+			}
+		#endif
 	}
     cycle++;
 
-
-	
 	TerminateTask();
 }
 
@@ -254,7 +266,7 @@ void PostTaskHook() {
 			hook_start_of_idle = t;
 		#endif
 
-		#ifdef PRINT_MEASURED_LOAD
+		#if defined(PRINT_MEASURED_LOAD) || defined(BENCHMARK)
 			idle = true;
 			start_of_idle = t;
 		#endif
@@ -268,10 +280,9 @@ void PostTaskHook() {
 					hook_idle = false;
 				#endif
 	
-				#ifdef PRINT_MEASURED_LOAD
+				#if defined(PRINT_MEASURED_LOAD) || defined(BENCHMARK)
 					idle = false;
 				#endif
-	
 			}
 		} else {
 			// when calculate_until is set, this task was still in calculation.
@@ -282,14 +293,12 @@ void PostTaskHook() {
 					hook_idle = false;
 				#endif
 	
-				#ifdef PRINT_MEASURED_LOAD
+				#if defined(PRINT_MEASURED_LOAD) || defined(BENCHMARK)
 					idle = false;
 				#endif
 	
 			}
 		}
-		
-
 	}
 }
 
@@ -353,7 +362,7 @@ TASK(MS1) {
 		cycle_count[id]++;
 	#endif
 	
-	#ifdef PRINT_RUN_STATS
+	#if defined(PRINT_RUN_STATS) || defined(BENCHMARK)
 		finish_counter[id]++;
 	#endif
 
@@ -376,7 +385,7 @@ TASK(MS2) {
 		cycle_count[id]++;
 	#endif
 	
-	#ifdef PRINT_RUN_STATS
+	#if defined(PRINT_RUN_STATS) || defined(BENCHMARK)
 		finish_counter[id]++;
 	#endif
 
@@ -399,7 +408,7 @@ TASK(MS5) {
 		cycle_count[id]++;
 	#endif
 	
-	#ifdef PRINT_RUN_STATS
+	#if defined(PRINT_RUN_STATS) || defined(BENCHMARK)
 		finish_counter[id]++;
 	#endif
 
@@ -422,7 +431,7 @@ TASK(MS10) {
 		cycle_count[id]++;
 	#endif
 	
-	#ifdef PRINT_RUN_STATS
+	#if defined(PRINT_RUN_STATS) || defined(BENCHMARK)
 		finish_counter[id]++;
 	#endif
 
@@ -445,7 +454,7 @@ TASK(MS20) {
 		cycle_count[id]++;
 	#endif
 	
-	#ifdef PRINT_RUN_STATS
+	#if defined(PRINT_RUN_STATS) || defined(BENCHMARK)
 		finish_counter[id]++;
 	#endif
 
@@ -468,7 +477,7 @@ TASK(MS50) {
 		cycle_count[id]++;
 	#endif
 	
-	#ifdef PRINT_RUN_STATS
+	#if defined(PRINT_RUN_STATS) || defined(BENCHMARK)
 		finish_counter[id]++;
 	#endif
 
@@ -491,7 +500,7 @@ TASK(MS100) {
 		cycle_count[id]++;
 	#endif
 	
-	#ifdef PRINT_RUN_STATS
+	#if defined(PRINT_RUN_STATS) || defined(BENCHMARK)
 		finish_counter[id]++;
 	#endif
 
@@ -514,7 +523,7 @@ TASK(MS200) {
 		cycle_count[id]++;
 	#endif
 	
-	#ifdef PRINT_RUN_STATS
+	#if defined(PRINT_RUN_STATS) || defined(BENCHMARK)
 		finish_counter[id]++;
 	#endif
 
@@ -537,7 +546,7 @@ TASK(MS1000) {
 		cycle_count[id]++;
 	#endif
 	
-	#ifdef PRINT_RUN_STATS
+	#if defined(PRINT_RUN_STATS) || defined(BENCHMARK)
 		finish_counter[id]++;
 	#endif
 
@@ -560,7 +569,7 @@ TASK(MSANGLE) {
 		angle_cycle_count++;
 	#endif
 	
-	#ifdef PRINT_RUN_STATS
+	#if defined(PRINT_RUN_STATS) || defined(BENCHMARK)
 		angle_finish_counter++;
 	#endif
 

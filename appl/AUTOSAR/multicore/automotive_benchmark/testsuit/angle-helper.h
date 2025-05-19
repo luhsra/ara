@@ -12,7 +12,8 @@ static uint32_t angle_time_when_stopped = 0;
  ******************** DEBUG VARIABLES ********************
  */
 #define ANGLE
-#ifdef PRINT_RUN_STATS 
+
+#if defined(PRINT_RUN_STATS) || defined(BENCHMARK) 
     static unsigned angle_start_counter = 0;
     static unsigned angle_blocked_counter = 0;
     static unsigned angle_finish_counter = 0;

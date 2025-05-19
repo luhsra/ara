@@ -11,7 +11,7 @@
  ******************** DEFINEs ********************
  * Control what gets measured and printed at the end, comment in or out.
  */
-
+// [PRINTING]
 // At end of run print time spend between each call of TASK(SCHED), should be equal to SCHEDUL_INTERVAL
 // #define PRINT_CYCLE_TIMING
 // At end of run print time that passed between start and end of each run of each task
@@ -32,6 +32,11 @@
 // prints the result for the automated benchmark
 #define BENCHMARK
 
+// [CONFIG]
+// Way fewer cycles, usefull to view timing/hook_stats
+// #define SHORT_RUN
+// Active the angle sync task in the fixed intervall ANGLE_SYNC_PERIOD
+#define TRIG_ANGLE
 
 /**
  ******************** SYSTEM CONFIG ********************
@@ -58,7 +63,6 @@ static_assert(TASK_COUNT <= NR_TASKS);
 // [Simulation cycles]
 // How many times the schedueler is activated, each cycle is SCHEDUL_INTERVAL long.
 // The longest activation period is every 1000 cycles.
-#define SHORT_RUN
 #if defined(SHORT_RUN)
 	constexpr unsigned CYCLES = 30;
 #else

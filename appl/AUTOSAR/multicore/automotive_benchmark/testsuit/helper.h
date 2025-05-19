@@ -35,12 +35,12 @@ static uint32_t time_when_stopped[TASK_COUNT] = {0};
 	static uint32_t hook_start_of_idle = 0;
 #endif
 
-#ifdef PRINT_RUN_STATS 
+#if defined(PRINT_RUN_STATS) || defined(BENCHMARK)
 	static unsigned start_counter[TASK_COUNT] = {0};
 	static unsigned blocked_counter[TASK_COUNT] = {0};
 	static unsigned finish_counter[TASK_COUNT] = {0};
 #endif
-#ifdef PRINT_MEASURED_LOAD
+#if defined(PRINT_MEASURED_LOAD) || defined(BENCHMARK)
 	// tracks if any tasks is still running when scheduler starts
 	static bool idle = false;
 	// used to calculate how long one idle window is
@@ -83,6 +83,17 @@ task_id translate_task_type(uint32_t task) {
 	}
 }
 
+/**
+ ******************** HELPER ********************
+ */
+unsigned abs(signed i) {
+	return (i >= 0) ? i : -i;
+}
+
+void kout_percent(unsigned i) {
+	kout << (signed) i / 100 << "." << (((unsigned) abs(i)%100) < 10 ? "0" : "");
+	kout << (unsigned) abs(i) % 100 << "%";
+}
 
 /**
  ******************** PRINT RESULTS ********************
@@ -92,15 +103,20 @@ void setup_and_print(const char* name) {
 
     arch::Perf::start();
 
-    kout << "Run " << name << " testsuit with "<< TASK_COUNT << " Tasks";
+    kout << "Starting benchmark" << endl;
+	kout << "- " << name << endl;
+	kout << "- #Task(s): "<< TASK_COUNT << endl;
 	#ifdef ANGLE
-		kout << " and Angle-Sync Task";
+		kout << "- with Angle-Sync";
+		#ifdef TRIG_ANGLE
+			kout << " (triggered)";
+		#endif
 	#endif
-	kout << "." << endl;
-	kout << "#CYCLES total/benchmarked: " << TOTAL_CYLES << "/" << CYCLES << endl;
-	kout << "#RUNNABLES               : " << NUMBER_OF_RUNABLES << endl;
+	kout << endl;
+	kout << "- #Cycles benchmark/total: " << CYCLES << "/" << TOTAL_CYLES << endl;
+	kout << "- #Runnables             : " << NUMBER_OF_RUNABLES << endl;
 	#ifdef MEMORY
-		kout << "#LABELS (if benchmarked) : " << NUMBER_OF_LABELS << endl;
+		kout << "#Labels (if benchmarked) : " << NUMBER_OF_LABELS << endl;
 	#endif
 	kout << "*******************\r\n" << endl;
 
@@ -111,6 +127,7 @@ void setup_and_print(const char* name) {
 
 	kout << "\r\n****************\r\nStart" << endl;
 }
+
 
 // After end of run show results, depends on ifdef in parameters.h
 void print_results() {
@@ -129,7 +146,6 @@ void print_results() {
 		}
 		kout << "*******************\r\n" << endl;
 	#endif
-
 	#ifdef PRINT_TASK_TIMING
 		kout << "*******************\r\n" << "Time passed between start and completion of a task:" << endl;
 		kout << "TASK\t| Iteration\t| TIME_DELTA" << endl;
@@ -150,7 +166,6 @@ void print_results() {
 		#endif
 		kout << "*******************\r\n" << endl;
 	#endif
-
 	#ifdef PRINT_HOOK_STATS
 		kout << "*******************\r\n" << "Hook statistics and modified wait_times:" << endl;
 		kout << "HOOK_TYPE | TASK | TIME" << endl;
@@ -192,36 +207,52 @@ void print_results() {
 		kout << "*******************\r\n" << endl;
 	#endif
 
-	#ifdef PRINT_TASK_DATA
-		kout << "*******************\r\n" << TASK_COUNT << " different Tasks/Activation Periods (ONLY FOR CALCULATION, NOT MEMORY TIMES):" << endl;
-		unsigned exp_runtime = 0;
+	#if defined(PRINT_TASK_DATA) || defined(BENCHMARK)
 		unsigned runables = 0;
 		unsigned rt_si = 0;
+		for (unsigned i = 0; i < TASK_COUNT; i++) {
+			runables += (NUMBER_OF_RUNABLES / 100) * RUNABLES_SHARE[i];
+			rt_si += TOTAL_RUNTIME[i] / RUNABLES_PERIOD[i];
+		}
+		unsigned rt_si_p = (10000*rt_si) / SCHEDUL_INTERVAL;
+		#ifdef ANGLE
+			runables += (NUMBER_OF_RUNABLES / 100) * RUNABLES_SHARE[MSANGLE_id];
+			unsigned angle_time = TOTAL_RUNTIME[MSANGLE_id] / ((SHORTEST_ANGLE_SYNC_PERIOD + LONGEST_ANGLE_SYNC_PERIOD) / 2);
+			unsigned rt_si_angle = rt_si + angle_time;
+			unsigned rt_si_angle_p = (10000*rt_si_angle) / SCHEDUL_INTERVAL;
+			rt_si_p = (10000*rt_si) / SCHEDUL_INTERVAL;
+		#endif
+	#endif
+	#ifdef PRINT_TASK_DATA
+		kout << "*******************\r\n" << TASK_COUNT << " different Tasks/Activation Periods (without delay for memory):" << endl;
+		
 		kout << "TASK     | % of RUNNABLES | #RUNNABLES \t| PERIODE \t| TASK RUNTIME | EXPECTED RUNTIME per SCHEDUL_INTERVAL" << endl;
 		kout << "-----------------------------------------------------------------------------------------------" << endl;
 		for (unsigned i = 0; i < TASK_COUNT; i++) {
-			runables += (NUMBER_OF_RUNABLES / 100) * RUNABLES_SHARE[i];
-			exp_runtime = TOTAL_RUNTIME[i];
-			rt_si += exp_runtime / RUNABLES_PERIOD[i];
 			kout << taskStrings[i] << "\t | " << RUNABLES_SHARE[i] << "\t\t  | " << (NUMBER_OF_RUNABLES / 100) * RUNABLES_SHARE[i] << "\t\t| ";
-			kout <<  RUNABLES_PERIOD[i] << "\tus\t | " << exp_runtime << "\tus";
-			kout << "\t| " << exp_runtime / RUNABLES_PERIOD[i] << "\tus" << endl;
+			kout <<  RUNABLES_PERIOD[i] << "\tus\t | " << TOTAL_RUNTIME[i] << "\tus";
+			kout << "\t| " << TOTAL_RUNTIME[i] / RUNABLES_PERIOD[i] << "\tus" << endl;
 		}
 		#ifdef ANGLE
-			runables += (NUMBER_OF_RUNABLES / 100) * RUNABLES_SHARE[MSANGLE_id];
-			exp_runtime = TOTAL_RUNTIME[MSANGLE_id];
 			kout << taskStrings[MSANGLE_id] << "\t | " << RUNABLES_SHARE[MSANGLE_id] << "\t\t  | " << (NUMBER_OF_RUNABLES / 100) * RUNABLES_SHARE[MSANGLE_id] << "\t\t| ";
 			kout <<  SHORTEST_ANGLE_SYNC_PERIOD << "-" << LONGEST_ANGLE_SYNC_PERIOD << " (" << ((SHORTEST_ANGLE_SYNC_PERIOD + LONGEST_ANGLE_SYNC_PERIOD) / 2) << ")";
-			kout << " us\t | " << exp_runtime << "\tus";
-			kout << "\t| ~" << exp_runtime / ((SHORTEST_ANGLE_SYNC_PERIOD + LONGEST_ANGLE_SYNC_PERIOD) / 2) << "\tus" << endl;
+			kout << " us\t | " << TOTAL_RUNTIME[MSANGLE_id] << "\tus";
+			kout << "\t| ~" << angle_time << "\tus" << endl;
 		#endif
 		kout << "Active number of runnables=" << runables << " | Needed runtime per interval=" << rt_si;
-		// unsigned p = (rt_si * 100) / (SCHEDUL_INTERVAL / 100) / 100;
-		kout  << "us (available_interval=" << SCHEDUL_INTERVAL << "us) | Load=" << rt_si / (SCHEDUL_INTERVAL / 100) << "% (Excluding Angle Sync)" << endl;
-		kout << "*******************\r\n" << endl;
+		kout << "us (available_interval=" << SCHEDUL_INTERVAL << "us)" << endl;
+		kout << "Load=";
+		kout_percent(rt_si_p);
+		kout << "(Excluding Angle Sync)";
+		#ifdef ANGLE
+			kout << "\t | With Angle Sync=";
+			kout_percent(rt_si_angle_p);
+			kout << endl;
+		#else
+			kout << endl;
+		#endif
+		kout << "\r\n*******************\r\n" << endl;
 	#endif
-
-
 	#if defined(PRINT_MEM_STATS) && defined(MEMORY)
 		kout << "*******************\r\nMemory Analysis for up to " << NUMBER_OF_LABELS << " labels with each ";
 		kout << AVAERAGE_LABEL_SIZE << " bytes:" << endl;
@@ -242,7 +273,6 @@ void print_results() {
 		kout << "Total used: " << labels << " bytes." << endl;
 		kout << "*******************\r\n" << endl;
 	#endif
-
 	#ifdef PRINT_RUN_STATS
 	kout << "*******************\r\nResults for " << CYCLES << " scheduling cycles:" << endl;
 		kout << "TASK\t| #started_runs | #finished_runs | blocked_runs #/%"<< endl;
@@ -257,15 +287,65 @@ void print_results() {
 		kout << "*******************\r\n" << endl;
 	#endif
 
+
+	#if defined(PRINT_MEASURED_LOAD) || defined(BENCHMARK)
+		unsigned long long idle_time = idle_total / WAIT_FREQUENCE;
+		unsigned long long runtime = SCHEDUL_INTERVAL * CYCLES;		// care with overflow here
+		unsigned long long load = 10000 - (idle_time * 10000 / runtime);
+	#endif
 	#ifdef PRINT_MEASURED_LOAD
 		kout << "*******************\r\n" << "Idle time:" << endl;
-		unsigned long long idle_time = idle_total / WAIT_FREQUENCE;
-		unsigned long long runtime = SCHEDUL_INTERVAL * CYCLES;
 		kout << "Total Idle Time was: " << (unsigned) idle_time << " us, of a total runtime of: " << (unsigned) runtime << " us." << endl;
 		kout << "Idle Cycles were: " << (unsigned) idle_total << " of " << (unsigned) runtime * WAIT_FREQUENCE << endl;
-		// care with overflow here
-		unsigned long long load = 10000 - (idle_time * 10000 / runtime);
-		kout << "Which means load of: " << (unsigned) load / 100 << "." << (unsigned) load % 100 << " %" << endl;
+		kout << "Which means load of: ";
+		kout_percent(load);
+		kout << endl;
+		kout << "*******************\r\n" << endl;
+	#endif
+
+
+	#ifdef BENCHMARK
+		kout << "*******************\r\n" << "Benchmark Result" << endl;
+		bool passed = true;
+		for (unsigned i = 0; i < TASK_COUNT; i++) {
+			if ((start_counter[i] != finish_counter[i]) || blocked_counter[i] != 0){
+				passed = false;
+			}
+		}
+		#ifdef ANGLE
+			if ((angle_start_counter != angle_finish_counter) || angle_blocked_counter != 0){
+				passed = false;
+			}
+		#endif
+
+		if (passed){
+			kout << "- All task finished, passed!" << endl;
+		} else {
+			kout << "- Task(s) got blocked, failed!" << endl;
+		}
+
+		kout << "- Expected load was:\t";
+		kout_percent(rt_si_p);
+		#ifdef ANGLE
+			kout << "\t(w-Angle: ";
+			kout_percent(rt_si_angle_p);
+			kout << ")" << endl;
+		#else
+			kout << endl;
+		#endif
+		kout << "- Actual load was:\t";
+		kout_percent(load);
+		kout << endl;
+
+		kout << "- Difference is:\t";
+		kout_percent(load-rt_si_p);
+		#ifdef ANGLE
+			kout << "\t(w-Angle: ";
+			kout_percent(load-rt_si_angle_p);
+			kout << ")" << endl;
+		#else
+			kout << endl;
+		#endif
 		kout << "*******************\r\n" << endl;
 	#endif
 
