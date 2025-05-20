@@ -112,9 +112,9 @@
 #define GetNumberOfActivatedCores() AUTOSAR_GetNumberOfActivatedCores()
 
 // For XEN hypercalls
-#define test_sender_event_channel(port) XEN_test_sender_event_channel(port)
-#define test_notify_evtchn(port) XEN_test_notify_evtchn(port)
-#define test_recive_event_channel(port, cb) XEN_test_recive_event_channel(port, cb)
+// #define test_sender_event_channel(port) XEN_test_sender_event_channel(port)
+// #define test_notify_evtchn(port) XEN_test_notify_evtchn(port)
+// #define test_recive_event_channel(port, cb) XEN_test_recive_event_channel(port, cb)
 
 #define OS_CORE_ID_0 0
 #define OS_CORE_ID_1 1
@@ -351,9 +351,9 @@ extern void AUTOSAR_SuspendOSInterrupts();
 extern void AUTOSAR_ResumeOSInterrupts();
 
 // for XEN hypercalls
-void XEN_test_sender_event_channel(EventChannelPortType port);
-void XEN_test_notify_evtchn(EventChannelPortType port);
-void XEN_test_recive_event_channel(EventChannelPortType port, EventChannelCallbackType cb);
+// extern void XEN_test_sender_event_channel(EventChannelPortType port);
+// extern void XEN_test_notify_evtchn(EventChannelPortType port);
+// extern void XEN_test_recive_event_channel(EventChannelPortType port, EventChannelCallbackType cb);
 
 
 /******************************************************************************

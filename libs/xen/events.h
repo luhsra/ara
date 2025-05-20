@@ -9,7 +9,7 @@
 
 #include "event_channel.h"
 
-typedef void (*evtchn_cb_t)();
+typedef void * evtchn_cb_t;
 
 struct event_channel_handle {
 	evtchn_cb_t cb;
@@ -23,7 +23,7 @@ typedef struct event_channel_handle evtchn_handle_t;
  */
 int evtchn_status(evtchn_status_t *status);
 int evtchn_close(evtchn_port_t port);
-int evtchn_set_priority(evtchn_port_t port, uint32_t priority);
+int evtchn_set_priority(evtchn_port_t port, unsigned int priority);
 	void notify_evtchn(evtchn_port_t port)
 {
 	// TODO
@@ -65,17 +65,24 @@ int bind_interdomain_event_channel(domid_t remote_dom, evtchn_port_t remote_port
 	return 10; //TODO
 }
 
-EXTERN_C_DECL void test_sender_event_channel(evtchn_port_t port) {
-	return;
-}
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-EXTERN_C_DECL void test_notify_evtchn(evtchn_port_t port) {
-	return;
+	void test_sender_event_channel(evtchn_port_t port) {
+		return;
+	}
+	
+	void test_notify_evtchn(evtchn_port_t port) {
+		return;
+	}
+	
+	void test_recive_event_channel(evtchn_port_t port, evtchn_cb_t cb) {
+		return;
+	}
+#ifdef __cplusplus
 }
-
-EXTERN_C_DECL void test_recive_event_channel(evtchn_port_t port, evtchn_cb_t cb) {
-	return;
-}
+#endif
 
 /*
  * Bind user-defined handler to specified event-channel
