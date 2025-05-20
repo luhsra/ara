@@ -1584,7 +1584,8 @@ class MultiSSE(StatsStep):
                 "graph_name": "MSTG" + "-" + fna[:-1],
                 "subgraph": "mstg",
                 "add_legend" : self.add_legend.get(),
-                "reduced" : True
+                "reduced" : True,
+                "domain_type" : "Dom" if self._graph.os == XEN else "CPU"
             })
             self._step_manager.chain_step({
                 "name": "Printer",

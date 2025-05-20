@@ -10,11 +10,21 @@
 		"DumpInstances"
 	],
 	"AutosarGeneratorIR": {
-		"log_level": "debug",
+		"log_level": "error",
 		"rename_syscalls": true
 	},
+	"LoadOil" : {
+		"log_level": "warn"
+	},
+	"LLVMMap" : {
+		"log_level": "error"
+	},
+	"SVFAnalyses": {
+		"log_level": "warning",
+		"hide_svf_output": true
+	},
 	"Generator": {
-		"log_level": "debug",
+		"log_level": "warning",
 		"arch": "arm",
 		"os": "autosar",
 		"lock_elision": false,
@@ -25,7 +35,7 @@
 	},
 	"MultiSSE": {
 		"with_times": false,
-		"log_level": "debug",
+		"log_level": "error",
 		"dump": true
 	}
 }

@@ -360,7 +360,7 @@ def mstg_to_dot(self, label="MSTG"):
         for e in edges:
             if mstg.ep.type[e] == MSTType.st2sy:
                 cpu_id = mstg.ep.cpu_id[e]
-                cols.append(f"<TD PORT=\"c{cpu_id}\">CPU {cpu_id}</TD>")
+                cols.append(f"<TD PORT=\"c{cpu_id}\">{self.domain_type.get()} {cpu_id}</TD>")
         if cols:
             label = '<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">' \
                     '<TR>{}</TR>' \
@@ -395,7 +395,7 @@ def mstg_to_dot(self, label="MSTG"):
             cpu_id = mstg.vp.cpu_id[metastate]
 
             dot_m = pydot.Cluster(_to_str(metastate),
-                                  label=f"M{int(metastate)} (CPU {cpu_id})")
+                                  label=f"M{int(metastate)} ({self.domain_type.get()} {cpu_id})")
             dot_graph.add_subgraph(dot_m)
 
             for state in m2s.vertex(metastate).out_neighbors():
@@ -707,6 +707,11 @@ class Printer(Step):
                             help="Add a legend pydot cluster to the graph. Currently only supports CFGs and MSTGs",
                             ty=Bool(),
                             default_value=False)
+
+    domain_type = Option(name="domain_type",
+                            help="Used to create a multi OS hypersse hstg, or a multicore multisse mstg.",
+                            ty=Choice("CPU", "Dom"),
+                            default_value="CPU")
 
 
     def _print_init(self) -> str:

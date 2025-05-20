@@ -134,7 +134,7 @@ class XEN(OSBase):
 
     @staticmethod
     def get_initial_state(cfg: CFG, instances: InstanceGraph) -> OSState:
-        logger.warning(f"Get inital state from {XEN.system_count} systems.")
+        logger.info(f"Get inital state from {XEN.system_count} systems.")
         states: OSState = []
         for i in range(XEN.system_count):
             states.append(XEN.system_types[i].get_initial_state(
@@ -258,7 +258,7 @@ class XEN(OSBase):
     @staticmethod
     def interpret(graph: Graph, state: OSState, cpu_id, categories=SyscallCategory.every) -> OSState:
 
-        logger.warning(f"Interpret: cpu_id: {cpu_id} System count: {XEN.system_count} {XEN.graph_list}\nCurrent graph: {graph}")
+        logger.info(f"Interpret: cpu_id: {cpu_id} System count: {XEN.system_count} {XEN.graph_list}\nCurrent graph: {graph}")
         syscall = state.get_syscall_name(cpu_id)
 
 

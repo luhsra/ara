@@ -238,7 +238,7 @@ class LoadOIL(Step):
                     if code_instance is not None:
                         va.assign_system_object(code_instance, instances.vp.obj[t])
                     else:
-                        self._log.warning(f"Could not find task {t_name} in "
+                        self._log.info(f"Could not find task {t_name} in "
                                           "the code. This is likely to fail "
                                           "in later steps.")
 

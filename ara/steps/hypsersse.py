@@ -260,5 +260,5 @@ class HyperSSE(Step):
         self._step_manager.chain_step({"name": "MultiSSE", "with_times": False, "dump": True, 
                                        "log_level": "debug", "hyper_sse": True, "file_name_appendix": "hyper", "add_legend": False})
 
-        log.error("Done with single MultiSSEs, starting HyperSSE MultiSSE now!")
+        log.warning("Done with single MultiSSEs, starting HyperSSE MultiSSE now!")
         HyperSSE.done = True
