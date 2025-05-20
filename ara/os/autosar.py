@@ -47,6 +47,7 @@ from .os_base import (
     IRQContext,
     InterruptMissing,
 )
+from .xen import XenSyscalls
 
 TASK_PREFIX = "AUTOSAR_TASK_"
 ALARM_PREFIX = "AUTOSAR_ALARM_"
@@ -259,7 +260,7 @@ class Resource(AUTOSARInstance):
     pass
 
 
-class AUTOSAR(OSBase):
+class AUTOSAR(OSBase, XenSyscalls):
     """AUTOSAR model.
 
     See https://www.autosar.org/fileadmin/user_upload/standards/classic/20-11/AUTOSAR_SWS_OS.pdf
@@ -1249,26 +1250,4 @@ class AUTOSAR(OSBase):
             state, cpu_id, args.event_mask, "WaitEvent", InstanceEdge.wait
         )
 
-        return state
-
-
-
-    @syscall(categories={SyscallCategory.comm}, signature=tuple())
-    def test_sender_event_channel(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
-        # placeholder for XEN syscalls
-        pass
-        return state
-
-
-    @syscall(categories={SyscallCategory.comm}, signature=tuple())
-    def test_notify_evtchn(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
-        # placeholder for XEN syscalls
-        pass
-        return state
-
-
-    @syscall(categories={SyscallCategory.comm}, signature=tuple())
-    def test_recive_event_channel(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
-        # placeholder for XEN syscalls
-        pass
         return state

@@ -36,6 +36,29 @@ from ara.steps.multisse_helper.common import CrossExecState
 
 logger = get_logger("XEN")
 
+class XenSyscalls():
+    @syscall(categories={SyscallCategory.comm}, signature=tuple())
+    def XEN_test_sender_event_channel(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
+        # placeholder for XEN syscalls
+        pass
+        return state
+
+
+    @syscall(categories={SyscallCategory.comm}, signature=tuple())
+    def XEN_test_notify_evtchn(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
+        # placeholder for XEN syscalls
+        pass
+        return state
+
+
+    @syscall(categories={SyscallCategory.comm}, signature=tuple())
+    def XEN_test_recive_event_channel(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
+        # placeholder for XEN syscalls
+        pass
+        return state
+
+
+
 class XEN(OSBase):
     
     system_count: int = 0
