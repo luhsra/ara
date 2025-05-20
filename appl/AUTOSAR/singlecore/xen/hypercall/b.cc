@@ -11,7 +11,7 @@ int main(void) {
 
 TASK(B) {
 	kout << "B"<< endl;
-	test_recive_event_channel(port, AUTOSAR_TASK_FUNC_B);
+	test_recive_event_channel(port, reinterpret_cast<void*>(AUTOSAR_TASK_FUNC_B));
 
 	TerminateTask();
 }
