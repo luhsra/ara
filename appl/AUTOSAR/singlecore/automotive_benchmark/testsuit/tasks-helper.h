@@ -86,13 +86,13 @@ task_id translate_task_type(uint32_t task) {
 /**
  ******************** HELPER ********************
  */
-unsigned abs(signed i) {
+unsigned local_abs(signed i) {
 	return (i >= 0) ? i : -i;
 }
 
 void kout_percent(unsigned i) {
-	kout << (signed) i / 100 << "." << (((unsigned) abs(i)%100) < 10 ? "0" : "");
-	kout << (unsigned) abs(i) % 100 << "%";
+	kout << (signed) i / 100 << "." << (((unsigned) local_abs(i)%100) < 10 ? "0" : "");
+	kout << (unsigned) local_abs(i) % 100 << "%";
 }
 
 /**
@@ -109,6 +109,8 @@ void setup_and_print(const char* name) {
 		kout << "- with Angle-Sync";
 		#ifdef TRIG_ANGLE
 			kout << " (triggered)";
+		#else
+			kout << " (not triggered)";
 		#endif
 		kout << endl;
 	#endif

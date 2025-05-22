@@ -38,7 +38,7 @@
 // Only do read only memory and exlude intercom memory
 // #define READ_ONLY
 // Active the angle sync task in the fixed intervall ANGLE_SYNC_PERIOD
-// #define TRIG_ANGLE
+#define TRIG_ANGLE
 
 /**
  ******************** SYSTEM CONFIG ********************

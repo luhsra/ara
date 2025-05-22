@@ -193,6 +193,7 @@ autosar_apps = [
   {'core': 'singlecore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'tasks',          'timing': 'BB', 'oil': 'tasks.json',    'variants': ['MIN', 'SMALL', 'BIG', 'FULL']},
   {'core': 'singlecore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'labels',         'timing': 'BB', 'oil': 'tasks.json',    'variants': ['MIN', 'SMALL', 'BIG', 'FULL']},
   {'core': 'singlecore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'angle',          'timing': 'BB', 'oil': 'angle.json',    'variants': ['MIN', 'SMALL', 'BIG', 'FULL']},
+  {'core': 'singlecore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'mixed',          'timing': 'BB', 'oil': 'angle.json',    'variants': ['MIN', 'SMALL', 'BIG', 'FULL']},
 ]
 subdir('multicore' / 'trampoline')
 

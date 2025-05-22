@@ -125,7 +125,7 @@ constexpr unsigned ro_memory_offset[NR_TASKS + 1] = {
  */
 // read only memory
 static unsigned ro_mem[RO_MEMORY] = {0};
-static unsigned volatile ro_mem_results[TASK_COUNT] = {0};
+static unsigned volatile ro_mem_results[NR_TASKS] = {0};
 
 // intercom memory
 // somehow are more idle cycles there when intercom_mem is added and filled
