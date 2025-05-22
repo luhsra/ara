@@ -9,7 +9,7 @@ GOOD = re.compile(r"[a-z]+\[.*?\]=\d+")
 lines = 0
 #run = 0
 should_print = False
-with serial.Serial("/dev/ttyUSB1", 115200, timeout=1) as ser:
+with serial.Serial("/dev/ttyUSB0", 115200, timeout=1) as ser:
     while lines < 250 :
         line = ser.readline().strip(b"\r\n").decode("UTF-8", "ignore")
         print("RAW", line)

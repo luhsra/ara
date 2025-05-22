@@ -334,7 +334,7 @@ if get_option('enable_step_tests')
     endforeach
 
     foreach app : autosar_generated_targets_riscv
-      test('autosar_generator_riscv_' + app['full_name'],
+      test('autosar_generator_beaglev_' + app['full_name'],
         py3_inst,
         args: [files('autosar_generator_beagle.py'), app['tftp_cmd_riscv']],
         env: [python_path],

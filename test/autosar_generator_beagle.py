@@ -19,7 +19,7 @@ def main():
 
     #TARGET = 'tftp_autosar_multicore_andreas_cores_4_riscv'
     #BUILD_DIR = "/srv/scratch/mau.hoeppner/Bachelorthesis/ara/build"
-    REMOTE_HOST ="lab-pc60"
+    REMOTE_HOST ="lab-pc67"
 
 
     executable = sys.argv[1:]
@@ -38,12 +38,12 @@ def main():
 
     # restart board # from 45 
     try:
-        subprocess.run('/srv/scratch/mau.hoeppner/Bachelorthesis/power2.py NET2 CYCLE', shell=True, check=True)
+        subprocess.run("ssh lab-pc00 './power.py NET2 CYCLE'", shell=True, check=True)
     except subprocess.CalledProcessError as e:
         print("ninja failed", e.stderr)
         raise (e)
     
-    with open(Path(__file__).parent / "serial_console.py") as f:
+    with open(Path(__file__).parent / "beagle_serial_console.py") as f:
         remote_serial = f.read()
     assert "'" not in remote_serial, "Forbidden chars"
     
