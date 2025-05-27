@@ -1136,9 +1136,6 @@ class MultiSSE(StatsStep):
         else:
             cross_syscalls = list(metastate.cross_syscalls)
 
-        #if cross_syscalls:
-        #    cross_syscalls = [] # TODO remove this again and fix CCS
-
         s_from = f", start from {int(start_from)}" if start_from else ''
         self._log.debug("Search for candidates for the cross syscalls: "
                         f"{[int(x) for x in metastate.cross_syscalls]} "
@@ -1179,12 +1176,12 @@ class MultiSSE(StatsStep):
                                                            multi_state,
                                                            sc_cpu.reference_cpu_id,
                                                            sc_cpu.irq)
-                            if not isinstance(irq_exit_states, list):
-                                irq_exit_states = [irq_exit_states]
                             if irq_exit_states is None:
                                 self._log.info("IRQ %s cannot be handled.",
                                                sc_cpu.irq.id)
                                 continue
+                            if not isinstance(irq_exit_states, list):
+                                irq_exit_states = [irq_exit_states]
                             for irq_exit_state in irq_exit_states:
                             # advance the virtual interrupt CPU
                                 set_next_abb(irq_exit_state, sc_cpu.id)

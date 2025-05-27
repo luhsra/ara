@@ -200,7 +200,7 @@ namespace ara::step {
 				PyObject* obj;
 				{
 					TakeGIL gil;
-					obj = py_dict({{"cpu_id", py_int_signed(-1)},
+					obj = py_dict({{"cpu_id", py_int_signed(0)},
 					               {"cfg", py_none()}, // Create in Python side
 					               {"artificial", Py_False},
 					               {"function", py_none()}, // Create in Python side

@@ -444,21 +444,27 @@ class Zephyr(OSBase):
     def get_cpu_local_contexts(context, cpu_id, instances):
         local_contexts = []
 
-        # TODO: Are there any CPU locals instances in zephyr?, use all globals for now
         for inst, ctx in context.items():
+            if isinstance(inst, ZephyrIRQ):
+                # related IRQCPUs for this local context (required for irq enable/disable)
+                if inst.isr_handler.cpu_id == cpu_id:
+                    local_contexts.append((inst, ctx))
+            elif isinstance(inst, ZephyrKernel): # global but required for singlecore analysis too
                 local_contexts.append((inst, ctx))
-
+            else:
+                if getattr(inst, "cpu_id", None) == cpu_id:
+                    local_contexts.append((inst, ctx))
         return dict(local_contexts)
 
     @staticmethod
     def get_global_contexts(context, instances):
-        local_contexts = []
+        contexts = []
 
-        # TODO: Are there any CPU locals instances in zephyr?, use all globals for now
         for inst, ctx in context.items():
-                local_contexts.append((inst, ctx))
+            if not hasattr(inst, "cpu_id"):
+                contexts.append((inst, ctx))
 
-        return dict(local_contexts)
+        return dict(contexts)
 
     @staticmethod
     def get_unique_id(ident: str) -> str:
@@ -827,13 +833,13 @@ class Zephyr(OSBase):
         # Zephyr.create_instance(cfg, state, cpu_id, va, "ISR", instance, args.symbol, "sys_clock_announce")
 
         for _, obj in instances.get(IRQ):
-            status = TaskStatus.blocked # default block IRQ until enable
+            status = TaskStatus.running if obj.active else TaskStatus.blocked
             if obj.function:
                 abb = cfg.get_entry_abb(obj.function)
             else:
                 abb = None # TODO find sys_clock_announce?!
             state.context[obj] = IRQContext(
-                status=status, abb=abb, call_path=CallPath(), dyn_prio=[1]
+                status=status, abb=abb, call_path=CallPath(), dyn_prio=[-1] # neg. prio: not yet enabled IRQ
             )
 
         return state
@@ -2564,7 +2570,7 @@ class Zephyr(OSBase):
         cfg = graph.cfg
 
         v, obj = Zephyr._find_irq_by_id(state, args.irq)
-        state.context[obj].status = TaskStatus.running
+        state.context[obj].dyn_prio = [1]
 
         return state
 
@@ -2576,6 +2582,7 @@ class Zephyr(OSBase):
 
         v, obj = Zephyr._find_irq_by_id(state, args.irq)
         state.context[obj].status = TaskStatus.blocked
+        state.context[obj].dyn_prio = [-1]
 
         return state
 
@@ -2658,10 +2665,6 @@ class Zephyr(OSBase):
             return None
 
         if irq.name.startswith('IRQCONNECT'): # user declared ISRs, # mostly same as sys_clock_announce
-
-            # trigger one Interrupt per hyperperiod only
-            # TODO: NO PERMUTATION THIS WAY! 
-
             kernel = Zephyr.get_kernel_context(state)
             state = root_state.copy()
 
@@ -2673,12 +2676,13 @@ class Zephyr(OSBase):
                 cpu_id = 0
                 cpu = state.cpus[cpu_id]
 
-                if not state.context[irq].status == TaskStatus.running:
-                    logger.info(f"{irq.name} not ready ({state.context[irq].status})")
+                if state.context[irq].dyn_prio[0] < 0:
+                    logger.info(f"{irq.name} not ready (prio: {state.context[irq].dyn_prio})")
                     return None
                 else:
                     logger.info(f"{irq.name} running (once!)")
                     state.context[irq].status = TaskStatus.blocked
+                    state.context[irq].dyn_prio = [-1]
 
                 new_vertex, new_obj = Zephyr._find_isr_by_entry_name(state, isr_fn_name)
                 old_ctx = state.cur_context(cpu_id)

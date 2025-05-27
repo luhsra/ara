@@ -69,9 +69,6 @@ class ZephyrStaticPost(Step):
 
         Zephyr.config = KConfigFile(self.kconfigfile.get())
 
-        # artificial CPU ids starting at 1
-        fake_cpuid = 1
-
         cfg = self._graph.cfg
         callgraph = self._graph.callgraph
         os = self._graph.os
@@ -107,7 +104,7 @@ class ZephyrStaticPost(Step):
                 
                 # create the missing IRQ for analysis
                 irq = ZephyrIRQ(
-                    cpu_id=fake_cpuid,
+                    cpu_id=0, # target CPUID
                     cfg=cfg,
                     artificial=True,
                     function=func_v, #inst.function,
@@ -116,7 +113,6 @@ class ZephyrStaticPost(Step):
                     isr_handler=inst,
                     active=True, # the IRQ_CONNECT emits an arch dependent irq registration. irq_enable is then used afterwards
                 )
-                fake_cpuid += 1
 
                 ZephyrStaticPost.create_static_instance(self._graph.instances, "IRQ", irq, "IRQCONNECT_"+inst.entry_name, False)
 
@@ -128,7 +124,7 @@ class ZephyrStaticPost(Step):
                 if expiry_fn_name:
                     expiry_fn = cfg.get_function_by_name(inst.expiry_fn)
                     expiry_instance = ISR(
-                        cpu_id=0,
+                        cpu_id=0, # target CPUID
                         cfg=cfg,
                         artificial=False,
                         function=expiry_fn,
@@ -143,7 +139,7 @@ class ZephyrStaticPost(Step):
                 if stop_fn_name:
                     stop_fn = cfg.get_function_by_name(inst.stop_fn)
                     stop_instance = ISR(
-                        cpu_id=0,
+                        cpu_id=0, # target CPUID
                         cfg=cfg,
                         artificial=False,
                         function=stop_fn,
@@ -221,7 +217,7 @@ class ZephyrStaticPost(Step):
 
 
         isr_sys_clock_announce = ISR(
-            cpu_id=-1,
+            cpu_id=0,
             cfg=cfg,
             artificial=True,
             function=None,
@@ -232,10 +228,10 @@ class ZephyrStaticPost(Step):
             flags=0,
         )
 
-        ZephyrStaticPost.create_static_instance(self._graph.instances, "ISR", isr_sys_clock_announce, "ISR_sys_clock_announce", False)
+        #ZephyrStaticPost.create_static_instance(self._graph.instances, "ISR", isr_sys_clock_announce, "ISR_sys_clock_announce", False)
 
         irq_sys_clock_announce = ZephyrIRQ(
-            cpu_id=-1,
+            cpu_id=0,
             cfg=cfg,
             artificial=True,
             function=None,
@@ -245,7 +241,7 @@ class ZephyrStaticPost(Step):
             active=False, # TODO: reenable
         )
 
-        ZephyrStaticPost.create_static_instance(self._graph.instances, "IRQ", irq_sys_clock_announce, "IRQ_sys_clock_announce", False)
+        #ZephyrStaticPost.create_static_instance(self._graph.instances, "IRQ", irq_sys_clock_announce, "IRQ_sys_clock_announce", False)
 
 
         if 'CONFIG_TIMESLICING' in Zephyr.config:
@@ -253,14 +249,14 @@ class ZephyrStaticPost(Step):
             # but we need to generate a additional state
             # and timeslice does not have advancing time
             irq_z_time_slice = ZephyrIRQ(
-                cpu_id=-1,
+                cpu_id=0,
                 cfg=cfg,
                 artificial=True,
                 function=None,
                 id=0,
                 name='z_time_slice',
                 isr_handler=isr_sys_clock_announce,
-                active=True,
+                active=False,
             )
 
-            ZephyrStaticPost.create_static_instance(self._graph.instances, "IRQ", irq_z_time_slice, "IRQ_z_time_slicing", False)
+            #ZephyrStaticPost.create_static_instance(self._graph.instances, "IRQ", irq_z_time_slice, "IRQ_z_time_slicing", False)
