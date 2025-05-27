@@ -4,6 +4,7 @@
 # SPDX-FileCopyrightText: 2022 Domenik Kuhn
 # SPDX-FileCopyrightText: 2022 Jan Neugebauer
 # SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2025 Mareike Burg
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -187,7 +188,7 @@ def get_child_logger_or_none(logger, name):
 
 
 def init_logging(level=logging.DEBUG, max_stepname=20, root_name='root',
-                 werr=False):
+                 werr=False, no_colors: bool = False):
     """Init logging with color and timestamps.
 
     Returns a root logger with correct log level.
@@ -199,10 +200,19 @@ def init_logging(level=logging.DEBUG, max_stepname=20, root_name='root',
     """
     if logging.root.handlers:
         raise RuntimeWarning("Logging already setup")
-    logging.addLevelName(logging.WARNING, "\033[1;33m%s\033[1;0m" % logging.getLevelName(logging.WARNING))
-    logging.addLevelName(logging.ERROR, "\033[1;41m%s\033[1;0m" % logging.getLevelName(logging.ERROR))
-    logging.addLevelName(logging.DEBUG, "\033[1;32m%s\033[1;0m" % logging.getLevelName(logging.DEBUG))
-    logging.addLevelName(logging.INFO, "\033[1;34m%s\033[1;0m" % logging.getLevelName(logging.INFO))
+    
+    # check if terminal supports colors
+    if no_colors:       # sys.stdout.isatty did not work as wanted
+        logging.addLevelName(logging.WARNING, "%s" % logging.getLevelName(logging.WARNING))
+        logging.addLevelName(logging.ERROR, "%s" % logging.getLevelName(logging.ERROR))
+        logging.addLevelName(logging.DEBUG, "%s" % logging.getLevelName(logging.DEBUG))
+        logging.addLevelName(logging.INFO, "%s" % logging.getLevelName(logging.INFO))
+    else:
+        logging.addLevelName(logging.WARNING, "\033[1;33m%s\033[1;0m" % logging.getLevelName(logging.WARNING))
+        logging.addLevelName(logging.ERROR, "\033[1;41m%s\033[1;0m" % logging.getLevelName(logging.ERROR))
+        logging.addLevelName(logging.DEBUG, "\033[1;32m%s\033[1;0m" % logging.getLevelName(logging.DEBUG))
+        logging.addLevelName(logging.INFO, "\033[1;34m%s\033[1;0m" % logging.getLevelName(logging.INFO))
+
     max_l = max([len(logging.getLevelName(l)) for l in range(logging.CRITICAL)])
     _format = f'%(asctime)s %(levelname)-{max_l}s %(name)-{max_stepname+1}s %(message)s'
     if type(level) == str:
