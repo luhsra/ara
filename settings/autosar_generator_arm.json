@@ -36,7 +36,7 @@
 		"fail_on_deadlock": true
 	},
 	"MultiSSE": {
-		"log_level": "error",
+		"log_level": "info",
 		"with_times": true,
     	"dump" : true
 	},

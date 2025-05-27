@@ -2,22 +2,36 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-# Template for other test
-# run with 'meson test dummytest'
-test('mydummy',
-    py3_inst,
-    args: [files('dummy.py'), 'param'],
-    env: [python_path],
-    suite: 'mareike',
-    timeout: 5      # in seconds
-)
-# test('dummy2',
+# Template for other tests
+# meson test dummytest
+# meson test --suite ara:mareike
+# meson test --suite mareike
+# test('dummytest',
 #     py3_inst,
 #     args: [files('dummy.py'), 'param'],
 #     env: [python_path],
-#     suite: 'mareike',
+#     depends: ara_py,
+#     # is_parallel: false,
+#     suite: 'automotive_benchmark',
 #     timeout: 5      # in seconds
 # )
-# meson test --suite ara:mareike_benchmark
-# meson test --suite mareike_benchmark
-# müssten gehen, aber dann wird alles ara ausgeführt
+
+do_stdout = true
+arg = do_stdout ? 'true' : 'false'
+
+foreach app : autosar_targets
+    # Filter
+    if not app['path'].contains('automotive_benchmark/testsuit')
+        continue
+    endif
+
+    # 1. Compile and run ara
+    test('ara_' + app['name'] + '_' + app['variant'].to_lower(),
+        py3_inst,
+        args: [files('run_ara.py'), py3_inst, ara_py, app['ll_pi4'], app['oil'], app['full_name'], arg],
+        env: [python_path],
+        depends: [ara_py, app['ll_pi4']],
+        suite: 'automotive_benchmark',
+        timeout: 10 # 30 600
+    )
+endforeach

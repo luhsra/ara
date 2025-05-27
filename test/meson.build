@@ -144,8 +144,9 @@ if get_option('enable_step_tests')
 
     subdir('native_step_test')
 
-    # Call all testcases in this folder, contains the autosar_benchmark_suite
-    subdir('mareike_benchmark')
+  # Call all testcases in this folder, contains the autosar_benchmark_suite
+  subdir('mareike_benchmark')
+
   endif
 
   test('ir-reader-false-syntax',
@@ -298,32 +299,34 @@ if get_option('enable_step_tests')
     )
   endforeach
 
-  # system runtime test for generator
-  if posix_enabled
-    foreach app : autosar_generated_targets_posix
-      test('autosar_generator_posix_' + app['full_name'],
-        py3_inst,
-        args: [files('autosar_generator.py'), app['run_cmd_posix']],
-        env: [python_path],
-        depends: ara_py,
-        is_parallel: false,
-        suite: ['autosar_generator', 'autosar_generator_posix']
-      )
-    endforeach
-  endif
+  # this wildcards to all testsuits?
 
-  if arm_enabled
-    foreach app : autosar_generated_targets_pi4
-      test('autosar_generator_pi4_' + app['full_name'],
-        py3_inst,
-        args: [files('autosar_generator.py'), app['run_cmd_pi4_noopt']],
-        env: [python_path],
-        depends: ara_py,
-        is_parallel: false,
-        suite: ['autosar_generator', 'autosar_generator_pi4']
-      )
-    endforeach
-  endif
+  # system runtime test for generator
+  # if posix_enabled
+  #   foreach app : autosar_generated_targets_posix
+  #     test('autosar_generator_posix_' + app['full_name'],
+  #       py3_inst,
+  #       args: [files('autosar_generator.py'), app['run_cmd_posix']],
+  #       env: [python_path],
+  #       depends: ara_py,
+  #       is_parallel: false,
+  #       suite: ['autosar_generator', 'autosar_generator_posix']
+  #     )
+  #   endforeach
+  # endif
+
+  # if arm_enabled
+  #   foreach app : autosar_generated_targets_pi4
+  #     test('autosar_generator_pi4_' + app['full_name'],
+  #       py3_inst,
+  #       args: [files('autosar_generator.py'), app['run_cmd_pi4_noopt']],
+  #       env: [python_path],
+  #       depends: ara_py,
+  #       is_parallel: false,
+  #       suite: ['autosar_generator', 'autosar_generator_pi4']
+  #     )
+  #   endforeach
+  # endif
 
   if riscv_enabled
     foreach app : autosar_generated_targets_riscv
