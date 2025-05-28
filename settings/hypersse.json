@@ -15,7 +15,12 @@
 	"Printer": {
 		"log_level": "warning"
 	},
-
+	"SysCall": {
+		"log_level": "debug"
+	},
+	"OS_BASE": {
+		"log_level": "debug"
+	},
 	"MultiSSE": {
 		"with_times": false,
 		"dump": true,

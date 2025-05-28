@@ -19,6 +19,9 @@
 	"LLVMMap" : {
 		"log_level": "error"
 	},
+	"RemoveSysfuncBody": {
+		"disable": true
+	},
 	"SVFAnalyses": {
 		"log_level": "warning",
 		"hide_svf_output": true
@@ -34,8 +37,8 @@
 		"fail_on_deadlock": true
 	},
 	"MultiSSE": {
-		"with_times": false,
-		"log_level": "error",
+		"with_times": true,
+		"log_level": "debug",
 		"dump": true
 	}
 }

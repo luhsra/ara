@@ -345,7 +345,7 @@ class MultiSSE(StatsStep):
     def _get_initial_state(self):
         os_state = self._graph.os.get_initial_state(self._graph.cfg,
                                                     self._graph.instances)
-        self._log.info(f"Init state: {os_state}")
+        # self._log.info(f"Init state: {os_state}")
 
         if self._graph.os == XEN:
             # xen has a slightly different method for adding interrupts
