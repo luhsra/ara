@@ -163,7 +163,6 @@ class CPUBounded:
     """
     cpu_id: int
 
-
 @dataclass(kw_only=True)
 class ControlInstance(CPUBounded):
     """All operating system instances (system objects) that contain control
@@ -173,6 +172,16 @@ class ControlInstance(CPUBounded):
     cfg: CFG
     artificial: bool
     function: graph_tool.libgraph_tool_core.Vertex
+
+
+class CrossOSEvent():
+    """General object for a signal between different operating systems
+
+    In Autosar mapped to start a task, in other OS it could be a message/signal.
+    """
+    # id: int
+    # name: str
+    pass
 
 
 @dataclass(kw_only=True)
@@ -317,6 +326,13 @@ class OSState:
             s += f"\n\t{k} --- {v}"
         s += "\n"
         return s
+
+    # helper to view all context
+    def context_dump(self):
+        logger.warning("Printing context:\n")
+        for k, v in self.context.items():
+            logger.warning(k)
+            logger.warning(f"    {v}\n")
 
     def __post_init__(self):
         self._instances = self.instances
