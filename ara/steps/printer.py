@@ -135,7 +135,7 @@ def _sstg_state_as_dot(sstg, state_vert, os=AUTOSAR):
                 ("type", ExecState(cpu.exec_state).name),
                 ("abb", abb),
                 # ("kernel", str(kernel)),
-            ] #+ xcet
+            ] + xcet
         ] + [
             f"<i>{k}</i>: {str(v)}"
             for k, v in [
