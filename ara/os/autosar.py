@@ -38,6 +38,7 @@ from .os_base import (
     CPUList,
     CPU,
     ControlInstance,
+    CrossOSEvent,
     TaskStatus,
     ControlContext,
     CrossCoreAction,
@@ -95,9 +96,11 @@ class AUTOSARInstance(CPUBounded):
         # the name of an arbitrary AUTOSAR instance must be unique
         return hash(self.__class__.__name__ + self.name)
 
+    def __str__(self):
+        return f"AutosarInstance of {type(self)} Name: {self.name} CpuId: {self.cpu_id}"
+    
     def __repr__(self):
         return self.name
-
 
 @dataclass
 class TaskGroup(AUTOSARInstance):
@@ -113,7 +116,7 @@ class OSIRQStatus(AUTOSARInstance):
 
 
 @dataclass(repr=False)
-class Task(AUTOSARInstance, ControlInstance):
+class Task(AUTOSARInstance, ControlInstance, CrossOSEvent):
     priority: int
     activation: Any
     autostart: bool
@@ -140,6 +143,10 @@ class Task(AUTOSARInstance, ControlInstance):
         s += f"cfg={self.cfg} func={self.cfg.vertex_index[self.function]} ..."
         return s
 
+
+@dataclass
+class AUTOSARCrossOSEvent(CrossOSEvent):
+    task: Task
 
 @dataclass
 class TaskContext(ControlContext):
@@ -316,7 +323,7 @@ class AUTOSAR(OSBase, XenSyscalls):
     # single core contexte mit cpu0 -> single core contexte mit cpuNEW
     @staticmethod
     def move_context(context: dict, target_cpu_id: int) -> dict:
-        logger.info(f"Moved context to CPU {target_cpu_id}.")
+        logger.info(f"Moved context to CPU {target_cpu_id} for Xen.")
         new_context = {}
         for k,v in context.items():
             # logger.info(f"Found context: {k} : {v}")

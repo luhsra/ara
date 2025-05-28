@@ -67,7 +67,7 @@ typedef uint32_t ResourceType;
 typedef uint32_t SpinlockType;
 typedef uint32_t CoreIdType;
 
-typedef uint32_t EventChannelPortType;
+typedef uint32_t PortType;
 typedef void * EventChannelCallbackType;
 
 typedef unsigned long EventMaskType;
