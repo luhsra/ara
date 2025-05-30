@@ -430,7 +430,7 @@ class OSBase(metaclass=OSCreator):
         return cls.__name__
 
     @classmethod
-    def is_syscall(cls, function_name) -> bool:
+    def is_syscall(cls: "OSBase", function_name) -> bool:
         """Return whether a function name is a system call of this OS."""
         if hasattr(cls, function_name):
             return hasattr(getattr(cls, function_name), "syscall")
