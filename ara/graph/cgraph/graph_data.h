@@ -48,6 +48,8 @@ namespace ara::graph {
 	  	SVF::SVFIR* pags_pointer = nullptr;
 	  	SVF::LLVMModuleSet* llvm_module = nullptr;
 	  	SVF::AndersenWaveDiff* anderson = nullptr;
+		SVF::SymbolTableInfo* syminfo = nullptr;
+	  	// SVF::SVFModule* svf_module = nullptr;
 
 		/**
 		 * Workaround for LLVM classes where we need additional attributes.

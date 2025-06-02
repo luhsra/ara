@@ -37,11 +37,15 @@ namespace ara::step {
 		SVFIR* old_pag = SVFIR::getPAG();
 		LLVMModuleSet* old_llvm = LLVMModuleSet::getLLVMModuleSet();
 		AndersenWaveDiff* old_anderson = AndersenWaveDiff::createAndersenWaveDiff(old_pag);
+		SymbolTableInfo* sym = SymbolTableInfo::SymbolInfo();
+		// SVFModule* old_mod = SymbolTableInfo::SymbolInfo()->getModule();
 
 		// save location into graph_data, so it can be used later for syscall value analysis of this system
 		graph.get_graph_data().pags_pointer = old_pag;
 		graph.get_graph_data().llvm_module = old_llvm;
 		graph.get_graph_data().anderson = old_anderson;
+		graph.get_graph_data().syminfo = sym;
+		// graph.get_graph_data().svf_module = old_mod;
 
 		// forget singeltons in svf
 		LLVMModuleSet::forgetLLVMModuleSet();
@@ -55,10 +59,11 @@ namespace ara::step {
 
 		SVFGBuilder::releaseSVFG();
 		logger.debug() << "Released SVFG" << std::endl;
-		
+
+		SymbolTableInfo::forgetSymbolInfo();
+		logger.debug() << "Released SVFModule" << std::endl;
+
 		// Other possible singeltons in svf, but (probaly) not used/set
-		// fixed issue with kout breaking next iteration
-		SymbolTableInfo::releaseSymbolInfo();
 		// SVFGBuilder::releaseMemory();
 		
 		// FSMPTA::releaseFSMPTA();
