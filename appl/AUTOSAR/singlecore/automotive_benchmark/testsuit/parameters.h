@@ -49,13 +49,34 @@
 constexpr unsigned NR_TASKS = 10;
 // Only use the X first tasks, starting with the shortest scheduling intervals. Angle sync
 // With all tasks analysis might take very long! (for 7 Tasks ~200s, for 8 Tasks ~1340s)
-#if defined(VARIANT_MIN)
+// #if defined(VARIANT_MIN)
+// 	constexpr unsigned TASK_COUNT = 1;
+// #elif defined(VARIANT_SMALL)
+// 	constexpr unsigned TASK_COUNT = 3;
+// #elif defined(VARIANT_BIG)
+// 	constexpr unsigned TASK_COUNT = 6;
+// #elif defined(VARIANT_FULL)
+// 	constexpr unsigned TASK_COUNT = 9;
+// #else
+// 	constexpr unsigned TASK_COUNT = 3;
+// #endif
+#if defined(VARIANT_1)
 	constexpr unsigned TASK_COUNT = 1;
-#elif defined(VARIANT_SMALL)
+#elif defined(VARIANT_2)
+	constexpr unsigned TASK_COUNT = 2;
+#elif defined(VARIANT_3)
 	constexpr unsigned TASK_COUNT = 3;
-#elif defined(VARIANT_BIG)
+#elif defined(VARIANT_4)
+	constexpr unsigned TASK_COUNT = 4;
+#elif defined(VARIANT_5)
+	constexpr unsigned TASK_COUNT = 5;
+#elif defined(VARIANT_6)
 	constexpr unsigned TASK_COUNT = 6;
-#elif defined(VARIANT_FULL)
+#elif defined(VARIANT_7)
+	constexpr unsigned TASK_COUNT = 7;
+#elif defined(VARIANT_8)
+	constexpr unsigned TASK_COUNT = 8;
+#elif defined(VARIANT_9)
 	constexpr unsigned TASK_COUNT = 9;
 #else
 	constexpr unsigned TASK_COUNT = 3;

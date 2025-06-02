@@ -6,6 +6,11 @@
 # meson test dummytest
 # meson test --suite ara:mareike
 # meson test --suite mareike
+
+# Parse testlog into csv, plot [and save to png]
+# python3 meson_parser.py ../../../../build/meson-logs/testlog.txt res.csv 
+# python3 plot.py res.csv [--save out.png]
+
 # test('dummytest',
 #     py3_inst,
 #     args: [files('dummy.py'), 'param'],
@@ -32,6 +37,6 @@ foreach app : autosar_targets
         env: [python_path],
         depends: [ara_py, app['ll_pi4']],
         suite: 'automotive_benchmark',
-        timeout: 10 # 30 600
+        timeout: 60 # 30 600
     )
 endforeach
