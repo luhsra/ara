@@ -400,7 +400,7 @@ namespace ara::step {
 			/* HyperSSE switches between different sets of SVF's Singeltons, 
 			* in the step SVFReset the active Singeltons get forgotten,
 			* and their pointers get stored into graph.graph_data.
-			* In loadOil when the first ValueAnalyzer is created new Singeltions are 
+			* In loadOil when the first ValueAnalyzer is created new Singeltons are 
 			* created by the code below.
 			*/
 			if(graph.get_graph_data().pags_pointer != nullptr
@@ -410,6 +410,7 @@ namespace ara::step {
 				SVF::PAG::setPAG(graph.get_graph_data().pags_pointer);
 				SVF::LLVMModuleSet::setLLVMModuleSet(graph.get_graph_data().llvm_module);
 				SVF::AndersenWaveDiff::setAndersenWaveDiff(graph.get_graph_data().anderson);
+				SVF::SymbolTableInfo::SymbolInfo()->setSymbolInfo(graph.get_graph_data().syminfo);
 			}
 
 			SVF::PAG* pag = SVF::PAG::getPAG();

@@ -1027,7 +1027,9 @@ namespace ara::step {
 		llvm::AttributeSet attrs = attrl.getAttributes(argument_nr + 1);
 		const llvm::Value& val = get_nth_arg(callsite, argument_nr);
 
-		va.logger.debug() << "Analyzing argument " << argument_nr << ": " << pretty_print(val) << std::endl;
+		va.logger.debug() << "Analyzing argument: " << argument_nr << "| " << pretty_print(val) << std::endl;
+		// va.logger.debug() << "Callsite: " << callsite << "| " << "callpath: " << callpath << "| " << "hint: " << hint << std::endl;
+		// va.logger.debug() << "val: " << val << std::endl;
 
 		// fast lane, if val is a constant, take it
 		report_type::FoundValue<SVFG> value;
