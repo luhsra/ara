@@ -200,6 +200,10 @@ class HyperSSE(Step):
             program["oilfile"] = oilfile
             extra["HyperSSE"]["dom_files"] = self.dom_files.get()
             extra["HyperSSE"]["oil_files"] = self.dom_oils.get()
+            extra["SystemRelevantFunctions"] = {}
+            extra["SystemRelevantFunctions"]["xen_syscall"] = True
+            extra["SysFuncts"] = {}
+            extra["SysFuncts"]["xen_syscall"] = True
             extra["DumpCFG"] = {}
             extra["DumpCFG"]["dot"] = "dom" + str(HyperSSE.runid)
             extra["DumpCFG"]["add_legend"] = False
