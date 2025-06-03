@@ -1,7 +1,8 @@
 /*
  * Copyright (c) 2021 EPAM Systems
  * Copyright (c) 2022 Arm Limited (or its affiliates). All rights reserved.
- *
+ * SPDX-FileCopyrightText: 2025 Mareike Burg
+ * 
  * SPDX-License-Identifier: Apache-2.0
  */
 #ifndef __XEN_EVENTS_H__
@@ -69,15 +70,15 @@ int bind_interdomain_event_channel(domid_t remote_dom, evtchn_port_t remote_port
 extern "C" {
 #endif
 
-	void test_send_event_channel(evtchn_port_t port) {
+	void test_send_event_channel(domid_t remote_dom, evtchn_port_t port) {
 		return;
 	}
 	
-	void test_notify_evtchn(evtchn_port_t port) {
+	void test_notify_evtchn(domid_t remote_dom, evtchn_port_t port) {
 		return;
 	}
 	
-	void test_receive_event_channel(evtchn_port_t port, evtchn_cb_t cb) {
+	void test_receive_event_channel(domid_t remote_dom, evtchn_port_t port, evtchn_cb_t cb) {
 		return;
 	}
 #ifdef __cplusplus
