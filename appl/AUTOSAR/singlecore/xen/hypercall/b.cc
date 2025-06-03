@@ -1,11 +1,12 @@
 #include "autosar/os.h"
 #include "xen/events.h"
 
+extern "C" void ara_timing_info(int a, int b);
+
 DeclareTask(B);
 DeclareTask(B2);
+domid_t remote_dom = 0;
 evtchn_port_t port = 42;
-
-extern "C" void ara_timing_info(int a, int b);
 
 int main(void) {
 	StartOS(0);
@@ -14,7 +15,7 @@ int main(void) {
 TASK(B) {
 	kout << "B"<< endl;
   	ara_timing_info(25, 25);
-	test_receive_event_channel(port, reinterpret_cast<void*>(AUTOSAR_TASK_FUNC_B));
+	test_receive_event_channel(remote_dom, port, reinterpret_cast<void*>(AUTOSAR_TASK_FUNC_B));
 
   	ara_timing_info(25, 25);
 	TerminateTask();

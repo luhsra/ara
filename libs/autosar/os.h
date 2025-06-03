@@ -112,9 +112,9 @@
 #define GetNumberOfActivatedCores() AUTOSAR_GetNumberOfActivatedCores()
 
 // For XEN hypercalls
-#define test_send_event_channel(port) XEN_test_send_event_channel(port)
-#define test_notify_evtchn(port) XEN_test_notify_evtchn(port)
-#define test_receive_event_channel(port, cb) XEN_test_receive_event_channel(port, cb)
+#define test_send_event_channel(remote_dom, port) XEN_test_send_event_channel(remote_dom, port)
+#define test_notify_evtchn(remote_dom, port) XEN_test_notify_evtchn(remote_dom, port)
+#define test_receive_event_channel(remote_dom, port, cb) XEN_test_receive_event_channel(remote_dom, port, cb)
 
 #define OS_CORE_ID_0 0
 #define OS_CORE_ID_1 1
@@ -351,9 +351,9 @@ extern void AUTOSAR_SuspendOSInterrupts();
 extern void AUTOSAR_ResumeOSInterrupts();
 
 // for XEN hypercalls
-extern void XEN_test_send_event_channel(PortType port);
-extern void XEN_test_notify_evtchn(PortType port);
-extern void XEN_test_receive_event_channel(PortType port, EventChannelCallbackType cb);
+extern void XEN_test_send_event_channel(RemoteDomainType remote_dom, PortType port);
+extern void XEN_test_notify_evtchn(RemoteDomainType remote_dom, PortType port);
+extern void XEN_test_receive_event_channel(RemoteDomainType remote_dom, PortType port, EventChannelCallbackType cb);
 
 
 /******************************************************************************
