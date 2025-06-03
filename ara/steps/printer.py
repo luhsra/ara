@@ -39,6 +39,9 @@ _sysshort = {
     "AUTOSAR_SetRelAlarm": "SRA",
     "AUTOSAR_GetAlarm": "GA",
     "AUTOSAR_CancelAlarm": "CA",
+    "XEN_test_send_event_channel": "XTS",
+    "XEN_test_receive_event_channel": "XTR",
+    "XEN_test_notify_evtchn": "XTN",
 
 }
 

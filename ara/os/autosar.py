@@ -48,7 +48,6 @@ from .os_base import (
     IRQContext,
     InterruptMissing,
 )
-from .xen import XenSyscalls
 
 TASK_PREFIX = "AUTOSAR_TASK_"
 ALARM_PREFIX = "AUTOSAR_ALARM_"
@@ -266,8 +265,7 @@ class Event(AUTOSARInstance):
 class Resource(AUTOSARInstance):
     pass
 
-
-class AUTOSAR(OSBase, XenSyscalls):
+class AUTOSAR(OSBase):
     """AUTOSAR model.
 
     See https://www.autosar.org/fileadmin/user_upload/standards/classic/20-11/AUTOSAR_SWS_OS.pdf
@@ -573,7 +571,6 @@ class AUTOSAR(OSBase, XenSyscalls):
         return []
 
     @staticmethod
-    # def interpret(graph: Graph, state: OSState, cpu_id, categories=SyscallCategory.every) -> OSState:
     def interpret(graph: Graph, state: OSState, cpu_id: int, categories=None) -> OSState:
         if not categories:
             categories = {SyscallCategory.every}
@@ -585,6 +582,12 @@ class AUTOSAR(OSBase, XenSyscalls):
             f"ABB: {cfg.vp.name[abb]}"
             f" (in {cfg.vp.name[cfg.get_function(abb)]})"
         )
+
+        if not hasattr(AUTOSAR, syscall):
+            logger.info("Skipping syscall, since from hypervisor")
+            state = state.copy()
+            set_next_abb(state, cpu_id)
+            return state
 
         syscall_function = getattr(AUTOSAR, syscall)
 

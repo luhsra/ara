@@ -11,6 +11,8 @@ from graph_tool import GraphView
 from graph_tool.topology import label_out_component
 from .option import Option, Bool
 
+from ara.os.xen import XEN
+
 
 class SystemRelevantFunctions(Step):
     """Mark all function that are in the Callgraph as system relevant or not."""
@@ -24,6 +26,12 @@ class SystemRelevantFunctions(Step):
                         ty=Bool(),
                         default_value=False)
 
+    xen_syscall = Option(name="xen_syscall",
+                        help="Additionally find any xen syscalls as any operating system,"
+                        "used for HyperSSE",
+                        ty=Bool(),
+                        default_value=False)
+    
     def get_single_dependencies(self):
         return ["CallGraph", "SysFuncts"]
 
@@ -36,8 +44,12 @@ class SystemRelevantFunctions(Step):
 
         every_set = {SyscallCategory.every, }
 
+        if self.xen_syscall.get():
+            syscalls = self._graph.os.syscalls | XEN.syscalls
+        else:
+            syscalls = self._graph.os.syscalls
         # begin with syscalls, they are always entry points
-        for syscall, sys_func in self._graph.os.syscalls.items():
+        for syscall, sys_func in syscalls.items():
             if not self.with_stubs.get() and sys_func.is_stub:
                 continue
             for sys_cat in every_set | sys_func.categories:
