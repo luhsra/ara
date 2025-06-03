@@ -183,7 +183,7 @@ class Main:
         step_sneak_in(self.args.manual_corrections, "ManualCorrections",
                       after=True)
         step_sneak_in(self.args.va_corrections, "ValueAnalyzerCorrections")
-        step_sneak_in(self.args.timings, "ApplyTimings")
+        #step_sneak_in(self.args.timings, "ApplyTimings")
 
         self.graph.os = get_os(self.args.os)
 
