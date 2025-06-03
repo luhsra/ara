@@ -22,7 +22,7 @@ from ara.graph import SyscallCategory as _SyscallCategory, SigType as _SigType
 from ara.graph import CFType as _CFType, CFGView as _CFGView
 from ara.steps.util import current_step
 
-from .os_base import ExecState
+from .os_base import ExecState, OSState
 
 from ara.util import get_logger
 logger = get_logger("OS_UTIL")
@@ -186,11 +186,15 @@ Argument.hint = property(Argument.get_hint, Argument.set_hint)
 Arg = Argument
 
 
-def set_next_abb(state, cpu_id):
+def set_next_abb(state: OSState, cpu_id: int):
     """Set the CPU specified with cpu_id to the next abb.
 
     Note: Call this functions on syscalls only.
     """
+    if state.system_count:
+        cfg = state.cfg_list[cpu_id]
+    else:
+        cfg = state.cfg
     lcfg = _CFGView(state.cfg, efilt=state.cfg.ep.type.fa == _CFType.lcf)
     cpu = state.cpus[cpu_id]
     for idx, next_abb in enumerate(lcfg.vertex(cpu.abb).out_neighbors()):

@@ -72,94 +72,6 @@ class HypercallReceiver(CPUBounded):
 
     def __str__(self):
         return f"HypercallReceiver: {self.name} on port: {self.port} and event: {self.event} with CpuId: {self.cpu_id}"
-    
-
-class XenSyscalls():
-
-    _sender: int = 0
-    _receive: int = 0
-
-    # tempräry solution?
-    # Which os should be notified if an event is send to this port
-    _mapping: dict[int, int] = {}
-
-    @syscall(categories={SyscallCategory.comm}, 
-                     signature=(Arg("port", ty=int, raw_value=True, hint=SigType.value),),)
-    def XEN_test_send_event_channel(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
-        
-        port = args.port.value.get_initializer().get() # this works for now
-        XenSyscalls._sender += 1
-        hyper = HypercallSender(cpu_id=cpu_id, name="HypercallSender"+str(XenSyscalls._sender), port=port)
-        state.context[hyper] = 1
-        
-        state.context_dump()
-
-        return state
-
-    @syscall(categories={SyscallCategory.comm},
-                     signature=(Arg("port", ty=int, raw_value=True, hint=SigType.value),
-                                Arg("event", ty=CrossOSEvent, hint=SigType.symbol)
-                                ,),)
-    def XEN_test_receive_event_channel(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
-    
-        # todo fix valueanalyzer, this is specifc
-        for k, v in state.context.items():
-            if isinstance(k, CrossOSEvent):
-                if k.name == "B2":
-                     task = k
-        port = args.port.value.get_initializer().get() # this works for now
-        XenSyscalls._receive += 1
-        hyper = HypercallReceiver(cpu_id=cpu_id, name="HypercallReceiver"+str(XenSyscalls._receive), port=port, event=task)
-        state.context[hyper] = 1
-        
-        XenSyscalls._mapping[port] = cpu_id
-        state.context_dump()
-
-        return state
-
-
-    @staticmethod
-    def check_cpu(state, cpu_id):
-        """Check, if cpu_id is supported in state.
-
-        Raise a CrossCoreAction otherwise
-        """
-        cpu_ids = set([x.id for x in state.cpus])
-
-        if cpu_id not in cpu_ids:
-            raise CrossCoreAction(set([cpu_id]))
-
-    @staticmethod
-    def ActivateTask(state: OSState, cpu_id: int, task: CrossOSEvent):
-        assert isinstance(task, CrossOSEvent)
-        logger.debug(f"Setting {task} ready.")
-
-        XenSyscalls.check_cpu(state, task.cpu_id)
-        ctx = state.context[task]
-        if ctx.status is not TaskStatus.running:
-            if ctx.status is TaskStatus.suspended:
-                ctx.abb = state.cfg.get_entry_abb(task.function)
-            ctx.status = TaskStatus.ready
-        return state
-    
-    @syscall(categories={SyscallCategory.comm}, 
-                     signature=(Arg("port", ty=int, raw_value=True, hint=SigType.value),),)
-    def XEN_test_notify_evtchn(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
-
-        port = args.port.value.get_initializer().get() # this works for now
-        state.context_dump()
-
-        # if we are not hypervised this does nothing
-        if graph.os != XEN:
-            return state
-        
-        target = XenSyscalls._mapping[port]
-        
-        # XEN.ActivateTask(state=state, cpu_id=target, task=)
-        # hier ist der Context des Empfängers nicht da, wie lösen wir Cross IR mit ihm aus?
-
-
-
 
 class XEN(OSBase):
     
@@ -169,24 +81,10 @@ class XEN(OSBase):
     instances_list: list[InstanceGraph] = []
     graph_list: list[Graph] = []
 
-    # @classmethod
-    # def is_syscall(cls, function_name):
-    #     """Return whether a function name is a system call of this OS."""
-    #     if hasattr(cls, function_name):
-    #         return hasattr(getattr(cls, function_name), "syscall")
-    #     return False
-
     @classmethod
     def is_interaction(cls, ty) -> bool:
         """Return whether an edge type is an interaction in this OS."""
         return True
-
-    # @staticmethod
-    # def get_special_steps():
-    #     """Return OS specific preprocessing steps."""
-    #     from ara.steps import get_native_component
-    #     ValueAnalyzer = get_native_component("ValueAnalyzer")
-    #     return ValueAnalyzer.get_dependencies()
 
     @staticmethod
     def has_dynamic_instances():
@@ -387,30 +285,29 @@ class XEN(OSBase):
         syscall = state.get_syscall_name(cpu_id)
 
 
-        # if XEN.is_syscall(syscall):
-        #     logger.warning(f"Interpret a xen syscall: {syscall}")
-        #     syscall_function = getattr(XEN, syscall)
+        if XEN.is_syscall(syscall):
+            logger.warning(f"Interpret a xen syscall: {syscall}")
+            syscall_function = getattr(XEN, syscall)
+            # return state
+            return syscall_function(graph, state, cpu_id)
+        else:
+            return XEN.system_types[cpu_id].interpret(graph=XEN.graph_list[cpu_id], state=state, cpu_id=cpu_id, categories=categories)
+
+    # not in use, old variant!
+    # @staticmethod
+    # def split_states(state: OSState) -> list[OSState]:
         
-        #     return syscall_function(graph, state, cpu_id)
-        # else:
-        return XEN.system_types[cpu_id].interpret(graph=XEN.graph_list[cpu_id], state=state, cpu_id=cpu_id, categories=categories)
+    #     states: list[OSState] = []
+    #     cpus: list[CPU] = [cpu.id for cpu in state.cpus]
 
-    @staticmethod
-    def split_states(state: OSState) -> list[OSState]:
-        
-        states: list[OSState] = []
-        cpus: list[CPU] = [cpu.id for cpu in state.cpus]
+    #     logger.debug(f"Splitting state into {len(cpus)} states.")
 
-        logger.debug(f"Splitting state into {len(cpus)} states.")
+    #     # instances = InstanceGraph TODO
+    #     for idx, cpu in enumerate(cpus):
+    #         states.append(OSState(cpus=CPUList(cpus=cpu), cfg=XEN.cfg_list[idx].cfg, instances=XEN.instances_list[idx].instances))
 
-        # instances = InstanceGraph TODO
-        for idx, cpu in enumerate(cpus):
-            states.append(OSState(cpus=CPUList(cpus=cpu), cfg=XEN.cfg_list[idx].cfg, instances=XEN.instances_list[idx].instances))
-
-        # see _get_single_core_states in MultiSSE
-        return states
-    
-            
+    #     # see _get_single_core_states in MultiSSE
+    #     return states
     
     @staticmethod
     def schedule(state: OSState, cpus=None) -> None:
@@ -426,53 +323,156 @@ class XEN(OSBase):
                     break
 
         else:
-            logger.error(f"TODO Tried to schedule multicore cpu with: {cpus} cores.") 
-            states = XEN.split_states(state=state)
+            logger.error(f"TODO Tried to schedule multicore cpu with: {cpus} cores.")
+            # Here we need to schedule each cpu seperatly 
+            states = []
+
+            # convert from dict with cpu_ids into list of states
+            for id, state in XEN._get_single_core_states(state).items():
+                states.append(state)
 
             for idx, sc_state in enumerate(states):
 
                 # TODO XEN [0]
-                XEN.system_types[idx].schedule(state=sc_state, cpus=cpus)
+                XEN.system_types[idx].schedule(state=sc_state, cpus=cpus)        
+                
 
 
-    # @syscall(categories={SyscallCategory.comm}, signature=Arg("port", ty=int, hint=SigType.value))
-    # def XEN_test_send_event_channel(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
+
+    # --------------------------- SYSCALLS ---------------------
+
+    _sender: int = 0
+    _receive: int = 0
+
+    # tempräry solution?
+    # Which os should be notified if an event is send to this port
+    #_mapping: dict[int, int] = {}
+
+    @syscall(categories={SyscallCategory.comm}, 
+                     signature=(Arg("remote_dom", ty=int, raw_value=True, hint=SigType.value),
+                                Arg("port", ty=int, raw_value=True, hint=SigType.value)),)
+    def XEN_test_send_event_channel(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
+        pass
+        port = args.port.value.get_initializer().get() # this works for now
+        XEN._sender += 1
+        hyper = HypercallSender(cpu_id=cpu_id, name="HypercallSender"+str(XEN._sender), port=port)
+        state.context[hyper] = 1
         
-    #     # TODO 
-    #     for k, v in state.context.items():
-    #         logger.info(k)
-    #         logger.info(v)
-    #         logger.info("\n")
+        state.context_dump()
 
-    #     pass
-    #     # HypercallSender(cpu_id=cpu_id)
-    #     # state.context["Hyper"]
+        return state
+
+    @syscall(categories={SyscallCategory.comm},
+                     signature=(Arg("remote_dom", ty=int, raw_value=True, hint=SigType.value),
+                                Arg("port", ty=int, raw_value=True, hint=SigType.value),
+                                Arg("event", ty=CrossOSEvent, hint=SigType.symbol)
+                                ,),)
+    def XEN_test_receive_event_channel(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
         
-    #     return state
+        event_name: str = args.event.value.get_name()
+
+        # Autosar specific renaming
+        if event_name.startswith("AUTOSAR_TASK_FUNC_"):
+            event_name = event_name.strip("AUTOSAR_TASK_FUNC_")
+        
+        for k, v in state.context.items():
+            if isinstance(k, CrossOSEvent):
+                if k.name == event_name:
+                     task = k
+        assert task, "Could not find CrossOSEvent!"
+
+        port = args.port.value.get_initializer().get() # this works for now
+        XEN._receive += 1
+        hyper = HypercallReceiver(cpu_id=cpu_id, name="HypercallReceiver"+str(XEN._receive), port=port, event=task)
+        state.context[hyper] = 1
+        
+        #XEN._mapping[port] = cpu_id
+        state.context_dump()
+
+        return state
 
 
-    # @syscall(categories={SyscallCategory.comm}, signature=tuple())
-    # def XEN_test_notify_evtchn(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
-    #     # TODO aus args den port ziehen
-    #     # aus args
-    #     target_id = 1
-    #     pass
-    #     # handle_irq()
-    #     # TODO require an ActivateTask from each os
-    #     # XEN.system_types[cpu_id].ActivateTask()
+    @staticmethod
+    def check_cpu(state, cpu_id):
+        """Check, if cpu_id is supported in state.
 
-    #     # cpuid sagt mit welchem Kern syncen
-    #     # welchen Callback auf diesem Kern
+        Raise a CrossCoreAction otherwise
+        """
+        cpu_ids = set([x.id for x in state.cpus])
 
-    #     # TODO brauchen Callback obj -> steht im state.ctx drinnen als mögliches event (aus args) 
-    #     #raise CrossCoreAction(set([cpu_id]))
-    #     pass
-    #     # todo sync point mit zieltask machen
-    #     return state
+        if cpu_id not in cpu_ids:
+            raise CrossCoreAction(set([cpu_id]))
+        
+    def _get_single_core_states(multi_core_state) -> dict:
+        single_core_states = {}
+        for cpu in multi_core_state.cpus:
+            # restrict state to this cpu
 
+            # if system count is present it is a XEN state and needs a differnt copy
+            if multi_core_state.system_count:
+                state = XEN.state_copy_index(multi_core_state, cpu.id)
+            else:
+                state = multi_core_state.copy()
+            state.cpus = CPUList([cpu])
+            state.context = XEN.get_cpu_local_contexts(
+                multi_core_state.context, cpu.id, state.instances)
+            single_core_states[cpu.id] = state
 
-    # @syscall(categories={SyscallCategory.comm}, signature=tuple())
-    # def XEN_test_receive_event_channel(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
-    #     # TODO 
-    #     pass
-    #     return state
+        return single_core_states
+    
+    @staticmethod
+    def ActivateTask(state: OSState, cpu_id: int, task: CrossOSEvent):
+        assert isinstance(task, CrossOSEvent)
+        logger.debug(f"Setting {task} ready.")
+
+        XEN.check_cpu(state, task.cpu_id)
+        ctx = state.context[task]
+        if ctx.status is not TaskStatus.running:
+            if ctx.status is TaskStatus.suspended:
+                ctx.abb = state.cfg.get_entry_abb(task.function)
+            ctx.status = TaskStatus.ready
+        return state
+    
+    @syscall(categories={SyscallCategory.comm}, 
+                     signature=(Arg("remote_dom", ty=int, raw_value=True, hint=SigType.value),
+                                Arg("port", ty=int, raw_value=True, hint=SigType.value),),)
+    def XEN_test_notify_evtchn(graph: Graph, state: OSState, cpu_id: int, args, va) -> list[OSState]:
+
+        port = args.port.value.get_initializer().get() # this works for now
+        remote_dom = args.remote_dom.value.get_initializer().get() # this works for now
+        state.context_dump()
+
+        # if we are not hypervised this does nothing
+        if graph.os != XEN:
+            return state
+        
+        logger.error("Xen notify!")
+
+        XEN.check_cpu(state, remote_dom)
+        # raise CrossCoreAction(set([remote_dom]))
+        # CrossOSEvent ausführen
+
+        for k, v in state.context.items():
+            if isinstance(k, CrossOSEvent):
+                if k.name == "B2":
+                     task = k
+
+        state.hypersse_state(system_count=2, cfg_list=XEN.cfg_list, instances_list=XEN.instances_list)
+        ctx = state.context[task]
+        if ctx.status is not TaskStatus.running:
+            if ctx.status is TaskStatus.suspended:
+                cfg = task.cfg
+                ctx.abb = cfg.get_entry_abb(task.function)
+            ctx.status = TaskStatus.ready
+        #add context (B)
+
+        return state
+
+        # XEN.ActivateTask(state=state, cpu_id=target, task=)
+        # states = []
+
+        # # convert from dict with cpu_ids into list of states
+        # for id, state in XEN._get_single_core_states(state).items():
+        #     states.append(state)
+        # return states
+

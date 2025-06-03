@@ -174,7 +174,7 @@ class ControlInstance(CPUBounded):
     function: graph_tool.libgraph_tool_core.Vertex
 
 
-class CrossOSEvent():
+class CrossOSEvent(): #todo ControlInstance
     """General object for a signal between different operating systems
 
     In Autosar mapped to start a task, in other OS it could be a message/signal.
