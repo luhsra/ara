@@ -455,13 +455,22 @@ class TimingCalculator():
                         set_time(t_to, cur, new_t)
                     # self._log.debug(f"GRT: iter t_to = {get_time(t_to, pred)} + {get_wcet(cur)}, "
                     #                 f"t_from = {get_time(t_from, pred)} + {get_bcet(pred)}")
+                    for nex in cur.out_neighbors():
+                        stack.append(nex)
                 elif degree >= 2:
                     if any(
                         [dominates(dom_tree, cur, x) for x in cur.in_neighbors()]):
                         # we have a loop, find out_neighbor which belongs to loop
-                        self._fail(
+                        self._log.error(
                             "Loops are unsupported currently. Please roll them out."
                         )
+                        # Workaround: calculate as if we always come from first predecessor 
+                        pred = next(cur.in_neighbors())
+                        set_time(t_from, cur, get_time(t_from, pred) + get_bcet(pred))
+                        new_t = get_time(t_to, pred) + get_wcet(cur)
+                        if not inf:
+                            inf = new_t == math.inf or inf
+                            set_time(t_to, cur, new_t)
                     else:
                         # we need to wait, until all predecessors have a time
                         froms = []
@@ -482,8 +491,8 @@ class TimingCalculator():
                             inf = new_t == math.inf or inf
                             set_time(t_to, cur, new_t)
 
-                for nex in cur.out_neighbors():
-                    stack.append(nex)
+                        for nex in cur.out_neighbors():
+                            stack.append(nex)
 
             to_time = math.inf if inf else get_time(t_to, state)
             t = TimeRange(up=get_time(t_from, state), to=to_time)
