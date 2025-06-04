@@ -39,40 +39,6 @@ from ara.steps.multisse_helper.common import CrossExecState
 
 logger = get_logger("XEN")
 
-# müssen wir ControlInstance erben?
-@dataclass()
-class HypercallSender(CPUBounded):
-    def __eq__(self, other):
-        # the name of an arbitrary AUTOSAR instance must be unique
-        return self.name == other.name
-
-    def __hash__(self):
-        # the name of an arbitrary AUTOSAR instance must be unique
-        return hash(self.__class__.__name__ + self.name)
-
-    name: str
-    port: int
-    # target_cpu: int = -1
-    def __str__(self):
-        return f"HypercallSender: {self.name} to port: {self.port} with CpuId: {self.cpu_id}"# and target: {self.target_cpu}"
-    
-@dataclass()
-class HypercallReceiver(CPUBounded):
-    def __eq__(self, other):
-        # the name of an arbitrary AUTOSAR instance must be unique
-        return self.name == other.name
-
-    def __hash__(self):
-        # the name of an arbitrary AUTOSAR instance must be unique
-        return hash(self.__class__.__name__ + self.name)
-
-    name: str
-    port: int
-    event: CrossOSEvent  # event that happens on hypercall
-
-    def __str__(self):
-        return f"HypercallReceiver: {self.name} on port: {self.port} and event: {self.event} with CpuId: {self.cpu_id}"
-
 class XEN(OSBase):
     
     system_count: int = 0
@@ -286,71 +252,6 @@ class XEN(OSBase):
                 XEN.system_types[idx].schedule(state=sc_state, cpus=cpus)        
                 
 
-
-
-    # --------------------------- SYSCALLS ---------------------
-
-    _sender: int = 0
-    _receive: int = 0
-
-    # tempräry solution?
-    # Which os should be notified if an event is send to this port
-    #_mapping: dict[int, int] = {}
-
-    @syscall(categories={SyscallCategory.comm}, 
-                     signature=(Arg("remote_dom", ty=int, raw_value=True, hint=SigType.value),
-                                Arg("port", ty=int, raw_value=True, hint=SigType.value)),)
-    def XEN_test_send_event_channel(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
-        pass
-        port = args.port.value.get_initializer().get() # this works for now
-        XEN._sender += 1
-        hyper = HypercallSender(cpu_id=cpu_id, name="HypercallSender"+str(XEN._sender), port=port)
-        state.context[hyper] = 1
-        
-        state.context_dump()
-
-        return state
-
-    @syscall(categories={SyscallCategory.comm},
-                     signature=(Arg("remote_dom", ty=int, raw_value=True, hint=SigType.value),
-                                Arg("port", ty=int, raw_value=True, hint=SigType.value),
-                                Arg("event", ty=CrossOSEvent, hint=SigType.symbol)
-                                ,),)
-    def XEN_test_receive_event_channel(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
-        
-        event_name: str = args.event.value.get_name()
-
-        # Autosar specific renaming
-        if event_name.startswith("AUTOSAR_TASK_FUNC_"):
-            event_name = event_name.strip("AUTOSAR_TASK_FUNC_")
-        
-        for k, v in state.context.items():
-            if isinstance(k, CrossOSEvent):
-                if k.name == event_name:
-                     task = k
-        assert task, "Could not find CrossOSEvent!"
-
-        port = args.port.value.get_initializer().get() # this works for now
-        XEN._receive += 1
-        hyper = HypercallReceiver(cpu_id=cpu_id, name="HypercallReceiver"+str(XEN._receive), port=port, event=task)
-        state.context[hyper] = 1
-        
-        #XEN._mapping[port] = cpu_id
-        state.context_dump()
-
-        return state
-
-
-    @staticmethod
-    def check_cpu(state, cpu_id):
-        """Check, if cpu_id is supported in state.
-
-        Raise a CrossCoreAction otherwise
-        """
-        cpu_ids = set([x.id for x in state.cpus])
-
-        if cpu_id not in cpu_ids:
-            raise CrossCoreAction(set([cpu_id]))
         
     def _get_single_core_states(multi_core_state) -> dict:
         single_core_states = {}
@@ -369,34 +270,102 @@ class XEN(OSBase):
 
         return single_core_states
     
-    @staticmethod
-    def ActivateTask(state: OSState, cpu_id: int, task: CrossOSEvent):
-        assert isinstance(task, CrossOSEvent)
-        logger.debug(f"Setting {task} ready.")
 
-        XEN.check_cpu(state, task.cpu_id)
-        ctx = state.context[task]
-        if ctx.status is not TaskStatus.running:
-            if ctx.status is TaskStatus.suspended:
-                ctx.abb = state.cfg.get_entry_abb(task.function)
-            ctx.status = TaskStatus.ready
+
+    # --------------------------- SYSCALLS ---------------------
+
+    # Used for uniques ids
+    _sender: int = 0
+    _receive: int = 0
+
+    @syscall(categories={SyscallCategory.comm}, 
+                     signature=(Arg("remote_dom", ty=int, raw_value=True, hint=SigType.value),
+                                Arg("port", ty=int, raw_value=True, hint=SigType.value)),)
+    def XEN_test_send_event_channel(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
+        
+        remote_dom = args.remote_dom.value.get_initializer().get()
+        port = args.port.value.get_initializer().get()
+
+        XEN._sender += 1
+        hyper = HypercallSender(cpu_id=cpu_id, name="HypercallSender"+str(XEN._sender), port=port, target_domain=remote_dom)
+        state.context[hyper] = 1
+
         return state
-    
+
+    @syscall(categories={SyscallCategory.comm},
+                     signature=(Arg("source_dom", ty=int, raw_value=True, hint=SigType.value),
+                                Arg("port", ty=int, raw_value=True, hint=SigType.value),
+                                Arg("event", ty=CrossOSEvent, hint=SigType.symbol)
+                                ,),)
+    def XEN_test_receive_event_channel(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
+        
+        source_dom = args.source_dom.value.get_initializer().get()
+        port = args.port.value.get_initializer().get()
+        event_name: str = args.event.value.get_name()
+
+        # Autosar specific renaming
+        if event_name.startswith("AUTOSAR_TASK_FUNC_"):
+            event_name = event_name.strip("AUTOSAR_TASK_FUNC_")
+        
+        for k, v in state.context.items():
+            if isinstance(k, CrossOSEvent):
+                if k.name == event_name:
+                     task = k
+        assert task, f"Could not find CrossOSEvent {event_name} on domain {cpu_id}"
+
+        XEN._receive += 1
+        hyper = HypercallReceiver(cpu_id=cpu_id, name="HypercallReceiver"+str(XEN._receive), port=port, event=task, target_domain=source_dom)
+        state.context[hyper] = 1
+
+        return state
+
+
+    @staticmethod
+    def get_remote_id(state: OSState, id: int):
+        """
+        Check, if another dom/cpu_id is included in state.
+        Otherwise raise a CrossCoreAction, which return here again with the other dom/cpu.
+        Analog to os.Autosar.check_cpu
+        """
+        ids = set([x.id for x in state.cpus])
+
+        if id not in ids:
+            raise CrossCoreAction(set([id]))
+        
     @syscall(categories={SyscallCategory.comm}, 
                      signature=(Arg("remote_dom", ty=int, raw_value=True, hint=SigType.value),
                                 Arg("port", ty=int, raw_value=True, hint=SigType.value),),)
     def XEN_test_notify_evtchn(graph: Graph, state: OSState, cpu_id: int, args, va) -> list[OSState]:
 
-        port = args.port.value.get_initializer().get() # this works for now
-        remote_dom = args.remote_dom.value.get_initializer().get() # this works for now
-        state.context_dump()
-
         # if we are not hypervised this does nothing
         if graph.os != XEN:
             return state
         
+        # need get_initializer for global variables
+        port = args.port.value.get_initializer().get()
+        remote_dom = args.remote_dom.value.get_initializer().get()
+
         # check if target in included in state, if not raise CrossCoreAction and return later 
-        XEN.check_cpu(state, remote_dom)
+        XEN.get_remote_id(state, remote_dom)
+
+        recver = state.context_get_instances(HypercallReceiver)
+        sender = state.context_get_instances(HypercallSender)
+
+        # task = None
+        # for send in sender:
+        #     # filter to sender from this cpu_id
+        #     if send.cpu_id != cpu_id:
+        #         continue
+        #     for revc in recver:
+        #         # filter recevier who receive from this cpu_id
+        #         if revc.target_domain != cpu_id:
+        #             continue
+        #         # filter that port is correct
+        #         if send.port == revc.port:
+        #             task = revc.event
+        
+        # # TODO beim 2ten mal fehlt der HypercallRecveiver Context??
+        # assert task, f"Could not find CrossOSEvent from domain {cpu_id} to {remote_dom} on port {port}"
 
         # TODO
         for k, v in state.context.items():
@@ -404,7 +373,7 @@ class XEN(OSBase):
                 if k.name == "B2":
                      task = k
 
-        state.hypersse_state(system_count=2, cfg_list=XEN.cfg_list, instances_list=XEN.instances_list)
+        state.hypersse_state(system_count=len(state.cpus), cfg_list=XEN.cfg_list, instances_list=XEN.instances_list)
         ctx = state.context[task]
         if ctx.status is not TaskStatus.running:
             if ctx.status is TaskStatus.suspended:
@@ -413,3 +382,34 @@ class XEN(OSBase):
             ctx.status = TaskStatus.ready
 
         return state
+
+# TODO müssen wir ControlInstance erben?
+@dataclass()
+class HypercallSender(CPUBounded):
+    def __eq__(self, other):
+        return self.name == other.name
+
+    def __hash__(self):
+        return hash(self.__class__.__name__ + self.name)
+
+    name: str
+    port: int
+    target_domain: int
+    def __str__(self):
+        return f"{self.name} on dom:{self.cpu_id} to: {self.target_domain} via port: {self.port}"
+    
+@dataclass()
+class HypercallReceiver(CPUBounded):
+    def __eq__(self, other):
+        return self.name == other.name
+
+    def __hash__(self):
+        return hash(self.__class__.__name__ + self.name)
+
+    name: str
+    port: int
+    target_domain: int
+    event: CrossOSEvent  # event that happens on hypercall
+
+    def __str__(self):
+        return f"{self.name} on dom:{self.cpu_id} to: {self.target_domain} via port: {self.port} with: {self.event}"

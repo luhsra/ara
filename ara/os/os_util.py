@@ -211,7 +211,7 @@ class Parenthesis(Enum):
 
 
 _argument_value_cache = {"last_added": []}
-def _get_cached_argument_value(va, abb, idx, callpath, hint):
+def _get_cached_argument_value(va, cpu_id: int, abb, idx, callpath, hint):
     CACHE_LENGTH = 5
 
     def _shorten_callpath(callpath, length):
@@ -219,7 +219,7 @@ def _get_cached_argument_value(va, abb, idx, callpath, hint):
         while len(short_cp) > length:
             short_cp.pop_front()
 
-    key = (int(abb), idx, hint)
+    key = (cpu_id, int(abb), idx, hint)
     cp_length, s_cache = _argument_value_cache.get(key, (-1, None))
     if cp_length != -1:
         short_cp = _shorten_callpath(callpath, cp_length)
@@ -329,13 +329,14 @@ class SysCall:
         logger.info(f"Syscall analysis of cpu_id: {cpu_id} and graph: {graph}")
 
         class CachingValueAnalyzer(ValueAnalyzer):
-            def get_argument_value(self, abb, idx, callpath=None, hint=None):
-                return _get_cached_argument_value(super(), abb, idx, callpath, hint)
+            def get_argument_value(self, cpu_id, abb, idx, callpath=None, hint=None):
+                return _get_cached_argument_value(super(), cpu_id, abb, idx, callpath, hint)
 
             def assign_system_object(self, value, instance, offset, callpath):
                 _clear_cache()
                 return super().assign_system_object(value, instance, offset, callpath)
 
+        # CachingValueAnalyzer ging einmal kaputt und hat geänderte Werte nicht gefunden
         va = CachingValueAnalyzer(
             graph,
             current_step.tracer if hasattr(current_step, "tracer") else None)
@@ -357,6 +358,7 @@ class SysCall:
                 hint = _SigType.symbol
             try:
                 result = va.get_argument_value(
+                    cpu_id,
                     abb,
                     idx + sig_offset,
                     callpath=callpath,

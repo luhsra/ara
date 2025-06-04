@@ -10,7 +10,7 @@ import copy
 import enum
 
 from dataclasses import dataclass, field
-from typing import Any, List
+from typing import Any, List, Type, TypeVar
 
 import graph_tool
 
@@ -181,6 +181,7 @@ class CrossOSEvent(): #todo ControlInstance
     """
     # id: int
     # name: str
+    # trigger function: TODO
     pass
 
 
@@ -332,7 +333,7 @@ class OSState:
         logger.warning("Printing context:\n")
         for k, v in self.context.items():
             logger.warning(k)
-            logger.warning(f"    {v}\n")
+            logger.warning(f"    {v}")
 
     def __post_init__(self):
         self._instances = self.instances
@@ -398,6 +399,14 @@ class OSState:
         if cur:
             return self.instances.vp.obj[self.cpus[cpu_id].control_instance]
         return None
+    
+    T = TypeVar('T')    # it gets a class as parameter and returns a list of instances of that class
+    def context_get_instances(self, instance: Type[T]) -> list[T]:
+        inst = []
+        for k, v in self.context.items():
+            if isinstance(k, instance):
+                inst.append(k)
+        return inst
 
     def cur_context(self, cpu_id):
         """Return the context of current running object for the given CPU."""
