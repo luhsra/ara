@@ -12,19 +12,19 @@ int main(void) {
 	StartOS(0);
 }
 
-TASK(B) {
-	kout << "B"<< endl;
-  	ara_timing_info(25, 25);
-	test_receive_event_channel(remote_dom, port, reinterpret_cast<void*>(AUTOSAR_TASK_FUNC_B));
-
-  	ara_timing_info(25, 25);
-	TerminateTask();
-}
-
 TASK(B2) {
 	kout << "B2"<< endl;
 
   	ara_timing_info(40, 40);
-	// TerminateTask();
-	ShutdownMachine();
+	TerminateTask();
+	// ShutdownMachine();
+}
+
+TASK(B) {
+	kout << "B"<< endl;
+  	ara_timing_info(25, 25);
+	test_receive_event_channel(remote_dom, port, reinterpret_cast<void*>(AUTOSAR_TASK_FUNC_B2));
+
+  	ara_timing_info(25, 25);
+	TerminateTask();
 }

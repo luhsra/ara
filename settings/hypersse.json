@@ -22,7 +22,7 @@
 		"log_level": "debug"
 	},
 	"MultiSSE": {
-		"with_times": false,
+		"with_times": true,
 		"dump": true,
 		"log_level": "warning"
 	},
