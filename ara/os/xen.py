@@ -351,35 +351,33 @@ class XEN(OSBase):
         recver = state.context_get_instances(HypercallReceiver)
         sender = state.context_get_instances(HypercallSender)
 
-        # task = None
-        # for send in sender:
-        #     # filter to sender from this cpu_id
-        #     if send.cpu_id != cpu_id:
-        #         continue
-        #     for revc in recver:
-        #         # filter recevier who receive from this cpu_id
-        #         if revc.target_domain != cpu_id:
-        #             continue
-        #         # filter that port is correct
-        #         if send.port == revc.port:
-        #             task = revc.event
+        task = None
+        for send in sender:
+            # filter to sender from this cpu_id
+            if send.cpu_id != cpu_id:
+                continue
+            for revc in recver:
+                # filter recevier who receive from this cpu_id
+                if revc.target_domain != cpu_id:
+                    continue
+                # filter that port is correct
+                if send.port == revc.port:
+                    task = revc.event
         
-        # # TODO beim 2ten mal fehlt der HypercallRecveiver Context??
-        # assert task, f"Could not find CrossOSEvent from domain {cpu_id} to {remote_dom} on port {port}"
-
-        # TODO
-        for k, v in state.context.items():
-            if isinstance(k, CrossOSEvent):
-                if k.name == "B2":
-                     task = k
-
         state.hypersse_state(system_count=len(state.cpus), cfg_list=XEN.cfg_list, instances_list=XEN.instances_list)
-        ctx = state.context[task]
-        if ctx.status is not TaskStatus.running:
-            if ctx.status is TaskStatus.suspended:
-                cfg = task.cfg
-                ctx.abb = cfg.get_entry_abb(task.function)
-            ctx.status = TaskStatus.ready
+
+        if task:
+        # Activate Task Syntax
+            ctx = state.context[task]
+            if ctx.status is not TaskStatus.running:
+                if ctx.status is TaskStatus.suspended:
+                    cfg = task.cfg
+                    ctx.abb = cfg.get_entry_abb(task.function)
+                ctx.status = TaskStatus.ready
+        else:
+            logger.warning(f"Did not find CrossOSEvent from domain {cpu_id} to {remote_dom} on port {port}, notify is ignored!")
+            logger.warning(f"Should be avoided with timing information.")
+
 
         return state
 
