@@ -160,6 +160,8 @@ class HyperSSE(Step):
         # checkout get_logger() from ara/util.py
         log: logging = self._log
 
+        do_timings = True
+
         if not HyperSSE.systems:
             HyperSSE.systems = self.system_count.get()
 
@@ -211,9 +213,12 @@ class HyperSSE(Step):
             extra["DumpInstances"]["dot"] = "dom" + str(HyperSSE.runid)
             extra["MultiSSE"]["file_name_appendix"] = "dom" + str(HyperSSE.runid)
             extra["MultiSSE"]["add_legend"] = False
+            extra["MultiSSE"]["with_times"] = do_timings
+            extra["ApplyTimings"] = {}
+            extra["ApplyTimings"]["timings"] = "BB"
 
             # readd steps that are completed
-            extra["steps"] = ['MultiSSE', 'DumpCFG', 'DumpInstances', 'SVFReset', 'HyperSSE']
+            extra["steps"] = ['ApplyTimings', 'MultiSSE', 'DumpCFG', 'DumpInstances', 'SVFReset', 'HyperSSE']
             # reset entry_points
             program["entry_point"] = "main" 
 
@@ -261,7 +266,7 @@ class HyperSSE(Step):
 
         OSState.reset_id()
 
-        self._step_manager.chain_step({"name": "MultiSSE", "with_times": False, "dump": True, 
+        self._step_manager.chain_step({"name": "MultiSSE", "with_times": do_timings, "dump": True, 
                                        "log_level": "debug", "hyper_sse": True, "file_name_appendix": "hyper", "add_legend": False})
 
         log.warning("Done with single MultiSSEs, starting HyperSSE MultiSSE now!")
