@@ -4,6 +4,21 @@
 
 import csv
 import argparse
+from dataclasses import dataclass
+
+class Testcase:
+    name: str
+    variant: str
+    status: str
+    duration: float
+
+    # MSTGStats
+    stats: bool = False
+    sps: int        # Synchronisation Point
+    labsss: int     # Local-Core Abstract System State
+    vertices: int
+    edges: int
+
 
 def main():
     """Parses the output of meson into a csv. python3 meson_parser.py testlog.txt res.csv"""
@@ -15,7 +30,9 @@ def main():
     
     logs = args.InputFile
     out = args.OutputFile
-    case, variant, duration, result = [], [], [], []
+    seperator = "=============================================================================="
+    cases: list[Testcase] = []
+    current = Testcase()
 
     print(f"Parsing: \"{logs}\" to \"{out}\".")
 
@@ -24,30 +41,49 @@ def main():
             
             if line.startswith("test:"):
                 t = line.removeprefix("test:").strip().removeprefix("ara:automotive_benchmark / ara_")
-                case.append(t.split("_")[0])
-                variant.append(t.split("_")[1])
+                current.name = t.split("_")[0]
+                current.variant = t.split("_")[1]
             elif line.startswith("duration:"):
                 d = line.removeprefix("duration:").strip().removesuffix("s")
-                duration.append(d)
+                current.duration = d
             elif line.startswith("result:"):
                 r = line.removeprefix("result:").strip()
                 if r == "exit status 0":
-                    result.append("Passed")
+                    current.status = "Passed"
                 elif r == "killed by signal 15 SIGTERM":
-                    result.append("Timeout")
+                    current.status = "Timeout"
                 else:
-                    result.append("Unknown")
+                    current.status = "Unknown"
+            elif "Number of vertices" in line:
+                v = line.split(":")[3].strip()
+                current.vertices = int(v)
+                current.stats = True
+            elif "Number of edges" in line:
+                e = line.split(":")[3].strip()
+                current.edges = int(e)
+            elif "Number of SPs" in line:
+                s = line.split(":")[3].strip()
+                current.sps = int(s)
+            elif "Number of LAbSSs" in line:
+                l = line.split(":")[3].strip()
+                current.labsss = int(l)
+            elif line.startswith(seperator):
+                cases.append(current)
+                current = Testcase()
   
-    assert len(case) == len(duration) == len(result), "Invalid logs!"     
-
     with open(out, mode='w', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(["Testcase", "Variant", "AnalysisStatus", "AnalysisDuration[s]"])
-        for i in range(len(case)):
-            writer.writerow([case[i], variant[i], result[i], duration[i]])
+        writer.writerow(["Testcase", "Variant", "AnalysisStatus", "AnalysisDuration[s]", 
+                         "HasStats", "#Vertices", "#Edges", "#SynchronisationPoints", 
+                         "#LocalCoreAbstractSystemState"])
+        for i in cases:
+            if i.stats:
+                writer.writerow([i.name, i.variant, i.status, i.duration, i.stats, i.vertices, i.edges, i.sps, i.labsss])
+            else:
+                writer.writerow([i.name, i.variant, i.status, i.duration, i.stats])
 
 
-    print(f"Done, wrote {len(case)} lines.")
+    print(f"Done, wrote {len(cases)} lines.")
 
 
 if __name__ == "__main__":

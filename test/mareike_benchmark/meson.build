@@ -4,8 +4,8 @@
 
 # Template for other tests
 # meson test dummytest
-# meson test --suite ara:mareike
-# meson test --suite mareike
+# meson test --suite ara:automotive_benchmark
+# meson test --suite automotive_benchmark
 
 # Parse testlog into csv, plot [and save to png]
 # python3 meson_parser.py ../../../../build/meson-logs/testlog.txt res.csv 
@@ -37,6 +37,6 @@ foreach app : autosar_targets
         env: [python_path],
         depends: [ara_py, app['ll_pi4']],
         suite: 'automotive_benchmark',
-        timeout: 60 # 30 600
+        timeout: 1000 # 60 600
     )
 endforeach
