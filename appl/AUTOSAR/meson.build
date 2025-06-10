@@ -550,20 +550,22 @@ foreach app: autosar_targets
                                     '-O', 'binary',
                                     '@INPUT@',
                                     '@OUTPUT@'])
-
+      app += {'pi4_bin': pi4_bin}
       rt = 'tftp_' + opt_app_name + '_pi4'
+      pi4_tftp_cmd = [
+                      py3_inst,
+                      tftp_deploy,
+                      pi4_bin.full_path(),
+                      '--ssh-host', libplatforms_proj.get_variable('tftp_host'),
+                      '--scp', scp.full_path(),
+                      '--ssh', ssh.full_path(),
+                      '--path', '/proj/tftp/research/rpi4',
+                      '--rpi',
+      ]
+      app += {'pi4_tftp_cmd': pi4_tftp_cmd}
       pi4_bin_pxe = run_target(rt,
                           depends : [pi4_bin],
-                          command : [
-                            py3_inst,
-                            tftp_deploy,
-                            pi4_bin.full_path(),
-                            '--ssh-host', libplatforms_proj.get_variable('tftp_host'),
-                            '--scp', scp.full_path(),
-                            '--ssh', ssh.full_path(),
-                            '--path', '/proj/tftp/research/rpi4',
-                            '--rpi',
-                          ])
+                          command : pi4_tftp_cmd)
       summary('Flash @0@ on RPI with TFTP'.format(opt_app_name), 'meson compile ' + rt, bool_yn: true, section: 'MACAW, AUTOSAR synthesis')
 
       autosar_generated_targets_pi4 += app
@@ -654,6 +656,7 @@ foreach app: autosar_targets
                           '--path', '/proj/tftp/research/beaglev',
                           '--beaglev',
                         ])
+      app +={'riscv_bin_tftp' : riscv_bin_tftp }
       summary('Flash @0@ on BeagleV with TFTP'.format(full_name), 'meson compile ' + rt, bool_yn: true, section: 'MACAW, AUTOSAR synthesis')
 
 

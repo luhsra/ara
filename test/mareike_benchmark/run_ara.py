@@ -4,7 +4,6 @@
 
 import sys
 import subprocess
-import time
 
 def main():
     """Run a target of the automotive benchmark suite."""
@@ -32,16 +31,13 @@ def main():
     if do_debug:
         print(f"Command:\n{' '.join(command)}\n")
 
-    # start = time.perf_counter()
     with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as process:
         if do_debug:
             stdout_log = process.stdout.read().decode("utf-8")
             stderr_log = process.stderr.read().decode("utf-8")
             print(f"Errors:\n{stderr_log}\n")
             print(f"StdOut:\n{stdout_log}\n")
-    # end = time.perf_counter()
-
-    # print(f"Ara took: {end - start}s.")
+            
     # Test ok
     sys.exit(0)
 
