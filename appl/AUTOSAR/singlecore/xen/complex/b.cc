@@ -2,8 +2,9 @@
 
 DeclareTask(B);
 DeclareCounter(C1);
-DeclareAlarm(ALARM);
+DeclareAlarm(A1);
 
+extern "C" void ara_timing_info(int a, int b);
 
 int main(void) {;
 	StartOS(0);
@@ -12,6 +13,7 @@ int main(void) {;
 static unsigned c = 0;
 TASK(B) {
 	kout << "Recurring B!"<< endl;
+  	ara_timing_info(15, 15);
 
 	c++;
 

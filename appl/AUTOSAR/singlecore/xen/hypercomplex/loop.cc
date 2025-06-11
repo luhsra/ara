@@ -25,6 +25,7 @@ TASK(L) {
 		kout << "Done" << endl;
 		ShutdownMachine();
 	}
+  	ara_timing_info(5, 5);
 
 	TerminateTask();
 }

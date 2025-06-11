@@ -23,10 +23,10 @@ TASK(A) {
 	test_notify_evtchn(remote_dom, port_x);
 
 	ara_timing_info(250, 250);
-	test_notify_evtchn(remote_dom, port_y);
+	// test_notify_evtchn(remote_dom, port_y);
 
 	ara_timing_info(250, 250);
-	test_notify_evtchn(remote_dom, port_x);
+	// test_notify_evtchn(remote_dom, port_x);
 
 	ara_timing_info(50, 50);
 	TerminateTask();
