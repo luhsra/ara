@@ -12,6 +12,7 @@
 from ara.graph import (ABBType, CFType, CFG, CFGView, HSTGraph, HSTType, HyperStateType, MSTType, StateType,
                        single_check, vertex_types)
 from ara.os.os_base import ExecState, IRQCPU, IRQ
+from ara.os.xen import XEN
 
 from .option import Option, String, Choice, Bool
 from .step import Step
@@ -404,9 +405,14 @@ def mstg_to_dot(mstg, label="MSTG", OS=AUTOSAR):
             m2s = mstg.edge_type(MSTType.m2s)
             cpu_id = mstg.vp.cpu_id[metastate]
 
-            dot_m = pydot.Cluster(_to_str(metastate),
-                                  label=f"M{int(metastate)} ({self.domain_type.get()} {cpu_id})")
-            dot_graph.add_subgraph(dot_m)
+            if self._graph.os == XEN:
+                dot_m = pydot.Cluster(_to_str(metastate), penwidth=3, color="grey",
+                                    label=f"M{int(metastate)} ({self.domain_type.get()} {cpu_id}, {XEN.system_types[cpu_id].get_name()})")
+                dot_graph.add_subgraph(dot_m)
+            else:
+                dot_m = pydot.Cluster(_to_str(metastate),
+                                    label=f"M{int(metastate)} ({self.domain_type.get()} {cpu_id})")
+                dot_graph.add_subgraph(dot_m)
 
             for state in m2s.vertex(metastate).out_neighbors():
                 attrs = _sstg_state_as_dot(mstg, state, OS)
