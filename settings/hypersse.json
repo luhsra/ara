@@ -2,9 +2,6 @@
 	"steps": [
 		"HyperSSE"
 	],
-	"LoadOil" : {
-		"log_level": "error"
-	},
 	"LLVMMap" : {
 		"log_level": "error"
 	},
@@ -32,12 +29,12 @@
 		"XEN": "debug"
 	},
 
-	"HyperSSE": {
-		"system_count": 2,
-		"dom_files" : ["subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_a.pi4.ll",
-					"subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_b.pi4.ll"],
-		"dom_oils" : ["../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercall/a.json", 
-						"../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercall/b.json"]
-	}
-	
+"HyperSSE": {
+    "system_count": 2,
+    "dom_files" : ["subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_complex_a.pi4.ll",
+                "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_complex_b.pi4.ll"],
+    "dom_oils" : ["../subprojects/ara/appl/AUTOSAR/singlecore/xen/complex/a.json", 
+                    "../subprojects/ara/appl/AUTOSAR/singlecore/xen/complex/b.json"]
+}
+
 }

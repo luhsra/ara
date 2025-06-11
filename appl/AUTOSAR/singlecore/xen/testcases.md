@@ -32,6 +32,7 @@ ninja ara@@run_autosar_singlecore_xen_alarm_a_noopt_pi4
 ninja ara@@run_autosar_singlecore_xen_complex_a_noopt_pi4 && ninja ara@@run_autosar_singlecore_xen_complex_b_noopt_pi4
 ninja ara@@run_autosar_singlecore_xen_complex_multi_core_noopt_pi4
 
+ninja subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_complex_a_noopt_mod.pi4.ll && ninja subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_complex_b_noopt_mod.pi4.ll
 "HyperSSE": {
     "system_count": 2,
     "dom_files" : ["subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_complex_a.pi4.ll",
@@ -62,13 +63,15 @@ ninja ara@@run_autosar_singlecore_xen_hypercall_a_noopt_pi4 && ninja ara@@run_au
 3 Systeme, A sendet zu festen Zeitpunkten Signale an B, C sendet ebenfalls an B, 3 verschiedene Events auf B.
 ninja subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercomplex_loop_noopt_mod.pi4.ll && ninja subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercomplex_worker_noopt_mod.pi4.ll && ninja subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercomplex_a_noopt_mod.pi4.ll
 
-TODO
+
 "HyperSSE": {
     "system_count": 3,
-    "dom_files" : ["subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_a.pi4.ll",
-                "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_b.pi4.ll"],
-    "dom_oils" : ["../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercall/a.json", 
-                    "../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercall/b.json"]
+    "dom_files" : ["subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercomplex_a.pi4.ll",
+                "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercomplex_worker.pi4.ll",
+                "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercomplex_loop.pi4.ll"]
+    "dom_oils" : ["../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercomplex/a.json", 
+                    "../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercomplex/worker.json",
+                    "../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercomplex/loop.json"]
 }
 
 
