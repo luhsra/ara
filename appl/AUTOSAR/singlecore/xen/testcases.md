@@ -58,6 +58,19 @@ ninja ara@@run_autosar_singlecore_xen_hypercall_a_noopt_pi4 && ninja ara@@run_au
 }
 
 
+# Hypercalls Complex
+3 Systeme, A sendet zu festen Zeitpunkten Signale an B, C sendet ebenfalls an B, 3 verschiedene Events auf B.
+ninja subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercomplex_loop_noopt_mod.pi4.ll && ninja subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercomplex_worker_noopt_mod.pi4.ll && ninja subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercomplex_a_noopt_mod.pi4.ll
+
+TODO
+"HyperSSE": {
+    "system_count": 3,
+    "dom_files" : ["subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_a.pi4.ll",
+                "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_b.pi4.ll"],
+    "dom_oils" : ["../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercall/a.json", 
+                    "../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercall/b.json"]
+}
+
 
 # Spinlock
 ninja ara@@run_autosar_singlecore_xen_spinlock_spinlock_noopt_pi4

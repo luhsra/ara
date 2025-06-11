@@ -22,6 +22,12 @@
 	"RemoveSysfuncBody": {
 		"disable": true
 	},
+	"SystemRelevantFunctions": {
+		"xen_syscall": true
+	},
+	"SysFuncts": {
+		"xen_syscall": true
+	},
 	"SVFAnalyses": {
 		"log_level": "warning",
 		"hide_svf_output": true
