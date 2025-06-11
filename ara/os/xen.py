@@ -8,6 +8,8 @@ from ara.util import get_logger
 
 from copy import copy
 
+from .autosar import AUTOSARInstance
+
 from .os_util import (
     syscall,
     Arg,
@@ -367,13 +369,17 @@ class XEN(OSBase):
         state.hypersse_state(system_count=len(state.cpus), cfg_list=XEN.cfg_list, instances_list=XEN.instances_list)
 
         if task:
-        # Activate Task Syntax
-            ctx = state.context[task]
-            if ctx.status is not TaskStatus.running:
-                if ctx.status is TaskStatus.suspended:
-                    cfg = task.cfg
-                    ctx.abb = cfg.get_entry_abb(task.function)
-                ctx.status = TaskStatus.ready
+            # Activate Task Syntax
+            if isinstance(task, AUTOSARInstance):
+                ctx = state.context[task]
+                if ctx.status is not TaskStatus.running:
+                    if ctx.status is TaskStatus.suspended:
+                        cfg = task.cfg
+                        ctx.abb = cfg.get_entry_abb(task.function)
+                    ctx.status = TaskStatus.ready
+            else:
+                logger.warning(f"Unknown CrossOSEvent: {task}, aborting")
+                exit(1)
         else:
             logger.warning(f"Did not find CrossOSEvent from domain {cpu_id} to {remote_dom} on port {port}, notify is ignored!")
             logger.warning(f"Should be avoided with timing information.")
