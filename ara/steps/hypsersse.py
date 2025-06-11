@@ -187,7 +187,10 @@ class HyperSSE(Step):
 
             input_file = self.dom_files.get()[HyperSSE.runid]
             oilfile = self.dom_oils.get()[HyperSSE.runid]
-            log.warning(f"Found {input_file}, {oilfile}")
+            _i = input_file.removeprefix("subprojects/ara/appl/AUTOSAR/")
+            _o = oilfile.removeprefix("../subprojects/ara/appl/AUTOSAR/")
+            log.warning(f"Found {_i}")
+            log.warning(f"Found {_o}")
 
             program = self._step_manager._config.program
             extra = self._step_manager._config.extra
@@ -216,6 +219,10 @@ class HyperSSE(Step):
             extra["MultiSSE"]["with_times"] = do_timings
             extra["ApplyTimings"] = {}
             extra["ApplyTimings"]["timings"] = "BB"
+            extra["logger"] = {}
+            extra["logger"]["AUTOSAR"] = "warning"
+            extra["LoadOIL"] = {}
+            extra["LoadOIL"]["log_level"] = "error"
 
             # readd steps that are completed
             extra["steps"] = ['ApplyTimings', 'MultiSSE', 'DumpCFG', 'DumpInstances', 'SVFReset', 'HyperSSE']
@@ -257,8 +264,8 @@ class HyperSSE(Step):
 
         for graph in HyperSSE.graphs:
             XEN.system_types.append(AUTOSAR)
-            graph.cfg.name = "dom" + str(XEN.system_count)
-            graph.instances.name = "dom" + str(XEN.system_count)
+            graph.cfg.name = "CFG-dom-" + str(XEN.system_count)
+            graph.instances.name = "Inst-dom-" + str(XEN.system_count)
             XEN.cfg_list.append(graph.cfg)
             XEN.instances_list.append(graph.instances)
             XEN.system_count += 1
@@ -269,5 +276,5 @@ class HyperSSE(Step):
         self._step_manager.chain_step({"name": "MultiSSE", "with_times": do_timings, "dump": True, 
                                        "log_level": "debug", "hyper_sse": True, "file_name_appendix": "hyper", "add_legend": False})
 
-        log.warning("Done with single MultiSSEs, starting HyperSSE MultiSSE now!")
+        log.error("Done with single MultiSSEs, starting HyperSSE MultiSSE now!")
         HyperSSE.done = True

@@ -96,7 +96,7 @@ class AUTOSARInstance(CPUBounded):
         return hash(self.__class__.__name__ + self.name)
 
     def __str__(self):
-        return f"AutosarInstance of {type(self)} Name: {self.name} CpuId: {self.cpu_id}"
+        return f"\33[1;36mCPU-{self.cpu_id}\033[0m: {self.name}"
     
     def __repr__(self):
         return self.name
@@ -138,8 +138,8 @@ class Task(AUTOSARInstance, ControlInstance, CrossOSEvent):
         }
 
     def __str__(self):
-        s = f"Task: name={self.name} cpu_id={self.cpu_id} prio={self.priority} autoS={self.autostart} "
-        s += f"cfg={self.cfg} func={self.cfg.vertex_index[self.function]} ..."
+        s = f"\33[1;36mTask-{self.name}\033[0m: cpu_id={self.cpu_id}/{self.cfg.name}"
+        # s+= f", abb={self.function}"
         return s
 
 
@@ -179,9 +179,9 @@ class TaskContext(ControlContext):
         )
 
     def __str__(self):
-        s = f"TaskContext: status={self.status.name} abb={self.abb} call_path={self.call_path} "
-        s += f"dyn_prio={self.dyn_prio} received_events={self.received_events} "
-        s += f"waited_events={self.waited_events} in_critical_section={self.in_critical_section}"
+        s = f"{self.status.name} abb={self.abb}"
+        # s += f"dyn_prio={self.dyn_prio} received_events={self.received_events} "
+        # s += f"waited_events={self.waited_events} in_critical_section={self.in_critical_section}"
         return s
 
 

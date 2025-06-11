@@ -153,7 +153,8 @@ class ControlContext:
                           dyn_prio=list(self.dyn_prio))
 
     def __str__(self):
-        return f"ControlContext: status={self.status.name} abb={self.abb} call_path={self.call_path} dyn_prio={self.dyn_prio}"
+        return f"{self.status.name} abb={self.abb}"
+        # "call_path={self.call_path} dyn_prio={self.dyn_prio}"
 
 @dataclass
 class CPUBounded:
@@ -200,8 +201,8 @@ class IRQ(ControlInstance):
         return hash((self.id, self.name))
 
     def __str__(self):
-        s = f"IRQ: id={self.id} name=\"{self.name}\" cpu_id={self.cpu_id} cfg={self.cfg} "
-        s += f"isr_handler={self.isr_handler} active={self.active} func={self.cfg.vertex_index[self.function]}"
+        s = f"\33[1;36mCPU-{self.cpu_id}\033[0m: {self.name} @{self.cfg.name}"
+        # active={self.active} func={self.cfg.vertex_index[self.function]}"
         return s
 
 @dataclass
@@ -289,7 +290,7 @@ def _get_id():
 class OSState:
 
     id: int = field(init=False, default_factory=_get_id)
-    cpus: CPUList
+    cpus: CPUList   # can be cpus or hypervised systems
     instances: graph_tool.Graph = field(repr=False)
     cfg: CFG = field(repr=False)
 
@@ -307,21 +308,27 @@ class OSState:
         _state_id = 0
 
     def __str__(self):
-        s = f"\nPrinting OSState: Id={self.id} #cpus={len(self.cpus)}"
+        # \33 escape sequenze, 1 for bold, 35 for magenta, m for end of sequenze
+        s = f"\n\t\33[1;35mOSState-{self.id}\033[0m with \33[1;35m{len(self.cpus)}\033[0m cpu(s) "
         if self.system_count:
-            s += f", system_count={self.system_count}\n"
+            s += f"on \33[1;35m{self.system_count}\033[0m domains\n"
             for i in range(self.system_count):
-                s += "\t" + str(self.cfg_list[i]) + ", " + str(self.instances_list[i]) + "\n"
+                s += f"\t  dom{i} @{str(self.cfg_list[i].name)}/{str(self.instances_list[i].name)}\n"
         else:
-            s += "\n\t" + str(self.cfg) + " " + str(self.instances)
+            s += f"\33[1;35m@{str(self.cfg.name)}\033[0m/{str(self.instances.name)}\n"
+        s += "\t-----"
         for cpu in self.cpus:
-            s += f"\n\t{str(cpu)}"
-            # for syscalls print name of syscall aswell
-            if cpu.exec_state == ExecState.syscall:
-                s += " syscall=" + self.cfg.get_syscall_name(cpu.abb)
-        s += "\n"
+            if isinstance(cpu, IRQCPU):
+                s += f"\n\t\33[1;36mIRQCPU-{cpu.id}\033[0m: ABB={cpu.abb}, state={cpu.exec_state.name}"
+                s += f", ref_cpu={cpu.reference_cpu_id}, irq={cpu.irq.name}"
+            else:
+                s += f"\n\t\33[1;36mCPU-{cpu.id}\033[0m: ABB={cpu.abb}, state={cpu.exec_state.name}"
+                # for syscalls print name of syscall aswell
+                if cpu.exec_state == ExecState.syscall:
+                    s += f":{self.cfg.get_syscall_name(cpu.abb)}"
+        s += "\n\t-----"
         for k, v in self.context.items():
-            s += f"\n\t{k} --- {v}"
+            s += f"\n\t{k} -- {v}"
         s += "\n"
         return s
 
