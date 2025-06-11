@@ -222,6 +222,7 @@ class XEN(OSBase):
 
         if XEN.is_syscall(syscall):
             logger.warning(f"Interpret a xen syscall: {syscall}")
+            logger.warning(state)
             syscall_function = getattr(XEN, syscall)
             # return state
             return syscall_function(graph, state, cpu_id)
@@ -400,7 +401,7 @@ class HypercallSender(CPUBounded):
     port: int
     target_domain: int
     def __str__(self):
-        return f"{self.name} on dom:{self.cpu_id} to: {self.target_domain} via port: {self.port}"
+        return f"\33[1;36mDom-{self.cpu_id}\033[0m: {self.name} to dom-{self.target_domain} via port:{self.port}"
     
 @dataclass()
 class HypercallReceiver(CPUBounded):
@@ -416,4 +417,4 @@ class HypercallReceiver(CPUBounded):
     event: CrossOSEvent  # event that happens on hypercall
 
     def __str__(self):
-        return f"{self.name} on dom:{self.cpu_id} to: {self.target_domain} via port: {self.port} with: {self.event}"
+        return f"\33[1;36mDom-{self.cpu_id}\033[0m: {self.name} from dom-{self.target_domain} via port: {self.port} with: {self.event}"

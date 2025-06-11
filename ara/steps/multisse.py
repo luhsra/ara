@@ -366,7 +366,7 @@ class MultiSSE(StatsStep):
 
     def _get_single_core_states(self, multi_core_state):
         single_core_states = {}
-        self._log.info(f"MC: {multi_core_state}")
+        self._log.info(f"Splitting multicore state: {multi_core_state}")
         for cpu in multi_core_state.cpus:
             # restrict state to this cpu
 
@@ -381,7 +381,7 @@ class MultiSSE(StatsStep):
             single_core_states[cpu.id] = state
 
         for k, v in single_core_states.items():
-            self._log.info(f"SC {k}: {v}")
+            self._log.info(f"Found singlecore states: {k+1}/{len(single_core_states.items())}{v}")
         return single_core_states
 
     def _get_common_metastate(self, meta_states):

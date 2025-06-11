@@ -392,7 +392,7 @@ class LoadOIL(Step):
 
             irq = IRQ(
                 id=v,
-                name=f"IRQ {obj.name}",
+                name=f"IRQ_{obj.name}",
                 isr_handler=v,
                 active=active,
                 cpu_id=obj.cpu_id,
