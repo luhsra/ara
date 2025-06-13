@@ -5,8 +5,8 @@
 # Template for other tests
 # meson test dummytest
 # meson test ara_tasks_1
-# meson test --suite ara:automotive_benchmark
-# meson test --suite automotive_benchmark
+# meson test --suite ara:automotive_benchmark_ara
+# meson test --suite automotive_benchmark_ara
 
 # Parse testlog into csv, plot [and save to png]
 # python3 meson_parser.py ../../../../build/meson-logs/testlog.txt res.csv 
@@ -38,7 +38,7 @@ foreach app : autosar_targets
         env: [python_path],
         depends: [ara_py, app['ll_pi4']],
         suite: 'automotive_benchmark_ara',
-        timeout: 1000 # 60 600
+        timeout: 10 # 60 600 1000
     )
 endforeach
 
@@ -53,7 +53,9 @@ foreach app : autosar_generated_targets_pi4
         py3_inst,
         args: [files('run_pi.py'), app['pi4_tftp_cmd']],
         env: [python_path],
-        depends: [ara_py, app['pi4_bin']],
+        depends: [ara_py],
+        # TODO this breaks even when running other test
+        # depends: [ara_py, app['pi4_bin']]
         is_parallel: false,
         suite: 'automotive_benchmark_pi',
         timeout: 100
