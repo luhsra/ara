@@ -367,10 +367,10 @@ class XEN(OSBase):
                 if revc.target_domain != cpu_id:
                     continue
                 # filter that port is correct
-                if send.port == revc.port:
+                if send.port == revc.port == port:
                     task = revc.event
         
-        state.hypersse_state(system_count=len(state.cpus), cfg_list=XEN.cfg_list, instances_list=XEN.instances_list)
+        state.hypersse_state(system_count=XEN.system_count, cfg_list=XEN.cfg_list, instances_list=XEN.instances_list)
 
         if task:
             # Activate Task Syntax
