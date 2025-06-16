@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 """Container for Printer."""
-from ara.graph import (ABBType, CFType, CFG, CFGView, HSTGraph, HSTType, HyperStateType, MSTType, StateType,
+from ara.graph import (ABBType, CFType, CFG, CFGView, HSTGraph, MSTGraph, HSTType, HyperStateType, MSTType, StateType,
                        single_check, vertex_types)
 from ara.os.os_base import ExecState, IRQCPU, IRQ
 from ara.os.xen import XEN
@@ -361,8 +361,8 @@ def reduced_mstg_to_dot(mstg, cfg, label="MSTG"):
 
     return dot_graph
 
-
-def mstg_to_dot(mstg, label="MSTG", OS=AUTOSAR):
+# this can be called as Printer-Step via run and step settings, or directly
+def mstg_to_dot(mstg: MSTGraph, label: str = "MSTG", OS=AUTOSAR, add_legend: bool = False, domain_type: str = "CPU"):
     def _to_str(v):
         return str(int(v))
 
@@ -371,7 +371,7 @@ def mstg_to_dot(mstg, label="MSTG", OS=AUTOSAR):
         for e in edges:
             if mstg.ep.type[e] == MSTType.st2sy:
                 cpu_id = mstg.ep.cpu_id[e]
-                cols.append(f"<TD PORT=\"c{cpu_id}\">{self.domain_type.get()} {cpu_id}</TD>")
+                cols.append(f"<TD PORT=\"c{cpu_id}\">{domain_type} {cpu_id}</TD>")
         if cols:
             label = '<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">' \
                     '<TR>{}</TR>' \
@@ -405,14 +405,14 @@ def mstg_to_dot(mstg, label="MSTG", OS=AUTOSAR):
             m2s = mstg.edge_type(MSTType.m2s)
             cpu_id = mstg.vp.cpu_id[metastate]
 
-            if self._graph.os == XEN:
-                dot_m = pydot.Cluster(_to_str(metastate), penwidth=3, color="grey",
-                                    label=f"M{int(metastate)} ({self.domain_type.get()} {cpu_id}, {XEN.system_types[cpu_id].get_name()})")
-                dot_graph.add_subgraph(dot_m)
-            else:
-                dot_m = pydot.Cluster(_to_str(metastate),
-                                    label=f"M{int(metastate)} ({self.domain_type.get()} {cpu_id})")
-                dot_graph.add_subgraph(dot_m)
+            # TODO add different box for xen hypermetastates
+            # if self._graph.os == XEN:
+            #     dot_m = pydot.Cluster(_to_str(metastate), penwidth=3, color="grey",
+            #                         label=f"M{int(metastate)} (dom {cpu_id}, {XEN.system_types[cpu_id].get_name()})")
+            #     dot_graph.add_subgraph(dot_m)
+            dot_m = pydot.Cluster(_to_str(metastate),
+                                label=f"M{int(metastate)} ({domain_type} {cpu_id})")
+            dot_graph.add_subgraph(dot_m)
 
             for state in m2s.vertex(metastate).out_neighbors():
                 attrs = _sstg_state_as_dot(mstg, state, OS)
@@ -462,7 +462,7 @@ def mstg_to_dot(mstg, label="MSTG", OS=AUTOSAR):
 
         dot_graph.add_edge(pydot.Edge(src, tgt, **attrs))
 
-    if self.add_legend.get():
+    if add_legend:
         # add a new cluster with the legend
         legend = pydot.Cluster(graph_name="legend", label="Legend")
         dot_graph.add_subgraph(legend)
@@ -726,7 +726,6 @@ class Printer(Step):
                             help="Add a legend pydot cluster to the graph. Currently only supports CFGs and MSTGs",
                             ty=Bool(),
                             default_value=False)
-
     domain_type = Option(name="domain_type",
                             help="Used to create a multi OS hypersse hstg, or a multicore multisse mstg.",
                             ty=Choice("CPU", "Dom"),
@@ -973,7 +972,9 @@ class Printer(Step):
     def print_mstg(self):
         OS = self._graph.os
         name = self._print_init()
-        dot_graph = mstg_to_dot(self._graph.mstg, name, OS)
+        add_legend = self.add_legend.get()
+        domain_type = self.domain_type.get()
+        dot_graph = mstg_to_dot(self._graph.mstg._graph.mstg, name, OS, add_legend, domain_type)
         self._write_dot(dot_graph)
 
     def print_reduced_mstg(self):

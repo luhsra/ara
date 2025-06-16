@@ -1575,6 +1575,7 @@ class MultiSSE(StatsStep):
         self._log.info(f"Analysis needed {counter} iterations.")
 
         self._graph.mstg = mstg
+        self._step_manager._graph.mstg = mstg
 
         step_data = [StatData(key="rounds", value=counter)]
         self._print_and_store(step_data)
