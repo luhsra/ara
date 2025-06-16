@@ -68,7 +68,7 @@ ninja subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercomplex_loop_noop
     "system_count": 3,
     "dom_files" : ["subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercomplex_a.pi4.ll",
                 "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercomplex_worker.pi4.ll",
-                "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercomplex_loop.pi4.ll"]
+                "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercomplex_loop.pi4.ll"],
     "dom_oils" : ["../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercomplex/a.json", 
                     "../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercomplex/worker.json",
                     "../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercomplex/loop.json"]
