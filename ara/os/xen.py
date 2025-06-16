@@ -216,14 +216,17 @@ class XEN(OSBase):
     @staticmethod
     def interpret(graph: Graph, state: OSState, cpu_id, categories=SyscallCategory.every) -> OSState:
 
-        logger.info(f"Interpret: cpu_id: {cpu_id} System count: {XEN.system_count} {XEN.graph_list}\nCurrent graph: {graph}")
+        # logger.info(f"Interpret: cpu_id: {cpu_id} System count: {XEN.system_count} {XEN.graph_list}\nCurrent graph: {graph}")
         syscall = state.get_syscall_name(cpu_id)
 
 
         if XEN.is_syscall(syscall):
-            logger.warning(f"Interpret a xen syscall: {syscall}")
-            logger.warning(state)
+            logger.warning(f"\33[1;36mSyscall\033[0m: {syscall} on cpu/dom {cpu_id} {state}")
             syscall_function = getattr(XEN, syscall)
+
+            # if another dom was added via an SP its graph might still be active, so change here
+            graph = XEN.graph_list[cpu_id]
+
             # return state
             return syscall_function(graph, state, cpu_id)
         else:
@@ -384,6 +387,7 @@ class XEN(OSBase):
         else:
             logger.warning(f"Did not find CrossOSEvent from domain {cpu_id} to {remote_dom} on port {port}, notify is ignored!")
             logger.warning(f"Should be avoided with timing information.")
+            # exit(1)
 
 
         return state
