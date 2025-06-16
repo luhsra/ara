@@ -958,3 +958,4 @@ class Graph:
         self.svfg = SVFG()
         self.step_data = {}
         self.file_cache = {}
+        self.name = ""

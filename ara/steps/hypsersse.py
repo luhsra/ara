@@ -260,10 +260,12 @@ class HyperSSE(Step):
 
         # self._graph = HyperSSE.graphs[0]
         self._graph.os = XEN
+        self._graph.name = "Graph-Xen"
         XEN.graph_list = HyperSSE.graphs
 
         for graph in HyperSSE.graphs:
             XEN.system_types.append(AUTOSAR)
+            graph.name = "Graph-dom-" + str(XEN.system_count)
             graph.cfg.name = "CFG-dom-" + str(XEN.system_count)
             graph.instances.name = "Inst-dom-" + str(XEN.system_count)
             XEN.cfg_list.append(graph.cfg)
