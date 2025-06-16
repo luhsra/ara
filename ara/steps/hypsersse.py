@@ -92,20 +92,6 @@ class HyperSSE(Step):
         return sp
     """
 
-    def print_mstg(self, mstg: MSTGraph) -> None:
-        log: logging = self._log
-
-        log.error(f"Printing: mstg")
-        mstg.list_properties()
-        for v in mstg.vertices():
-            # {mstg.vp.state[v]}
-            if mstg.vp.type[v] == 0:
-                print(f"Node: {v} Type=Invalid cpu_id={mstg.vp.cpu_id[v]} bcet={mstg.vp.bcet[v]} wcet={mstg.vp.wcet[v]}")
-            else:
-                print(f"Node: {v} Type={str(StateType(mstg.vp.type[v]))} cpu_id={mstg.vp.cpu_id[v]} bcet={mstg.vp.bcet[v]} wcet={mstg.vp.wcet[v]}")
-        for e in mstg.edges():
-            print(f"Edge: {e} Type={str(MSTType(mstg.ep.type[e]))} irq={mstg.ep.irq[e]} cpu_id={mstg.ep.cpu_id[e]} bcet={mstg.ep.bcet[e]} wcet={mstg.ep.wcet[e]}")
-
     def print_hstg(self, hstg: HSTGraph) -> None:
         log: logging = self._log
 
@@ -165,15 +151,7 @@ class HyperSSE(Step):
         if not HyperSSE.systems:
             HyperSSE.systems = self.system_count.get()
 
-        # log.warning(f"MultiSSE for dom{HyperSSE.runid} done.")
-
-        # HyperSSE.cfg.append(self._graph.cfg)
-        # HyperSSE.callgraph.append(self._graph.callgraph)
-        # HyperSSE.os.append(self._graph.os)
-        # HyperSSE.graphs.append(self._graph)
-
         if HyperSSE.runid != 0:
-
             HyperSSE.graphs.append(self._graph)
 
         while HyperSSE.runid < HyperSSE.systems:
@@ -181,9 +159,6 @@ class HyperSSE(Step):
 
             self._graph = Graph()
             self._graph.os = AUTOSAR
-
-            # geht nicht
-            # self._graph._graph_data = HyperSSE.graphs[-1]._graph_data
 
             input_file = self.dom_files.get()[HyperSSE.runid]
             oilfile = self.dom_oils.get()[HyperSSE.runid]
@@ -240,27 +215,10 @@ class HyperSSE(Step):
         if HyperSSE.done:
             return
 
-        # MERGING:
-        """
-        merged_cfg = CFG()
-        merged_instance = InstanceGraph()
-
-        for i, graph in enumerate(HyperSSE.graphs):
-            merged_cfg.add_cfg(cfg=graph.cfg, id=i)
-            merged_instance.add_instance(instance=graph.instances, id=i)
-
-        self.print_cfg_nodes(merged_cfg)
-
-        # self._graph.cfg = merged_cfg
-        # self._graph.instances = merged_instance
-
-        self._step_manager.chain_step({"name": "DumpCFG", "dot": "merged", "add_legend": True})
-        self._step_manager.chain_step({"name": "DumpInstances", "dot": "merged"})
-        """
-
         # self._graph = HyperSSE.graphs[0]
-        self._graph.os = XEN
-        self._graph.name = "Graph-Xen"
+        self._step_manager._graph = Graph()
+        self._step_manager._graph.os = XEN
+        self._step_manager._graph.name = "Graph-Xen"
         XEN.graph_list = HyperSSE.graphs
 
         for graph in HyperSSE.graphs:
