@@ -14,17 +14,11 @@ int main(void) {;
 	StartOS(0);
 }
 
-static unsigned c = 0;
 TASK(L) {
 
-	c++;
   	ara_timing_info(5, 5);
 	test_notify_evtchn(remote_dom, port_z);
 
-	if (c > 10){
-		kout << "Done" << endl;
-		ShutdownMachine();
-	}
   	ara_timing_info(5, 5);
 
 	TerminateTask();
