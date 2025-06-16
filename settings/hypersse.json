@@ -21,7 +21,8 @@
 	"MultiSSE": {
 		"with_times": true,
 		"dump": true,
-		"log_level": "warning"
+		"log_level": "warning",
+		"per_round_dump": false
 	},
 
 	"logger": {

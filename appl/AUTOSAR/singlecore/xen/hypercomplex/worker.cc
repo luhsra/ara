@@ -7,8 +7,8 @@ DeclareTask(B);
 DeclareTask(BX);
 DeclareTask(BY);
 DeclareTask(BZ);
-domid_t remote_dom = 0;
-domid_t remote_dom_loop = 0;
+domid_t sender_a = 0;
+domid_t sender_loop = 2;
 evtchn_port_t port_x = 42;
 evtchn_port_t port_y = 45;
 evtchn_port_t port_z = 48;
@@ -38,11 +38,11 @@ TASK(BZ) {
 TASK(B) {
 	kout << "B"<< endl;
   	ara_timing_info(25, 25);
-	test_receive_event_channel(remote_dom, port_x, reinterpret_cast<void*>(AUTOSAR_TASK_FUNC_BX));
+	test_receive_event_channel(sender_a, port_x, reinterpret_cast<void*>(AUTOSAR_TASK_FUNC_BX));
   	ara_timing_info(25, 25);
-	test_receive_event_channel(remote_dom, port_y, reinterpret_cast<void*>(AUTOSAR_TASK_FUNC_BY));
+	test_receive_event_channel(sender_a, port_y, reinterpret_cast<void*>(AUTOSAR_TASK_FUNC_BY));
   	ara_timing_info(25, 25);
-	test_receive_event_channel(remote_dom_loop, port_z, reinterpret_cast<void*>(AUTOSAR_TASK_FUNC_BZ));
+	test_receive_event_channel(sender_loop, port_z, reinterpret_cast<void*>(AUTOSAR_TASK_FUNC_BZ));
 
   	ara_timing_info(5, 5);
 	TerminateTask();
