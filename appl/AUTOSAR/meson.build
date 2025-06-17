@@ -99,6 +99,7 @@ autosar_apps = [
   {'core': 'singlecore', 'path': 'xen' / 'spinlock',   'name': 'spinlock',              'oil': 'spinlock.json'},
   {'core': 'singlecore', 'path': 'xen' / 'spinlock',   'name': 'a',                     'oil': 'a.json'},
   {'core': 'singlecore', 'path': 'xen' / 'spinlock',   'name': 'b',                     'oil': 'b.json'},
+  {'core': 'singlecore', 'path': 'xen' / 'bugfix',      'name': 'a',                     'oil': 'a.json', 'timing': 'BB'},
   {'core': 'singlecore', 'path': 'xen' / 'hypercall',   'name': 'a',                    'oil': 'a.json', 'timing': 'BB'},
   {'core': 'singlecore', 'path': 'xen' / 'hypercall',   'name': 'b',                    'oil': 'b.json', 'timing': 'BB'},
   {'core': 'singlecore', 'path': 'xen' / 'hypercall',   'name': 'multi_core',           'oil': 'multi_core.json', 'timing': 'BB'},
