@@ -5,6 +5,8 @@ extern "C" void ara_timing_info(int a, int b);
 DeclareTask(A);
 DeclareTask(B);
 DeclareTask(C);
+DeclareAlarm(A1);
+DeclareCounter(C1);
 
 int main() {
 	StatusType rv;

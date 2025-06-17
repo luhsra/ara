@@ -50,7 +50,7 @@
         }
       },
       "alarms": {
-        "ALARM": {
+        "A1": {
           "counter": "C1",
           "action": {
             "action": "activatetask",
