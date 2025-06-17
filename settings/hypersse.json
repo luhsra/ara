@@ -22,7 +22,7 @@
 		"with_times": true,
 		"dump": true,
 		"log_level": "warning",
-		"per_round_dump": false
+		"per_round_dump": true
 	},
 
 	"logger": {
