@@ -45,6 +45,7 @@
 	"MultiSSE": {
 		"with_times": true,
 		"log_level": "debug",
+		"per_round_dump": true,
 		"dump": true
 	}
 }
