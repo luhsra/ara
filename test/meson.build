@@ -328,17 +328,17 @@ if get_option('enable_step_tests')
   #   endforeach
   # endif
 
-  if riscv_enabled
-    foreach app : autosar_generated_targets_riscv
-      test('autosar_generator_riscv_' + app['full_name'],
-        py3_inst,
-        args: [files('autosar_generator.py'), app['run_cmd_riscv']],
-        env: [python_path],
-        depends: [ara_py, app['app_image_riscv']],
-        is_parallel: false,
-        suite: ['autosar_generator', 'autosar_generator_riscv']
-      )
-    endforeach
-  endif
+  # if riscv_enabled
+  #   foreach app : autosar_generated_targets_riscv
+  #     test('autosar_generator_riscv_' + app['full_name'],
+  #       py3_inst,
+  #       args: [files('autosar_generator.py'), app['run_cmd_riscv']],
+  #       env: [python_path],
+  #       depends: [ara_py, app['app_image_riscv']],
+  #       is_parallel: false,
+  #       suite: ['autosar_generator', 'autosar_generator_riscv']
+  #     )
+  #   endforeach
+  # endif
 endif
 

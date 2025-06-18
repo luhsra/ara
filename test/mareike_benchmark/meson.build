@@ -5,14 +5,13 @@
 # Inside parrot/build
 # Run a test(s):
 # meson test ara_tasks_1 ara_angle_2
-# Run suite:
-# meson test --suite automotive_benchmark_ara
+# Run suite (with 36 cores):
+# meson test --suite automotive_benchmark_ara -j 36
 
 # Inside ara/test/mareike_benchmark
 # Parse testlog into csv, plot [and save to png]
 # python3 meson_parser.py ../../../../build/meson-logs/testlog.txt res_tmp.csv && python3 plot.py res_tmp.csv [--save out.png]
 
-who
 do_stdout = true
 arg = do_stdout ? 'true' : 'false'
 
