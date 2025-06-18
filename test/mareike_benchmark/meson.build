@@ -31,6 +31,16 @@ foreach app : autosar_targets
         continue
     endif
 
+    # Only extended angle testing
+    if not (app['name'].contains('angle') or app['name'].contains('tasks'))
+        continue
+    endif
+
+    # Remove extended angle testing
+    # if app['name'].contains('angle-')
+    #     continue
+    # endif
+
     # 1. Compile and run ara
     test('ara_' + app['name'] + '_' + app['variant'].to_lower(),
         py3_inst,

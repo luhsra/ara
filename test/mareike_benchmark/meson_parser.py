@@ -40,7 +40,7 @@ def main():
         for line in file:
             
             if line.startswith("test:"):
-                t = line.removeprefix("test:").strip().removeprefix("ara:automotive_benchmark / ara_")
+                t = line.removeprefix("test:").strip().removeprefix("ara:automotive_benchmark_ara / ara_")
                 current.name = t.split("_")[0]
                 current.variant = t.split("_")[1]
             elif line.startswith("duration:"):

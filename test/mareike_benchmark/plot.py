@@ -6,6 +6,7 @@ import csv
 import argparse
 import matplotlib.pyplot as plt
 from collections import defaultdict
+import random
 
 def main():
     """Plot a csv. python3 pllot.py res.csv"""
@@ -20,10 +21,12 @@ def main():
     stats = defaultdict(list)
     timeout = 1000
     color_map = {
-        'tasks': '#348ABD',
-        'labels': '#467821',
-        'angle': '#7A68A6',
-        'mixed': '#A60628'
+        'tasks': '#00faff',
+        'labels': '#0000ff',
+        'angle': '#02ff00',
+        'mixed': '#0a5b00',
+        'angle-ideal': "#ff0100",
+        'angle-worst': "#ff00c5"
     }
 
     print(f"Parsing: \"{input}\".")
@@ -37,9 +40,8 @@ def main():
             data[row[0]].append((int(row[1]),float(row[3])))
             if row[4] == "True":
                 stats[row[0]].append((int(row[1]), int(row[7]), int(row[8])))
-
-            if row[3] == 'Timeout':
-                timeout = int(row[3])-1
+            if row[2] == "Timeout":
+                timeout = int(float(row[3]))-1
 
     # Plot duration
     plt.style.use("bmh")
@@ -53,7 +55,7 @@ def main():
         print(f"\t{k} {v}")
 
         x, y = zip(*v)
-        plt.plot(x, y, label=k, marker="x", color=color_map[k])
+        plt.plot(x, [i + random.uniform(-0.1, 0.1) for i in y], label=k, marker="x", color=color_map[k])
     plt.legend()
     if args.save:
         path: str = args.save
@@ -75,7 +77,7 @@ def main():
         print(f"\t{k} {v}")
 
         x, y, _ = zip(*v)
-        plt.plot(x, y, label=k, marker="x", color=color_map[k])
+        plt.plot(x, [i + random.uniform(-0.1, 0.1) for i in y], label=k, marker="x", color=color_map[k])
     plt.legend()
     if args.save:
         path: str = args.save
@@ -91,13 +93,11 @@ def main():
     plt.xlabel("Number of Tasks")
     plt.ylabel("Number of LAbSS in MSTG")
     plt.xticks(range(0,9))
-    print(f"Found {len(stats)} benchmarks:")
     for k,v in stats.items():
         v.sort(key=lambda x: x[0])  # sort by first 
-        print(f"\t{k} {v}")
 
         x, _, y = zip(*v)
-        plt.plot(x, y, label=k, marker="x", color=color_map[k])
+        plt.plot(x, [i + random.uniform(-0.1, 0.1) for i in y], label=k, marker="x", color=color_map[k])
     plt.legend()
     if args.save:
         path: str = args.save
