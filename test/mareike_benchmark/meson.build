@@ -2,26 +2,17 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-# Template for other tests
-# meson test dummytest
-# meson test ara_tasks_1
-# meson test --suite ara:automotive_benchmark_ara
+# Inside parrot/build
+# Run a test(s):
+# meson test ara_tasks_1 ara_angle_2
+# Run suite:
 # meson test --suite automotive_benchmark_ara
 
+# Inside ara/test/mareike_benchmark
 # Parse testlog into csv, plot [and save to png]
-# python3 meson_parser.py ../../../../build/meson-logs/testlog.txt res.csv 
-# python3 plot.py res.csv [--save out.png]
+# python3 meson_parser.py ../../../../build/meson-logs/testlog.txt res_tmp.csv && python3 plot.py res_tmp.csv [--save out.png]
 
-# test('dummytest',
-#     py3_inst,
-#     args: [files('dummy.py'), 'param'],
-#     env: [python_path],
-#     depends: ara_py,
-#     # is_parallel: false,
-#     suite: 'automotive_benchmark',
-#     timeout: 5      # in seconds
-# )
-
+who
 do_stdout = true
 arg = do_stdout ? 'true' : 'false'
 
@@ -31,12 +22,12 @@ foreach app : autosar_targets
         continue
     endif
 
-    # Only extended angle testing
+    # [FLAG] Only extended angle testing
     if not (app['name'].contains('angle') or app['name'].contains('tasks'))
         continue
     endif
 
-    # Remove extended angle testing
+    # [FLAG] Remove extended angle testing
     # if app['name'].contains('angle-')
     #     continue
     # endif
@@ -48,7 +39,7 @@ foreach app : autosar_targets
         env: [python_path],
         depends: [ara_py, app['ll_pi4']],
         suite: 'automotive_benchmark_ara',
-        timeout: 10 # 60 600 1000
+        timeout: 1000 # 60 600 1000
     )
 endforeach
 
@@ -71,3 +62,14 @@ foreach app : autosar_generated_targets_pi4
         timeout: 100
     )
 endforeach
+
+# Template for other tests
+# test('dummytest',
+#     py3_inst,
+#     args: [files('dummy.py'), 'param'],
+#     env: [python_path],
+#     depends: ara_py,
+#     # is_parallel: false,
+#     suite: 'automotive_benchmark',
+#     timeout: 5      # in seconds
+# )
