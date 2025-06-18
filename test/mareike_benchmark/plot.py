@@ -26,7 +26,8 @@ def main():
         'angle': '#02ff00',
         'mixed': '#0a5b00',
         'angle-ideal': "#ff0100",
-        'angle-worst': "#ff00c5"
+        'angle-worst': "#ff00c5",
+        'angle-notimes': "#433474"
     }
 
     print(f"Parsing: \"{input}\".")
