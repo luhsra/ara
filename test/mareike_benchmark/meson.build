@@ -12,6 +12,7 @@
 # Parse testlog into csv, plot [and save to png]
 # python3 meson_parser.py ../../../../build/meson-logs/testlog.txt res_tmp.csv && python3 plot.py res_tmp.csv [--save out.png]
 
+# Write stdout/err into testlog.txt
 do_stdout = true
 arg = do_stdout ? 'true' : 'false'
 
@@ -22,14 +23,14 @@ foreach app : autosar_targets
     endif
 
     # [FLAG] Only extended angle testing
-    if not (app['name'].contains('angle') or app['name'].contains('tasks'))
-        continue
-    endif
-
-    # [FLAG] Remove extended angle testing
-    # if app['name'].contains('angle-')
+    # if not (app['name'].contains('angle') or app['name'].contains('tasks'))
     #     continue
     # endif
+
+    # [FLAG] Remove extended angle testing
+    if app['name'].contains('angle-')
+        continue
+    endif
 
     # 1. Compile and run ara
     test('ara_' + app['name'] + '_' + app['variant'].to_lower(),
@@ -38,7 +39,7 @@ foreach app : autosar_targets
         env: [python_path],
         depends: [ara_py, app['ll_pi4']],
         suite: 'automotive_benchmark_ara',
-        timeout: 1000 # 60 600 1000
+        timeout: 10 # 60 600 1000
     )
 endforeach
 
@@ -51,7 +52,7 @@ foreach app : autosar_generated_targets_pi4
     # 2. Deploy binary and run ara on pi4
     test('pi_' + app['name'] + '_' + app['variant'].to_lower(),
         py3_inst,
-        args: [files('run_pi.py'), app['pi4_tftp_cmd']],
+        args: [files('run_pi.py'), app['full_name'], app['app_image_pi4_cmd'], app['pi4_tftp_cmd']],
         env: [python_path],
         depends: [ara_py],
         # TODO this breaks even when running other test

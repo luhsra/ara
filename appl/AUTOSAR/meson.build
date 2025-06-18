@@ -512,6 +512,16 @@ foreach app: autosar_targets
       app += {'autosar_pi4_' + opt: autosar}
       app += {'linker_script_pi4_' + opt: linker_script}
 
+      app_image_pi4_cmd = [clang_cpp,
+                        ['-T', linker_script],
+                        arm_autosar_includes,
+                        autosar_includes,
+                        ld_flags,
+                        autosar_pi4_ld_flags,
+                        clang_flags,
+                        autosar_pi4_clang_flags,
+      ]
+      app += {'app_image_pi4_cmd': app_image_pi4_cmd}
       app_image_pi4 = custom_target(opt_app_name + '_image_pi4',
                               input: [
                                 app_ll_mod,
@@ -523,15 +533,8 @@ foreach app: autosar_targets
                               ],
                               output : opt_app_name + '_pi4',
                               depfile : opt_app_name + '.pi4.dep',
-                              command : clang_cpp +
-                                        ['-T', linker_script] +
-                                        arm_autosar_includes +
-                                        autosar_includes +
-                                        ld_flags +
-                                        autosar_pi4_ld_flags +
-                                        clang_flags +
-                                        autosar_pi4_clang_flags)
-
+                              command : app_image_pi4_cmd)
+      
       app += {'app_image_pi4_' + opt: app_image_pi4}
       run_cmd = libplatforms_proj.get_variable('qemu_rpi4_32bit_cmd') + app_image_pi4
       app += {'run_cmd_pi4_' + opt: run_cmd}

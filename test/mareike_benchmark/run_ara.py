@@ -18,9 +18,10 @@ def main():
     
     os = "AUTOSAR"
     settings = "../subprojects/ara/settings/autosar_arm_automotive_benchmark.json"
+    output_path = "subprojects/ara/appl/AUTOSAR/"
     opt_name = full_name + "_noopt"
-    mod_pi4_ll = opt_name + "_mod.pi4.ll"
-    autosar_pi4 = opt_name + "_autosar.pi4.cc"
+    mod_pi4_ll = output_path + opt_name + "_mod.pi4.ll"
+    autosar_pi4 = output_path + opt_name + "_autosar.pi4.cc"
     timing = "BB"
 
     command = [py3_inst, ara_py, ll_pi4, "--os", os, "--oilfile", oil, 
