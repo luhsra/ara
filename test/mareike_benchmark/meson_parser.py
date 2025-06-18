@@ -5,6 +5,7 @@
 import csv
 import argparse
 from dataclasses import dataclass
+from datetime import datetime
 
 class Testcase:
     name: str
@@ -73,7 +74,7 @@ def main():
   
     with open(out, mode='w', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(["Testcase", "Variant", "AnalysisStatus", "AnalysisDuration[s]", 
+        writer.writerow([datetime.today().strftime('%Y-%m-%dT%H:%M:%S')+"-Testcase", "Variant", "AnalysisStatus", "AnalysisDuration[s]", 
                          "HasStats", "#Vertices", "#Edges", "#SynchronisationPoints", 
                          "#LocalCoreAbstractSystemState"])
         for i in cases:
