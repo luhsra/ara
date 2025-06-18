@@ -25,8 +25,11 @@ def main():
 
     command = [py3_inst, ara_py, ll_pi4, "--os", os, "--oilfile", oil, 
                "--ir_output", mod_pi4_ll, "--step-settings", settings,
-               "--generator_output", autosar_pi4, "--timing", timing, 
+               "--generator_output", autosar_pi4, 
                "--no_colors", "True"]
+    
+    if not "notimes" in full_name:
+        command += ["--timing", timing]
 
     if do_debug:
         print(f"Command:\n{' '.join(command)}\n")

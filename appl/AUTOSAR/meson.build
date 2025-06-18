@@ -196,6 +196,7 @@ autosar_apps = [
   {'core': 'singlecore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'angle',           'timing': 'BB', 'oil': 'angle.json',    'variants': ['1', '2', '3', '4', '5', '6', '7', '8', '9']},
   {'core': 'singlecore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'angle-ideal',     'timing': 'BB', 'oil': 'angle-ideal.json',    'variants': ['1', '2', '3', '4', '5', '6', '7', '8', '9']},
   {'core': 'singlecore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'angle-worst',     'timing': 'BB', 'oil': 'angle-worst.json',    'variants': ['1', '2', '3', '4', '5', '6', '7', '8', '9']},
+  {'core': 'singlecore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'angle-notimes',                   'oil': 'angle-notimes.json',    'variants': ['1', '2', '3', '4', '5', '6', '7', '8', '9']},
 ]
 subdir('multicore' / 'trampoline')
 

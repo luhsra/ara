@@ -321,6 +321,11 @@ class LoadOIL(Step):
 
                 self._log.debug(f"Found ISR {i_name}")
 
+                if not "min_activation_time" in isr:
+                    isr["min_activation_time"] = 0
+                if not "max_activation_time" in isr:
+                    isr["max_activation_time"] = math.inf
+
                 instances.vp.obj[i] = _autosar.ISR(
                         cfg=cfg,
                         name=i_name,
