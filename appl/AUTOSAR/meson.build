@@ -483,6 +483,21 @@ foreach app: autosar_targets
     foreach opt : opt_targets
       opt_app_name = full_name + '_' + opt
       if get_option('execute_ara')
+        autosar_benchmark_settings = '../subprojects/ara/settings/autosar_arm_automotive_benchmark.json'
+        ara_cmd = [ py3_inst, ara_py, app['ll_pi4'],
+              '--os', 'AUTOSAR',
+              '--oilfile', app['oil'],
+              '--ir_output', '@OUTPUT0@',
+              '--step-settings', 
+              # if in autosar_benchmark use different settings file
+              get_option('autosar_benchmark') ? autosar_benchmark_settings : ara_opt_settings[opt],
+              '--generator_output', '@OUTPUT1@',
+              ara_timing_settings
+          ]  
+        # if in autosar_benchmark add to cmd
+        # if is_variable('autosar_benchmark')
+        #   ara_cmd += ['--no_colors', 'True']
+        # endif
         out = custom_target(
           opt_app_name + '_mod_pi4',
           input : app['ll_pi4'],
@@ -492,15 +507,7 @@ foreach app: autosar_targets
             opt_app_name +'_autosar.pi4.ld'
           ],
           depfile : opt_app_name + '_mod.pi4.ll.dep',
-          command : [
-            py3_inst, ara_py, app['ll_pi4'],
-            '--os', 'AUTOSAR',
-            '--oilfile', app['oil'],
-            '--ir_output', '@OUTPUT0@',
-            '--step-settings', ara_opt_settings[opt],
-            '--generator_output', '@OUTPUT1@',
-            ara_timing_settings
-          ]
+          command : ara_cmd
         )
       else
         out = disabler()

@@ -3,45 +3,36 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import sys
+import os
 import subprocess
 
 def main():
     """Run a target of the automotive benchmark suite."""
 
     # sys.argv[0] is name of script
-    py3_inst = sys.argv[1]
-    ara_py = sys.argv[2]
-    ll_pi4 = sys.argv[3]
-    oil = sys.argv[4]
-    full_name = sys.argv[5]
-    do_debug = sys.argv[6] == 'true'
+    full_name = sys.argv[1]
+    target = "subprojects/ara/appl/AUTOSAR/" + full_name + "_noopt_mod.pi4.ll"
+    ninja_ara = ["ninja", target, "-v"]
+    # set_config_cmd = ["meson", "configure", "-Dara:autosar_benchmark=true"]
+    # unset_config_cmd = ["meson", "configure", "-Dara:autosar_benchmark=false"]
+
+    # if file already exists remove it
+    if os.path.exists(target):
+        os.remove(target)
     
-    os = "AUTOSAR"
-    settings = "../subprojects/ara/settings/autosar_arm_automotive_benchmark.json"
-    output_path = "subprojects/ara/appl/AUTOSAR/"
-    opt_name = full_name + "_noopt"
-    mod_pi4_ll = output_path + opt_name + "_mod.pi4.ll"
-    autosar_pi4 = output_path + opt_name + "_autosar.pi4.cc"
-    timing = "BB"
-
-    command = [py3_inst, ara_py, ll_pi4, "--os", os, "--oilfile", oil, 
-               "--ir_output", mod_pi4_ll, "--step-settings", settings,
-               "--generator_output", autosar_pi4, 
-               "--no_colors", "True"]
+    # # set config
+    # subprocess.run(set_config_cmd)
     
-    if not "notimes" in full_name:
-        command += ["--timing", timing]
+    # execute ninja cmd
+    with subprocess.Popen(ninja_ara, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as process:
+        stdout_log = process.stdout.read().decode("utf-8")
+        stderr_log = process.stderr.read().decode("utf-8")
+        print(f"Errors:\n{stderr_log}\n")
+        print(f"StdOut:\n{stdout_log}\n")
 
-    if do_debug:
-        print(f"Command:\n{' '.join(command)}\n")
+    # # set config back to false
+    # subprocess.run(unset_config_cmd)
 
-    with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as process:
-        if do_debug:
-            stdout_log = process.stdout.read().decode("utf-8")
-            stderr_log = process.stderr.read().decode("utf-8")
-            print(f"Errors:\n{stderr_log}\n")
-            print(f"StdOut:\n{stdout_log}\n")
-            
     # Test ok
     sys.exit(0)
 

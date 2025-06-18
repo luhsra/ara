@@ -3,7 +3,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 # Inside parrot/build
-# Run a test(s):
+# Setup config + Run a test(s):
+# meson configure -Dara:autosar_benchmark=true && ninja
 # meson test ara_tasks_1 ara_angle_2
 # Run suite (with 36 cores):
 # meson test --suite automotive_benchmark_ara -j 36
@@ -12,10 +13,8 @@
 # Parse testlog into csv, plot [and save to png]
 # python3 meson_parser.py ../../../../build/meson-logs/testlog.txt res_tmp.csv && python3 plot.py res_tmp.csv [--save out.png]
 
-# Write stdout/err into testlog.txt
-do_stdout = true
-arg = do_stdout ? 'true' : 'false'
-
+# At the end reset config
+# meson configure -Dara:autosar_benchmark=false
 foreach app : autosar_targets
     # Filter
     if not app['path'].contains('automotive_benchmark/testsuit')
@@ -35,11 +34,11 @@ foreach app : autosar_targets
     # 1. Compile and run ara
     test('ara_' + app['name'] + '_' + app['variant'].to_lower(),
         py3_inst,
-        args: [files('run_ara.py'), py3_inst, ara_py, app['ll_pi4'], app['oil'], app['full_name'], arg],
-        env: [python_path],
+        args: [files('run_ara.py'), app['full_name']],
+        env: [python_path, 'autosar_benchmark=1'],
         depends: [ara_py, app['ll_pi4']],
         suite: 'automotive_benchmark_ara',
-        timeout: 10 # 60 600 1000
+        timeout: 20 # 60 600 1000
     )
 endforeach
 
