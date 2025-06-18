@@ -59,8 +59,8 @@ def main():
     plt.legend()
     if args.save:
         path: str = args.save
-        plt.savefig("dur"+path, dpi=300)
-        print(f"Plot written to \"dur{path}\".")
+        plt.savefig(path+"-dur.png", dpi=300)
+        print(f"Plot written to \"{path}-dur.png\".")
         plt.close()
     else:
         plt.show()
@@ -81,8 +81,8 @@ def main():
     plt.legend()
     if args.save:
         path: str = args.save
-        plt.savefig("sps"+path, dpi=300)
-        print(f"Plot written to \"sps{path}\".")
+        plt.savefig(path+"-sps.png", dpi=300)
+        print(f"Plot written to \"{path}-sps.png\".")
         plt.close()
     else:
         plt.show()
@@ -101,8 +101,8 @@ def main():
     plt.legend()
     if args.save:
         path: str = args.save
-        plt.savefig("labsss"+path, dpi=300)
-        print(f"Plot written to \"labsss{path}\".")
+        plt.savefig(path+"-labsss.png", dpi=300)
+        print(f"Plot written to \"{path}-labsss.png\".")
         plt.close()
     else:
         plt.show()
