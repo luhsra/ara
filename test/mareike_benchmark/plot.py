@@ -71,7 +71,7 @@ def main():
     plt.title("Automotive Benchmark - SynchronisationPoints")
     plt.xlabel("Number of Tasks")
     plt.ylabel("Number of SPs in MSTG")
-    plt.xticks(range(0,9))
+    plt.xticks(range(0,10))
     print(f"Found {len(stats)} benchmarks:")
     for k,v in stats.items():
         v.sort(key=lambda x: x[0])  # sort by first 
@@ -93,7 +93,7 @@ def main():
     plt.title("Automotive Benchmark - LocalCoreAbstractSystemState")
     plt.xlabel("Number of Tasks")
     plt.ylabel("Number of LAbSS in MSTG")
-    plt.xticks(range(0,9))
+    plt.xticks(range(0,10))
     for k,v in stats.items():
         v.sort(key=lambda x: x[0])  # sort by first 
 
