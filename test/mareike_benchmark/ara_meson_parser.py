@@ -83,9 +83,7 @@ def main():
             else:
                 writer.writerow([i.name, i.variant, i.status, i.duration, i.stats])
 
-
     print(f"Done, wrote {len(cases)} lines.")
-
 
 if __name__ == "__main__":
     main()

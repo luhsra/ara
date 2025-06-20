@@ -13,15 +13,10 @@ def main():
     full_name = sys.argv[1]
     target = "subprojects/ara/appl/AUTOSAR/" + full_name + "_noopt_mod.pi4.ll"
     ninja_ara = ["ninja", target, "-v"]
-    # set_config_cmd = ["meson", "configure", "-Dara:autosar_benchmark=true"]
-    # unset_config_cmd = ["meson", "configure", "-Dara:autosar_benchmark=false"]
 
     # if file already exists remove it
     if os.path.exists(target):
         os.remove(target)
-    
-    # # set config
-    # subprocess.run(set_config_cmd)
     
     # execute ninja cmd
     with subprocess.Popen(ninja_ara, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as process:
@@ -29,9 +24,6 @@ def main():
         stderr_log = process.stderr.read().decode("utf-8")
         print(f"Errors:\n{stderr_log}\n")
         print(f"StdOut:\n{stdout_log}\n")
-
-    # # set config back to false
-    # subprocess.run(unset_config_cmd)
 
     # Test ok
     sys.exit(0)
