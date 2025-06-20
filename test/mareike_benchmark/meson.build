@@ -15,7 +15,7 @@
 
 # At the end reset config
 # meson configure -Dara:autosar_benchmark=false
-foreach app : autosar_targets
+foreach app : autosar_generated_targets_pi4
     # Filter
     if not app['path'].contains('automotive_benchmark/testsuit')
         continue
@@ -35,30 +35,21 @@ foreach app : autosar_targets
     test('ara_' + app['name'] + '_' + app['variant'].to_lower(),
         py3_inst,
         args: [files('run_ara.py'), app['full_name']],
-        env: [python_path, 'autosar_benchmark=1'],
+        env: [python_path],
         depends: [ara_py, app['ll_pi4']],
         suite: 'automotive_benchmark_ara',
-        timeout: 20 # 60 600 1000
+        timeout: 20 # 60 600 1000 7000
     )
-endforeach
-
-foreach app : autosar_generated_targets_pi4
-    # Filter
-    if not app['path'].contains('automotive_benchmark/testsuit')
-        continue
-    endif
 
     # 2. Deploy binary and run ara on pi4
     test('pi_' + app['name'] + '_' + app['variant'].to_lower(),
         py3_inst,
-        args: [files('run_pi.py'), app['full_name'], app['app_image_pi4_cmd'], app['pi4_tftp_cmd']],
+        args: [files('run_pi.py'), app['full_name']],
         env: [python_path],
         depends: [ara_py],
-        # TODO this breaks even when running other test
-        # depends: [ara_py, app['pi4_bin']]
         is_parallel: false,
         suite: 'automotive_benchmark_pi',
-        timeout: 100
+        timeout: 60 # 60 600 1000 7000
     )
 endforeach
 

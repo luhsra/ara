@@ -126,7 +126,7 @@ void setup_and_print(const char* name) {
 	kout << "*******************\r\n" << endl;
 
 	// to better see results on PI wait at the beginning
-	#ifndef QEMU
+	#if !defined(QEMU) && !defined(BENCHMARK)
 		micro_sec_wait(2000000);
 	#endif
 
@@ -351,10 +351,11 @@ void print_results() {
 		#else
 			kout << endl;
 		#endif
+		kout << "Done with Benchmark!" << endl;
 		kout << "*******************\r\n" << endl;
 	#endif
 
-	#ifndef QEMU
+	#if !defined(QEMU) && !defined(BENCHMARK)
 		// to better see results on PI wait at the end before rebooting
 		micro_sec_wait(5000000);
 	#endif
