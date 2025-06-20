@@ -38,7 +38,7 @@ foreach app : autosar_generated_targets_pi4
         env: [python_path],
         depends: [ara_py, app['ll_pi4']],
         suite: 'automotive_benchmark_ara',
-        timeout: 20 # 60 600 1000 7000
+        timeout: 7000 # 20 60 600 1000 7000
     )
 
     # 2. Deploy binary and run ara on pi4
@@ -49,7 +49,7 @@ foreach app : autosar_generated_targets_pi4
         depends: [ara_py],
         is_parallel: false,
         suite: 'automotive_benchmark_pi',
-        timeout: 60 # 60 600 1000 7000
+        timeout: 180
     )
 endforeach
 

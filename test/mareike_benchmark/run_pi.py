@@ -7,7 +7,6 @@ import subprocess
 import time
 from pathlib import Path
 from os import path
-from datetime import datetime
 
 def main():
     """Deploy a target on the evaluation pi for the automotive benchmark suite."""
@@ -45,7 +44,8 @@ def main():
     host ="lab-pc67"
     command = f"python3 -c '{remote_serial}'"
     result = subprocess.run(["ssh", host, command], capture_output=True, check=False)
-    
+    print(result)
+
     # Parse results
     suc = False
     for l in result.stdout.decode("UTF-8", "ignore").splitlines():
