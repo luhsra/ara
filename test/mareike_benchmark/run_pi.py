@@ -44,7 +44,8 @@ def main():
     host ="lab-pc67"
     command = f"python3 -c '{remote_serial}'"
     result = subprocess.run(["ssh", host, command], capture_output=True, check=False)
-    print(result)
+    
+    # print(result)
 
     # Parse results
     suc = False

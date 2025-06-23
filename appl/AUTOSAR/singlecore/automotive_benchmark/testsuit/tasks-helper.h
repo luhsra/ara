@@ -355,6 +355,9 @@ void print_results() {
 		kout << "*******************\r\n" << endl;
 	#endif
 
+	// gives time to read result
+	micro_sec_wait(1000000);
+	
 	#if !defined(QEMU) && !defined(BENCHMARK)
 		// to better see results on PI wait at the end before rebooting
 		micro_sec_wait(5000000);
