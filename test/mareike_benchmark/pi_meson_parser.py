@@ -10,15 +10,21 @@ from datetime import datetime
 class Testcase:
     name: str
     variant: str
+    duration: float             # runtime of testcase
+
+    skipped: bool = False
 
     passed: bool
-    load: float             # in %
-    expected_load: float    # in %
-    diff: float             # in %
+    expected_load: float        # in %
+    angle_expected_load: float  # in %
+    load: float                 # in %
+    diff: float                 # in %
 
 
 def main():
-    """Parses the output of meson into a csv. python3 meson_parser.py testlog.txt res.csv"""
+    """Parses the output of meson into a csv.
+    python3 ara_meson_parser.py ../../../../build/meson-logs/testlog.txt res-ara.csv
+    """
     
     parser = argparse.ArgumentParser("MesonParser")
     parser.add_argument("InputFile", help="Path to meson testlog.txt.", type=str)
@@ -37,47 +43,52 @@ def main():
         for line in file:
             
             if line.startswith("test:"):
-                t = line.removeprefix("test:").strip().removeprefix("ara:automotive_benchmark_ara / ara_")
+                t = line.removeprefix("test:").strip()
+                if "ara:automotive_benchmark_pi / pi_" not in t:
+                    print(f"Wrong benchmark data: \"{t}\" does not contain \"ara:automotive_benchmark_pi / pi_\"")
+                    print("Stopping!")
+                    exit(1)
+                t = t.removeprefix("ara:automotive_benchmark_pi / pi_")
                 current.name = t.split("_")[0]
                 current.variant = t.split("_")[1]
             elif line.startswith("duration:"):
                 d = line.removeprefix("duration:").strip().removesuffix("s")
                 current.duration = d
-            elif line.startswith("result:"):
-                r = line.removeprefix("result:").strip()
-                if r == "exit status 0":
-                    current.status = "Passed"
-                elif r == "killed by signal 15 SIGTERM":
-                    current.status = "Timeout"
-                else:
-                    current.status = "Unknown"
-            elif "Number of vertices" in line:
-                v = line.split(":")[3].strip()
-                current.vertices = int(v)
-                current.stats = True
-            elif "Number of edges" in line:
-                e = line.split(":")[3].strip()
-                current.edges = int(e)
-            elif "Number of SPs" in line:
-                s = line.split(":")[3].strip()
-                current.sps = int(s)
-            elif "Number of LAbSSs" in line:
-                l = line.split(":")[3].strip()
-                current.labsss = int(l)
+            
+            elif line.startswith("SKIPPED!"):
+                current.skipped = True
+
+            elif line.startswith("- All task finished, passed!"):
+                current.passed = True
+            elif line.startswith("- Task(s) got blocked, failed!"):
+                current.passed = False
+
+            elif line.startswith("- Expected load was:"):
+                d = line.removeprefix("- Expected load was:").strip()
+                current.expected_load = d.split("%")[0]
+                # Check estimation with angle sync
+                # if d.split("%")[1].startswith("	(w-Angle: "):
+                #     e = d.split("%")[1].removeprefix("	(w-Angle: ").removesuffix("%")
+                #     current.angle_expected_load = e
+            elif line.startswith("- Actual load was:"):
+                current.load = line.removeprefix("- Actual load was:").strip().removesuffix("%")
+            elif line.startswith("- Difference is:"):
+                d = line.removeprefix("- Difference is:").strip()
+                current.diff = d.split("%")[0]
+
             elif line.startswith(seperator):
                 cases.append(current)
                 current = Testcase()
   
     with open(out, mode='w', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow([datetime.today().strftime('%Y-%m-%dT%H:%M:%S')+"-Testcase", "Variant", "AnalysisStatus", "AnalysisDuration[s]", 
-                         "HasStats", "#Vertices", "#Edges", "#SynchronisationPoints", 
-                         "#LocalCoreAbstractSystemState"])
+        writer.writerow([datetime.today().strftime('%Y-%m-%dT%H:%M:%S')+"-Testcase", "Variant", "Skipped", "Passed", 
+                         "Expected-Load [%]", "Load[%]", "Diff[%]"])
         for i in cases:
-            if i.stats:
-                writer.writerow([i.name, i.variant, i.status, i.duration, i.stats, i.vertices, i.edges, i.sps, i.labsss])
+            if not i.skipped:
+                writer.writerow([i.name, i.variant, i.skipped, i.passed, i.expected_load, i.load, i.diff])
             else:
-                writer.writerow([i.name, i.variant, i.status, i.duration, i.stats])
+                writer.writerow([i.name, i.variant, i.skipped])
 
     print(f"Done, wrote {len(cases)} lines.")
 

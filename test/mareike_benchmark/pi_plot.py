@@ -9,7 +9,7 @@ from collections import defaultdict
 import random
 
 def main():
-    """Plot a csv. python3 pllot.py res.csv"""
+    """Plot a csv. python3 pi_plot.py res-pi"""
     
     parser = argparse.ArgumentParser("MesonParser")
     parser.add_argument("InputFile", help="Path to .csv file.", type=str)
@@ -18,8 +18,6 @@ def main():
     
     input = args.InputFile
     data = defaultdict(list)
-    stats = defaultdict(list)
-    timeout = 1000
     color_map = {
         'tasks': '#00faff',
         'labels': '#0000ff',
@@ -38,42 +36,17 @@ def main():
         for row in reader:
             print(row)
 
-            data[row[0]].append((int(row[1]),float(row[3])))
-            if row[4] == "True":
-                stats[row[0]].append((int(row[1]), int(row[7]), int(row[8])))
-            if row[2] == "Timeout":
-                timeout = int(float(row[3]))-1
-
+            if row[2] == "False":
+                data[row[0]].append((int(row[1]),float(row[5]),float(row[6])))
+                
     # Plot duration
     plt.style.use("bmh")
-    plt.title("Automotive Benchmark - AnalysisDuration")
+    plt.title("Automotive Benchmark - Load on Pi")
     plt.xlabel("Number of Tasks")
-    plt.ylabel("Duration of analysis in [s]")
-    plt.ylim(0, timeout)
-    print(f"Found {len(data)} benchmarks, timeout is {timeout}:")
-    for k,v in data.items():
-        v.sort(key=lambda x: x[0])  # sort by first 
-        print(f"\t{k} {v}")
-
-        x, y = zip(*v)
-        plt.plot(x, [i + random.uniform(-0.1, 0.1) for i in y], label=k, marker="x", color=color_map[k])
-    plt.legend()
-    if args.save:
-        path: str = args.save
-        plt.savefig(path+"-dur.png", dpi=300)
-        print(f"Plot written to \"{path}-dur.png\".")
-        plt.close()
-    else:
-        plt.show()
-
-    # Plot Sps
-    plt.style.use("bmh")
-    plt.title("Automotive Benchmark - SynchronisationPoints")
-    plt.xlabel("Number of Tasks")
-    plt.ylabel("Number of SPs in MSTG")
+    plt.ylabel("Measured Utilization [%]")
     plt.xticks(range(0,10))
-    print(f"Found {len(stats)} benchmarks:")
-    for k,v in stats.items():
+    print(f"Found {len(data)} benchmarks:")
+    for k,v in data.items():
         v.sort(key=lambda x: x[0])  # sort by first 
         print(f"\t{k} {v}")
 
@@ -82,28 +55,30 @@ def main():
     plt.legend()
     if args.save:
         path: str = args.save
-        plt.savefig(path+"-sps.png", dpi=300)
-        print(f"Plot written to \"{path}-sps.png\".")
+        plt.savefig(path+"-dur.png", dpi=300)
+        print(f"Plot written to \"{path}-load.png\".")
         plt.close()
     else:
-        plt.show()
+        plt.show()   
 
-    # Plot Sps
+    # Plot offset
     plt.style.use("bmh")
-    plt.title("Automotive Benchmark - LocalCoreAbstractSystemState")
+    plt.title("Automotive Benchmark - Difference to expected load")
     plt.xlabel("Number of Tasks")
-    plt.ylabel("Number of LAbSS in MSTG")
+    plt.ylabel("Calculated to measured load [%]")
     plt.xticks(range(0,10))
-    for k,v in stats.items():
+    print(f"Found {len(data)} benchmarks:")
+    for k,v in data.items():
         v.sort(key=lambda x: x[0])  # sort by first 
+        print(f"\t{k} {v}")
 
         x, _, y = zip(*v)
         plt.plot(x, [i + random.uniform(-0.1, 0.1) for i in y], label=k, marker="x", color=color_map[k])
     plt.legend()
     if args.save:
         path: str = args.save
-        plt.savefig(path+"-labsss.png", dpi=300)
-        print(f"Plot written to \"{path}-labsss.png\".")
+        plt.savefig(path+"-dur.png", dpi=300)
+        print(f"Plot written to \"{path}-offset.png\".")
         plt.close()
     else:
         plt.show()

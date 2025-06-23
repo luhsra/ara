@@ -22,7 +22,9 @@ class Testcase:
 
 
 def main():
-    """Parses the output of meson into a csv. python3 meson_parser.py testlog.txt res.csv"""
+    """Parses the output of meson into a csv.
+    python3 pi_meson_parser.py ../../../../build/meson-logs/testlog.txt res-pi.csv
+    """
     
     parser = argparse.ArgumentParser("MesonParser")
     parser.add_argument("InputFile", help="Path to meson testlog.txt.", type=str)
@@ -41,7 +43,12 @@ def main():
         for line in file:
             
             if line.startswith("test:"):
-                t = line.removeprefix("test:").strip().removeprefix("ara:automotive_benchmark_ara / ara_")
+                t = line.removeprefix("test:").strip()
+                if "ara:automotive_benchmark_ara / ara_" not in t:
+                    print(f"Wrong benchmark data: \"{t}\" does not contain \"ara:automotive_benchmark_ara / ara_\"")
+                    print("Stopping!")
+                    exit(1)
+                t = t.removeprefix("ara:automotive_benchmark_ara / ara_")
                 current.name = t.split("_")[0]
                 current.variant = t.split("_")[1]
             elif line.startswith("duration:"):

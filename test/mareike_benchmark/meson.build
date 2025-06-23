@@ -2,19 +2,26 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-# Inside parrot/build
-# Setup config + Run a test(s):
-# meson configure -Dara:autosar_benchmark=true && ninja
-# meson test ara_tasks_1 ara_angle_2
-# Run suite (with 36 cores):
-# meson test --suite automotive_benchmark_ara -j 36
+# Usage:
+    # Goto parrots build folder and run:
+    # meson configure -Dara:autosar_benchmark=true && ninja
+    # Single Test/ Multiple Test/ Suite (with 36 cores)
+        # meson test ara_tasks_1
+        # meson test ara_tasks_1 ara_angle_1
+        # meson test --suite automotive_benchmark_ara -j 36
 
-# Inside ara/test/mareike_benchmark
-# Parse testlog into csv, plot [and save to png]
-# python3 meson_parser.py ../../../../build/meson-logs/testlog.txt res_tmp.csv && python3 plot.py res_tmp.csv [--save out.png]
+    # Goto "ara/test/mareike_benchmark":
+    # Parse testlog into csv, plot [and save to png]
+        # python3 ara_meson_parser.py ../../../../build/meson-logs/testlog.txt res-ara.csv && python3 ara_plot.py res-ara.csv [--save out.png]
+        # python3 pi_meson_parser.py ../../../../build/meson-logs/testlog.txt res-pi.csv && python3 pi_plot.py res-pi.csv [--save out.png]
 
-# At the end reset config
-# meson configure -Dara:autosar_benchmark=false
+    # Reset config afterwards:
+    # meson configure -Dara:autosar_benchmark=false
+
+    # Bash wrapper in "ara/test/mareike_benchmark"
+    # ./ara_run.sh
+    # ./pi_run.sh
+
 foreach app : autosar_generated_targets_pi4
     # Filter
     if not app['path'].contains('automotive_benchmark/testsuit')
