@@ -23,7 +23,7 @@ class Testcase:
 
 def main():
     """Parses the output of meson into a csv.
-    python3 pi_meson_parser.py ../../../../build/meson-logs/testlog.txt res-pi.csv
+    python3 ara_meson_parser.py ../../../../build/meson-logs/testlog.txt res-ara.csv
     """
     
     parser = argparse.ArgumentParser("MesonParser")
