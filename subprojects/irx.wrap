@@ -1,4 +1,4 @@
 [wrap-git]
-url = ssh://git@scm.sra.uni-hannover.de/research/parrot-projects/irx.git
-revision = main
+url = https://github.com/luhsra/irx.git
+revision = github
 depth = 1
