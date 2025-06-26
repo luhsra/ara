@@ -1,0 +1,44 @@
+From 7303c45211c1766792d98d5508fc573a7cb9ecd0 Mon Sep 17 00:00:00 2001
+From: Mareike Burg <mareike.burg@web.de>
+Date: Wed, 30 Apr 2025 16:08:20 +0200
+Subject: [PATCH 1/2] Update rpi deploy to accept multiple config.txt
+
+---
+ deploy.py | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/deploy.py b/deploy.py
+index 6e2c827..95c4683 100644
+--- a/deploy.py
++++ b/deploy.py
+@@ -22,7 +22,7 @@ def main():
+     args = parser.parse_args()
+ 
+     assert args.ssh.is_file()
+-    assert args.scp.is_file()
++    assert args.scp.is_file()   
+     assert args.image.is_file()
+ 
+     name = args.image.stem
+@@ -31,11 +31,16 @@ def main():
+     run([args.scp, args.image.absolute(), remote_file])
+ 
+     remote_cmd = f"chmod 777 {args.path}/{name}.img"
+-
+     run([args.ssh, args.ssh_host, remote_cmd])
++
+     if args.rpi:
+-        remote_cmd = f"sed -i -E 's/^kernel=.*/kernel={name}.img/' {args.path}/config.txt"
++        remote_cmd = f"sed -i -E 's/^kernel=.*/kernel={name}.img/' {args.path}/config32.txt"
++        run([args.ssh, args.ssh_host, remote_cmd])
++
++        # force symlink to be on 32-bit config
++        remote_cmd = f"ln -s -f config32.txt config.txt"
+         run([args.ssh, args.ssh_host, remote_cmd])
++    
+     if args.beaglev:
+         remote_cmd = f"cp {args.path}/{name}.img {args.path}/autosar.bin"
+         run([args.ssh, args.ssh_host, remote_cmd])
+-- 
+2.34.1
+

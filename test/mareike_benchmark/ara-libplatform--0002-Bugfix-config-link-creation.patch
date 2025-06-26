@@ -1,0 +1,25 @@
+From d70d568bd4c5a927c5ce6c26db5315857f431c59 Mon Sep 17 00:00:00 2001
+From: Mareike Burg <mareike.burg@web.de>
+Date: Thu, 26 Jun 2025 12:33:41 +0200
+Subject: [PATCH 2/2] Bugfix config link creation
+
+---
+ deploy.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/deploy.py b/deploy.py
+index 95c4683..8b9a032 100644
+--- a/deploy.py
++++ b/deploy.py
+@@ -38,7 +38,7 @@ def main():
+         run([args.ssh, args.ssh_host, remote_cmd])
+ 
+         # force symlink to be on 32-bit config
+-        remote_cmd = f"ln -s -f config32.txt config.txt"
++        remote_cmd = f" cd /proj/tftp/research/rpi4 && ln -s -f config32.txt config.txt"
+         run([args.ssh, args.ssh_host, remote_cmd])
+     
+     if args.beaglev:
+-- 
+2.34.1
+
