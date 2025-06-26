@@ -1,4 +1,4 @@
 [wrap-git]
-url = ssh://git@scm.sra.uni-hannover.de/research/parrot-projects/ara-libsra.git
-revision = main
+url = https://github.com/luhsra/ara-libsra.git
+revision = github
 depth = 1
