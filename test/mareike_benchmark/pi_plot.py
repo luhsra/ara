@@ -55,7 +55,7 @@ def main():
     plt.legend()
     if args.save:
         path: str = args.save
-        plt.savefig(path+"-dur.png", dpi=300)
+        plt.savefig(path+"-load.png", dpi=300)
         print(f"Plot written to \"{path}-load.png\".")
         plt.close()
     else:
@@ -63,9 +63,9 @@ def main():
 
     # Plot offset
     plt.style.use("bmh")
-    plt.title("Automotive Benchmark - Difference to expected load")
+    plt.title("Automotive Benchmark - Difference to theoretical task load")
     plt.xlabel("Number of Tasks")
-    plt.ylabel("Calculated to measured load [%]")
+    plt.ylabel("Measured load increase [%]")
     plt.xticks(range(0,10))
     print(f"Found {len(data)} benchmarks:")
     for k,v in data.items():
@@ -77,7 +77,7 @@ def main():
     plt.legend()
     if args.save:
         path: str = args.save
-        plt.savefig(path+"-dur.png", dpi=300)
+        plt.savefig(path+"-offset.png", dpi=300)
         print(f"Plot written to \"{path}-offset.png\".")
         plt.close()
     else:

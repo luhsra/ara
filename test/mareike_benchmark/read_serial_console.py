@@ -4,6 +4,7 @@ import time
 import serial
 
 PI_SERIAL = "/dev/ttyFTDI_FT232R_USB_UART_A50285BI-00"
+# PI_SERIAL = "/dev/ttyUSB5"
 START_STR = "Starting benchmark:"
 END_STR = "Done with Benchmark!"
 
@@ -13,7 +14,7 @@ for _ in range(5):
     reading = False
     try:
         with serial.Serial(PI_SERIAL, 115200) as ser:
-            while len(lines) < 1000:
+            while len(lines) < 5000:
                 l = ser.readline().strip(b"\r\n").decode("UTF-8", "ignore")
                 if l.startswith(START_STR):
                     reading = True
@@ -23,8 +24,9 @@ for _ in range(5):
                     reading = False
                     break
     # if this error occures wait and retry
-    except serial.SerialException:
+    except serial.SerialException as e:
         print("Serial Error, retrying")
+        print(e)
         time.sleep(5)
     # if no exception it worked
     else:
