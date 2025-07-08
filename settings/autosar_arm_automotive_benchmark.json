@@ -7,10 +7,7 @@
 		"AutosarGeneratorIR",
 		"IRWriter",
 		"Generator",
-		"MSTGStats",
-		"DumpCFG", 
-		"DumpCallgraph",
-		"DumpInstances"
+		"MSTGStats"
 	],
 	"LLVMMap": {
 		"log_level": "error"
