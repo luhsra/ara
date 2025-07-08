@@ -53,7 +53,7 @@ foreach app : autosar_generated_targets_pi4
         py3_inst,
         args: [files('run_pi.py'), app['full_name']],
         env: [python_path],
-        depends: [ara_py],
+        depends: [ara_py, app['ll_pi4_mod_noopt']],
         is_parallel: false,
         suite: 'automotive_benchmark_pi',
         timeout: 180

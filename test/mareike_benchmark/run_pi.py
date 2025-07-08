@@ -23,6 +23,7 @@ def main():
             print(f"Not analysed by ARA, first run \"meson test --suite automotive_benchmark_ara\"")
             print(f"Needs:{stderr_log}\n{stdout_log}")
             print("SKIPPED!")
+            print("This should never happen with the current configuration.")
             sys.exit(77) # means skipped for meson
 
     tftp_cmd = ["ninja", "ara@@tftp_" + full_name + "_noopt_pi4", "-v"]
