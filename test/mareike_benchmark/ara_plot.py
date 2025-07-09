@@ -47,8 +47,8 @@ def main():
 
     # Plot duration
     plt.style.use("bmh")
-    plt.title("Automotive Benchmark - AnalysisDuration")
-    plt.xlabel("Number of Tasks")
+    plt.title("Automotive Benchmark - ARA Processing Time")
+    plt.xlabel("Number of different activation periods")
     plt.ylabel("Duration of analysis in [s]")
     # plt.ylim(0, timeout)
     print(f"Found {len(data)} benchmarks, timeout is {timeout}:")
@@ -69,8 +69,8 @@ def main():
 
     # Plot Sps
     plt.style.use("bmh")
-    plt.title("Automotive Benchmark - SynchronisationPoints")
-    plt.xlabel("Number of Tasks")
+    plt.title("Automotive Benchmark - ARA SynchronisationPoints")
+    plt.xlabel("Number of different activation periods")
     plt.ylabel("Number of SPs in MSTG")
     plt.xticks(range(0,10))
     print(f"Found {len(stats)} benchmarks:")
@@ -91,8 +91,8 @@ def main():
 
     # Plot Sps
     plt.style.use("bmh")
-    plt.title("Automotive Benchmark - LocalCoreAbstractSystemState")
-    plt.xlabel("Number of Tasks")
+    plt.title("Automotive Benchmark - ARA LocalCoreAbstractSystemStates")
+    plt.xlabel("Number of different activation periods")
     plt.ylabel("Number of LAbSS in MSTG")
     plt.xticks(range(0,10))
     for k,v in stats.items():

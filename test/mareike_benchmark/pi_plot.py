@@ -42,8 +42,8 @@ def main():
     # Plot duration
     plt.style.use("bmh")
     plt.title("Automotive Benchmark - Load on Pi")
-    plt.xlabel("Number of Tasks")
-    plt.ylabel("Measured Utilization [%]")
+    plt.xlabel("Number of different activation periods")
+    plt.ylabel("Measured Percentage not Idel [%]")
     plt.xticks(range(0,10))
     print(f"Found {len(data)} benchmarks:")
     for k,v in data.items():
@@ -64,8 +64,8 @@ def main():
     # Plot offset
     plt.style.use("bmh")
     plt.title("Automotive Benchmark - Difference to theoretical task load")
-    plt.xlabel("Number of Tasks")
-    plt.ylabel("Measured load increase [%]")
+    plt.xlabel("Number of different activation periods")
+    plt.ylabel("Measured Percentage Increase [%]")
     plt.xticks(range(0,10))
     print(f"Found {len(data)} benchmarks:")
     for k,v in data.items():
