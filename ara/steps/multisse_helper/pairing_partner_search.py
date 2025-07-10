@@ -176,8 +176,13 @@ class _PairingPartnerSearch:
         _, elist = shortest_path(sync_graph, orig_sp, new_sp)
         return len(elist) > 0
 
-    def _get_path(self, graph, from_sp, to_sp):
-        return shortest_path(graph, from_sp, to_sp)[1]
+    def _get_path(self, graph: graph_tool.GraphView, from_sp: graph_tool.libgraph_tool_core.Vertex, to_sp:graph_tool.libgraph_tool_core.Vertex):
+        # returns a list of edges
+        try:
+            return shortest_path(graph, from_sp, to_sp)[1]
+        except ValueError:
+            self._log.warning(f"Tried to find connection from SP {int(from_sp)} to {int(to_sp)} where no path exist.")
+            return None
 
     def _add_syscall_delays(self, eqs, path, core):
         """Add artificial syscall delays to a path.
