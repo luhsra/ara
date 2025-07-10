@@ -277,7 +277,7 @@ class MultiSSE(StatsStep):
         dot_graph = mstg_to_dot(self._mstg.g, label=f"MSTG {extra}")
         with open_with_dirs(dot_path):
             dot_graph.write(dot_path)
-        self._log.info(f"Write MSTG to {dot_path}.")
+        self._log.debug(f"Write MSTG to {dot_path}.")
 
         dot_file = self.dump_prefix.get() + f"mstg.{extra}.sp.dot"
         dot_path = os.path.abspath(dot_file)
@@ -285,7 +285,7 @@ class MultiSSE(StatsStep):
                                    label=f"SP MSTG {extra}")
         with open_with_dirs(dot_path):
             dot_graph.write(dot_path)
-        self._log.info(f"Write SP MSTG to {dot_path}.")
+        self._log.debug(f"Write SP MSTG to {dot_path}.")
 
         dot_file = self.dump_prefix.get() + f"mstg.{extra}.reduced.dot"
         dot_path = os.path.abspath(dot_file)
@@ -293,7 +293,7 @@ class MultiSSE(StatsStep):
                                         label=f"SP MSTG {extra}")
         with open_with_dirs(dot_path):
             dot_graph.write(dot_path)
-        self._log.info(f"Write reduced MSTG to {dot_path}.")
+        self._log.debug(f"Write reduced MSTG to {dot_path}.")
 
     def _get_initial_state(self):
         os_state = self._graph.os.get_initial_state(self._graph.cfg,
@@ -832,14 +832,14 @@ class MultiSSE(StatsStep):
             starts = []
             if start_from:
                 starts.append(Range(start=start_from, end=None))
-            combs = search_for_pairing_partners(self._mstg.g,
-                                                self._mstg.sync_point_map,
-                                                self._mstg.type_map,
-                                                path,
-                                                cross_state,
-                                                affected_cores,
-                                                starts,
-                                                self.syscall_delay.get(),
+            combs = search_for_pairing_partners(mstg=self._mstg.g,
+                                                core_map=self._mstg.sync_point_map,
+                                                type_map=self._mstg.type_map,
+                                                path=path,
+                                                cross_state=cross_state,
+                                                affected_cores=affected_cores,
+                                                restrictions=starts,
+                                                syscall_delay=self.syscall_delay.get(),
                                                 timing_calc=self._timings,
                                                 time=time)
             combinations.update(combs)

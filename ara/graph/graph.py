@@ -603,6 +603,17 @@ class MSTGraph(graph_tool.Graph):
         # here that captures this value.
         self.add_vertex()
 
+    def dump_graph(self):
+        self.list_properties()
+        for v in self.vertices():
+            # {mstg.vp.state[v]}
+            if self.vp.type[v] == 0:
+                print(f"Node: {v} Type=Invalid cpu_id={self.vp.cpu_id[v]} bcet={self.vp.bcet[v]} wcet={self.vp.wcet[v]}")
+            else:
+                print(f"Node: {v} Type={str(StateType(self.vp.type[v]))} cpu_id={self.vp.cpu_id[v]} bcet={self.vp.bcet[v]} wcet={self.vp.wcet[v]}")
+        for e in self.edges():
+            print(f"Edge: {e} Type={str(MSTType(self.ep.type[e]))} irq={self.ep.irq[e]} cpu_id={self.ep.cpu_id[e]} bcet={self.ep.bcet[e]} wcet={self.ep.wcet[e]}")
+
     def add_edge(self, *args, **kwargs):
         e = super().add_edge(*args, **kwargs)
         self.ep.irq[e] = -1

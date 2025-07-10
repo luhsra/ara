@@ -16,7 +16,7 @@
 		"log_level": "error"
 	},
 	"LoadOIL": {
-		"log_level": "error"
+		"log_level": "info"
 	},
 	"AutosarGeneratorIR": {
 		"rename_syscalls": true
@@ -36,9 +36,10 @@
 		"fail_on_deadlock": true
 	},
 	"MultiSSE": {
-		"log_level": "info",
+		"log_level": "debug",
 		"with_times": true,
-    	"dump" : true
+    	"dump" : true,
+		"per_round_dump" : true
 	},
 	"MSTGStats": {
     	"dump" : true
