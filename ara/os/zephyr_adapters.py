@@ -235,7 +235,8 @@ class ThreadStateAdapter(enum.IntFlag):
             ThreadStateAdapter._THREAD_DUMMY: TaskStatus.terminated,
             ThreadStateAdapter._THREAD_PENDING: TaskStatus.running,
             ThreadStateAdapter._THREAD_PRESTART: TaskStatus.blocked,
-            ThreadStateAdapter._THREAD_DEAD: TaskStatus.terminated,
+            ThreadStateAdapter._THREAD_DEAD : TaskStatus.terminated,
+            ThreadStateAdapter._THREAD_DEAD | ThreadStateAdapter._THREAD_QUEUED: TaskStatus.terminated,
             ThreadStateAdapter._THREAD_SUSPENDED: TaskStatus.suspended,
             ThreadStateAdapter._THREAD_SUSPENDED | ThreadStateAdapter._THREAD_PRESTART: TaskStatus.suspended,
             ThreadStateAdapter._THREAD_ABORTING: TaskStatus.terminated,
@@ -963,7 +964,7 @@ class InterpreterContext:
             else:
                 logger.warning(f"Unknown state returned abSSTState: {abSSTState}")
                 threads_map[t.ptr].status = TaskStatus.blocked
-                #raise RuntimeError("Unknown state returned")
+                raise RuntimeError("Unknown state returned")
 
             threads_map[t.ptr].thread_state = ThreadStateAdapter(t.base.thread_state)
             threads_map[t.ptr].preempt = int(t.base.preempt)

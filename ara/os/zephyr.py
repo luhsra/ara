@@ -914,7 +914,7 @@ class Zephyr(OSBase):
 
         if len(kernel.ready_q) <= 0:
             logger.warning(f"no thread in ready list")
-            return
+            #return
         # new_vertex = kernel.ready_q[0]
 
         if kernel.cache is None:
