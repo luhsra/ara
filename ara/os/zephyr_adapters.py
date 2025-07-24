@@ -947,7 +947,7 @@ class InterpreterContext:
         # TODO: block rescheduling in ISR unless ISR has higher priority
         from .zephyr import ISR
         if isinstance(cache_obj, ISR): # is the kernel in a ISR? / or check .nested != 0
-            pass # do not unschedule ISR
+            logger.info(f"Reschedule in ISR {cache_obj}")
         elif _kernel.ready_q.cache.ptr in self.kobj_maps[zephyr.k_thread]:
             kernel.cache = self.kobj_maps[zephyr.k_thread][_kernel.ready_q.cache.ptr].v
         else:

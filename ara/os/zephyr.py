@@ -1049,7 +1049,7 @@ class Zephyr(OSBase):
             # ISR could change the ready queue, but for cooperative it should resume the interrupted thread
             new_vertex = kernel.ready_q[0] # probably better to store this information in the ISR context instead of guessing here
             new_obj = cpu.analysis_context.interrupted_thread
-            if new_obj:
+            if new_obj and new_obj.priority < 0: # if a cooperative thread was interrupted
                 new_vertex = state.instances.get_node(new_obj)
             new_obj = state.instances.vp.obj[new_vertex]
             old_ctx: za.ISRContext = state.cur_context(cpu_id)
