@@ -848,11 +848,6 @@ class Zephyr(OSBase):
     def is_interaction(ty) -> bool:
         return ty in [ZephyrEdgeType.interaction, ZephyrEdgeType.create, 0]
 
-    #@staticmethod
-    #def handle_exit(graph: Graph, state: OSState, cpu_id: int):
-    #    # we do not handle Interrupts in a special way currently
-    #    return []
-
     @staticmethod
     def syscall_in_category(syscall, categories):
         """Checks wether a syscall interpreter belongs to the given category"""
@@ -1036,8 +1031,6 @@ class Zephyr(OSBase):
         # if kernel.cache != Zephyr.idle_threads[cpu_id]:
         #     new_state = state.copy()
         #     return [new_state]
-
-        cpu_id = 0 # TODO assume this is done on CPU 0
 
         cpu = state.cpus[cpu_id]
         v = cpu.control_instance
@@ -2668,12 +2661,10 @@ class Zephyr(OSBase):
             kernel = Zephyr.get_kernel_context(state)
             state = root_state.copy()
 
-            interrupted_thread = state.cur_control_inst(0) # TODO : should use target CPU of interrupt
+            interrupted_thread = state.cur_control_inst(cpu_id)
 
             isr_fn_name = irq.isr_handler.entry_name
             if isr_fn_name != None: # handle application ISR
-                # TODO: assuming CPUs are always targeting CPU 0
-                cpu_id = 0
                 cpu = state.cpus[cpu_id]
 
                 if state.context[irq].dyn_prio[0] < 0:

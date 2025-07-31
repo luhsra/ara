@@ -790,9 +790,9 @@ class MultiSSE(StatsStep):
         affected_cores = self._mstg.cross_core_map[cross_state]
         current_core = mstg.vp.cpu_id[cross_state]
 
-        #if (affected_cores[0] < 0):
-        #    self._log.warning(f"cross_core_map incorrect, affected_cores = {affected_cores}, assuming 0")
-        affected_cores = [0]
+        if (affected_cores[0] < 0):
+            self._log.error(f"cross_core_map incorrect, affected_cores = {affected_cores}, assuming 0")
+            affected_cores = [0]
 
         time = None
         if self.with_times.get():

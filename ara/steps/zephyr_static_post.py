@@ -228,7 +228,7 @@ class ZephyrStaticPost(Step):
             flags=0,
         )
 
-        #ZephyrStaticPost.create_static_instance(self._graph.instances, "ISR", isr_sys_clock_announce, "ISR_sys_clock_announce", False)
+        ZephyrStaticPost.create_static_instance(self._graph.instances, "ISR", isr_sys_clock_announce, "ISR_sys_clock_announce", False)
 
         irq_sys_clock_announce = ZephyrIRQ(
             cpu_id=0,
@@ -241,7 +241,7 @@ class ZephyrStaticPost(Step):
             active=False, # TODO: reenable
         )
 
-        #ZephyrStaticPost.create_static_instance(self._graph.instances, "IRQ", irq_sys_clock_announce, "IRQ_sys_clock_announce", False)
+        ZephyrStaticPost.create_static_instance(self._graph.instances, "IRQ", irq_sys_clock_announce, "IRQ_sys_clock_announce", False)
 
 
         if 'CONFIG_TIMESLICING' in Zephyr.config:
@@ -259,4 +259,4 @@ class ZephyrStaticPost(Step):
                 active=False,
             )
 
-            #ZephyrStaticPost.create_static_instance(self._graph.instances, "IRQ", irq_z_time_slice, "IRQ_z_time_slicing", False)
+            ZephyrStaticPost.create_static_instance(self._graph.instances, "IRQ", irq_z_time_slice, "IRQ_z_time_slicing", False)

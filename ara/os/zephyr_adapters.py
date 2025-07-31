@@ -839,7 +839,7 @@ class InterpreterContext:
 
         proxy.get(_kernel)
         cpu = state.cpus[cpu_id]
-        #_kernel.cpus[cpu_id].nested = cpu.analysis_context.nested # restore ISR lock TODO why is it -1?
+        _kernel.cpus[cpu_id].nested = cpu.analysis_context.nested # restore ISR lock
         proxy.put(_kernel)
         proxy.get(_kernel)
 

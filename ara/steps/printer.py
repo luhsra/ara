@@ -10,7 +10,7 @@
 """Container for Printer."""
 from ara.graph import (ABBType, CFType, CFGView, MSTType, StateType,
                        single_check, vertex_types)
-from ara.os.os_base import ExecState, IRQCPU
+from ara.os.os_base import ExecState, IRQCPU, IRQ
 
 from .option import Option, String, Choice, Bool
 from .step import Step
@@ -483,7 +483,10 @@ def sp_mstg_to_dot(mstg, cfg, label="SyncPoints MSTG"):
         entry_lbl = "en: " + _prettify_abbs(entry_abbs)
         label = f"c{core}, s{int(sys_state)}"
         if irq >= 0:
-            irq_name = "TEST" #mstg.vp.state[sys_state].instances.vp.obj[irq].name
+            irq_name = "None"
+            for _, i in mstg.vp.state[sys_state].instances.get(IRQ):
+                if i.id == irq:
+                    irq_name = i.name
             label += " (\u26A1" + f"{irq_name})"
         else:
             sys_name = mstg.get_syscall_name(sys_state)
