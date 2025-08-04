@@ -445,7 +445,9 @@ class Zephyr(OSBase):
         local_contexts = []
 
         for inst, ctx in context.items():
-            if not hasattr(inst, "cpu_id"):  # globals required for singlecore analysis too
+            if cpu_id != 0 and isinstance(inst, ZephyrKernel): # FIXME: ignore ready q from IRQCPUS
+                pass
+            elif not hasattr(inst, "cpu_id"):  # globals required for singlecore analysis too
                 local_contexts.append((inst, ctx))
             if isinstance(inst, ZephyrIRQ):
                 # related IRQCPUs for this local context (required for irq enable/disable)
@@ -461,7 +463,7 @@ class Zephyr(OSBase):
         contexts = []
 
         for inst, ctx in context.items():
-            if not hasattr(inst, "cpu_id"):
+            if not hasattr(inst, "cpu_id") and not isinstance(inst, ZephyrKernel):
                 contexts.append((inst, ctx))
 
         return dict(contexts)

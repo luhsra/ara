@@ -25,7 +25,9 @@ import os.path
 
 from itertools import chain
 
-from ..os.zephyr import Thread as ZephyrThread # TODO remove this...
+# TODO remove this...
+from ..os.zephyr import Thread as ZephyrThread
+from ..os.zephyr import ZephyrIRQ
 
 _sysshort = {
     "AUTOSAR_GetSpinlock": "GL",
@@ -63,7 +65,7 @@ def with_color(value, color, min=0.0, max=1.0):
 from ara.os.zephyr import Zephyr
 from ara.os.autosar import AUTOSAR
 
-def _sstg_state_as_dot(sstg, state_vert, os=AUTOSAR):
+def _sstg_state_as_dot(sstg, state_vert, OS=AUTOSAR):
     attrs = {"fontsize": 14}
     size = 12
 
@@ -73,18 +75,18 @@ def _sstg_state_as_dot(sstg, state_vert, os=AUTOSAR):
     cpu = obj.cpus.one()
     thread_info = []
 
-    if os == Zephyr:
+    kernel = None
+    if OS == Zephyr:
         kernel_obj = obj.instances.vp.obj[Zephyr.kernel]
-        kernel = obj.context[kernel_obj]
-    else:
-        kernel = None
+        if kernel_obj in obj.context:
+            kernel = obj.context[kernel_obj]
 
     if cpu.control_instance:
         instance = obj.instances.vp.label[obj.instances.vertex(cpu.control_instance)]
         #is_exit = cfg.vp.is_exit[cpu.abb]
         thread = obj.cur_control_inst(cpu.id)
 
-        if os == Zephyr and hasattr(thread, 'name'):
+        if OS == Zephyr and hasattr(thread, 'name'):
             thread_list = [(v, obj) for v, obj in obj.instances.get(ZephyrThread)]
             thread_names = list(map(lambda x: x[1].name, thread_list))
             thread_count = len(thread_list)
@@ -96,15 +98,16 @@ def _sstg_state_as_dot(sstg, state_vert, os=AUTOSAR):
                 idstr = f"{str(v)}"
             thread_info.append(("thread", with_color(thread.name, thread_idx, -1, thread_count) + " " + idstr))
 
-            context = obj.context[thread]
-            thread_info.append(("preempt", context.preempt))
-            thread_info.append(("thread_state", bin(context.thread_state)))
-            vertices = [str(obj.instances.vertex_index[v]) for v in context.join_queue]
-            timeouts = [str(obj.instances.vertex_index[to.v]) for to in kernel.timeout_list]
-            if vertices:
-                thread_info.append(("join_queue", ", ".join(vertices)))
-            if timeouts:
-                thread_info.append(("timeout_list", ", ".join(timeouts)))
+            if thread in obj.context:
+                context = obj.context[thread]
+                thread_info.append(("preempt", context.preempt))
+                thread_info.append(("thread_state", bin(context.thread_state)))
+                vertices = [str(obj.instances.vertex_index[v]) for v in context.join_queue]
+                timeouts = [str(obj.instances.vertex_index[to.v]) for to in kernel.timeout_list]
+                if vertices:
+                    thread_info.append(("join_queue", ", ".join(vertices)))
+                if timeouts:
+                    thread_info.append(("timeout_list", ", ".join(timeouts)))
 
     else:
         instance = "Idle"
@@ -159,12 +162,12 @@ def _sstg_state_as_dot(sstg, state_vert, os=AUTOSAR):
     return attrs
 
 
-def sstg_to_dot(sstg, label="SSTG", reduced=False, os=AUTOSAR):
+def sstg_to_dot(sstg, label="SSTG", reduced=False, OS=AUTOSAR):
     dot_graph = pydot.Dot(graph_type="digraph", label=label)
 
     for state_vert in sstg.vertices():
         attrs = _sstg_state_as_dot(
-            sstg, state_vert, os
+            sstg, state_vert, OS
         )
         dot_state = pydot.Node(str(state_vert), **attrs)
         dot_graph.add_node(dot_state)
@@ -346,7 +349,7 @@ def reduced_mstg_to_dot(mstg, cfg, label="MSTG"):
     return dot_graph
 
 
-def mstg_to_dot(mstg, label="MSTG"):
+def mstg_to_dot(mstg, label="MSTG", OS=AUTOSAR):
     def _to_str(v):
         return str(int(v))
 
@@ -394,7 +397,7 @@ def mstg_to_dot(mstg, label="MSTG"):
             dot_graph.add_subgraph(dot_m)
 
             for state in m2s.vertex(metastate).out_neighbors():
-                attrs = _sstg_state_as_dot(mstg, state)
+                attrs = _sstg_state_as_dot(mstg, state, OS)
                 dot_state = pydot.Node(_to_str(state), **attrs)
                 dot_m.add_node(dot_state)
 
@@ -780,19 +783,20 @@ class Printer(Step):
 
     def print_sstg(self, reduced=False):
         name = self._print_init()
-        os = self._graph.os
+        OS = self._graph.os
 
         if reduced:
             sstg = self._graph.reduced_sstg
         else:
             sstg = self._graph.sstg
 
-        dot_graph = sstg_to_dot(sstg, name, reduced, os)
+        dot_graph = sstg_to_dot(sstg, name, reduced, OS)
         self._write_dot(dot_graph)
 
     def print_mstg(self):
+        OS = self._graph.os
         name = self._print_init()
-        dot_graph = mstg_to_dot(self._graph.mstg, name)
+        dot_graph = mstg_to_dot(self._graph.mstg, name, OS)
         self._write_dot(dot_graph)
 
     def print_reduced_mstg(self):
