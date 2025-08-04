@@ -2669,8 +2669,8 @@ class Zephyr(OSBase):
             if isr_fn_name != None: # handle application ISR
                 cpu = state.cpus[cpu_id]
 
-                if state.context[irq].dyn_prio[0] < 0:
-                    logger.info(f"{irq.name} not ready (prio: {state.context[irq].dyn_prio})")
+                if state.context[irq].dyn_prio[0] < 0 or state.context[irq].status == TaskStatus.blocked:
+                    logger.info(f"{irq.name} not ready (prio: {state.context[irq].dyn_prio} status {state.context[irq].status})")
                     return None
                 else:
                     logger.info(f"{irq.name} running (once!)")
