@@ -432,6 +432,9 @@ class Zephyr(OSBase):
     """ idle threads map: cpu_id -> vertex of thread """
     idle_threads = {}
 
+    """ whether IRQs shall be triggered only once and then disabled automatically """
+    analyze_irqs_once = False
+
     @staticmethod
     def get_special_steps():
         return ["ZephyrStaticPost"] # "LoadKernelLL" not required for INA/SIA, enable via config
@@ -2546,6 +2549,7 @@ class Zephyr(OSBase):
         cfg = graph.cfg
 
         v, obj = Zephyr._find_irq_by_id(state, args.irq)
+        state.context[obj].status = TaskStatus.running
         state.context[obj].dyn_prio = [1]
 
         return state
@@ -2654,9 +2658,10 @@ class Zephyr(OSBase):
                     logger.info(f"{irq.name} not ready (prio: {state.context[irq].dyn_prio} status {state.context[irq].status})")
                     return None
                 else:
-                    logger.info(f"{irq.name} running (once!)")
-                    state.context[irq].status = TaskStatus.blocked
-                    state.context[irq].dyn_prio = [-1]
+                    logger.info(f"{irq.name} running")
+                    if Zephyr.analyze_irqs_once:
+                        state.context[irq].status = TaskStatus.blocked
+                        state.context[irq].dyn_prio = [-1]
 
                 new_vertex, new_obj = Zephyr._find_isr_by_entry_name(state, isr_fn_name)
                 old_ctx = state.cur_context(cpu_id)
