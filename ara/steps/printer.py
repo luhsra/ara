@@ -98,7 +98,7 @@ def _sstg_state_as_dot(sstg, state_vert, OS=AUTOSAR):
                 idstr = f"{str(v)}"
             thread_info.append(("thread", with_color(thread.name, thread_idx, -1, thread_count) + " " + idstr))
 
-            if thread in obj.context:
+            if thread in obj.context and not isinstance(thread, ZephyrIRQ):
                 context = obj.context[thread]
                 thread_info.append(("preempt", context.preempt))
                 thread_info.append(("thread_state", bin(context.thread_state)))

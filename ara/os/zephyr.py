@@ -442,31 +442,12 @@ class Zephyr(OSBase):
 
     @staticmethod
     def get_cpu_local_contexts(context, cpu_id, instances):
-        local_contexts = []
-
-        for inst, ctx in context.items():
-            if cpu_id != 0 and isinstance(inst, ZephyrKernel): # FIXME: ignore ready q from IRQCPUS
-                pass
-            elif not hasattr(inst, "cpu_id"):  # globals required for singlecore analysis too
-                local_contexts.append((inst, ctx))
-            if isinstance(inst, ZephyrIRQ):
-                # related IRQCPUs for this local context (required for irq enable/disable)
-                if inst.isr_handler.cpu_id == cpu_id:
-                    local_contexts.append((inst, ctx))
-            else:
-                if getattr(inst, "cpu_id", None) == cpu_id:
-                    local_contexts.append((inst, ctx))
-        return dict(local_contexts)
+        # for now we are single core only, whole context is in here, also for IRQCPUS that all target CPU 0
+        return context
 
     @staticmethod
     def get_global_contexts(context, instances):
-        contexts = []
-
-        for inst, ctx in context.items():
-            if not hasattr(inst, "cpu_id") and not isinstance(inst, ZephyrKernel):
-                contexts.append((inst, ctx))
-
-        return dict(contexts)
+        return {}
 
     @staticmethod
     def get_unique_id(ident: str) -> str:
