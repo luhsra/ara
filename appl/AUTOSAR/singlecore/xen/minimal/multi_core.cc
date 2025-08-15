@@ -3,6 +3,8 @@
 DeclareTask(A);
 DeclareTask(B);
 
+extern "C" void ara_timing_info(int a, int b);
+
 int main() {
 	StatusType rv;
 	switch (GetCoreID()) {
@@ -15,12 +17,14 @@ int main() {
 
 TASK(A) {
 	kout << "Hello World Core 1"<< endl;
+	ara_timing_info(5, 10);
 
 	TerminateTask();
 }
 
 TASK(B) {
 	kout << "Hello World Core 2"<< endl;
+	ara_timing_info(20, 100);
 
 	TerminateTask();
 }
