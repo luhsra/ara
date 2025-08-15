@@ -113,8 +113,12 @@
 
 // For XEN hypercalls
 #define test_send_event_channel(remote_dom, port) XEN_test_send_event_channel(remote_dom, port)
-#define test_notify_evtchn(remote_dom, port) XEN_test_notify_evtchn(remote_dom, port)
 #define test_receive_event_channel(remote_dom, port, cb) XEN_test_receive_event_channel(remote_dom, port, cb)
+#define test_notify_evtchn(remote_dom, port) XEN_test_notify_evtchn(remote_dom, port)
+
+#define evtchn_alloc_unbound(dom, remote_dom) XEN_evtchn_alloc_unbound(dom, remote_dom)
+#define evtchn_bind_interdomain(remote_dom, remote_port, cb) XEN_evtchn_bind_interdomain(remote_dom, remote_port, cb)
+#define evtchn_send(port) XEN_evtchn_send(port)
 
 #define OS_CORE_ID_0 0
 #define OS_CORE_ID_1 1
