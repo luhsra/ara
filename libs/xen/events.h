@@ -74,16 +74,61 @@ extern "C" {
 		return;
 	}
 	
+	void test_receive_event_channel(domid_t remote_dom, evtchn_port_t port, evtchn_cb_t cb) {
+		return;
+	}
+
 	void test_notify_evtchn(domid_t remote_dom, evtchn_port_t port) {
 		return;
 	}
+
+#ifdef __cplusplus
+}
+#endif
+
+// V2 hypercall wrapper
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+	// typedef uint32_t uint32_t;
 	
-	void test_receive_event_channel(domid_t remote_dom, evtchn_port_t port, evtchn_cb_t cb) {
+    static int first_port = 10;
+
+	evtchn_port_t evtchn_alloc_unbound(domid_t dom, domid_t remote_dom) {
+		/**
+		 * Create a new event channel 
+		 * @param domid_t dom: own domain
+		 * @param domid_t remote_dom: target domain
+		 * @return local port that will be connected
+		 */
+		evtchn_port_t port = first_port++;
+		return port;
+	}
+
+	evtchn_port_t evtchn_bind_interdomain(domid_t remote_dom, evtchn_port_t remote_port, evtchn_cb_t cb) {
+		/**
+		 * Attatch to an existing event channel
+		 * @param domid_t remote_dom: remote domain
+		 * @param evtchn_port_t remote_port: remote port on remote domain
+		 * @param evtchn_cb_t cb: callback routine that is executed on event
+		 * @return local port that will be connected
+		 */
+		evtchn_port_t local_port = first_port++;
+		return local_port;
+	}
+
+	void evtchn_send(evtchn_port_t port) {
+		/**
+		 * Notifiy other side 
+		 * @param evtchn_port_t port: local port
+		 */
 		return;
 	}
 #ifdef __cplusplus
 }
 #endif
+
 
 /*
  * Bind user-defined handler to specified event-channel
