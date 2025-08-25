@@ -67,9 +67,10 @@ typedef uint32_t ResourceType;
 typedef uint32_t SpinlockType;
 typedef uint32_t CoreIdType;
 
-typedef uint16_t RemoteDomainType;
-typedef uint32_t PortType;
-typedef void * EventChannelCallbackType;
+// Not sure why it works without this
+// typedef uint32_t RemoteDomainType;
+// typedef uint32_t PortType;
+// typedef void * EventChannelCallbackType;
 
 typedef unsigned long EventMaskType;
 typedef unsigned long* EventMaskRefType;

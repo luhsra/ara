@@ -10,65 +10,94 @@
 
 #include "event_channel.h"
 
-typedef void * evtchn_cb_t;
-
-struct event_channel_handle {
-	evtchn_cb_t cb;
-	// void *priv;
-};
-typedef struct event_channel_handle evtchn_handle_t;
-
 /*
- * Following functions just wrap Xen hypercalls, detailed description
- * of parameters and return values are located in include/xen/public/event_channel.h
+ * Since current OSs do not implement Xen, this wrapper is used for analysis. Applications import this file
+ * and can use the provided syscalls, and the analysis is able to simulate it. For a HW-deployment, the wrapper 
+ * syscalls would need to be included in the respective OS (for example Autosar).
  */
-int evtchn_status(evtchn_status_t *status);
-int evtchn_close(evtchn_port_t port);
-int evtchn_set_priority(evtchn_port_t port, unsigned int priority);
-	void notify_evtchn(evtchn_port_t port)
-{
-	// TODO
-	return;
-}
-
-/*
- * Allocate event-channel between caller and remote domain
- *
- * @param remote_dom - remote domain domid
- * @return - local event channel port on success, negative on error
- */
-int alloc_unbound_event_channel(domid_t remote_dom);
-
-#ifdef CONFIG_XEN_DOM0
-/*
- * Allocate event-channel between remote domains. Can be used only from Dom0.
- *
- * @param dom - first remote domain domid (may be DOMID_SELF)
- * @param remote_dom - second remote domain domid
- * @return - local event channel port on success, negative on error
- */
-int alloc_unbound_event_channel_dom0(domid_t dom, domid_t remote_dom);
-#endif /* CONFIG_XEN_DOM0 */
-
-/*
- * Allocate local event channel, binded to remote port and attach specified callback
- * to it
- *
- * @param remote_dom - remote domain domid
- * @param remote_port - remote domain event channel port number
- * @param cb - callback, attached to locat port
- * @param data - private data, that will be passed to cb
- * @return - local event channel port on success, negative on error
- */
-int bind_interdomain_event_channel(domid_t remote_dom, evtchn_port_t remote_port,
-		evtchn_cb_t cb, void *data)
-{
-	return 10; //TODO
-}
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+	// Function that is triggered on the event. An OS-specific implementation might add a instead add an interrupt
+	typedef void * evtchn_cb_t;
+
+	// This wrapper uses different id than the ports from Xen, to allow multiple connections/channels between two guests.
+	// A real OS implementation would need to map this new ports towards the ports it receives from the hypercalls
+	typedef int channel_t;
+
+
+	void wrap_evtchn_alloc_unbound(domid_t remote_dom, channel_t channel, evtchn_cb_t cb) {
+		/**
+		 * Create a new event channel
+		 * @param domid_t remote_dom: target domain
+		 * @param channel_t channel: choosen channel, needs to be the same for sender/receiver
+		 * @param evtchn_cb_t cb: callback routine that is executed when signal is received
+		 * @return a real syscall would return its status code here
+		 */
+
+		// TODO - only proof of concept
+		/*
+		struct evtchn_alloc_unbound event; 
+		event.dom = GET_OWN_DOM_ID;
+		event.remote_dom = remote_dom;
+
+		evtchn_port_t port;
+		if (port = HYPERVISOR_event_channel_op(EVTCHNOP_alloc_unbound, &event) != 0){
+			// error handling
+		}
+		OS-SPECIFIC_map(channel, port);
+		xen_store_write(port);
+		*/
+	}
+
+	void wrap_evtchn_bind_interdomain(domid_t remote_dom, channel_t channel, evtchn_cb_t cb) {
+		/**
+		 * Bind to a new event channel
+		 * @param domid_t remote_dom: target domain
+		 * @param channel_t channel: choosen channel, needs to be the same for sender/receiver
+		 * @param evtchn_cb_t cb: callback routine that is executed when signal is received
+		 * @return a real syscall would return its status code here
+		 */
+
+		// TODO - only proof of concept
+		/*
+		evtchn_port_t remote_port = xen_store_read(port);
+
+		struct evtchn_bind_interdomain event; 
+		event.remote_dom = remote_dom;
+		event.remote_port = remote_port;
+
+		evtchn_port_t local_port;
+		if (local_port = HYPERVISOR_event_channel_op(EVTCHNOP_bind_interdomain, &event) != 0){
+			// error handling
+		}
+		OS-SPECIFIC_map(channel, local_port);
+		*/
+	}
+
+	void wrap_evtchn_send(channel_t channel) {
+		/**
+		 * Send event on an existing channel
+		 * @param channel_t channel: choosen channel
+		 * @return a real syscall would return its status code here
+		 */
+
+		// TODO - only proof of concept
+		/*
+		evtchn_port_t port = OS-SPECIFIC_retrieve(channel);
+
+		struct evtchn_send event;
+		event.port = port;
+
+		if (HYPERVISOR_event_channel_op(evtchn_send, &event) != 0){
+			// error handling
+		}
+		*/
+	}
+
+	// Old version of hypercalls wrapper
 
 	void test_send_event_channel(domid_t remote_dom, evtchn_port_t port) {
 		return;
@@ -86,49 +115,46 @@ extern "C" {
 }
 #endif
 
-// V2 hypercall wrapper
-#ifdef __cplusplus
-extern "C" {
-#endif
 
-	// typedef uint32_t uint32_t;
-	
-    static int first_port = 10;
+// -----------------------------------------------------------------------------------
 
-	evtchn_port_t evtchn_alloc_unbound(domid_t dom, domid_t remote_dom) {
-		/**
-		 * Create a new event channel 
-		 * @param domid_t dom: own domain
-		 * @param domid_t remote_dom: target domain
-		 * @return local port that will be connected
-		 */
-		evtchn_port_t port = first_port++;
-		return port;
-	}
-
-	evtchn_port_t evtchn_bind_interdomain(domid_t remote_dom, evtchn_port_t remote_port, evtchn_cb_t cb) {
-		/**
-		 * Attatch to an existing event channel
-		 * @param domid_t remote_dom: remote domain
-		 * @param evtchn_port_t remote_port: remote port on remote domain
-		 * @param evtchn_cb_t cb: callback routine that is executed on event
-		 * @return local port that will be connected
-		 */
-		evtchn_port_t local_port = first_port++;
-		return local_port;
-	}
-
-	void evtchn_send(evtchn_port_t port) {
-		/**
-		 * Notifiy other side 
-		 * @param evtchn_port_t port: local port
-		 */
-		return;
-	}
-#ifdef __cplusplus
+/*
+ * Following functions just wrap Xen hypercalls, detailed description
+ * of parameters and return values are located in include/xen/public/event_channel.h
+ */
+int evtchn_status(evtchn_status_t *status);
+int evtchn_close(evtchn_port_t port);
+int evtchn_set_priority(evtchn_port_t port, unsigned int priority);
+void notify_evtchn(evtchn_port_t port)
+{
+	// TODO
+	return;
 }
-#endif
 
+/*
+ * Allocate event-channel between caller and remote domain
+ *
+ * @param remote_dom - remote domain domid
+ * @return - local event channel port on success, negative on error
+ */
+int alloc_unbound_event_channel(domid_t remote_dom);
+
+
+/*
+ * Allocate local event channel, binded to remote port and attach specified callback
+ * to it
+ *
+ * @param remote_dom - remote domain domid
+ * @param remote_port - remote domain event channel port number
+ * @param cb - callback, attached to locat port
+ * @param data - private data, that will be passed to cb
+ * @return - local event channel port on success, negative on error
+ */
+int bind_interdomain_event_channel(domid_t remote_dom, evtchn_port_t remote_port,
+		evtchn_cb_t cb, void *data)
+{
+	return 10; //TODO
+}
 
 /*
  * Bind user-defined handler to specified event-channel

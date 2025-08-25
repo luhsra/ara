@@ -29,6 +29,23 @@
 #ifndef __XEN_PUBLIC_EVENT_CHANNEL_H__
 #define __XEN_PUBLIC_EVENT_CHANNEL_H__
 
+
+/*
+ * Hypercall definition from Xen Docs, shorted/old Version
+ * https://xenbits.xen.org/docs/unstable/hypercall/arm/include,public,event_channel.h.html
+ * A guest's OS uses this structs to perform hypercalls in their system call implementation
+ */
+/*
+	// Example for how to use Hypercall
+	struct evtchn_send event;
+	event.port = 42;
+
+	if (HYPERVISOR_event_channel_op(EVTCHNOP_send, &event) != 0){
+		// error handling
+	}
+*/
+
+
 //#include "xen.h"
 typedef uint16_t domid_t;
 
