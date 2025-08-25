@@ -355,8 +355,8 @@ class OSState:
         self.cfg_list = cfg_list
         self.instances_list = instances_list
 
-    # helper function used in interpret
     def get_syscall_name(self, cpu_id: int) -> str:
+        """Helper function for current abb on cpu_id"""
         abb = self.cpus[cpu_id].abb
         syscall = self.cfg.get_syscall_name(abb)
         assert syscall, f"Tried to get syscall name of a state that is not in a syscall, cpud_id={cpu_id}, state={self}"
