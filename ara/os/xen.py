@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from dataclasses import dataclass
+from typing import Any
 from graph_tool import Graph
 from ara.util import get_logger
 
@@ -33,6 +34,7 @@ from ara.steps.multisse_helper.common import CrossExecState, get_single_core_sta
 logger = get_logger("XEN")
 
 class XEN(OSBase):
+    """OS Model for Xen Hypervisor"""
     
     # Number of guest systems
     system_count: int = 0
@@ -47,10 +49,12 @@ class XEN(OSBase):
     # Graph datastructure of guest
     graph_list: list[Graph] = []
     
+    # ------------------- From OSBase --------------------
+
     @staticmethod
     def get_initial_state(cfg: CFG, instances: InstanceGraph) -> OSState:
         """Creates the inital state over all guests, parameters are not used, instead the class 
-        atributes cfg_list/instances-list"""
+         attributes cfg_list/instances-list."""
 
         def merge_states(states: list[OSState]) -> OSState:
             """Combines multiple state into one, changes ids to ascending numbers"""
@@ -83,12 +87,94 @@ class XEN(OSBase):
                                                             instances=XEN.instances_list[i]))
         return merge_states(states)
     
+    @staticmethod
+    def get_cpu_local_contexts(context: dict, cpu_id: int, instances: InstanceGraph) -> dict[Any, Any]:
+        """Since every part of the context is already numbered correctly, it is
+         extracted from each guest OS."""
+        return XEN.system_types[cpu_id].get_cpu_local_contexts(context, cpu_id, instances)
+
+    @staticmethod
+    def get_global_contexts(contexts, instances) -> dict[Any, Any]:
+        """Get all contexts that affct multiple CPUs."""
+        
+        global_contexsts = []
+        for inst, ctx in contexts.items():
+            if not hasattr(inst, "cpu_id"):
+                global_contexsts.append((inst, ctx))
+
+        # TODO: might need global contexts from guest OSs, for this use OSState as parameter and not context
+        return dict(global_contexsts)
+
+    @staticmethod
+    def handle_irq(graph, state, cpu_id, irq):
+        """IRQs can be passed to the guest OS."""
+        return XEN.system_types[cpu_id].handle_irq(graph, state, cpu_id, irq)
+
+    @staticmethod
+    def handle_exit(graph, state, cpu_id):
+        """Can be paresed by guest OS."""
+        return XEN.system_types[cpu_id].handle_exit(graph, state, cpu_id)
+
+    @staticmethod
+    def interpret(graph: Graph, state: OSState, cpu_id, categories=SyscallCategory.every) -> OSState:
+        """Parse a system call and direct it to the correct guest OS, returns follow up state. 
+         Possible this could also return multiple States with a wierd OS."""
+
+        syscall = state.get_syscall_name(cpu_id)
+        # logger.info(f"Interpret: cpu_id: {cpu_id} System count: {XEN.system_count} {XEN.graph_list}\nCurrent graph: {graph}")
+
+        # A Xen syscall is a hypercall
+        if XEN.is_syscall(syscall):
+            logger.info(f"\33[1;36mSyscall\033[0m: {syscall} on cpu/dom {cpu_id} {state}")
+
+            # Retrieve hypercall function
+            syscall_function = getattr(XEN, syscall)
+
+            # If another dom was added via an SP its graph might still be active, so change here
+            graph = XEN.graph_list[cpu_id]
+
+            # Execute hypercall
+            return syscall_function(graph, state, cpu_id)
+        else:
+            # Syscall from the guest OS are parsed there
+            return XEN.system_types[cpu_id].interpret(graph=XEN.graph_list[cpu_id], state=state, cpu_id=cpu_id, categories=categories)
+
+    @staticmethod
+    def schedule(state: OSState, cpus=None) -> None:
+        """Perform scheduling operating on a possible multicore/OS state, state is modifed in place.
+         Since the scheduling is only local, a multi-OS state is scheduled locally on each OS."""
+
+        if cpus is None:
+            cpus = [cpu.id for cpu in state.cpus]
+
+        if len(cpus) == 1:
+            # For one CPU find the right one and only schedule it
+            for idx, cfg in enumerate(XEN.cfg_list):
+                if cfg == state.cfg:
+                    logger.info(f"Scheduling on cpu: {idx}.")
+                    XEN.system_types[idx].schedule(state=state, cpus=cpus)
+                    break
+        else:
+            logger.info(f"Scheduling a xen multicore cpu with: {cpus} cores.")
+
+            sc_states = []
+            # Split multicore state into singlecore states
+            for _, state in get_single_core_states(multi_core_state=state, os=XEN).items():
+                sc_states.append(state)
+
+            # Schedule each state, works because sc_states contains linked/shallow copy of state
+            for idx, sc_state in enumerate(sc_states):
+                XEN.system_types[idx].schedule(state=sc_state, cpus=cpus)        
+    
+
+
+    # ------------------- Special Methods --------------------
 
     @staticmethod
     def add_interrupts(state: OSState) -> None:
         """The way fake interupt cores are added in the MultiSSE does not work for virtualized systems
-        The input state is modifed by adding any required interupt cores, byiterate over all systems and 
-        finding each local interrupts"""
+         The input state is modifed by adding any required interupt cores, byiterate over all systems and 
+         finding each local interrupts"""
         cpu_idx = max([x.id for x in state.cpus]) + 1
         for idx, instances in enumerate(XEN.instances_list):
             tmp_instances_list = []
@@ -121,128 +207,15 @@ class XEN(OSBase):
                 tmp_instances_list.append(XEN.instances_list[idx])
         XEN.instances_list += tmp_instances_list
 
-    # used by MultiSSE in _get_single_core_states, to split multicore into singlecore states 
-    @staticmethod
-    def state_copy_index(old_state: OSState, system_id: int) -> OSState:
-         
-        new_state = OSState(cpus=copy(old_state.cpus),
-                                instances=old_state.instances_list[system_id],
-                                cfg=old_state.cfg_list[system_id])
-        # new context for control instances
-        for inst, ctx in old_state.context.items():
-            new_state.context[inst] = copy(ctx)
-        return new_state
-
-
-    @staticmethod
-    def get_cpu_local_contexts(context: dict, cpu_id: int, instances: InstanceGraph) -> dict:
-        # since each system is single-core assume id=0
-        # here we have to translate back again that each system thinks it has cpu_id 0
-        # instances is already set to the right graph
-
-        new_context = XEN.system_types[cpu_id].get_cpu_local_contexts(context, cpu_id, instances)
-
-        return new_context
-
-
-    @staticmethod
-    def get_global_contexts(contexts, cpu_idinstances):
-        """Get all contexts that affct multiple CPUs."""
-        
-        local_contexts = []
-        for inst, ctx in contexts.items():
-
-            # weird case of locks for one core
-            # if isinstance(inst, Spinlock):
-            #     cpus = AUTOSAR.get_cpus_of_spinlock(inst, instances)
-            #     if len(cpus) == 1:
-            #         continue
-            if not hasattr(inst, "cpu_id"):
-                local_contexts.append((inst, ctx))
-        return dict(local_contexts)
-
-    @staticmethod
-    def handle_irq(graph, state, cpu_id, irq):
-        """Handle an (asynchronous) IRQ.
-
-        Arguments:
-        graph      -- the system graph
-        state      -- the current system state (see the State class)
-        cpu_id     -- the CPU where the system call occurs
-        irq        -- the IRQ number
-
-        Return:
-        The follow up state or None if the IRQ is invalid.
-        """
-        return XEN.system_types[cpu_id].handle_irq(graph, state, cpu_id, irq)
-
-    @staticmethod
-    def handle_exit(graph, state, cpu_id):
-        """Handle an irregular exit.
-
-        Some exits cannot be followed within the ICFG (most notably ISR exits).
-        Only the OS model can handle this.
-
-        Arguments:
-        graph      -- the system graph
-        state      -- the current system state (see the State class)
-        cpu_id     -- the CPU where the system call occurs
-
-        Return:
-        A list of follow up states.
-        """
-        return XEN.system_types[cpu_id].handle_exit(graph, state, cpu_id)
-
-    @staticmethod
-    def interpret(graph: Graph, state: OSState, cpu_id, categories=SyscallCategory.every) -> OSState:
-
-        # logger.info(f"Interpret: cpu_id: {cpu_id} System count: {XEN.system_count} {XEN.graph_list}\nCurrent graph: {graph}")
-        syscall = state.get_syscall_name(cpu_id)
-
-
-        if XEN.is_syscall(syscall):
-            logger.warning(f"\33[1;36mSyscall\033[0m: {syscall} on cpu/dom {cpu_id} {state}")
-            syscall_function = getattr(XEN, syscall)
-
-            # if another dom was added via an SP its graph might still be active, so change here
-            graph = XEN.graph_list[cpu_id]
-
-            # return state
-            return syscall_function(graph, state, cpu_id)
-        else:
-            return XEN.system_types[cpu_id].interpret(graph=XEN.graph_list[cpu_id], state=state, cpu_id=cpu_id, categories=categories)
-
-    @staticmethod
-    def schedule(state: OSState, cpus=None) -> None:
-
-        if cpus is None:
-            cpus = [cpu.id for cpu in state.cpus]
-
-        if len(cpus) == 1:
-            for idx, cfg in enumerate(XEN.cfg_list):
-                if cfg == state.cfg:
-                    logger.info(f"Scheduling on cpu: {idx}.")
-                    XEN.system_types[idx].schedule(state=state, cpus=cpus)
-                    break
-
-        else:
-            logger.info(f"Scheduling a xen multicore cpu with: {cpus} cores.")
-            states = []
-
-            # convert from dict with cpu_ids into list of states
-            for id, state in get_single_core_states(multi_core_state=state, os=XEN).items():
-                states.append(state)
-
-            for idx, sc_state in enumerate(states):
-                # schedule each state seperatly
-                XEN.system_types[idx].schedule(state=sc_state, cpus=cpus)        
-
     # @staticmethod
     # def find_system_id(state: OSState):
     #     """Unused helper function"""
     #     for idx, cfg in enumerate(XEN.cfg_list):
     #         if cfg == state.cfg:
     #             logger.info(f"Scheduling on cpu: {idx}.")
+
+
+
     # --------------------------- SYSCALLS ---------------------
 
     # Used for uniques ids
