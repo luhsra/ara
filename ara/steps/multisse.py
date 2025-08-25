@@ -44,7 +44,8 @@ from .multisse_helper.common import (
     CrossExecState,
     FakeEdge,
     find_cross_syscalls,
-    get_reachable_states
+    get_reachable_states,
+    get_single_core_states
 )
 from graph_tool import Vertex
 from .multisse_helper.constrained_sps import get_constrained_sps
@@ -362,26 +363,6 @@ class MultiSSE(StatsStep):
         self._log.debug(f"Add initial sync point {int(sp)}")
 
         return sp
-
-    def _get_single_core_states(self, multi_core_state):
-        single_core_states = {}
-        self._log.info(f"Splitting multicore state: {multi_core_state}")
-        for cpu in multi_core_state.cpus:
-            # restrict state to this cpu
-
-            # if system count is present it is a XEN state and needs a differnt copy
-            if multi_core_state.system_count:
-                state = XEN.state_copy_index(multi_core_state, cpu.id)
-            else:
-                state = multi_core_state.copy()
-            state.cpus = CPUList([cpu])
-            state.context = self._graph.os.get_cpu_local_contexts(
-                multi_core_state.context, cpu.id, state.instances)
-            single_core_states[cpu.id] = state
-
-        for k, v in single_core_states.items():
-            self._log.info(f"Found singlecore states: {k+1}/{len(single_core_states.items())}{v}")
-        return single_core_states
 
     def _get_common_metastate(self, meta_states):
         """Unify all given metastates into one and return it."""
@@ -1365,7 +1346,7 @@ class MultiSSE(StatsStep):
 
     def _calculate_new_metastates(self, sp):
         """Calculate new metastates from an existing sync point."""
-        states = self._get_single_core_states(self._mstg.g.vp.state[sp])
+        states = get_single_core_states(self._mstg.g.vp.state[sp], self._graph.os)
         mstg = self._mstg.g
 
         metastates = {}
