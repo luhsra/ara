@@ -6,6 +6,8 @@ extern "C" void ara_timing_info(int a, int b);
 DeclareTask(A);
 domid_t remote_dom = 1;
 evtchn_port_t port = 42;
+channel_t channel = 42;
+evtchn_cb_t cb = nullptr;
 
 int main(void) {
 	StartOS(0);
@@ -15,6 +17,7 @@ TASK(A) {
 	kout << "A"<< endl;
 	ara_timing_info(50, 50);
 	test_send_event_channel(remote_dom, port);
+	wrap_evtchn_alloc_unbound(remote_dom, channel, cb);
 
 	ara_timing_info(50, 50);
 	kout << "A2"<< endl;

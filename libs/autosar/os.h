@@ -111,14 +111,15 @@
 
 #define GetNumberOfActivatedCores() AUTOSAR_GetNumberOfActivatedCores()
 
-// For XEN hypercalls
+// Xen hypercalls
+#define wrap_evtchn_alloc_unbound(remote_dom, channel, cb) XEN_wrap_evtchn_alloc_unbound(remote_dom, channel, cb)
+#define wrap_evtchn_bind_interdomain(remote_dom, channel, cb) XEN_wrap_evtchn_bind_interdomain(remote_dom, channel, cb)
+#define wrap_evtchn_send(channel) XEN_wrap_evtchn_send(channel)
+
+// Old Xen hypercalls
 #define test_send_event_channel(remote_dom, port) XEN_test_send_event_channel(remote_dom, port)
 #define test_receive_event_channel(remote_dom, port, cb) XEN_test_receive_event_channel(remote_dom, port, cb)
 #define test_notify_evtchn(remote_dom, port) XEN_test_notify_evtchn(remote_dom, port)
-
-#define evtchn_alloc_unbound(dom, remote_dom) XEN_evtchn_alloc_unbound(dom, remote_dom)
-#define evtchn_bind_interdomain(remote_dom, remote_port, cb) XEN_evtchn_bind_interdomain(remote_dom, remote_port, cb)
-#define evtchn_send(port) XEN_evtchn_send(port)
 
 #define OS_CORE_ID_0 0
 #define OS_CORE_ID_1 1
@@ -354,10 +355,16 @@ extern void AUTOSAR_ResumeAllInterrupts();
 extern void AUTOSAR_SuspendOSInterrupts();
 extern void AUTOSAR_ResumeOSInterrupts();
 
-// for XEN hypercalls
-extern void XEN_test_send_event_channel(RemoteDomainType remote_dom, PortType port);
-extern void XEN_test_notify_evtchn(RemoteDomainType remote_dom, PortType port);
-extern void XEN_test_receive_event_channel(RemoteDomainType remote_dom, PortType port, EventChannelCallbackType cb);
+// Not sure why it works without this
+// Xen hypercalls
+// extern void XEN_wrap_evtchn_alloc_unbound(RemoteDomainType remote_dom, PortType channel, EventChannelCallbackType cb);
+// extern void XEN_wrap_evtchn_bind_interdomain(RemoteDomainType remote_dom, PortType channel, EventChannelCallbackType cb);
+// extern void XEN_wrap_evtchn_send(PortType channel);
+
+// Old Xen hypercalls
+// extern void XEN_test_send_event_channel(RemoteDomainType remote_dom, PortType port);
+// extern void XEN_test_notify_evtchn(RemoteDomainType remote_dom, PortType port);
+// extern void XEN_test_receive_event_channel(RemoteDomainType remote_dom, PortType port, EventChannelCallbackType cb);
 
 
 /******************************************************************************
