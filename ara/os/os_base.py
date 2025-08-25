@@ -297,7 +297,6 @@ class OSState:
     # key: some instance, value: mutable context
     context: dict = field(default_factory=dict, init=False)
 
-    current_index: int = None
     system_count: int = None
     cfg_list: list[CFG] = None
     instances_list: list[InstanceGraph] = None
@@ -332,6 +331,11 @@ class OSState:
         s += "\n"
         return s
 
+    def is_cross_os(self):
+        if self.system_count == None:
+            return False
+        return True
+
     # helper to view all context
     def context_dump(self):
         logger.warning("Printing context:\n")
@@ -346,6 +350,7 @@ class OSState:
 
     def hypersse_state(self, system_count: int, cfg_list: list[CFG], 
                        instances_list: list[InstanceGraph]) -> None:
+        """Adds the datastructures for a hypersse state"""
         self.system_count = system_count
         self.cfg_list = cfg_list
         self.instances_list = instances_list

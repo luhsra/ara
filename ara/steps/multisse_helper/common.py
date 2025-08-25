@@ -8,10 +8,18 @@ from dataclasses import dataclass
 from itertools import product
 from graph_tool import Vertex, GraphView
 from graph_tool.topology import label_out_component
+from ara.util import get_logger
 
-from ara.os.os_base import ExecState
+from ara.os.os_base import (
+    ExecState,
+    OSState,
+    OSBase,
+    CPUList
+)
 from ara.graph import StateType, MSTType
 
+# Class independend logger
+log = get_logger("MultiSSE")
 
 @dataclass(frozen=True, eq=True)
 class FakeEdge:
@@ -175,3 +183,25 @@ def find_irqs(mstg, type_map, state, entry):
                    for e in st2sy.vertex(irq_state).out_edges()]) - {-1}
         out.extend(product([irq_state], irq))
     return out
+
+def get_single_core_states(multi_core_state: OSState, os: OSBase) -> dict[int, OSState]:
+    """Splits a multicore state into singlecore states"""
+    single_core_states = {}
+    log.info(f"Splitting multicore state: {multi_core_state}")
+    for cpu in multi_core_state.cpus:
+        # restrict state to this cpu
+
+        state = multi_core_state.copy()
+        # if its a cross-os state from the HyperSSE pull right graphs
+        if multi_core_state.is_cross_os():
+            state.cfg = multi_core_state.cfg_list[cpu.id]
+            state.instances = multi_core_state.instances_list[cpu.id]
+
+        state.cpus = CPUList([cpu])
+        state.context = os.get_cpu_local_contexts(
+            multi_core_state.context, cpu.id, state.instances)
+        single_core_states[cpu.id] = state
+
+    for k, v in single_core_states.items():
+        log.info(f"Found singlecore states: {k+1}/{len(single_core_states.items())}{v}")
+    return single_core_states
