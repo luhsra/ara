@@ -23,7 +23,7 @@ class DumpInstances(Step):
     def run(self):
         dot = self.dot.get()
         if dot:
-            inst_file = f'{self.dump_prefix.get()}{dot}.dot'
+            inst_file = f'{self.dump_prefix.get().split(".")[0]}.{dot}.dot'
         else:
             inst_file = f'{self.dump_prefix.get()}.dot'
         self._step_manager.chain_step({"name": "Printer",

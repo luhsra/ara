@@ -9,10 +9,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 """Container for Printer."""
-from ara.graph import (ABBType, CFType, CFG, CFGView, HSTGraph, MSTGraph, HSTType, HyperStateType, MSTType, StateType,
+from ara.graph import (ABBType, CFType, CFG, CFGView, MSTGraph, MSTType, StateType,
                        single_check, vertex_types)
 from ara.os.os_base import ExecState, IRQCPU, IRQ
-from ara.os.xen import XEN
 
 from .option import Option, String, Choice, Bool
 from .step import Step
@@ -81,7 +80,7 @@ def with_color(value, color, min=0.0, max=1.0):
 from ara.os.zephyr import Zephyr
 from ara.os.autosar import AUTOSAR
 
-def _sstg_state_as_dot(sstg, state_vert, OS=AUTOSAR):
+def _sstg_state_as_dot(sstg, state_vert, with_times: bool = True, OS=AUTOSAR):
     attrs = {"fontsize": 14}
     size = 12
 
@@ -132,7 +131,7 @@ def _sstg_state_as_dot(sstg, state_vert, OS=AUTOSAR):
         if syscall != "":
             syscall = f" ({syscall})"
         abb = f"{cfg.vp.name[cpu.abb]} {syscall}"
-        if cfg.vp.wcet[cpu.abb] != 0:
+        if with_times:
             xcet = [("bcet/wcet", f"{cfg.vp.bcet[cpu.abb]}/{cfg.vp.wcet[cpu.abb]}")]
         else:
             xcet = []
@@ -365,7 +364,8 @@ def reduced_mstg_to_dot(mstg, cfg, label="MSTG"):
     return dot_graph
 
 # this can be called as Printer-Step via run and step settings, or directly
-def mstg_to_dot(mstg: MSTGraph, label: str = "MSTG", OS=AUTOSAR, add_legend: bool = False, domain_type: str = "CPU"):
+def mstg_to_dot(mstg: MSTGraph, label: str = "MSTG", OS=AUTOSAR, with_times: bool = True, 
+                add_legend: bool = False, domain_type: str = "CPU"):
     def _to_str(v):
         return str(int(v))
 
@@ -418,7 +418,7 @@ def mstg_to_dot(mstg: MSTGraph, label: str = "MSTG", OS=AUTOSAR, add_legend: boo
             dot_graph.add_subgraph(dot_m)
 
             for state in m2s.vertex(metastate).out_neighbors():
-                attrs = _sstg_state_as_dot(mstg, state, OS)
+                attrs = _sstg_state_as_dot(mstg, state, OS, with_times=with_times)
                 dot_state = pydot.Node(_to_str(state), **attrs)
                 dot_m.add_node(dot_state)
 
@@ -456,8 +456,9 @@ def mstg_to_dot(mstg: MSTGraph, label: str = "MSTG", OS=AUTOSAR, add_legend: boo
                          "style": "dashed"}
             if flow.ep.type[edge] == MSTType.follow_sync:
                 attrs = {"color": "darkgreen",
-                         "style": "dotted",
-                         "label": f"{flow.ep.bcet[edge]} - {flow.ep.wcet[edge]}"}
+                         "style": "dotted"}
+                if with_times:
+                    attrs["label"] = f"{flow.ep.bcet[edge]} - {flow.ep.wcet[edge]}"
             if flow.ep.type[edge] in [MSTType.sync_neighbor, MSTType.m2sy]:
                 continue
             src = _to_str(src)
@@ -488,104 +489,6 @@ def mstg_to_dot(mstg: MSTGraph, label: str = "MSTG", OS=AUTOSAR, add_legend: boo
 
 
         # TODO add syncpoints
-
-    return dot_graph
-
-
-def hstg_to_dot(hstg: HSTGraph, label: str ="HSTG") -> pydot.Dot:
-    def _to_str(v):
-        return str(int(v))
-
-    def _draw_sync(sync, edges):
-        cols = []
-        for e in edges:
-            if hstg.ep.type[e] == HSTType.st2sy:
-                cpu_id = hstg.ep.cpu_id[e]
-                cols.append(f"<TD PORT=\"c{cpu_id}\">CPU {cpu_id}</TD>")
-        if cols:
-            label = '<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">' \
-                    '<TR>{}</TR>' \
-                    '</TABLE>>'.format(''.join(sorted(cols)))
-            shape = "plaintext"
-        else:
-            label = "undiscovered"
-            shape = "box"
-        return pydot.Node(_to_str(sync), label=label,
-                          shape=shape,
-                          tooltip=_to_str(sync))
-
-    dot_graph = pydot.Dot(graph_type="digraph", label=label)
-
-    m2s = hstg.edge_type(HSTType.m2s)
-    m2sy = hstg.edge_type(HSTType.m2sy)
-
-    ms_done = set()
-    # draw initial sync node
-    for init in hstg.get_sync_points(exit=True).vertices():
-        init = hstg.vertex(init)
-        if init.in_degree() == 0:
-            dot_graph.add_node(_draw_sync(init, init.out_edges()))
-        # draw metastates
-        for metastate in sorted(m2sy.vertex(init).out_neighbors(),
-                                key=lambda x: hstg.vp.cpu_id[x]):
-            metastate = hstg.vertex(metastate)
-            if metastate in ms_done:
-                continue
-            ms_done.add(metastate)
-            m2s = hstg.edge_type(HSTType.m2s)
-            cpu_id = hstg.vp.cpu_id[metastate]
-
-            dot_m = pydot.Cluster(_to_str(metastate),
-                                  label=f"M{int(metastate)} (CPU {cpu_id})")
-            dot_graph.add_subgraph(dot_m)
-
-            for state in m2s.vertex(metastate).out_neighbors():
-                attrs = _sstg_state_as_dot(hstg, state)
-                dot_state = pydot.Node(_to_str(state), **attrs)
-                dot_m.add_node(dot_state)
-
-    for sync_point in hstg.get_sync_points(exit=False).vertices():
-        sync_point = hstg.vertex(sync_point)
-        sync_m = pydot.Cluster("Metasync" + _to_str(sync_point), label="")
-        dot_graph.add_subgraph(sync_m)
-        # draw entry_sync
-        sync_m.add_node(_draw_sync(sync_point, sync_point.in_edges()))
-        # draw exit_sync
-        for follow in sync_point.out_neighbors():
-            sync_m.add_node(_draw_sync(follow, follow.out_edges()))
-
-    flow = GraphView(hstg, efilt=hstg.ep.type.fa != HSTType.m2s)
-
-    def _sync_str(v, e):
-        return f"{_to_str(v)}:c{flow.ep.cpu_id[e]}"
-
-    for edge in flow.edges():
-        src = edge.source()
-        tgt = edge.target()
-        attrs = {"color": "black"}
-        if flow.ep.type[edge] == HSTType.st2sy:
-            if flow.vp.type[src] == HyperStateType.exit_sync:
-                src = _sync_str(src, edge)
-                tgt = _to_str(tgt)
-            elif flow.vp.type[tgt] == HyperStateType.entry_sync:
-                src = _to_str(src)
-                tgt = _sync_str(tgt, edge)
-            else:
-                assert False
-        else:
-            if flow.ep.type[edge] == HSTType.sy2sy:
-                attrs = {"color": "darkred",
-                         "style": "dashed"}
-            if flow.ep.type[edge] == HSTType.follow_sync:
-                attrs = {"color": "darkgreen",
-                         "style": "dotted",
-                         "label": f"{flow.ep.bcet[edge]} - {flow.ep.wcet[edge]}"}
-            if flow.ep.type[edge] in [HSTType.sync_neighbor, HSTType.m2sy]:
-                continue
-            src = _to_str(src)
-            tgt = _to_str(tgt)
-
-        dot_graph.add_edge(pydot.Edge(src, tgt, **attrs))
 
     return dot_graph
 
@@ -692,7 +595,6 @@ def sp_mstg_to_dot(mstg, cfg, label="SyncPoints MSTG"):
 
 
 
-
 class Printer(Step):
     """Print graphs to dot."""
 
@@ -729,6 +631,10 @@ class Printer(Step):
                             help="Add a legend pydot cluster to the graph. Currently only supports CFGs and MSTGs",
                             ty=Bool(),
                             default_value=False)
+    with_times = Option(name="with_times",
+                            help="If WCET/BCET should be shown in the graph",
+                            ty=Bool(),
+                            default_value=True)
     domain_type = Option(name="domain_type",
                             help="Used to create a multi OS hypersse hstg, or a multicore multisse mstg.",
                             ty=Choice("CPU", "Dom"),
@@ -824,7 +730,8 @@ class Printer(Step):
                 code = "\r".join([str(cfg.get_llvm_obj(bb))
                                   for bb in current_bbs])
                 code = code.replace('\n', '\r')
-                tooltip += f'\rbcet/wcet: {cfg.vp.bcet[block]} / {cfg.vp.wcet[block]}\r'
+                if self.with_times.get():
+                    tooltip += f'\rbcet/wcet: {cfg.vp.bcet[block]} / {cfg.vp.wcet[block]}\r'
                 # tooltip += code
                 tooltip = f'<{html.escape(tooltip)}>'  # seems to be added automagically
 
@@ -977,7 +884,8 @@ class Printer(Step):
         name = self._print_init()
         add_legend = self.add_legend.get()
         domain_type = self.domain_type.get()
-        dot_graph = mstg_to_dot(self._graph.mstg._graph.mstg, name, OS, add_legend, domain_type)
+        with_times = self.with_times.get()
+        dot_graph = mstg_to_dot(mstg=self._graph.mstg, label=name, OS=OS, add_legend=add_legend, with_times=with_times, domain_type=domain_type)
         self._write_dot(dot_graph)
 
     def print_reduced_mstg(self):
@@ -991,14 +899,6 @@ class Printer(Step):
         name = self._print_init()
         dot_graph = sp_mstg_to_dot(self._graph.mstg, self._graph.cfg, name)
         self._write_dot(dot_graph)
-
-
-    def print_hstg(self) -> None:
-        name = self._print_init()
-        self._log.info(f"Writing HSTG to {self.dot.get()}.")
-        dot_graph = hstg_to_dot(hstg=self._graph.hstg, label=name)
-        self._write_dot(dot_graph)
-
 
     def print_callgraph(self, only_systemrelevant=False):
         name = self._print_init()
@@ -1200,8 +1100,6 @@ class Printer(Step):
             self.print_sstg()
         if subgraph == 'mstg':
             self.print_mstg()
-        if subgraph == 'hstg':
-            self.print_hstg()
         if subgraph == 'reduced_sstg':
             self.print_sstg(reduced=True)
         if subgraph == 'reduced_mstg':

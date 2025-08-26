@@ -22,7 +22,7 @@
 		"with_times": true,
 		"dump": true,
 		"log_level": "warning",
-		"per_round_dump": true
+		"per_round_dump": false
 	},
 
 	"logger": {
@@ -30,12 +30,14 @@
 		"XEN": "debug"
 	},
 
-	"HyperSSE": {
-		"system_count": 2,
-		"dom_files" : ["subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_a.pi4.ll",
-					"subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_b.pi4.ll"],
-		"dom_oils" : ["../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercall/a.json", 
-						"../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercall/b.json"]
-	}
+"HyperSSE": {
+    "system_count": 2,
+	"do_timings": true,
+	"testname": "Hypercall",
+    "dom_files" : ["subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_a.pi4.ll",
+                "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_b.pi4.ll"],
+    "dom_oils" : ["../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercall/a.json", 
+                    "../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercall/b.json"]
+}
 
 }
