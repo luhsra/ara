@@ -43,6 +43,9 @@ _sysshort = {
     "XEN_test_send_event_channel": "XTS",
     "XEN_test_receive_event_channel": "XTR",
     "XEN_test_notify_evtchn": "XTN",
+    "XEN_wrap_evtchn_alloc_unbound": "XEA",
+    "XEN_wrap_evtchn_bind_interdomain": "XEB",
+    "XEN_wrap_evtchn_send": "XES",
 
 }
 

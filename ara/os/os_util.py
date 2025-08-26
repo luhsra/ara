@@ -15,7 +15,7 @@ import pyllco
 from abc import ABC, abstractmethod
 
 from enum import Enum
-from typing import Tuple
+from typing import Any, Tuple
 from copy import copy
 
 from ara.graph import SyscallCategory as _SyscallCategory, SigType as _SigType
@@ -186,15 +186,11 @@ Argument.hint = property(Argument.get_hint, Argument.set_hint)
 Arg = Argument
 
 
-def set_next_abb(state: OSState, cpu_id: int):
+def set_next_abb(state: OSState, cpu_id: int) -> None:
     """Set the CPU specified with cpu_id to the next abb.
 
     Note: Call this functions on syscalls only.
     """
-    if state.system_count:
-        cfg = state.cfg_list[cpu_id]
-    else:
-        cfg = state.cfg
     lcfg = _CFGView(state.cfg, efilt=state.cfg.ep.type.fa == _CFType.lcf)
     cpu = state.cpus[cpu_id]
     for idx, next_abb in enumerate(lcfg.vertex(cpu.abb).out_neighbors()):
@@ -211,7 +207,7 @@ class Parenthesis(Enum):
 
 
 _argument_value_cache = {"last_added": []}
-def _get_cached_argument_value(va, cpu_id: int, abb, idx, callpath, hint):
+def _get_cached_argument_value(va, cpu_id: int, abb, idx, callpath, hint) -> Any:
     CACHE_LENGTH = 5
 
     def _shorten_callpath(callpath, length):
@@ -336,7 +332,6 @@ class SysCall:
                 _clear_cache()
                 return super().assign_system_object(value, instance, offset, callpath)
 
-        # CachingValueAnalyzer ging einmal kaputt und hat geänderte Werte nicht gefunden
         va = CachingValueAnalyzer(
             graph,
             current_step.tracer if hasattr(current_step, "tracer") else None)

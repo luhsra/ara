@@ -318,32 +318,6 @@ class AUTOSAR(OSBase):
         return OSIRQStatus(name="AUTOSAR_OSIRQ_STATUS_" + str(cpu_id), cpu_id=cpu_id)
 
     @staticmethod
-    def move_context(context: dict, target_cpu_id: int) -> dict:
-        """HyperSSE starts with each system thinking its running on cpu 0, 
-        this function moves the context to target_cpu_id
-        single core contexte mit cpu0 -> single core contexte mit cpuNEW"""
-
-        logger.info(f"Moved context to CPU {target_cpu_id} for Xen.")
-        new_context = {}
-        for k,v in context.items():
-            # logger.info(f"Found context: {k} : {v}")
-            if isinstance(k, Task):
-                k.cpu_id = target_cpu_id
-                new_context[k] = v
-            elif isinstance(k, AUTOSARInstance):
-                k.name = k.name.replace("_0", f"_{target_cpu_id}")
-                k.cpu_id = target_cpu_id
-                new_context[k] = v
-            elif isinstance(k, IRQ):
-                k.cpu_id = target_cpu_id
-                new_context[k] = v
-            else:
-                logger.error(f"move_context: Unkown context of type: {type(k)}")
-                new_context[k] = v
-                
-        return new_context
-
-    @staticmethod
     def get_initial_state(cfg: CFG, instances: InstanceGraph) -> OSState:
         # technically, AUTOSAR starts with a main function on every core
         # The actual startup happens via StartCore or in HW directly
@@ -755,6 +729,56 @@ class AUTOSAR(OSBase):
                 ctx.abb = state.cfg.get_entry_abb(task.function)
             ctx.status = TaskStatus.ready
         return state
+
+    # For HyperSSE
+    @staticmethod
+    def move_context(context: dict, target_cpu_id: int) -> dict:
+        """HyperSSE starts with each system thinking its running on cpu 0, 
+        this function moves the context to target_cpu_id
+        single core contexte mit cpu0 -> single core contexte mit cpuNEW"""
+
+        logger.info(f"Moved context to CPU {target_cpu_id} for HyperSSE.")
+        new_context = {}
+        for k,v in context.items():
+            # logger.info(f"Found context: {k} : {v}")
+            if isinstance(k, Task):
+                k.cpu_id = target_cpu_id
+                new_context[k] = v
+            elif isinstance(k, AUTOSARInstance):
+                k.name = k.name.replace("_0", f"_{target_cpu_id}")
+                k.cpu_id = target_cpu_id
+                new_context[k] = v
+            elif isinstance(k, IRQ):
+                k.cpu_id = target_cpu_id
+                new_context[k] = v
+            else:
+                logger.error(f"move_context: Unkown context of type: {type(k)}")
+                new_context[k] = v
+
+        return new_context
+    
+    @staticmethod
+    def find_cross_os_event(state: OSState, cb: str) -> CrossOSEvent:
+        """Autosar currently only supports its Task as CrossOSEvents"""
+
+        # Autosar specific renaming 
+        if cb.startswith("AUTOSAR_TASK_FUNC_"):
+            cb = cb.strip("AUTOSAR_TASK_FUNC_")
+        
+        for k, _ in state.context.items():
+            if isinstance(k, CrossOSEvent):
+                if k.name == cb:
+                    return k
+        return None
+
+    @staticmethod
+    def trigger_cross_os_event(state: OSState, cpu_id: int, event: CrossOSEvent) -> OSState:
+        """Wrapper to apply the event to the given state, currently only ActivateTask is supported."""
+
+        return AUTOSAR.ActivateTask(state, cpu_id, event)
+
+
+    # ---------------- Syscalls ---------------------
 
     @syscall(
         categories={SyscallCategory.comm},

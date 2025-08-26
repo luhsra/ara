@@ -174,14 +174,11 @@ class ControlInstance(CPUBounded):
     artificial: bool
     function: graph_tool.libgraph_tool_core.Vertex
 
-
-class CrossOSEvent():
-    """Flag that signals that another class is part of a CrossOSEvent
-
-    In Autosar mapped to start a task, in other OS it could be a message/signal.
+class CrossOSEvent(CPUBounded):
+    """OS-Specifc classes inherit this class to allow them to be as part of the eventchannl hypercall. 
+     Autosar maps this to starting a task, in other OS it could be a message/signal.
     """
     pass
-
 
 @dataclass(kw_only=True)
 class IRQ(ControlInstance):
@@ -278,7 +275,6 @@ class IRQCPU(CPU):
 
 
 
-
 _state_id = 0
 def _get_id():
     global _state_id
@@ -288,6 +284,7 @@ def _get_id():
 
 @dataclass(kw_only=True)
 class OSState:
+    """Abstract System State, global or local"""
 
     id: int = field(init=False, default_factory=_get_id)
     cpus: CPUList   # can be cpus or hypervised systems
@@ -297,78 +294,10 @@ class OSState:
     # key: some instance, value: mutable context
     context: dict = field(default_factory=dict, init=False)
 
+    # Only used for HyperSSE states
     system_count: int = None
     cfg_list: list[CFG] = None
     instances_list: list[InstanceGraph] = None
-
-    @staticmethod
-    def reset_id():
-        global _state_id
-        _state_id = 0
-
-    def __str__(self):
-        # \33 escape sequenze, 1 for bold, 35 for magenta, m for end of sequenze
-        s = f"\n\t\33[1;35mOSState-{self.id}\033[0m with \33[1;35m{len(self.cpus)}\033[0m cpu(s) "
-        if self.system_count:
-            s += f"on \33[1;35m{self.system_count}\033[0m domains\n"
-            for i in range(self.system_count):
-                s += f"\t  dom{i} @{str(self.cfg_list[i].name)}/{str(self.instances_list[i].name)}\n"
-        else:
-            s += f"\33[1;35m@{str(self.cfg.name)}\033[0m/{str(self.instances.name)}\n"
-        s += "\t-----"
-        for cpu in self.cpus:
-            if isinstance(cpu, IRQCPU):
-                s += f"\n\t\33[1;36mIRQCPU-{cpu.id}\033[0m: ABB={cpu.abb}, state={cpu.exec_state.name}"
-                s += f", ref_cpu={cpu.reference_cpu_id}, irq={cpu.irq.name}"
-            else:
-                s += f"\n\t\33[1;36mCPU-{cpu.id}\033[0m: ABB={cpu.abb}, state={cpu.exec_state.name}"
-                # for syscalls print name of syscall aswell
-                if cpu.exec_state == ExecState.syscall:
-                    s += f":{self.cfg.get_syscall_name(cpu.abb)}"
-        s += "\n\t-----"
-        for k, v in self.context.items():
-            s += f"\n\t{k} -- {v}"
-        s += "\n"
-        return s
-
-    def is_cross_os(self):
-        if self.system_count == None:
-            return False
-        return True
-
-    # helper to view all context
-    def context_dump(self):
-        logger.warning("Printing context:\n")
-        for k, v in self.context.items():
-            logger.warning(k)
-            logger.warning(f"    {v}")
-
-    def __post_init__(self):
-        self._instances = self.instances
-        self._cfg = self.cfg
-
-
-    def hypersse_state(self, system_count: int, cfg_list: list[CFG], 
-                       instances_list: list[InstanceGraph]) -> None:
-        """Adds the datastructures for a hypersse state"""
-        self.system_count = system_count
-        self.cfg_list = cfg_list
-        self.instances_list = instances_list
-
-    def get_syscall_name(self, cpu_id: int) -> str:
-        """Helper function for current abb on cpu_id"""
-        abb = self.cpus[cpu_id].abb
-        syscall = self.cfg.get_syscall_name(abb)
-        assert syscall, f"Tried to get syscall name of a state that is not in a syscall, cpud_id={cpu_id}, state={self}"
-        return syscall
-    
-    # def choose_cfg(self, system_id: int) -> CFG:
-    #     assert(system_id <= self.system_count, f"Choose cfg_id {system_id} to high")
-    #     return self.cfg_list[system_id]
-        
-    # def choose_instances(self, system_id: int) -> InstanceGraph:
-    #     assert(system_id <= self.system_count, f"Choose instances_id {system_id} to high")
-    #     return self.instances_list[system_id]
         
     @property
     def cfg(self):
@@ -385,6 +314,35 @@ class OSState:
     @instances.setter
     def instances(self, instances):
         self._instances = instances
+
+    def __post_init__(self):
+        self._instances = self.instances
+        self._cfg = self.cfg
+
+    @staticmethod
+    def reset_id():
+        global _state_id
+        _state_id = 0
+
+
+    def is_cross_os(self):
+        """Used to find hypervisor states"""
+        if self.system_count == None:
+            return False
+        return True
+    def hypersse_state(self, system_count: int, cfg_list: list[CFG], 
+                       instances_list: list[InstanceGraph]) -> None:
+        """Adds the datastructures for a hypersse state"""
+        self.system_count = system_count
+        self.cfg_list = cfg_list
+        self.instances_list = instances_list
+
+    def get_syscall_name(self, cpu_id: int) -> str:
+        """Helper function for current abb on cpu_id"""
+        abb = self.cpus[cpu_id].abb
+        syscall = self.cfg.get_syscall_name(abb)
+        assert syscall, f"Tried to get syscall name of a state that is not in a syscall, cpud_id={cpu_id}, state={self}"
+        return syscall
 
     def __eq__(self, other):
         return hash(self) == hash(other)
@@ -423,6 +381,39 @@ class OSState:
         if cur:
             return self.context[self.cur_control_inst(cpu_id)]
         return None
+
+    # helper to view all context
+    def context_dump(self):
+        logger.warning("Printing context:\n")
+        for k, v in self.context.items():
+            logger.warning(k)
+            logger.warning(f"    {v}")
+
+    def __str__(self):
+        """Trying to print the imporant parts of a state."""
+        # \33 escape sequenze, 1 for bold, 35 for magenta, m for end of sequenze
+        s = f"\n\t\33[1;35mOSState-{self.id}\033[0m with \33[1;35m{len(self.cpus)}\033[0m cpu(s) "
+        if self.system_count:
+            s += f"on \33[1;35m{self.system_count}\033[0m domains\n"
+            for i in range(self.system_count):
+                s += f"\t  dom{i} @{str(self.cfg_list[i].name)}/{str(self.instances_list[i].name)}\n"
+        else:
+            s += f"\33[1;35m@{str(self.cfg.name)}\033[0m/{str(self.instances.name)}\n"
+        s += "\t-----"
+        for cpu in self.cpus:
+            if isinstance(cpu, IRQCPU):
+                s += f"\n\t\33[1;36mIRQCPU-{cpu.id}\033[0m: ABB={cpu.abb}, state={cpu.exec_state.name}"
+                s += f", ref_cpu={cpu.reference_cpu_id}, irq={cpu.irq.name}"
+            else:
+                s += f"\n\t\33[1;36mCPU-{cpu.id}\033[0m: ABB={cpu.abb}, state={cpu.exec_state.name}"
+                # for syscalls print name of syscall aswell
+                if cpu.exec_state == ExecState.syscall:
+                    s += f":{self.cfg.get_syscall_name(cpu.abb)}"
+        s += "\n\t-----"
+        for k, v in self.context.items():
+            s += f"\n\t{k} -- {v}"
+        s += "\n"
+        return s
 
 
 class OSCreator(type):
@@ -546,4 +537,25 @@ class OSBase(metaclass=OSCreator):
         state -- the current system state
         cpus  -- a list of cpu_ids, defaults to all CPUs
         """
+        raise NotImplementedError()
+
+    # For HyperSSE
+    @staticmethod
+    def move_context(context: dict, target_cpu_id: int) -> dict:
+        """HyperSSE starts with each system thinking its running on cpu 0, 
+        this function moves the context to target_cpu_id
+        single core contexte mit cpu0 -> single core contexte mit cpuNEW"""
+
+        raise NotImplementedError()
+
+    @staticmethod
+    def find_cross_os_event(state: OSState, cb: str) -> CrossOSEvent:
+        """Autosar currently only supports its Task as CrossOSEvents"""
+
+        raise NotImplementedError()
+
+    @staticmethod
+    def trigger_cross_os_event(state: OSState, cpu_id: int, event: CrossOSEvent) -> OSState:
+        """Wrapper to apply the event to the given state, currently only ActivateTask is supported."""
+        
         raise NotImplementedError()
