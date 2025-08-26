@@ -52,6 +52,8 @@ ninja subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_a_noopt_mod.
 
 "HyperSSE": {
     "system_count": 2,
+	"do_timings": true,
+	"testname": "Hypercall",
     "dom_files" : ["subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_a.pi4.ll",
                 "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_b.pi4.ll"],
     "dom_oils" : ["../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercall/a.json", 

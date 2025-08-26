@@ -258,14 +258,9 @@ class MultiSSE(StatsStep):
                                     "(-1 means unlimited)"),
                               ty=Integer(),
                               default_value=-1)
-    
-    hyper_sse = Option(name="hyper_sse",
-                              help=("states can have different encodings for hypersse"),
-                              ty=Bool(),
-                              default_value=False)
 
-    file_name_appendix = Option(name="file_name_appendix",
-                help="String that gets added to the file name of a dumped mstg to different mstgs.",
+    file_name = Option(name="file_name",
+                help="How the dumped mstg graph should be called.",
                 ty=String(),
                 default_value="")
 
@@ -347,8 +342,8 @@ class MultiSSE(StatsStep):
                                                     self._graph.instances)
         # self._log.info(f"Init state: {os_state}")
 
+        # HyperSSE/Xen has a slightly different method for adding interrupts
         if self._graph.os == XEN:
-            # xen has a slightly different method for adding interrupts
             XEN.add_interrupts(os_state)
         else:
             MultiSSE._add_interrupts(os_state)
@@ -554,10 +549,12 @@ class MultiSSE(StatsStep):
         else:
             sub_log = None
 
-        # sse expect full graph obj
+        # HyperSSE/Xen modifes the graph obj
         if self._graph.os == XEN:
+            # Load the correct graph obj but keep Xen as OS
             self._graph = XEN.graph_list[cpu_id]
             self._graph.os = XEN
+
         run_sse(
             self._graph,
             IRQOS,
@@ -1552,36 +1549,39 @@ class MultiSSE(StatsStep):
         self._print_and_store(step_data)
 
         if self.dump.get():
-            fna = self.file_name_appendix.get()
-            
-            # printer extracts name of abbs out of cfg, for XEN need to provide multiple cfgs
-            if self._graph.os == XEN:
-                self._graph.cfg = XEN.cfg_list
+            fn = self.file_name.get()
+            if fn:
+                if self._graph.os == XEN:
+                    dot = f'{self.dump_prefix.get().split("/")[0]}/HyperSSE.{fn}.hstg.dot'
+                else:
+                    dot = f'{self.dump_prefix.get().split(".")[0]}.{fn}.mstg.dot'
+            else:
+                # Legacy naming
+                dot = f'{self.dump_prefix.get()}.mstg.dot'
 
-            if fna:
-                fna += "."
             self._step_manager.chain_step({
                 "name": "Printer",
-                "dot": self.dump_prefix.get() + fna + "mstg.dot",
-                "graph_name": "MSTG" + "-" + fna[:-1],
+                "dot": dot,
+                "graph_name": "HSTG" if self._graph.os == XEN else "MSTG",
                 "subgraph": "mstg",
                 "add_legend" : self.add_legend.get(),
+                "with_times": self.with_times.get(),
                 "reduced" : True,
                 "domain_type" : "Dom" if self._graph.os == XEN else "CPU"
             })
-            self._step_manager.chain_step({
-                "name": "Printer",
-                "dot": self.dump_prefix.get() + fna + "mstg.reduced.dot",
-                "graph_name": "Reduced MSTG" + fna,
-                "subgraph": "reduced_mstg",
-                "add_legend" : self.add_legend.get(),
-                "reduced" : True
-            })
-            self._step_manager.chain_step({
-                "name": "Printer",
-                "dot": self.dump_prefix.get() + fna + "mstg.sps.dot",
-                "graph_name": "SP MSTG" + fna,
-                "subgraph": "sp_mstg",
-                "add_legend" : self.add_legend.get(),
-                "reduced" : True
-            })
+            # self._step_manager.chain_step({
+            #     "name": "Printer",
+            #     "dot": self.dump_prefix.get() + fna + "mstg.reduced.dot",
+            #     "graph_name": "Reduced MSTG" + fna,
+            #     "subgraph": "reduced_mstg",
+            #     "add_legend" : self.add_legend.get(),
+            #     "reduced" : True
+            # })
+            # self._step_manager.chain_step({
+            #     "name": "Printer",
+            #     "dot": self.dump_prefix.get() + fna + "mstg.sps.dot",
+            #     "graph_name": "SP MSTG" + fna,
+            #     "subgraph": "sp_mstg",
+            #     "add_legend" : self.add_legend.get(),
+            #     "reduced" : True
+            # })
