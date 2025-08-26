@@ -298,9 +298,12 @@ class XEN(OSBase):
 
         # Raise CrossCoreAction to get receiver and return here again
         get_remote_id(state, sender_channel.target_domain)
+        # Convert state in hyersse state
+        state.hypersse_state(system_count=XEN.system_count, cfg_list=XEN.cfg_list, instances_list=XEN.instances_list)
 
         # Find EventChannel object from receiver
         combined_channels = state.context_get_instances(EventChannel)
+        receiver_channel = None
         for evtchn in combined_channels:
             if evtchn.cpu_id == sender_channel.target_domain and evtchn.channel == channel_id and evtchn.target_domain == cpu_id:
                 receiver_channel = evtchn
@@ -314,8 +317,7 @@ class XEN(OSBase):
             logger.error("Hypercall is ignored!")
             return state
 
-        # Convert state and trigger event
-        state.hypersse_state(system_count=XEN.system_count, cfg_list=XEN.cfg_list, instances_list=XEN.instances_list)
+        # Trigger event
         XEN.system_types[receiver_channel.cpu_id].trigger_cross_os_event(state, receiver_channel.cpu_id, receiver_channel.event)
 
         return state

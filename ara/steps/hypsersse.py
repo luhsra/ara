@@ -2,31 +2,34 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Container for HyperSSE."""
-import sys
-from ara.graph import ABBType, Graph, CFG, MSTGraph, MSTType, NodeLevel, StateType, HSTGraph, HSTType, HyperStateType
+"""HyperSSE Analysis"""
+from ara.graph import Graph
 from ara.os.autosar import AUTOSAR
-from ara.os.os_base import OSState
+from ara.os.os_base import reset_id
 from ara.stepmanager import StepManager
 import logging
 
 from ara.os.xen import XEN
 
 from .step import Step # type: ignore
-from .option import Option, Integer, String, List
+from .option import Option, Integer, String, List, Bool
 
-from graph_tool.draw import graph_draw
-
-
-#class HyperSSE(MultiSSE):
 class HyperSSE(Step):
-    """Provides analysis of inter-vm communication."""
+    """Provides analysis of multiple operating systems on a shared hypervisor, currently Xen is supported."""
     system_count: Option = Option(name="system_count",
                           help="Number of systems that should be analysed together.",
                           ty=Integer(),
                           default_value=1)
+    do_timings: Option = Option(name="do_timings",
+                          help="If WCET/BCET timing information on ABBs should be used.",
+                          ty=Bool(),
+                          default_value=True)
+    testname: Option = Option(name="testname",
+                          help="How printed graphs should be named.",
+                          ty=String(),
+                          default_value="testsg")
     
-    # ara cli paramters are ignored for now
+    # This steps ignores the ara cli paramters that other steps us, instead this options are used
     dom_files: Option = Option(name="dom_files",
                          help="Path of list of dom ll.",
                          ty=List(String))
@@ -34,148 +37,47 @@ class HyperSSE(Step):
                          help="Path of list of dom oil.",
                          ty=List(String))
 
-
-    # used for dom0
     def get_single_dependencies(self):
-        # first run MultiSSE, afterwards cleanup svf datastructures for next run
-        #return ["MultiSSE", "SVFReset"]
         return []
-        # return ["MultiSSE"]
     
+    # Tracks how many guests systems are analysed 
     runid: int = 0
-    systems: int|None = None
+    # Stores the graph object from each guest
     graphs: list[Graph] = []
+    # Used to check if all guests are analysed on their own
     done: bool = False
-    # cfg: list[CFG] = []
-    # callgraph: list[Callgraph] = []
-    # os: list[autosar.AUTOSAR] = []
-
-    """
-    def _get_initial_state(self):
-        os_state = self._graph.os.get_initial_state(self._graph.cfg,
-                                                    self._graph.instances)
-        cpu_idx = max([x.id for x in os_state.cpus]) + 1
-        instances = os_state.instances
-        # add interrupts
-        for _, irq in instances.get(IRQ):
-            # every irq gets an own CPU
-            ctx = os_state.context[irq]
-            if ctx.status == TaskStatus.running:
-                exec_state = CrossExecState.computation
-                cur_abb = ctx.abb
-            else:
-                exec_state = CrossExecState.idle
-                cur_abb = None
-            irq_cpu = IRQCPU(id=cpu_idx,
-                             irq=irq,
-                             reference_cpu_id=irq.cpu_id,
-                             irq_on=False,
-                             control_instance=instances.get_node(irq),
-                             abb=cur_abb,
-                             call_path=copy(ctx.call_path),
-                             exec_state=exec_state,
-                             analysis_context=None)
-            os_state.cpus[irq_cpu.id] = irq_cpu
-            # reassign irq
-            irq.cpu_id = irq_cpu.id
-            cpu_idx += 1
-
-        # initial sync point
-        mstg = self._mstg.g
-        sp = mstg.add_vertex()
-        mstg.vp.type[sp] = StateType.exit_sync
-        mstg.vp.state[sp] = os_state
-        self._stats.incr(StateType.exit_sync)
-        self._mstg.sync_point_map[sp] = [x.id for x in os_state.cpus]
-        self._log.debug(f"Add initial sync point {int(sp)}")
-
-        return sp
-    """
-
-    def print_hstg(self, hstg: HSTGraph) -> None:
-        log: logging = self._log
-
-        log.warning(f"Printing: hstg")
-        hstg.list_properties()
-        for v in hstg.vertices():
-            # {hstg.vp.state[v]}
-            if hstg.vp.type[v] == 0:
-                print(f"Node: {v} Type=Invalid domain_id={hstg.vp.domain_id[v]} cpu_id={hstg.vp.cpu_id[v]} bcet={hstg.vp.bcet[v]} wcet={hstg.vp.wcet[v]}")
-            else:
-                print(f"Node: {v} Type={str(HyperStateType(hstg.vp.type[v]))} domain_id={hstg.vp.domain_id[v]} cpu_id={hstg.vp.cpu_id[v]} bcet={hstg.vp.bcet[v]} wcet={hstg.vp.wcet[v]}")
-        for e in hstg.edges():
-            print(f"Edge: {e} Type={str(HSTType(hstg.ep.type[e]))} irq={hstg.ep.irq[e]} domain_id={hstg.ep.domain_id[e]} cpu_id={hstg.ep.cpu_id[e]} bcet={hstg.ep.bcet[e]} wcet={hstg.ep.wcet[e]}")
-
-    def build_hstg(self) -> HSTGraph:
-
-        hstg = HSTGraph()
-        hstg.vp.domain_id[0] = -1
-
-        for i, graph in enumerate(HyperSSE.graphs):
-            mstg = graph.mstg
-            hstg.add_mstg(mstg=mstg)
-
-            # self.print_mstg(mstg=mstg)
-            # graph_draw(mstg, vertex_text=mstg.vertex_index, output=f"dumps/out_{i}.svg")
-
-        self.print_hstg(hstg=hstg)
-
-        # print hstg
-        self._graph.hstg = hstg
-        file_name = f"{self.dump_prefix.get()}hstg.dot"
-        self._step_manager.chain_step({"name": "Printer",
-                                        "dot": file_name,
-                                        "graph_name": "HSTG",
-                                        "subgraph": 'hstg'})
-        return hstg
-
-    def print_cfg_nodes(self, cfg: CFG) -> None:
-        log: logging = self._log
-
-        log.warning(f"Printing: cfg")
-        cfg.list_properties()
-        for v in cfg.vertices():
-            print(f"Node: {v} {str(ABBType(cfg.vp.type[v]))} {str(NodeLevel(cfg.vp.level[v]))}")
-            #Type={str(HyperStateType(cfg.vp.type[v]))} domain_id={cfg.vp.domain_id[v]} cpu_id={hstg.vp.cpu_id[v]} bcet={hstg.vp.bcet[v]} wcet={hstg.vp.wcet[v]}")
-        for e in cfg.edges():
-            print(f"Edge: {e} is_entry: {cfg.ep.is_entry[e]}")
-            #Type={str(HSTType(cfg.ep.type[e]))} irq={cfg.ep.irq[e]} domain_id={cfg.ep.domain_id[e]} cpu_id={hstg.ep.cpu_id[e]} bcet={hstg.ep.bcet[e]} wcet={hstg.ep.wcet[e]}")
-
 
     def run(self):
-        # checkout get_logger() from ara/util.py
+        # See get_logger() from ara/util.py
         log: logging = self._log
 
-        do_timings = True
-
-        if not HyperSSE.systems:
-            HyperSSE.systems = self.system_count.get()
-
+        # If this is not the first run store the previous graph
         if HyperSSE.runid != 0:
             HyperSSE.graphs.append(self._graph)
 
-        while HyperSSE.runid < HyperSSE.systems:
+        # Iterate guest systems
+        while HyperSSE.runid < self.system_count.get():
             log.info(f"Starting HyperSSE step - dom{HyperSSE.runid}")
 
+            # Create a new root graph object
             self._graph = Graph()
+
+            # For now only AUTOSAR
             self._graph.os = AUTOSAR
 
             input_file = self.dom_files.get()[HyperSSE.runid]
             oilfile = self.dom_oils.get()[HyperSSE.runid]
-            _i = input_file.removeprefix("subprojects/ara/appl/AUTOSAR/")
-            _o = oilfile.removeprefix("../subprojects/ara/appl/AUTOSAR/")
-            log.debug(f"Found {_i}")
-            log.debug(f"Found {_o}")
+            log.debug(f"Found: {input_file.removeprefix('subprojects/ara/appl/AUTOSAR/')}")
+            log.debug(f"Found: {oilfile.removeprefix('../subprojects/ara/appl/AUTOSAR/')}")
 
+            # Copy old config
             program = self._step_manager._config.program
             extra = self._step_manager._config.extra
 
-            # log.error(f"Olf config: {self._step_manager._config}")
             s_manager: StepManager = StepManager(self._graph)
-            
             self._step_manager = s_manager
 
-            # add new files for new dom
+            # Modify old config
             program["input_file"] = input_file
             program["oilfile"] = oilfile
             extra["HyperSSE"]["dom_files"] = self.dom_files.get()
@@ -185,13 +87,13 @@ class HyperSSE(Step):
             extra["SysFuncts"] = {}
             extra["SysFuncts"]["xen_syscall"] = True
             extra["DumpCFG"] = {}
-            extra["DumpCFG"]["dot"] = "dom" + str(HyperSSE.runid)
+            extra["DumpCFG"]["dot"] = str(self.testname.get()) + ".dom" + str(HyperSSE.runid)
             extra["DumpCFG"]["add_legend"] = False
             extra["DumpInstances"] = {}
-            extra["DumpInstances"]["dot"] = "dom" + str(HyperSSE.runid)
-            extra["MultiSSE"]["file_name_appendix"] = "dom" + str(HyperSSE.runid)
+            extra["DumpInstances"]["dot"] = str(self.testname.get()) + ".dom" + str(HyperSSE.runid)
+            extra["MultiSSE"]["file_name"] = str(self.testname.get()) + ".dom" + str(HyperSSE.runid)
             extra["MultiSSE"]["add_legend"] = False
-            extra["MultiSSE"]["with_times"] = do_timings
+            extra["MultiSSE"]["with_times"] = self.do_timings.get()
             extra["ApplyTimings"] = {}
             extra["ApplyTimings"]["timings"] = "BB"
             extra["logger"] = {}
@@ -199,23 +101,19 @@ class HyperSSE(Step):
             extra["LoadOIL"] = {}
             extra["LoadOIL"]["log_level"] = "error"
 
-            # readd steps that are completed
+            # Readadd all steps, end with returning to HyperSSE
             extra["steps"] = ['ApplyTimings', 'MultiSSE', 'DumpCFG', 'DumpInstances', 'SVFReset', 'HyperSSE']
-            # reset entry_points
+            # Reset entry_points
             program["entry_point"] = "main" 
 
             HyperSSE.runid += 1
-           
-            # log.error(f"New config: {program}, {extra}")
-            
             s_manager.execute(program, extra, None)
 
-
-        # careful, each instance would return here, so exit unless we are the first instance
+        # Each instance would return here, so exit unless we are the first/root instance
         if HyperSSE.done:
             return
-
-        # self._graph = HyperSSE.graphs[0]
+        
+        # Prepare a new Graph for the Xen MultiSSE 
         self._step_manager._graph = Graph()
         self._step_manager._graph.os = XEN
         self._step_manager._graph.name = "Graph-Xen"
@@ -225,16 +123,17 @@ class HyperSSE(Step):
             XEN.system_types.append(AUTOSAR)
             graph.name = "Graph-dom-" + str(XEN.system_count)
             graph.cfg.name = "CFG-dom-" + str(XEN.system_count)
-            graph.instances.name = "Inst-dom-" + str(XEN.system_count)
             XEN.cfg_list.append(graph.cfg)
+            graph.instances.name = "Inst-dom-" + str(XEN.system_count)
             XEN.instances_list.append(graph.instances)
             XEN.system_count += 1
 
+        # Reset to OSState Counter back to 0
+        reset_id()
 
-        OSState.reset_id()
-
-        self._step_manager.chain_step({"name": "MultiSSE", "with_times": do_timings, "dump": True, 
-                                       "log_level": "debug", "hyper_sse": True, "file_name_appendix": "hyper", "add_legend": False})
+        # Call another MultiSSE once this step is finished
+        self._step_manager.chain_step({"name": "MultiSSE", "with_times": self.do_timings.get(), "dump": True, 
+                                       "log_level": "debug", "hyper_sse": True, "file_name": str(self.testname.get()), "add_legend": False})
 
         log.warning("Done with single MultiSSEs, starting HyperSSE MultiSSE now!")
         HyperSSE.done = True

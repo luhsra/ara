@@ -5,11 +5,11 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from .graph import Graph, CFG, CFGView, MSTGraph, HSTGraph, InstanceGraph, single_check, vertex_types, edge_types, Callgraph
-from .mix import ABBType, CFType, SyscallCategory, SigType, NodeLevel, StateType, HyperStateType, MSTType, HSTType
+from .graph import Graph, CFG, CFGView, MSTGraph, InstanceGraph, single_check, vertex_types, edge_types, Callgraph
+from .mix import ABBType, CFType, SyscallCategory, SigType, NodeLevel, StateType, MSTType
 from .graph_data import Argument, Arguments, CallPath
 
-__all__ = ["Graph", "CFGView", "InstanceGraph", "CFG", "MSTGraph", "HSTGraph", "Callgraph",
+__all__ = ["Graph", "CFGView", "InstanceGraph", "CFG", "MSTGraph", "Callgraph",
            "ABBType", "CFType", "SyscallCategory", "SigType", "NodeLevel",
-           "StateType", "HyperStateType", "MSTType", "HSTType", "Argument", "Arguments", "CallPath",
+           "StateType", "MSTType", "Argument", "Arguments", "CallPath",
            "single_check", "vertex_types", "edge_types"]

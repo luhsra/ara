@@ -15,12 +15,10 @@ using namespace SVF;
 
 namespace ara::step {
 
-
 	namespace SVFReset_detail {} // namespace svf_reset_detail
 
 	std::string SVFReset::get_description() {
-		return "Resets singeltons from svf back to nullptr, so a different system can be analysed."
-		       "\n"
+		return "Resets singeltons from svf back to nullptr, so a different system can be analysed.\n"
 		       "Must be called before running HyperSSE, but after completing every other step that needs the svf datastructures.";
 	}
 
@@ -33,35 +31,33 @@ namespace ara::step {
 
 		logger.info() << "Start SVFReset" << std::endl;
 
-		// get pointer of existing singeltons
+		// Get pointer of existing singeltons
 		SVFIR* old_pag = SVFIR::getPAG();
 		LLVMModuleSet* old_llvm = LLVMModuleSet::getLLVMModuleSet();
 		AndersenWaveDiff* old_anderson = AndersenWaveDiff::createAndersenWaveDiff(old_pag);
 		SymbolTableInfo* sym = SymbolTableInfo::SymbolInfo();
-		// SVFModule* old_mod = SymbolTableInfo::SymbolInfo()->getModule();
 
-		// save location into graph_data, so it can be used later for syscall value analysis of this system
+		// Save memory adresses into graph_data, so the data from this system can be retrieved later
 		graph.get_graph_data().pags_pointer = old_pag;
 		graph.get_graph_data().llvm_module = old_llvm;
 		graph.get_graph_data().anderson = old_anderson;
 		graph.get_graph_data().syminfo = sym;
-		// graph.get_graph_data().svf_module = old_mod;
 
-		// forget singeltons in svf
+		// Forget (but not delete) singeltons in SVF
 		LLVMModuleSet::forgetLLVMModuleSet();
-		logger.debug() << "Released LLVMModuleSet" << std::endl;
+		// logger.debug() << "Released LLVMModuleSet" << std::endl;
 
 		SVFIR::forgetSVFIR();
-		logger.debug() << "Released SVFIR" << std::endl;
+		// logger.debug() << "Released SVFIR" << std::endl;
 
 		AndersenWaveDiff::forgetAndersenWaveDiff();
-		logger.debug() << "Released AndersenWaveDiff" << std::endl;
+		// logger.debug() << "Released AndersenWaveDiff" << std::endl;
 
 		SVFGBuilder::releaseSVFG();
-		logger.debug() << "Released SVFG" << std::endl;
+		// logger.debug() << "Released SVFG" << std::endl;
 
 		SymbolTableInfo::forgetSymbolInfo();
-		logger.debug() << "Released SVFModule" << std::endl;
+		// logger.debug() << "Released SVFModule" << std::endl;
 
 		// Other possible singeltons in svf, but (probaly) not used/set
 		// SVFGBuilder::releaseMemory();

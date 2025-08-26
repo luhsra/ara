@@ -145,7 +145,7 @@ namespace ara::step {
 
 	static bool set_command_line = false;
 	void SVFAnalyses::set_up_llvm_cl() {
-		// ParseCommandLineOptions is persisten accross multiple runs of SVFAnalyses
+		// ParseCommandLineOptions is persistent accross multiple runs of SVFAnalyses
 		if (!set_command_line) {
 			logger.info() << "First run, set up llvm::cl::options" << std::endl;
 

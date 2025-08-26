@@ -18,7 +18,7 @@ from graph_tool.topology import label_out_component
 from graph_tool.libgraph_tool_core import Vertex
 
 from .graph_data import PyGraphData, _get_llvm_obj
-from .mix import ABBType, CFType, SyscallCategory, NodeLevel, StateType, MSTType, HyperStateType, HSTType
+from .mix import ABBType, CFType, SyscallCategory, NodeLevel, StateType, MSTType
 from .mix import CFG_INVALID_ABB as _CFG_INVALID_ABB
 
 from collections.abc import Iterator
@@ -475,7 +475,7 @@ class CFG(graph_tool.Graph):
             f"{len(self.vp)}vp/{len(self.ep)}ep at {hex(id(self))}"
         return s
     
-    # prints all properties, nodes and edges to find bbs/abbs
+    # Prints all properties, nodes and edges to find bbs/abbs
     def nodes_to_string(self) -> None:
         print(self.name if self.name != "" else "CFG")
         self.list_properties()
@@ -755,46 +755,6 @@ class MSTGraph(graph_tool.Graph):
                 print(f"Node: {v} Type={str(StateType(self.vp.type[v]))} cpu_id={self.vp.cpu_id[v]} bcet={self.vp.bcet[v]} wcet={self.vp.wcet[v]}")
         for e in self.edges():
             print(f"Edge: {e} Type={str(MSTType(self.ep.type[e]))} irq={self.ep.irq[e]} cpu_id={self.ep.cpu_id[e]} bcet={self.ep.bcet[e]} wcet={self.ep.wcet[e]}")
-
-
-class HSTGraph(MSTGraph):
-
-    domain_id: int = 0
-
-    def __init__(self):
-        super().__init__()  # TODO fake node 0 in init
-        self.vertex_properties["domain_id"] = self.new_vp("int")
-        self.edge_properties["domain_id"] = self.new_ep("int")
-
-    # init from exisiting mstg
-    def add_mstg(self, mstg: MSTGraph) -> None:
-
-        offset: int = self.num_vertices()
-
-        # add inital hyper sync point
-        # v = self.add_vertex()
-        # self.vp.type[v] = HyperStateType.exit_sync
-        # TODO need state here
-
-        for v in mstg.vertices():
-            h_v = self.add_vertex()
-            for p in mstg.vp:
-                self.vp[p][h_v] = mstg.vp[p][v]
-            self.vp.domain_id[h_v] = HSTGraph.domain_id
-        
-        # inital hyper sync point connect
-        # e = self.add_edge(self.vertex(0), self.vertex(offset))
-        # self.ep.type[e] = HSTType.st2sy
-
-        for e in mstg.edges():
-            h_e = self.add_edge(int(e.source()) + offset, int(e.target()) + offset)
-            for p in mstg.ep:
-                # _log(self).warning(mstg.ep[p][e])
-                self.ep[p][h_e] = mstg.ep[p][e]
-            self.ep.domain_id[h_e] = HSTGraph.domain_id
-
-        HSTGraph.domain_id +=1 
-
 
 
 class InstanceGraph(graph_tool.Graph):
