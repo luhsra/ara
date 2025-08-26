@@ -281,6 +281,11 @@ def _get_id():
     _state_id += 1
     return _state_id
 
+# Needed for HyperSSE
+def reset_id():
+    global _state_id
+    _state_id = 0
+
 
 @dataclass(kw_only=True)
 class OSState:
@@ -293,56 +298,6 @@ class OSState:
 
     # key: some instance, value: mutable context
     context: dict = field(default_factory=dict, init=False)
-
-    # Only used for HyperSSE states
-    system_count: int = None
-    cfg_list: list[CFG] = None
-    instances_list: list[InstanceGraph] = None
-        
-    @property
-    def cfg(self):
-        return self._cfg
-        
-    @cfg.setter
-    def cfg(self, cfg):
-        self._cfg = cfg
-            
-    @property 
-    def instances(self):
-        return self._instances
-        
-    @instances.setter
-    def instances(self, instances):
-        self._instances = instances
-
-    def __post_init__(self):
-        self._instances = self.instances
-        self._cfg = self.cfg
-
-    @staticmethod
-    def reset_id():
-        global _state_id
-        _state_id = 0
-
-
-    def is_cross_os(self):
-        """Used to find hypervisor states"""
-        if self.system_count == None:
-            return False
-        return True
-    def hypersse_state(self, system_count: int, cfg_list: list[CFG], 
-                       instances_list: list[InstanceGraph]) -> None:
-        """Adds the datastructures for a hypersse state"""
-        self.system_count = system_count
-        self.cfg_list = cfg_list
-        self.instances_list = instances_list
-
-    def get_syscall_name(self, cpu_id: int) -> str:
-        """Helper function for current abb on cpu_id"""
-        abb = self.cpus[cpu_id].abb
-        syscall = self.cfg.get_syscall_name(abb)
-        assert syscall, f"Tried to get syscall name of a state that is not in a syscall, cpud_id={cpu_id}, state={self}"
-        return syscall
 
     def __eq__(self, other):
         return hash(self) == hash(other)
@@ -381,8 +336,35 @@ class OSState:
         if cur:
             return self.context[self.cur_control_inst(cpu_id)]
         return None
+    
 
-    # helper to view all context
+    # Used for HyperSSE multi-OS states
+    system_count: int = None
+    cfg_list: list[CFG] = None
+    instances_list: list[InstanceGraph] = None
+
+    def hypersse_state(self, system_count: int, cfg_list: list[CFG], 
+                       instances_list: list[InstanceGraph]) -> None:
+        """Adds the datastructures for a hypersse state"""
+        self.system_count = system_count
+        self.cfg_list = cfg_list
+        self.instances_list = instances_list
+
+    def is_cross_os(self):
+        """Used to find hypervisor states"""
+        if self.system_count == None:
+            return False
+        return True
+    
+    def get_syscall_name(self, cpu_id: int) -> str:
+        """Helper function for current abb on cpu_id"""
+        abb = self.cpus[cpu_id].abb
+        syscall = self.cfg.get_syscall_name(abb)
+        assert syscall, f"Tried to get syscall name of a state that is not in a syscall, cpud_id={cpu_id}, state={self}"
+        return syscall
+    
+
+    # Helper to view all context, better print whole state with str()
     def context_dump(self):
         logger.warning("Printing context:\n")
         for k, v in self.context.items():

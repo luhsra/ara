@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2021 Lukas Berg
 // SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
 // SPDX-FileCopyrightText: 2022 Jan Neugebauer
+// SPDX-FileCopyrightText: 2025 Mareike Burg
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -405,7 +406,8 @@ namespace ara::step {
 			*/
 			if(graph.get_graph_data().pags_pointer != nullptr
 				&& graph.get_graph_data().llvm_module != nullptr
-				&& graph.get_graph_data().anderson != nullptr) {
+				&& graph.get_graph_data().anderson != nullptr
+				&& graph.get_graph_data().syminfo != nullptr) {
 				
 				SVF::PAG::setPAG(graph.get_graph_data().pags_pointer);
 				SVF::LLVMModuleSet::setLLVMModuleSet(graph.get_graph_data().llvm_module);
