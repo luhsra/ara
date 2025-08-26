@@ -216,7 +216,111 @@ class XEN(OSBase):
 
 
 
-    # --------------------------- SYSCALLS ---------------------
+    # --------------------------- New Hypercalls ---------------------
+
+    # Used to assign unique ids
+    _eventchannel_id: int = 0
+
+    @syscall(categories={SyscallCategory.comm}, 
+            signature=(Arg("remote_dom", ty=int, raw_value=True, hint=SigType.value),
+                        Arg("channel", ty=int, raw_value=True, hint=SigType.value),
+                        Arg("cb", ty=CrossOSEvent, hint=SigType.symbol)),)
+    def XEN_wrap_evtchn_alloc_unbound(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
+        
+        remote_dom = args.remote_dom.value.get_initializer().get()
+        channel = args.channel.value.get_initializer().get()
+        cb: str = args.cb.value.get_name()
+
+        task = XEN.system_types[cpu_id].find_cross_os_event(state=state, cb=cb)
+        if not task:
+            logger.warning(f"Could not find CrossOSEvent: \"{cb}\" on dom-{cpu_id}")
+
+        # TODO: check if channel already exists
+        XEN._eventchannel_id += 1
+        evtchn = EventChannel(name="Evtchn-"+str(XEN._eventchannel_id), cpu_id=cpu_id, source_domain=cpu_id, target_domain=remote_dom,
+                              channel=channel, event=task)
+        logger.info(evtchn)
+        state.context[evtchn] = 1
+
+        return state
+    
+    @syscall(categories={SyscallCategory.comm},
+            signature=(Arg("remote_dom", ty=int, raw_value=True, hint=SigType.value),
+                        Arg("channel", ty=int, raw_value=True, hint=SigType.value),
+                        Arg("cb", ty=CrossOSEvent, hint=SigType.symbol),),)
+    def XEN_wrap_evtchn_bind_interdomain(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
+        
+        remote_dom = args.remote_dom.value.get_initializer().get()
+        channel = args.channel.value.get_initializer().get()
+        cb: str = args.cb.value.get_name()
+
+        task = XEN.system_types[cpu_id].find_cross_os_event(state=state, cb=cb)
+        if not task:
+            logger.warning(f"Could not find CrossOSEvent: \"{cb}\" on dom-{cpu_id}")
+
+        # TODO: check if channel already exists
+        XEN._eventchannel_id += 1
+        evtchn = EventChannel(name="Evtchn-"+str(XEN._eventchannel_id), cpu_id=cpu_id, source_domain=cpu_id, target_domain=remote_dom,
+                              channel=channel, event=task)
+        logger.info(evtchn)
+        state.context[evtchn] = 1
+
+        return state
+    
+    @syscall(categories={SyscallCategory.comm}, 
+            signature=(Arg("channel", ty=int, raw_value=True, hint=SigType.value),),)
+    def XEN_wrap_evtchn_send(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
+
+        def get_remote_id(state: OSState, id: int) -> None:
+            """
+            Check, if the cpu/dom id is already in state, otherwise raise a CrossCoreAction,
+             which return here again with the other dom/cpu. Analog to os.Autosar.check_cpu.
+            """
+            ids = set([x.id for x in state.cpus])
+
+            if id not in ids:
+                raise CrossCoreAction(set([id]))
+            
+        # If we are not hypervised this does nothing
+        if graph.os != XEN:
+            return state
+        
+        # Retrieve active event-channels of sender
+        channel_id = args.channel.value.get_initializer().get()
+        active_channels = state.context_get_instances(EventChannel)
+        for evtchn in active_channels:
+            if channel_id == evtchn.channel:
+                sender_channel = evtchn
+                break
+        if not sender_channel:
+            logger.error(f"Wrap_evtchn_send do not has an evtchn for channel: {channel_id}")
+            return state
+
+        # Raise CrossCoreAction to get receiver and return here again
+        get_remote_id(state, sender_channel.target_domain)
+
+        # Find EventChannel object from receiver
+        combined_channels = state.context_get_instances(EventChannel)
+        for evtchn in combined_channels:
+            if evtchn.cpu_id == sender_channel.target_domain and evtchn.channel == channel_id and evtchn.target_domain == cpu_id:
+                receiver_channel = evtchn
+                break
+        if not receiver_channel:
+            logger.error(f"Wrap_evtchn_send's does not find the right channel: {channel_id} at the receiver")
+            logger.error("Hypercall is ignored!")
+            return state
+        if not receiver_channel.event:
+            logger.error(f"Wrap_evtchn_send Receiver's event is None")
+            logger.error("Hypercall is ignored!")
+            return state
+
+        # Convert state and trigger event
+        state.hypersse_state(system_count=XEN.system_count, cfg_list=XEN.cfg_list, instances_list=XEN.instances_list)
+        XEN.system_types[receiver_channel.cpu_id].trigger_cross_os_event(state, receiver_channel.cpu_id, receiver_channel.event)
+
+        return state
+
+    # --------------------------- Old Hypercalls ---------------------
 
     # Used for uniques ids
     _sender: int = 0
@@ -237,50 +341,46 @@ class XEN(OSBase):
         return state
 
     @syscall(categories={SyscallCategory.comm},
-                     signature=(Arg("source_dom", ty=int, raw_value=True, hint=SigType.value),
+                     signature=(Arg("remote_dom", ty=int, raw_value=True, hint=SigType.value),
                                 Arg("port", ty=int, raw_value=True, hint=SigType.value),
-                                Arg("event", ty=CrossOSEvent, hint=SigType.symbol)
-                                ,),)
+                                Arg("cb", ty=CrossOSEvent, hint=SigType.symbol),),)
     def XEN_test_receive_event_channel(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
         
-        source_dom = args.source_dom.value.get_initializer().get()
+        remote_dom = args.remote_dom.value.get_initializer().get()
         port = args.port.value.get_initializer().get()
-        event_name: str = args.event.value.get_name()
+        cb: str = args.cb.value.get_name()
 
         # Autosar specific renaming
-        if event_name.startswith("AUTOSAR_TASK_FUNC_"):
-            event_name = event_name.strip("AUTOSAR_TASK_FUNC_")
+        if cb.startswith("AUTOSAR_TASK_FUNC_"):
+            cb = cb.strip("AUTOSAR_TASK_FUNC_")
         
         for k, v in state.context.items():
             if isinstance(k, CrossOSEvent):
-                if k.name == event_name:
+                if k.name == cb:
                      task = k
-        assert task, f"Could not find CrossOSEvent {event_name} on domain {cpu_id}"
+        assert task, f"Could not find CrossOSEvent {cb} on domain {cpu_id}"
 
         XEN._receive += 1
-        hyper = HypercallReceiver(cpu_id=cpu_id, name="HypercallReceiver"+str(XEN._receive), port=port, event=task, target_domain=source_dom)
+        hyper = HypercallReceiver(cpu_id=cpu_id, name="HypercallReceiver"+str(XEN._receive), port=port, event=task, target_domain=remote_dom)
         state.context[hyper] = 1
 
         return state
 
-
-    @staticmethod
-    def get_remote_id(state: OSState, id: int):
-        """
-        Check, if another dom/cpu_id is included in state.
-        Otherwise raise a CrossCoreAction, which return here again with the other dom/cpu.
-        Analog to os.Autosar.check_cpu
-        """
-        ids = set([x.id for x in state.cpus])
-
-        if id not in ids:
-            raise CrossCoreAction(set([id]))
-        
     @syscall(categories={SyscallCategory.comm}, 
                      signature=(Arg("remote_dom", ty=int, raw_value=True, hint=SigType.value),
                                 Arg("port", ty=int, raw_value=True, hint=SigType.value),),)
-    def XEN_test_notify_evtchn(graph: Graph, state: OSState, cpu_id: int, args, va) -> list[OSState]:
+    def XEN_test_notify_evtchn(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
 
+        def get_remote_id(state: OSState, id: int) -> None:
+            """
+            Check, if the cpu/dom id is already in state, otherwise raise a CrossCoreAction,
+             which return here again with the other dom/cpu. Analog to os.Autosar.check_cpu
+            """
+            ids = set([x.id for x in state.cpus])
+
+            if id not in ids:
+                raise CrossCoreAction(set([id]))
+            
         # if we are not hypervised this does nothing
         if graph.os != XEN:
             return state
@@ -290,7 +390,7 @@ class XEN(OSBase):
         remote_dom = args.remote_dom.value.get_initializer().get()
 
         # check if target in included in state, if not raise CrossCoreAction and return later 
-        XEN.get_remote_id(state, remote_dom)
+        get_remote_id(state, remote_dom)
 
         recver = state.context_get_instances(HypercallReceiver)
         sender = state.context_get_instances(HypercallSender)
@@ -327,10 +427,30 @@ class XEN(OSBase):
             logger.warning(f"Should be avoided with timing information.")
             # exit(1)
 
-
         return state
 
-# TODO müssen wir ControlInstance erben?
+# --------------------------- Classes ---------------------
+
+@dataclass()
+class EventChannel(CPUBounded):
+    """Event channels are used bidirectional, but because each system gets an instance of this class."""
+    def __eq__(self, other):
+        return self.name == other.name
+
+    def __hash__(self):
+        return hash(self.__class__.__name__ + self.name)
+    
+    name: str
+    source_domain: int
+    target_domain: int
+    channel: int
+    event: CrossOSEvent | None  # event that happens on hypercall
+
+    def __str__(self):
+        s = f"\33[1;36m{self.name}\033[0m: dom-{self.source_domain} to dom-{self.target_domain},"\
+             f" via channel: {self.channel} and event: {self.event}"
+        return s
+    
 @dataclass()
 class HypercallSender(CPUBounded):
     def __eq__(self, other):
@@ -360,141 +480,4 @@ class HypercallReceiver(CPUBounded):
 
     def __str__(self):
         return f"\33[1;36mDom-{self.cpu_id}\033[0m: {self.name} from dom-{self.target_domain} via port: {self.port} with: {self.event}"
- 
-# ---------------------------------------
-# 2nd hypercall syntax
 
-
-# @dataclass()
-# class Eventchanel():
-
-#     # Used to assign unique ids
-#     _id_counter: int = 0
-
-
-#     def __eq__(self, other):
-#         return self.name == other.name
-
-#     def __hash__(self):
-#         return hash(self.__class__.__name__ + self.name)
-
-#     id: str
-#     source_domain: int
-#     target_domain: int
-#     source_port: int
-#     target_port: int | None
-#     source_event: CrossOSEvent | None  # event that happens on hypercall
-#     target_event: CrossOSEvent | None  # event that happens on hypercall
-
-#     def __str__(self):
-#         return f"\33[1;36mDom-{self.source_domain}\033[0m to dom-{self.target_domain} via ports: {self.source_port}/{self.target_port}"
- 
- 
-
-# @syscall(categories={SyscallCategory.comm}, 
-#                     signature=(
-#                             Arg("dom", ty=int, raw_value=True, hint=SigType.value),
-#                             Arg("remote_dom", ty=int, raw_value=True, hint=SigType.value),
-#                             Arg("port", ty=int, raw_value=True, hint=SigType.value)),)
-# def XEN_evtchn_alloc_unbound(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
-    
-#     remote_dom = args.remote_dom.value.get_initializer().get()
-#     port = args.port.value.get_initializer().get()
-
-#     XEN._sender += 1
-#     hyper = HypercallSender(cpu_id=cpu_id, name="HypercallSender"+str(XEN._sender), port=port, target_domain=remote_dom)
-#     state.context[hyper] = 1
-
-#     return state
-
-# @syscall(categories={SyscallCategory.comm},
-#                     signature=(Arg("source_dom", ty=int, raw_value=True, hint=SigType.value),
-#                             Arg("port", ty=int, raw_value=True, hint=SigType.value),
-#                             Arg("event", ty=CrossOSEvent, hint=SigType.symbol)
-#                             ,),)
-# def XEN_evtchn_bind_interdomain(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
-    
-#     source_dom = args.source_dom.value.get_initializer().get()
-#     port = args.port.value.get_initializer().get()
-#     event_name: str = args.event.value.get_name()
-
-#     # Autosar specific renaming
-#     if event_name.startswith("AUTOSAR_TASK_FUNC_"):
-#         event_name = event_name.strip("AUTOSAR_TASK_FUNC_")
-    
-#     for k, v in state.context.items():
-#         if isinstance(k, CrossOSEvent):
-#             if k.name == event_name:
-#                     task = k
-#     assert task, f"Could not find CrossOSEvent {event_name} on domain {cpu_id}"
-
-#     XEN._receive += 1
-#     hyper = HypercallReceiver(cpu_id=cpu_id, name="HypercallReceiver"+str(XEN._receive), port=port, event=task, target_domain=source_dom)
-#     state.context[hyper] = 1
-
-#     return state
-
-
-#     """
-#     Check, if another dom/cpu_id is included in state.
-#     Otherwise raise a CrossCoreAction, which return here again with the other dom/cpu.
-#     Analog to os.Autosar.check_cpu
-#     """
-#     ids = set([x.id for x in state.cpus])
-
-#     if id not in ids:
-#         raise CrossCoreAction(set([id]))
-    
-# @syscall(categories={SyscallCategory.comm}, 
-#                     signature=(Arg("remote_dom", ty=int, raw_value=True, hint=SigType.value),
-#                             Arg("port", ty=int, raw_value=True, hint=SigType.value),),)
-# def XEN_evtchn_send(graph: Graph, state: OSState, cpu_id: int, args, va) -> list[OSState]:
-
-#         # if we are not hypervised this does nothing
-#         if graph.os != XEN:
-#             return state
-        
-#         # need get_initializer for global variables
-#         port = args.port.value.get_initializer().get()
-#         remote_dom = args.remote_dom.value.get_initializer().get()
-
-#         # check if target in included in state, if not raise CrossCoreAction and return later 
-#         XEN.get_remote_id(state, remote_dom)
-
-#         recver = state.context_get_instances(HypercallReceiver)
-#         sender = state.context_get_instances(HypercallSender)
-
-#         task = None
-#         for send in sender:
-#             # filter to sender from this cpu_id
-#             if send.cpu_id != cpu_id:
-#                 continue
-#             for revc in recver:
-#                 # filter recevier who receive from this cpu_id
-#                 if revc.target_domain != cpu_id:
-#                     continue
-#                 # filter that port is correct
-#                 if send.port == revc.port == port:
-#                     task = revc.event
-        
-#         state.hypersse_state(system_count=XEN.system_count, cfg_list=XEN.cfg_list, instances_list=XEN.instances_list)
-
-#         if task:
-#             # Activate Task Syntax
-#             if isinstance(task, AUTOSARInstance):
-#                 ctx = state.context[task]
-#                 if ctx.status is not TaskStatus.running:
-#                     if ctx.status is TaskStatus.suspended:
-#                         cfg = task.cfg
-#                         ctx.abb = cfg.get_entry_abb(task.function)
-#                     ctx.status = TaskStatus.ready
-#             else:
-#                 logger.warning(f"Unknown CrossOSEvent: {task}, aborting")
-#                 exit(1)
-#         else:
-#             logger.warning(f"Did not find CrossOSEvent from domain {cpu_id} to {remote_dom} on port {port}, notify is ignored!")
-#             logger.warning(f"Should be avoided with timing information.")
-#             # exit(1)
-
-
-#         return state
