@@ -16,7 +16,18 @@ int main(void) {
 TASK(B2) {
 	kout << "B2"<< endl;
 
-  	ara_timing_info(40, 40);
+  	ara_timing_info(2, 3);
+
+	kout << "B2"<< endl;
+  	ara_timing_info(6, 7);
+	EnableAllInterrupts();
+  	ara_timing_info(4, 5);
+	kout << "B2"<< endl;
+  	ara_timing_info(6, 7);
+	EnableAllInterrupts();
+	kout << "B2"<< endl;
+  	ara_timing_info(6, 7);
+	
 	TerminateTask();
 	// ShutdownMachine();
 }

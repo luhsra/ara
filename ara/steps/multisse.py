@@ -331,7 +331,8 @@ class MultiSSE(StatsStep):
                             abb=cur_abb,
                             call_path=copy(ctx.call_path),
                             exec_state=exec_state,
-                            analysis_context=None)
+                            analysis_context=None,
+                            cfg=state.cfg)
             state.cpus[irq_cpu.id] = irq_cpu
             # reassign irq
             irq.cpu_id = irq_cpu.id
@@ -1562,7 +1563,7 @@ class MultiSSE(StatsStep):
             self._step_manager.chain_step({
                 "name": "Printer",
                 "dot": dot,
-                "graph_name": "HSTG" if self._graph.os == XEN else "MSTG",
+                "graph_name": dot.split("/")[1],
                 "subgraph": "mstg",
                 "add_legend" : self.add_legend.get(),
                 "with_times": self.with_times.get(),

@@ -170,25 +170,6 @@ class CFG(graph_tool.Graph):
         # edge making a lopp, coming back to loop head (icf, lcf edges)
         self.edge_properties["back_edge"] = self.new_ep("bool")
 
-    # copies one CFG into another
-    def add_cfg(self, cfg: 'CFG', id: int = 0) -> None:
-
-        offset: int = self.num_vertices()
-        
-        for v in cfg.vertices():
-            h_v = self.add_vertex()
-            for p in cfg.vp:
-                if p == "name":
-                    self.vp[p][h_v] = str(id) + "_" + cfg.vp[p][v]
-                else:
-                    self.vp[p][h_v] = cfg.vp[p][v]
-    
-        for e in cfg.edges():
-            h_e = self.add_edge(int(e.source()) + offset, int(e.target()) + offset)
-            for p in cfg.ep:
-                self.ep[p][h_e] = cfg.ep[p][e]
-
-
     def contains_function_by_name(self, name: str):
         func = graph_tool.util.find_vertex(self, self.vp["name"], name)
         return len(func) == 1 and self.vp.level[func[0]] == NodeLevel.function
@@ -471,7 +452,7 @@ class CFG(graph_tool.Graph):
                     yield edge.target
 
     def __str__(self):
-        s = f"CFG{self.name}: {self.num_vertices()}v/{self.num_edges()}e," \
+        s = f"CFG: \"{self.name}\": {self.num_vertices()}v/{self.num_edges()}e," \
             f"{len(self.vp)}vp/{len(self.ep)}ep at {hex(id(self))}"
         return s
     

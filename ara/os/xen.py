@@ -7,9 +7,10 @@ from typing import Any
 from graph_tool import Graph
 from ara.util import get_logger
 
-from copy import copy
-
+# For V1 Hypercalls
 from .autosar import AUTOSARInstance
+
+from copy import copy
 
 from .os_util import (
     syscall,
@@ -65,6 +66,7 @@ class XEN(OSBase):
                 assert len(s.cpus) == 1, f"Tried to merge state that is already multicore {len(s.cpus)}."
                 cpu: CPU = s.cpus.one()
                 cpu.id = idx
+                cpu.cfg = XEN.cfg_list[idx]
                 cpus.append(cpu)
 
             state = OSState(cpus=CPUList(cpus), cfg=None, instances=None)
@@ -189,7 +191,8 @@ class XEN(OSBase):
                     cur_abb = None
                 irq_cpu = IRQCPU(id=cpu_idx, irq=irq, reference_cpu_id=irq.cpu_id, irq_on=False,
                                 control_instance=instances.get_node(irq), abb=cur_abb, 
-                                call_path=copy(ctx.call_path), exec_state=exec_state, analysis_context=None)
+                                call_path=copy(ctx.call_path), exec_state=exec_state, analysis_context=None,
+                                cfg=XEN.cfg_list[idx])
                 state.cpus[irq_cpu.id] = irq_cpu
                 # reassign irq
                 irq.cpu_id = irq_cpu.id
@@ -318,6 +321,7 @@ class XEN(OSBase):
             return state
 
         # Trigger event
+        state.cfg = XEN.cfg_list[receiver_channel.cpu_id]
         XEN.system_types[receiver_channel.cpu_id].trigger_cross_os_event(state, receiver_channel.cpu_id, receiver_channel.event)
 
         return state
