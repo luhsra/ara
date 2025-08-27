@@ -28,18 +28,22 @@ class DumpCFG(Step):
     def run(self):
         dot = self.dot.get()
         if dot:
-            abb_file = f'{self.dump_prefix.get().split(".")[0]}.{dot}.abbs.dot'
-            bb_file = f'{self.dump_prefix.get().split(".")[0]}.{dot}.bbs.dot'
+            path = self.dump_prefix.get().split(".")[0]
+            abb_file = f'{path}.{dot}.abbs.dot'
+            bb_file = f'{path}.{dot}.bbs.dot'
+            name = dot.split(".")[1]
+            names = (f"ABBs-{name}", f"BBs-{name}")
         else:
             abb_file = f'{self.dump_prefix.get()}.abbs.dot'
             bb_file = f'{self.dump_prefix.get()}.bbs.dot'
+            names = ("ABBs", "BBs")
         self._step_manager.chain_step({"name": "Printer",
                                        "dot": abb_file,
-                                       "graph_name": "ABBs",
+                                       "graph_name": names[0],
                                        "subgraph": 'abbs',
                                        "add_legend": self.add_legend.get()})
         self._step_manager.chain_step({"name": "Printer",
                                        "dot": bb_file,
-                                       "graph_name": "BBs",
+                                       "graph_name": names[0],
                                        "subgraph": 'bbs',
                                        "add_legend": self.add_legend.get()})

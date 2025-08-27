@@ -152,6 +152,7 @@ class TaskContext(ControlContext):
     received_events: int = 0
     waited_events: int = 0
     in_critical_section: bool = False
+    abb_name: str = "None"
 
     def __hash__(self):
         return hash(
@@ -176,10 +177,11 @@ class TaskContext(ControlContext):
             received_events=self.received_events,
             waited_events=self.waited_events,
             in_critical_section=self.in_critical_section,
+            abb_name=self.abb_name
         )
 
     def __str__(self):
-        s = f"{self.status.name} abb={self.abb}"
+        s = f"{self.status.name} {self.abb_name}"
         # s += f"dyn_prio={self.dyn_prio} received_events={self.received_events} "
         # s += f"waited_events={self.waited_events} in_critical_section={self.in_critical_section}"
         return s
@@ -374,6 +376,7 @@ class AUTOSAR(OSBase):
                         call_path=CallPath(),
                         exec_state=ExecState.from_abbtype(cfg.vp.type[entry_abb]),
                         analysis_context=None,
+                        cfg=cfg
                     )
                 )
                 running_tasks.append(prio_task)
@@ -398,6 +401,7 @@ class AUTOSAR(OSBase):
                 abb=cfg.get_entry_abb(obj.function),
                 call_path=CallPath(),
                 dyn_prio=[prio],
+                abb_name=f"StartWith: {state.cfg.vp.name[cfg.get_entry_abb(obj.function)]}"
             )
 
         for v, obj in instances.get(Alarm):
@@ -425,6 +429,7 @@ class AUTOSAR(OSBase):
             ctx = state.context[task]
             ctx.status = TaskStatus.running
             ctx.abb = None
+            ctx.abb_name = "Init-ABB"
             ctx.call_path = CallPath()
 
         for _, spinlock in instances.get(Spinlock):
@@ -685,6 +690,7 @@ class AUTOSAR(OSBase):
                 old_ctx = state.context[old_task]
                 if old_ctx.status in [TaskStatus.running, TaskStatus.blocked]:
                     old_ctx.abb = state.cfg.vertex(cpu.abb)
+                    old_ctx.abb_name = state.cfg.vp.name[state.cfg.vertex(cpu.abb)]
                     old_ctx.call_path = cpu.call_path
                 if old_ctx.status == TaskStatus.running:
                     old_ctx.status = TaskStatus.ready
@@ -696,6 +702,7 @@ class AUTOSAR(OSBase):
                 new_ctx.status = TaskStatus.running
                 # "reset" context values, they are irrelevant now
                 new_ctx.abb = None
+                new_ctx.abb_name = "Abb-reset"
                 new_ctx.call_path = CallPath()
 
                 cpu.control_instance = state.instances.vertex(new_vertex)
@@ -727,6 +734,7 @@ class AUTOSAR(OSBase):
         if ctx.status is not TaskStatus.running:
             if ctx.status is TaskStatus.suspended:
                 ctx.abb = state.cfg.get_entry_abb(task.function)
+                ctx.abb_name = state.cfg.vp.name[state.cfg.get_entry_abb(task.function)]
             ctx.status = TaskStatus.ready
         return state
 
@@ -1234,6 +1242,7 @@ class AUTOSAR(OSBase):
             abb=state.cfg.get_entry_abb(cur_task.function),
             call_path=CallPath(),
             dyn_prio=[2 * cur_task.priority],
+            abb_name=f"StartWith: {state.cfg.vp.name[state.cfg.get_entry_abb(cur_task.function)]}"
         )
 
         logger.debug(f"Terminate Task {cur_task.name}.")

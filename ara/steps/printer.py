@@ -129,14 +129,17 @@ def _sstg_state_as_dot(sstg, state_vert, with_times: bool = True, OS=AUTOSAR):
     if cpu.abb:
         syscall = cfg.get_syscall_name(cpu.abb)
         if syscall != "":
-            syscall = f" ({syscall})"
-        abb = f"{cfg.vp.name[cpu.abb]} {syscall}"
-        if with_times:
+            syscall = [('sys', f"{syscall}")]
+        else:
+            syscall = []
+        abb = f"{cfg.name.removeprefix('CFG-')}/{cfg.vp.name[cpu.abb]}"
+        if with_times and cfg.vp.bcet[cpu.abb] != 0 and cfg.vp.wcet[cpu.abb] != 0:
             xcet = [("bcet/wcet", f"{cfg.vp.bcet[cpu.abb]}/{cfg.vp.wcet[cpu.abb]}")]
         else:
             xcet = []
     else:
         abb = "None"
+        syscall = []
         xcet = []
 
     graph_attrs = "<br/>".join(
@@ -149,7 +152,7 @@ def _sstg_state_as_dot(sstg, state_vert, with_times: bool = True, OS=AUTOSAR):
                 ("type", ExecState(cpu.exec_state).name),
                 ("abb", abb),
                 # ("kernel", str(kernel)),
-            ] + xcet
+            ] + xcet + syscall
         ] + [
             f"<i>{k}</i>: {str(v)}"
             for k, v in [
@@ -169,7 +172,10 @@ def _sstg_state_as_dot(sstg, state_vert, with_times: bool = True, OS=AUTOSAR):
     attrs["tooltip"] = tooltip
 
     if cpu.exec_state & ExecState.with_time:
+        attrs["style"] = "bold"
         attrs["color"] = "green"
+        if cpu.exec_state == ExecState.idle:
+            attrs["color"] = "violet"
     elif cpu.exec_state & ExecState.syscall:
         attrs["color"] = "blue"
         attrs["shape"] = "box"

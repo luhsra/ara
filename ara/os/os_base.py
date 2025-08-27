@@ -222,6 +222,7 @@ class CPU:
     call_path: CallPath
     exec_state: ExecState
     analysis_context: Any  # analysis specific context information
+    cfg: CFG                # HyperSSE includes CPUs with different CFGs
 
     def copy(self):
         new_ac = None if not self.analysis_context else self.analysis_context.copy()
@@ -231,7 +232,8 @@ class CPU:
                    abb=self.abb,
                    call_path=copy.copy(self.call_path),
                    analysis_context=new_ac,
-                   exec_state=self.exec_state)
+                   exec_state=self.exec_state,
+                   cfg=self.cfg)
 
     def __eq__(self, other):
         return hash(self) == hash(other)
@@ -248,6 +250,8 @@ class CPU:
         except ValueError:
             s += f"Cfg-Abb=invalid "
         s += f"callpath={self.call_path} exec_state={self.exec_state.name}"
+        if self.cfg:
+            s += f" cfg={self.cfg.name}"
         return s
 
 @dataclass
@@ -268,7 +272,8 @@ class IRQCPU(CPU):
                       analysis_context=new_ac,
                       exec_state=self.exec_state,
                       irq=self.irq,
-                      reference_cpu_id=self.reference_cpu_id)
+                      reference_cpu_id=self.reference_cpu_id,
+                      cfg=self.cfg)
     
     def __str__(self):
         return "IRQ-" + super().__str__() + f" | irq={self.irq} ref_cpu_id {self.reference_cpu_id}"
@@ -384,10 +389,16 @@ class OSState:
         s += "\t-----"
         for cpu in self.cpus:
             if isinstance(cpu, IRQCPU):
+                # TODO: change abb id print name name
                 s += f"\n\t\33[1;36mIRQCPU-{cpu.id}\033[0m: ABB={cpu.abb}, state={cpu.exec_state.name}"
                 s += f", ref_cpu={cpu.reference_cpu_id}, irq={cpu.irq.name}"
             else:
-                s += f"\n\t\33[1;36mCPU-{cpu.id}\033[0m: ABB={cpu.abb}, state={cpu.exec_state.name}"
+                s += f"\n\t\33[1;36mCPU-{cpu.id}\033[0m: on {cpu.cfg.name} "
+                try:
+                    s += f"{cpu.cfg.vp.name[cpu.abb]}"
+                except TypeError:
+                    s += f"No-ABB"
+                s += f", state={cpu.exec_state.name}"
                 # for syscalls print name of syscall aswell
                 if cpu.exec_state == ExecState.syscall:
                     s += f":{self.cfg.get_syscall_name(cpu.abb)}"
