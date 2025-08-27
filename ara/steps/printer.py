@@ -11,7 +11,7 @@
 """Container for Printer."""
 from ara.graph import (ABBType, CFType, CFG, CFGView, MSTGraph, MSTType, StateType,
                        single_check, vertex_types)
-from ara.os.os_base import ExecState, IRQCPU, IRQ
+from ara.os.os_base import ExecState, IRQCPU, IRQ, OSBase
 
 from .option import Option, String, Choice, Bool
 from .step import Step
@@ -80,7 +80,7 @@ def with_color(value, color, min=0.0, max=1.0):
 from ara.os.zephyr import Zephyr
 from ara.os.autosar import AUTOSAR
 
-def _sstg_state_as_dot(sstg, state_vert, with_times: bool = True, OS=AUTOSAR):
+def _sstg_state_as_dot(sstg, state_vert, with_times: bool = True, OS: OSBase = AUTOSAR):
     attrs = {"fontsize": 14}
     size = 12
 
@@ -370,7 +370,7 @@ def reduced_mstg_to_dot(mstg, cfg, label="MSTG"):
     return dot_graph
 
 # this can be called as Printer-Step via run and step settings, or directly
-def mstg_to_dot(mstg: MSTGraph, label: str = "MSTG", OS=AUTOSAR, with_times: bool = True, 
+def mstg_to_dot(mstg: MSTGraph, label: str = "MSTG", OS: OSBase = AUTOSAR, with_times: bool = True, 
                 add_legend: bool = False, domain_type: str = "CPU"):
     def _to_str(v):
         return str(int(v))
@@ -424,7 +424,7 @@ def mstg_to_dot(mstg: MSTGraph, label: str = "MSTG", OS=AUTOSAR, with_times: boo
             dot_graph.add_subgraph(dot_m)
 
             for state in m2s.vertex(metastate).out_neighbors():
-                attrs = _sstg_state_as_dot(mstg, state, OS, with_times=with_times)
+                attrs = _sstg_state_as_dot(sstg=mstg, state_vert=state, with_times=with_times, OS=OS)
                 dot_state = pydot.Node(_to_str(state), **attrs)
                 dot_m.add_node(dot_state)
 
