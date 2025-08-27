@@ -10,6 +10,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 """Container for Printer."""
+import re
 from ara.graph import (ABBType, CFType, CFG, CFGView, MSTGraph, MSTType, StateType,
                        single_check, vertex_types)
 from ara.os.os_base import ExecState, IRQCPU, IRQ, OSBase
@@ -30,6 +31,7 @@ from itertools import chain
 # TODO remove this...
 from ..os.zephyr import Thread as ZephyrThread
 from ..os.zephyr import ZephyrIRQ
+from ..os.xen import EventChannel
 
 _sysshort = {
     "AUTOSAR_GetSpinlock": "GL",
@@ -127,21 +129,25 @@ def _sstg_state_as_dot(sstg, state_vert, with_times: bool = True, OS: OSBase = A
 
     else:
         instance = "Idle"
+
+    more_tupels = []
+
     if cpu.abb:
         syscall = cfg.get_syscall_name(cpu.abb)
         if syscall != "":
-            syscall = [('sys', f"{syscall}")]
-        else:
-            syscall = []
+            more_tupels.append(('sys', f"{syscall}"))
+            
         abb = f"{cfg.name.removeprefix('CFG-')}/{cfg.vp.name[cpu.abb]}"
         if with_times and cfg.vp.bcet[cpu.abb] != 0 and cfg.vp.wcet[cpu.abb] != 0:
-            xcet = [("bcet/wcet", f"{cfg.vp.bcet[cpu.abb]}/{cfg.vp.wcet[cpu.abb]}")]
-        else:
-            xcet = []
+            more_tupels.append(("bcet/wcet", f"{cfg.vp.bcet[cpu.abb]}/{cfg.vp.wcet[cpu.abb]}"))
     else:
         abb = "None"
-        syscall = []
-        xcet = []
+
+    # Debug testing
+    # x = obj.context_get_instances(EventChannel)
+    # if len(x) > 0:
+    #     ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+    #     more_tupels.append(("D:", ansi_escape.sub('', str(x[0]))))
 
     graph_attrs = "<br/>".join(
         [
@@ -153,7 +159,7 @@ def _sstg_state_as_dot(sstg, state_vert, with_times: bool = True, OS: OSBase = A
                 ("type", ExecState(cpu.exec_state).name),
                 ("abb", abb),
                 # ("kernel", str(kernel)),
-            ] + xcet + syscall
+            ] + more_tupels
         ] + [
             f"<i>{k}</i>: {str(v)}"
             for k, v in [

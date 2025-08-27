@@ -14,19 +14,15 @@ int main(void) {
 }
 
 TASK(B2) {
-	kout << "B2"<< endl;
 
-  	ara_timing_info(2, 3);
+	kout << "B2 Start"<< endl;
+  	ara_timing_info(10, 12);
 
-	kout << "B2"<< endl;
-  	ara_timing_info(6, 7);
+	// Example for any other syscall
 	EnableAllInterrupts();
+
   	ara_timing_info(4, 5);
-	kout << "B2"<< endl;
-  	ara_timing_info(6, 7);
-	EnableAllInterrupts();
-	kout << "B2"<< endl;
-  	ara_timing_info(6, 7);
+	kout << "B2 Done"<< endl;
 	
 	TerminateTask();
 	// ShutdownMachine();
