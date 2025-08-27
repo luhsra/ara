@@ -5,6 +5,7 @@
 # SPDX-FileCopyrightText: 2023 Jan Neugebauer
 # SPDX-FileCopyrightText: 2023 Andreas Kässens
 # SPDX-FileCopyrightText: 2025 Mareike Burg
+# SPDX-FileCopyrightText: 2025 Mareike Burg
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
