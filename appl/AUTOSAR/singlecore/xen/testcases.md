@@ -82,3 +82,8 @@ ninja ara@@run_autosar_singlecore_xen_spinlock_spinlock_noopt_pi4
 -> braucht Hypercalls!
 
 # IIT
+
+
+
+# Zephyr ?
+/usr/bin/python3 subprojects/ara/ara.py subprojects/ara-zephyr-apps/appl/qemu_cortex_m3-static_msgq.ll --os Zephyr --ir_output subprojects/ara-zephyr-apps/appl/qemu_cortex_m3-static_msgq_mod.ll --step-settings ../subprojects/ara/settings/zephyr.json autosar_singlecore_xen_hypercall_b_noopt_autosar.pi4.cc --timing BB
