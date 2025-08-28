@@ -742,8 +742,8 @@ class AUTOSAR(OSBase):
     @staticmethod
     def move_context(context: dict, target_cpu_id: int) -> dict:
         """HyperSSE starts with each system thinking its running on cpu 0, 
-        this function moves the context to target_cpu_id
-        single core contexte mit cpu0 -> single core contexte mit cpuNEW"""
+         this function moves the context to target_cpu_id
+         single core contexte mit cpu0 -> single core contexte mit cpuNEW"""
 
         logger.info(f"Moved context to CPU {target_cpu_id} for HyperSSE.")
         new_context = {}

@@ -373,7 +373,7 @@ class OSState:
     def context_dump(self):
         logger.warning("Printing context:\n")
         for k, v in self.context.items():
-            logger.warning(k)
+            logger.warning(f"{type(k)} --- {k}")
             logger.warning(f"    {v}")
 
     def __str__(self):

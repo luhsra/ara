@@ -4,12 +4,15 @@ DeclareTask(A);
 DeclareCounter(C1);
 DeclareAlarm(A1);
 
+extern "C" void ara_timing_info(int a, int b);
+
 int main() {
 	StartOS(0);
 }
 
 TASK(A) {
 	kout << "Hello World"<< endl;
+	ara_timing_info(50, 50);
 
 	TerminateTask();
 }
