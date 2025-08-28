@@ -20,11 +20,13 @@ MultiSSE und HyperSSE sollten hierbei das gleiche Ergebnis liefern.
 
 ninja ara@@run_autosar_singlecore_xen_alarm_a_noopt_pi4
 
-"HyperSSE": {
-    "system_count": 1,
-    "dom_files" : ["subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_alarm_test.pi4.ll"],
-    "dom_oils" : ["../subprojects/ara/appl/AUTOSAR/singlecore/xen/alarm_test.json"]
-}
+    "HyperSSE": {
+        "do_timings": true,
+        "testname": "Alarm",
+        "guests": ["Autosar", "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_alarm_a.pi4.ll",
+                    "../subprojects/ara/appl/AUTOSAR/singlecore/xen/alarm/a.json"]
+    }
+
 
 # Complex Test
 2 Systems, one with alarm. Need to synchronsize both for shutdown, therefore complex SP.
@@ -51,14 +53,16 @@ ninja subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_a_noopt_mod.
 
 
 "HyperSSE": {
-    "system_count": 2,
 	"do_timings": true,
 	"testname": "Hypercall",
-    "dom_files" : ["subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_a.pi4.ll",
-                "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_b.pi4.ll"],
-    "dom_oils" : ["../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercall/a.json", 
-                    "../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercall/b.json"]
+	"guests": ["Autosar", "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_a.pi4.ll",
+				"../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercall/a.json", 
+				"Autosar", 
+                "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_b.pi4.ll", 
+                "../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercall/b.json"
+			]
 }
+
 
 
 # Hypercalls Complex
@@ -87,3 +91,19 @@ ninja ara@@run_autosar_singlecore_xen_spinlock_spinlock_noopt_pi4
 
 # Zephyr ?
 /usr/bin/python3 subprojects/ara/ara.py subprojects/ara-zephyr-apps/appl/qemu_cortex_m3-static_msgq.ll --os Zephyr --ir_output subprojects/ara-zephyr-apps/appl/qemu_cortex_m3-static_msgq_mod.ll --step-settings ../subprojects/ara/settings/zephyr.json autosar_singlecore_xen_hypercall_b_noopt_autosar.pi4.cc --timing BB
+
+
+/usr/bin/python3 subprojects/ara/ara.py subprojects/ara-zephyr-apps/appl/native_sim-static_msgq.ll --os Zephyr --log-level info --with-stubs --va-corrections /home/sayna/Desktop/sra/master/parrot/settings/no_corrections.json --step-settings sse_native_sim-static_msgq.json
+
+    "HyperSSE": {
+        "do_timings": false,
+        "testname": "Hypercall",
+        "guests": ["Autosar", "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_zephyr_autosar.pi4.ll","../subprojects/ara/appl/AUTOSAR/singlecore/xen/zephyr/autosar.json"]
+    }
+
+    	"HyperSSE": {
+		"do_timings": false,
+		"testname": "Zephyr",
+		"guests": ["Zephyr", "subprojects/ara-zephyr-apps/appl/native_sim-static_msgq.ll"]
+	}
+

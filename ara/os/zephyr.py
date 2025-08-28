@@ -17,7 +17,7 @@ from .os_util import (
     find_instance_node,
     find_return_value
 )
-from .os_base import OSBase, ControlInstance, CPUList, CPU, OSState, ExecState, TaskStatus, ControlContext, IRQ, IRQContext
+from .os_base import CPUBounded, OSBase, ControlInstance, CPUList, CPU, OSState, ExecState, TaskStatus, ControlContext, IRQ, IRQContext
 from ara.util import get_logger
 from ara.graph import SyscallCategory, SigType, CallPath, CFG, Graph
 from ara.steps import get_native_component
@@ -700,6 +700,7 @@ class Zephyr(OSBase):
                 call_path=CallPath(),
                 exec_state=ExecState.from_abbtype(cfg.vp.type[entry_abb]),
                 analysis_context=za.ZephyrCPUAnalysisContext(), # current=prio_vert
+                cfg=cfg
             )
         ]
 
@@ -1094,6 +1095,30 @@ class Zephyr(OSBase):
             return [state]
 
         return []
+
+
+    # ------------------------- Xen HyperSSE ------------------------------
+
+    def move_context(context: dict, target_cpu_id: int) -> dict:
+        """HyperSSE starts with each system thinking its running on cpu 0, 
+         this function moves the context to target_cpu_id
+         single core contexte mit cpu0 -> single core contexte mit cpuNEW"""
+
+        logger.info(f"Moved context to CPU {target_cpu_id} for HyperSSE.")
+        new_context = {}
+        for k,v in context.items():
+            if isinstance(k, CPUBounded):
+                k.cpu_id = target_cpu_id
+                new_context[k] = v
+            else:
+                # ZephyrKernel is global, can not be moved?
+                # Same for MSGQ?
+                new_context[k] = v
+
+        return new_context
+    
+
+    # ------------------------------- Syscalls -----------------------------------
 
     # k_tid_t k_thread_create(struct k_thread *new_thread, k_thread_stack_t *stack, size_t stack_size,
     #   k_thread_entry_t entry, void *p1, void *p2, void *p3, int prio, uint32_t options,

@@ -9,6 +9,7 @@ from ara.util import get_logger
 
 # For V1 Hypercalls
 from .autosar import AUTOSARInstance
+from .zephyr import Zephyr
 
 from copy import copy
 
@@ -179,7 +180,14 @@ class XEN(OSBase):
          finding each local interrupts"""
         cpu_idx = max([x.id for x in state.cpus]) + 1
         for idx, instances in enumerate(XEN.instances_list):
+
             tmp_instances_list = []
+
+            # TODO: Xen interrupts are wierd!
+            if XEN.system_types[idx] == Zephyr:
+                logger.warning("Zephyr's IRQs are not supported!")
+                continue
+
             for _, irq in instances.get(IRQ):
                 # every irq gets an own CPU
                 ctx = state.context[irq]
@@ -208,6 +216,7 @@ class XEN(OSBase):
                 XEN.instances_list[idx].vp.obj[irq.isr_handler].cpu_id = idx
 
                 tmp_instances_list.append(XEN.instances_list[idx])
+
         XEN.instances_list += tmp_instances_list
 
     # @staticmethod

@@ -2,6 +2,13 @@
 	"steps": [
 		"HyperSSE"
 	],
+
+	"SystemRelevantFunctions" : {
+		"xen_syscall": true
+	},
+	"SysFuncts" : {
+		"xen_syscall": true
+	},
 	"LLVMMap" : {
 		"log_level": "error"
 	},
@@ -18,6 +25,25 @@
 	"OS_BASE": {
 		"log_level": "debug"
 	},
+	"DumpCFG": {
+		"add_legend": false
+	},
+	"DumpInstances": {
+		"add_legend": false
+	},
+
+	"SIA": {
+		"dump": false
+	},
+	"SSE": {
+		"dump": true
+	},
+
+	"logger": {
+		"AUTOSAR": "warning",
+		"Zephyr": "debug",
+		"XEN": "debug"
+	},
 	"MultiSSE": {
 		"with_times": true,
 		"dump": true,
@@ -25,19 +51,12 @@
 		"per_round_dump": false
 	},
 
-	"logger": {
-		"AUTOSAR": "debug",
-		"XEN": "debug"
-	},
-
-"HyperSSE": {
-    "system_count": 2,
-	"do_timings": true,
-	"testname": "Hypercall",
-    "dom_files" : ["subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_a.pi4.ll",
-                "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_b.pi4.ll"],
-    "dom_oils" : ["../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercall/a.json", 
-                    "../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercall/b.json"]
-}
+	"HyperSSE": {
+		"do_timings": false,
+		"testname": "Cross-OS",
+		"guests": ["Zephyr", "subprojects/ara-zephyr-apps/appl/native_sim-static_msgq.ll",
+		"Autosar", "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_zephyr_autosar.pi4.ll",
+		"../subprojects/ara/appl/AUTOSAR/singlecore/xen/zephyr/autosar.json"]
+	}
 
 }

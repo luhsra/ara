@@ -31,7 +31,7 @@ from itertools import chain
 # TODO remove this...
 from ..os.zephyr import Thread as ZephyrThread
 from ..os.zephyr import ZephyrIRQ
-from ..os.xen import EventChannel
+from ..os.xen import XEN
 
 _sysshort = {
     "AUTOSAR_GetSpinlock": "GL",
@@ -136,8 +136,11 @@ def _sstg_state_as_dot(sstg, state_vert, with_times: bool = True, OS: OSBase = A
         syscall = cfg.get_syscall_name(cpu.abb)
         if syscall != "":
             more_tupels.append(('sys', f"{syscall}"))
-            
-        abb = f"{cfg.name.removeprefix('CFG-')}/{cfg.vp.name[cpu.abb]}"
+
+        if OS == XEN:
+            abb = f"{cfg.name.removeprefix('CFG-')}/{cfg.vp.name[cpu.abb]}"
+        else:
+            abb = f"{cfg.vp.name[cpu.abb]}"
         if with_times and cfg.vp.bcet[cpu.abb] != 0 and cfg.vp.wcet[cpu.abb] != 0:
             more_tupels.append(("bcet/wcet", f"{cfg.vp.bcet[cpu.abb]}/{cfg.vp.wcet[cpu.abb]}"))
     else:
@@ -426,8 +429,10 @@ def mstg_to_dot(mstg: MSTGraph, label: str = "MSTG", OS: OSBase = AUTOSAR, with_
             #     dot_m = pydot.Cluster(_to_str(metastate), penwidth=3, color="grey",
             #                         label=f"M{int(metastate)} (dom {cpu_id}, {XEN.system_types[cpu_id].get_name()})")
             #     dot_graph.add_subgraph(dot_m)
-            dot_m = pydot.Cluster(_to_str(metastate),
-                                label=f"M{int(metastate)} ({domain_type} {cpu_id})")
+            label = f"M{int(metastate)} ({domain_type} {cpu_id})"
+            if OS == XEN:
+                label = f"M{int(metastate)}: {domain_type}-{cpu_id}-{XEN.system_types[cpu_id].get_name()}"
+            dot_m = pydot.Cluster(_to_str(metastate),label=label)
             dot_graph.add_subgraph(dot_m)
 
             for state in m2s.vertex(metastate).out_neighbors():

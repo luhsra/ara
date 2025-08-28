@@ -5,6 +5,7 @@
 """HyperSSE Analysis"""
 from ara.graph import Graph
 from ara.os.autosar import AUTOSAR
+from ara.os.zephyr import Zephyr
 from ara.os.os_base import reset_id
 from ara.stepmanager import StepManager
 import logging
@@ -12,14 +13,11 @@ import logging
 from ara.os.xen import XEN
 
 from .step import Step # type: ignore
-from .option import Option, Integer, String, List, Bool
+from .option import Option, String, List, Bool
 
 class HyperSSE(Step):
     """Provides analysis of multiple operating systems on a shared hypervisor, currently Xen is supported."""
-    system_count: Option = Option(name="system_count",
-                          help="Number of systems that should be analysed together.",
-                          ty=Integer(),
-                          default_value=1)
+
     do_timings: Option = Option(name="do_timings",
                           help="If WCET/BCET timing information on ABBs should be used.",
                           ty=Bool(),
@@ -29,12 +27,17 @@ class HyperSSE(Step):
                           ty=String(),
                           default_value="testsg")
     
-    # This steps ignores the ara cli paramters that other steps us, instead this options are used
-    dom_files: Option = Option(name="dom_files",
-                         help="Path of list of dom ll.",
-                         ty=List(String))
-    dom_oils: Option = Option(name="dom_oils",
-                         help="Path of list of dom oil.",
+    # # This steps ignores the ara cli paramters that other steps us, instead this options are used
+    # dom_files: Option = Option(name="dom_files",
+    #                      help="Path of list of dom ll.",
+    #                      ty=List(String))
+    # dom_oils: Option = Option(name="dom_oils",
+    #                      help="Path of list of dom oil.",
+    #                      ty=List(String))
+    
+    # Syntax is: OSName, config1, config2, ...
+    guests: Option = Option(name="guests",
+                         help="Data about each guest systems, the first entry is always the name of the OS.",
                          ty=List(String))
 
     def get_single_dependencies(self):
@@ -55,20 +58,14 @@ class HyperSSE(Step):
         if HyperSSE.runid != 0:
             HyperSSE.graphs.append(self._graph)
 
-        # Iterate guest systems
-        while HyperSSE.runid < self.system_count.get():
+        guests = self.guests.get()
+
+        # Iterate one guest systems, which calls another HyperSSE round to here
+        if guests and not HyperSSE.done:
             log.info(f"Starting HyperSSE step - dom{HyperSSE.runid}")
 
             # Create a new root graph object
             self._graph = Graph()
-
-            # For now only AUTOSAR
-            self._graph.os = AUTOSAR
-
-            input_file = self.dom_files.get()[HyperSSE.runid]
-            oilfile = self.dom_oils.get()[HyperSSE.runid]
-            log.debug(f"Found: {input_file.removeprefix('subprojects/ara/appl/AUTOSAR/')}")
-            log.debug(f"Found: {oilfile.removeprefix('../subprojects/ara/appl/AUTOSAR/')}")
 
             # Copy old config
             program = self._step_manager._config.program
@@ -76,36 +73,57 @@ class HyperSSE(Step):
 
             s_manager: StepManager = StepManager(self._graph)
             self._step_manager = s_manager
+            match guests[0]:
+                case "Autosar":
+                    self._graph.os = AUTOSAR
+                    log.debug(f"Found: {guests[1].removeprefix('subprojects/ara/appl/AUTOSAR/')}")
+                    log.debug(f"Found: {guests[2].removeprefix('../subprojects/ara/appl/AUTOSAR/')}")
 
-            # Modify old config
-            program["input_file"] = input_file
-            program["oilfile"] = oilfile
-            extra["HyperSSE"]["dom_files"] = self.dom_files.get()
-            extra["HyperSSE"]["oil_files"] = self.dom_oils.get()
-            extra["SystemRelevantFunctions"] = {}
-            extra["SystemRelevantFunctions"]["xen_syscall"] = True
-            extra["SysFuncts"] = {}
-            extra["SysFuncts"]["xen_syscall"] = True
-            extra["DumpCFG"] = {}
+                    program["input_file"] = guests[1]
+                    program["oilfile"] = guests[2]
+                    extra["LoadOIL"] = {"log_level": "error"}
+
+                    # Remove first 3 elements
+                    guests = guests[3:] 
+
+                    if self.do_timings.get():
+                        extra["MultiSSE"]["with_times"] = True
+                        extra["ApplyTimings"] = {"timings":"BB"}
+
+                        # Readadd all steps, end with returning to HyperSSE
+                        extra["steps"] = ['ApplyTimings', 'MultiSSE', 'DumpCFG', 'DumpInstances', 'SVFReset', 'HyperSSE']
+                    else:
+                        extra["steps"] = ['MultiSSE', 'DumpCFG', 'DumpInstances', 'SVFReset', 'HyperSSE']
+
+    
+                case "Zephyr":
+                    # other Zepyhr build also adds --with-stubs and --va-corrections with an emtpy json file
+                    self._graph.os = Zephyr
+                    program["input_file"] = guests[1]
+
+                    trimmed = guests[1].removesuffix(".ll")
+                    extra["ZephyrStaticPost"] = {"kconfigfile": trimmed + ".config"}
+                    extra["LoadKernelLL"] = {"kernel_ll": trimmed + "-kernel.ll"}
+                    extra["RemoveSysfuncBody"] = {"drop_llvm_suffix": True, "disable": False}
+                    extra["ZephyrStatic"] = {"log_level": "debug"}
+                    extra["steps"] = ['MergeStructs', 'RemoveSysfuncBody', 'ZephyrThreadEntry', 'SIA', "LoadKernelLL",
+                                      'SSE', 'DumpCFG', 'DumpInstances', 'SVFReset', 'HyperSSE']
+                    
+                    # Remove first 2 elements
+                    guests = guests[2:] 
+                case _:
+                    log.error(f"Unkown guest OS: {guests[0]}")
+                    exit(1)
+
+
             extra["DumpCFG"]["dot"] = str(self.testname.get()) + ".dom" + str(HyperSSE.runid)
-            extra["DumpCFG"]["add_legend"] = False
-            extra["DumpInstances"] = {}
             extra["DumpInstances"]["dot"] = str(self.testname.get()) + ".dom" + str(HyperSSE.runid)
             extra["MultiSSE"]["file_name"] = str(self.testname.get()) + ".dom" + str(HyperSSE.runid)
-            extra["MultiSSE"]["add_legend"] = False
-            extra["MultiSSE"]["with_times"] = self.do_timings.get()
-            extra["ApplyTimings"] = {}
-            extra["ApplyTimings"]["timings"] = "BB"
-            extra["logger"] = {}
-            extra["logger"]["AUTOSAR"] = "warning"
-            extra["LoadOIL"] = {}
-            extra["LoadOIL"]["log_level"] = "error"
+            extra["HyperSSE"]["guests"] = guests
 
-            # Readadd all steps, end with returning to HyperSSE
-            extra["steps"] = ['ApplyTimings', 'MultiSSE', 'DumpCFG', 'DumpInstances', 'SVFReset', 'HyperSSE']
             # Reset entry_points
             program["entry_point"] = "main" 
-
+            
             HyperSSE.runid += 1
             s_manager.execute(program, extra, None)
 
@@ -120,7 +138,7 @@ class HyperSSE(Step):
         XEN.graph_list = HyperSSE.graphs
 
         for graph in HyperSSE.graphs:
-            XEN.system_types.append(AUTOSAR)
+            XEN.system_types.append(graph.os)
             graph.name = "Graph-dom-" + str(XEN.system_count)
             graph.cfg.name = "CFG-dom-" + str(XEN.system_count)
             XEN.cfg_list.append(graph.cfg)

@@ -1557,7 +1557,7 @@ class MultiSSE(StatsStep):
         self._step_manager._graph.mstg = mstg
 
         step_data = [StatData(key="rounds", value=counter)]
-        self._print_and_store(step_data)
+        # self._print_and_store(step_data)
 
         if self.dump.get():
             fn = self.file_name.get()
