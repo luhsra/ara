@@ -95,15 +95,20 @@ ninja ara@@run_autosar_singlecore_xen_spinlock_spinlock_noopt_pi4
 
 /usr/bin/python3 subprojects/ara/ara.py subprojects/ara-zephyr-apps/appl/native_sim-static_msgq.ll --os Zephyr --log-level info --with-stubs --va-corrections /home/sayna/Desktop/sra/master/parrot/settings/no_corrections.json --step-settings sse_native_sim-static_msgq.json
 
-    "HyperSSE": {
-        "do_timings": false,
-        "testname": "Hypercall",
-        "guests": ["Autosar", "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_zephyr_autosar.pi4.ll","../subprojects/ara/appl/AUTOSAR/singlecore/xen/zephyr/autosar.json"]
-    }
 
-    	"HyperSSE": {
+	"HyperSSE": {
 		"do_timings": false,
-		"testname": "Zephyr",
-		"guests": ["Zephyr", "subprojects/ara-zephyr-apps/appl/native_sim-static_msgq.ll"]
+		"testname": "Cross-OS",
+		"guests": ["Zephyr", "subprojects/ara-zephyr-apps/appl/native_sim-static_msgq.ll",
+		"Autosar", "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_zephyr_autosar.pi4.ll",
+		"../subprojects/ara/appl/AUTOSAR/singlecore/xen/zephyr/autosar.json"]
 	}
 
+# Zephyr Hypercall    	
+	"HyperSSE": {
+		"do_timings": false,
+		"testname": "Cross-OS-HC",
+		"guests": ["Zephyr", "subprojects/ara-zephyr-apps/appl/native_sim-xen_static_msgq.ll",
+		"Autosar", "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_zephyr_hc_autosar.pi4.ll",
+		"../subprojects/ara/appl/AUTOSAR/singlecore/xen/zephyr-hc/autosar.json"]
+	}
