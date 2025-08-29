@@ -52,16 +52,16 @@ ninja subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_a_noopt_mod.
 /usr/lib/llvm-14/bin/clang -o subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_a.pi4.ll ../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercall/a.cc -MD -MF subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_a.pi4.ll.dep -std=c++11 -I /home/sayna/Desktop/sra/master/parrot/subprojects/ara/libs/autosar/arch/arm -I /home/sayna/Desktop/sra/master/parrot/subprojects/ara/libs/autosar/arch/arm/platforms/raspberry -I /home/sayna/Desktop/sra/master/parrot/subprojects/ara/libs/autosar -I /home/sayna/Desktop/sra/master/parrot/subprojects/ara/libs/autosar/.. -I /home/sayna/Desktop/sra/master/parrot/subprojects/ara/libs/autosar/os -I /home/sayna/Desktop/sra/master/parrot/subprojects/ara/libs/autosar/os/util -I /home/sayna/Desktop/sra/master/parrot/subprojects/ara/libs/autosar/arch/generic -I /home/sayna/Desktop/sra/master/parrot/subprojects/ara/libs/autosar/arch/generic -I /home/sayna/Desktop/sra/master/parrot/subprojects/ara/libs/autosar/os -I /home/sayna/Desktop/sra/master/parrot/subprojects/ara/libs/autosar/test -I /home/sayna/Desktop/sra/master/parrot/subprojects/ara/appl/AUTOSAR/source/os -ffunction-sections -fdata-sections -g -O0 -Xclang -disable-O0-optnone -fno-rtti -Wno-everything -fno-discard-value-names -fno-exceptions --target=arm-none-eabi -mthumb -mcpu=cortex-a72 -mthumb -mfloat-abi=soft -std=c++11 -O3 -ffixed-r9 -mcpu=cortex-a7 -DQEMU -O0 -S -emit-llvm && /usr/lib/llvm-14/bin/clang -o subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_b.pi4.ll ../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercall/b.cc -MD -MF subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_b.pi4.ll.dep -std=c++11 -I /home/sayna/Desktop/sra/master/parrot/subprojects/ara/libs/autosar/arch/arm -I /home/sayna/Desktop/sra/master/parrot/subprojects/ara/libs/autosar/arch/arm/platforms/raspberry -I /home/sayna/Desktop/sra/master/parrot/subprojects/ara/libs/autosar -I /home/sayna/Desktop/sra/master/parrot/subprojects/ara/libs/autosar/.. -I /home/sayna/Desktop/sra/master/parrot/subprojects/ara/libs/autosar/os -I /home/sayna/Desktop/sra/master/parrot/subprojects/ara/libs/autosar/os/util -I /home/sayna/Desktop/sra/master/parrot/subprojects/ara/libs/autosar/arch/generic -I /home/sayna/Desktop/sra/master/parrot/subprojects/ara/libs/autosar/arch/generic -I /home/sayna/Desktop/sra/master/parrot/subprojects/ara/libs/autosar/os -I /home/sayna/Desktop/sra/master/parrot/subprojects/ara/libs/autosar/test -I /home/sayna/Desktop/sra/master/parrot/subprojects/ara/appl/AUTOSAR/source/os -ffunction-sections -fdata-sections -g -O0 -Xclang -disable-O0-optnone -fno-rtti -Wno-everything -fno-discard-value-names -fno-exceptions --target=arm-none-eabi -mthumb -mcpu=cortex-a72 -mthumb -mfloat-abi=soft -std=c++11 -O3 -ffixed-r9 -mcpu=cortex-a7 -DQEMU -O0 -S -emit-llvm
 
 
-"HyperSSE": {
-	"do_timings": true,
-	"testname": "Hypercall",
-	"guests": ["Autosar", "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_a.pi4.ll",
-				"../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercall/a.json", 
-				"Autosar", 
-                "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_b.pi4.ll", 
-                "../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercall/b.json"
-			]
-}
+    "HyperSSE": {
+        "do_timings": true,
+        "testname": "Hypercall",
+        "guests": ["Autosar", "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_a.pi4.ll",
+                    "../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercall/a.json", 
+                    "Autosar", 
+                    "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_b.pi4.ll", 
+                    "../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercall/b.json"
+                ]
+    }
 
 
 
@@ -112,3 +112,7 @@ ninja ara@@run_autosar_singlecore_xen_spinlock_spinlock_noopt_pi4
 		"Autosar", "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_zephyr_hc_autosar.pi4.ll",
 		"../subprojects/ara/appl/AUTOSAR/singlecore/xen/zephyr-hc/autosar.json"]
 	}
+
+
+# TMP
+new path: subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercall_Autosar_A_LOOKHERE_noopt_mod.pi4.ll

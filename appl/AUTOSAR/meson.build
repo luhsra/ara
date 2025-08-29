@@ -201,6 +201,7 @@ autosar_apps = [
 ]
 subdir('multicore' / 'trampoline')
 
+autosar_apps += xen_autosar_apps
 
 no_timing_settings = custom_target(
   output: 'no_timing_settings.json',
@@ -227,6 +228,11 @@ foreach app : autosar_apps
     autosar_apps_with_variants += [app + {'src': files(sys + '.cc')[0], 'full_name': full_name}]
   endif
 endforeach
+
+# foreach key : autosar_apps_with_variants[0].keys()
+#   message(key + ': ' + autosar_apps_with_variants[0].get(key).to_string())
+# endforeach
+# error('exit')
 
 foreach app : autosar_apps_with_variants
   sys = app['core'] / app['path'] / app['name']

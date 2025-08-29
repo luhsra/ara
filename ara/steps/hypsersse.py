@@ -27,18 +27,10 @@ class HyperSSE(Step):
                           ty=String(),
                           default_value="testsg")
     
-    # # This steps ignores the ara cli paramters that other steps us, instead this options are used
-    # dom_files: Option = Option(name="dom_files",
-    #                      help="Path of list of dom ll.",
-    #                      ty=List(String))
-    # dom_oils: Option = Option(name="dom_oils",
-    #                      help="Path of list of dom oil.",
-    #                      ty=List(String))
-    
-    # Syntax is: OSName, config1, config2, ...
+    # Syntax is: OSName;config1;config2;OSNAME ...
     guests: Option = Option(name="guests",
                          help="Data about each guest systems, the first entry is always the name of the OS.",
-                         ty=List(String))
+                         ty=String())
 
     def get_single_dependencies(self):
         return []
@@ -58,10 +50,10 @@ class HyperSSE(Step):
         if HyperSSE.runid != 0:
             HyperSSE.graphs.append(self._graph)
 
-        guests = self.guests.get()
 
         # Iterate one guest systems, which calls another HyperSSE round to here
-        if guests and not HyperSSE.done:
+        if self.guests.get():
+            guests = self.guests.get().split(';')
             log.info(f"Starting HyperSSE step - dom{HyperSSE.runid}")
 
             # Create a new root graph object
@@ -119,7 +111,7 @@ class HyperSSE(Step):
             extra["DumpCFG"]["dot"] = str(self.testname.get()) + ".dom" + str(HyperSSE.runid)
             extra["DumpInstances"]["dot"] = str(self.testname.get()) + ".dom" + str(HyperSSE.runid)
             extra["MultiSSE"]["file_name"] = str(self.testname.get()) + ".dom" + str(HyperSSE.runid)
-            extra["HyperSSE"]["guests"] = guests
+            extra["HyperSSE"]["guests"] = ';'.join(guests)
 
             # Reset entry_points
             program["entry_point"] = "main" 

@@ -51,12 +51,11 @@
 		"per_round_dump": false
 	},
 
-	"HyperSSE": {
-		"do_timings": false,
-		"testname": "Cross-OS-HC",
-		"guests": ["Zephyr", "subprojects/ara-zephyr-apps/appl/native_sim-xen_static_msgq.ll",
-		"Autosar", "subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_zephyr_hc_autosar.pi4.ll",
-		"../subprojects/ara/appl/AUTOSAR/singlecore/xen/zephyr-hc/autosar.json"]
-	}
+
+    "HyperSSE": {
+        "do_timings": true,
+        "testname": "Hypercall",
+        "guests": "Autosar;subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_a.pi4.ll;../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercall/a.json;Autosar;subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_b.pi4.ll;../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercall/b.json"
+    }
 
 }

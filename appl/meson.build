@@ -4,6 +4,9 @@ if arm_enabled
   subdir('FreeRTOS')
 endif
 
+# Xen must be loaded before Autosar in order to find its targets!
+subdir('Xen')
+
 # AUTOSAR examples
 # it is POSIX only currently
 if posix_enabled

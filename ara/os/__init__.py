@@ -25,11 +25,12 @@ def _init_os_package():
         from .freertos import FreeRTOS
         from .autosar import AUTOSAR
         from .zephyr import Zephyr
+        from .xen import XEN
         from .posix.posix import POSIX
 
         _os_models = {
             model.get_name(): model
-            for model in [FreeRTOS, AUTOSAR, Zephyr, POSIX]
+            for model in [FreeRTOS, AUTOSAR, Zephyr, POSIX, XEN]
         }  # And here
 
 
