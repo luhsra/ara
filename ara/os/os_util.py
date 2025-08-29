@@ -196,6 +196,7 @@ def set_next_abb(state: OSState, cpu_id: int) -> None:
         cfg = state.cpus[cpu_id].cfg
         lcfg = _CFGView(cfg, efilt=cfg.ep.type.fa == _CFType.lcf)
     else:
+        cfg = state.cfg
         lcfg = _CFGView(state.cfg, efilt=state.cfg.ep.type.fa == _CFType.lcf)
     cpu = state.cpus[cpu_id]
     for idx, next_abb in enumerate(lcfg.vertex(cpu.abb).out_neighbors()):
@@ -203,7 +204,7 @@ def set_next_abb(state: OSState, cpu_id: int) -> None:
             raise RuntimeError(
                 "A syscall must not have more than one successor.")
         cpu.abb = int(next_abb)
-        cpu.exec_state = ExecState.from_abbtype(state.cfg.vp.type[next_abb])
+        cpu.exec_state = ExecState.from_abbtype(cfg.vp.type[next_abb])
 
 
 class Parenthesis(Enum):

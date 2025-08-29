@@ -7,10 +7,16 @@
 xen_testcases = [
   {'name': 'hypercall', 'do_timings': 'true', 'guests':
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercall_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hypercall/Autosar-A/a.json;' +
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercall_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hypercall/Autosar-B/b.json'},
-  {'name': 'hypercallv6', 'do_timings': 'true', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercall_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hypercall/Autosar-B/b.json'
+  },
+  {'name': 'hypercall-not', 'do_timings': 'false', 'guests': 
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercall_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hypercall/Autosar-A/a.json;' +
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercall_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hypercall/Autosar-B/b.json'},
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercall_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hypercall/Autosar-B/b.json'
+  },
+  {'name': 'hypercall-ext', 'do_timings': 'true', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercall_ext_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hypercall-ext/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercall_ext_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hypercall-ext/Autosar-B/b.json'
+  },
 ]
 
 # Compile ll files
