@@ -89,8 +89,6 @@ autosar_apps = [
   {'core': 'singlecore', 'path': 'ecc1' / 'eventisr1', 'name': 'e',                     'oil': 'system.json', 'mtrace': 'e.trace.json'},
   {'core': 'singlecore', 'path': 'ecc1' / 'eventisr1', 'name': 'f',                     'oil': 'system.json', 'mtrace': 'f.trace.json'},
   {'core': 'singlecore', 'path': 'sched' ,             'name': 'a',                     'oil': 'a.json', 'mtrace': 'a.trace.json'},
-  {'core': 'singlecore', 'path': 'xen' / 'zephyr',   'name': 'autosar',              'oil': 'autosar.json'},
-  {'core': 'singlecore', 'path': 'xen' / 'zephyr-hc',   'name': 'autosar',              'oil': 'autosar.json'},
   {'core': 'multicore',  'path': '',                   'name': 'minexample',            'oil': 'minexample.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'interrupts',        'name': 'a',                     'oil': 'a_system.json', 'mtrace': 'a_trace.json', 'timing': 'a_timings.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'multicore',  'path': 'interrupts',        'name': 'cross_alarms',          'oil': 'cross_alarms_system.json', 'mtrace': 'cross_alarms_trace.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
@@ -196,8 +194,9 @@ autosar_apps += [
   {'core': '../Xen',  'path': 'hypercomplex'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'hypercomplex'/ 'Autosar-B','name': 'worker', 'oil': 'worker.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'hypercomplex'/ 'Autosar-C','name': 'loop', 'oil': 'loop.json', 'timing': 'BB'},
-  
-  # Only Autosar cases
+  {'core': '../Xen',  'path': 'zephyr' / 'Autosar-B', 'name': 'a', 'oil':   'a.json'},
+  {'core': '../Xen',  'path': 'zephyr-hc' / 'Autosar-B', 'name': 'a', 'oil'  : 'a.json'},
+# Only Autosar cases
   # {'core': 'singlecore', 'path': 'xen' / 'minimal',    'name': 'multi_core',            'oil': 'multi_core.json', 'timing': 'BB'},
   # {'core': 'singlecore', 'path': 'xen' / 'hypercall',   'name': 'multi_core',           'oil': 'multi_core.json', 'timing': 'BB'},
   # {'core': 'singlecore', 'path': 'xen' / 'complex',    'name': 'multi_core',            'oil': 'multi_core.json'},

@@ -5,6 +5,7 @@
 
 # Testcases
 xen_testcases = [
+  # Hypercalls
   # Minimal Example for hypercalls
   {'name': 'hypercall', 'do_timings': 'true', 'guests':
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercall_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hypercall/Autosar-A/a.json;' +
@@ -25,7 +26,6 @@ xen_testcases = [
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_complex_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/complex/Autosar-A/a.json;' +
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_complex_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/complex/Autosar-B/b.json'
   },
-
   # Big example with Hypercalls: 3 Systeme, A sendet zu festen Zeitpunkten Signale an B, C sendet ebenfalls an B, 3 verschiedene Events auf B.
   {'name': 'hypercomplex', 'do_timings': 'true', 'guests': 
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercomplex_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hypercomplex/Autosar-A/a.json;' +
@@ -33,7 +33,20 @@ xen_testcases = [
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercomplex_Autosar_C_loop.pi4.ll;../subprojects/ara/appl/Xen/hypercomplex/Autosar-C/loop.json'
   },
 
+  # With Zephyr
+  # Zephyr
+  {'name': 'zephyr', 'do_timings': 'false', 'guests': 
+      'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-static_msgq.ll;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_zephyr_Autosar_B_a.pi4.ll;../subprojects/ara/appl/Xen/zephyr/Autosar-B/a.json'
+  },
+  # "Zephyr", "subprojects/ara-zephyr-apps/appl/native_sim-xen_static_msgq.ll",
+  # Zephyr with hypercalls
+  {'name': 'zephyr-hc', 'do_timings': 'false', 'guests': 
+      'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-xen_static_msgq.ll;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_zephyr_Autosar_B_a.pi4.ll;../subprojects/ara/appl/Xen/zephyr/Autosar-B/a.json'
+  },
 
+  # No Hypercalls
   # Load 2x Autosar in HyperSSE: Kleinstmöglichestes System, verschmelzen der beiden SingleCore Systeme zu einem Hypervisor System.
   {'name': 'minimal', 'do_timings': 'false', 'guests': 
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_minimal_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/minimal/Autosar-A/a.json;' +
@@ -47,18 +60,20 @@ xen_testcases = [
   },
 ]
 
-# Compile ll files
+# Compile Autosar ll files
 ll_targets = []
 foreach app: autosar_targets
   if app['core'].contains('Xen')
     ll_targets += app['ll_pi4']
   endif
 endforeach
-custom_target('xen-ara-prepll', 
-            command: ['echo', 'done'],
-            output: 'xen-ara-prepll',
+
+custom_target('xen-ara-autosar', 
+            command: find_program('true'),
+            output: 'xen-ara-autosar',
             depends: ll_targets)
 
+# must call: meson compile sse-native_sim-xen_static_msgq -v
 # Create ninja target, run with: ninja subprojects/ara/appl/Xen/HyperSSE.hypercallv2.hstg.dot
 foreach case: xen_testcases
   conf_data = configuration_data()
