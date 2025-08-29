@@ -5,17 +5,45 @@
 
 # Testcases
 xen_testcases = [
+  # Minimal Example for hypercalls
   {'name': 'hypercall', 'do_timings': 'true', 'guests':
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercall_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hypercall/Autosar-A/a.json;' +
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercall_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hypercall/Autosar-B/b.json'
   },
+  # Minimal Example for hypercalls without timing information
   {'name': 'hypercall-not', 'do_timings': 'false', 'guests': 
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercall_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hypercall/Autosar-A/a.json;' +
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercall_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hypercall/Autosar-B/b.json'
   },
+  # Hypercalls with more syscalls
   {'name': 'hypercall-ext', 'do_timings': 'true', 'guests': 
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercall_ext_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hypercall-ext/Autosar-A/a.json;' +
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercall_ext_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hypercall-ext/Autosar-B/b.json'
+  },
+  # Complex without Hypercalls: 2 systems, one with alarm
+  {'name': 'complex', 'do_timings': 'true', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_complex_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/complex/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_complex_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/complex/Autosar-B/b.json'
+  },
+
+  # Big example with Hypercalls: 3 Systeme, A sendet zu festen Zeitpunkten Signale an B, C sendet ebenfalls an B, 3 verschiedene Events auf B.
+  {'name': 'hypercomplex', 'do_timings': 'true', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercomplex_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hypercomplex/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercomplex_Autosar_B_worker.pi4.ll;../subprojects/ara/appl/Xen/hypercomplex/Autosar-B/worker.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercomplex_Autosar_C_loop.pi4.ll;../subprojects/ara/appl/Xen/hypercomplex/Autosar-C/loop.json'
+  },
+
+
+  # Load 2x Autosar in HyperSSE: Kleinstmöglichestes System, verschmelzen der beiden SingleCore Systeme zu einem Hypervisor System.
+  {'name': 'minimal', 'do_timings': 'false', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_minimal_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/minimal/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_minimal_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/minimal/Autosar-B/b.json'
+  },
+  # Load alarms into HyperSSE: indirekt wird aus dem SingleCore System ein MultiCore System.
+  # MultiSSE und HyperSSE sollten hierbei das gleiche Ergebnis liefern
+  {'name': 'alarm', 'do_timings': 'true', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_alarm_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/alarm/Autosar-A/a.json;'
+      
   },
 ]
 

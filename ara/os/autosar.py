@@ -361,6 +361,7 @@ class AUTOSAR(OSBase):
                         call_path=CallPath(),
                         exec_state=ExecState.idle,
                         analysis_context=None,
+                        cfg=cfg
                     )
                 )
                 logger.debug(f"Initial: CPU {cpu_id} idles.")

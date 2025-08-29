@@ -50,6 +50,9 @@ class XEN(OSBase):
     instances_list: list[InstanceGraph] = []
     # Graph datastructure of guest
     graph_list: list[Graph] = []
+
+    # Used for output in printer
+    irq_ids: list[int] = []
     
     # ------------------- From OSBase --------------------
 
@@ -210,6 +213,7 @@ class XEN(OSBase):
                 XEN.graph_list.append(XEN.graph_list[idx])
                 XEN.system_types.append(XEN.system_types[idx])
                 XEN.system_count += 1
+                XEN.irq_ids.append(irq.cpu_id)
 
                 # das ist alles ein bissel yikes
                 # IRQ Handling needs to find cpu core
