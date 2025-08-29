@@ -23,7 +23,7 @@ TASK(A) {
 
 	wrap_evtchn_send(channel);
 
-	ara_timing_info(20, 20);
+	ara_timing_info(25, 30);
 	kout << "A3"<< endl;
 
 	TerminateTask();

@@ -191,7 +191,12 @@ def set_next_abb(state: OSState, cpu_id: int) -> None:
 
     Note: Call this functions on syscalls only.
     """
-    lcfg = _CFGView(state.cfg, efilt=state.cfg.ep.type.fa == _CFType.lcf)
+    # for HyperSSE states find right CFG
+    if state.system_count:
+        cfg = state.cpus[cpu_id].cfg
+        lcfg = _CFGView(cfg, efilt=cfg.ep.type.fa == _CFType.lcf)
+    else:
+        lcfg = _CFGView(state.cfg, efilt=state.cfg.ep.type.fa == _CFType.lcf)
     cpu = state.cpus[cpu_id]
     for idx, next_abb in enumerate(lcfg.vertex(cpu.abb).out_neighbors()):
         if idx > 1:
