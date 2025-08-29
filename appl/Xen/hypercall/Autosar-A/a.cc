@@ -12,16 +12,19 @@ int main(void) {
 }
 
 TASK(A) {
+
 	kout << "A"<< endl;
-	ara_timing_info(50, 50);
+	ara_timing_info(45, 50);
+
 	wrap_evtchn_alloc_unbound(remote_dom, channel, nullptr);
 
 	ara_timing_info(50, 50);
 	kout << "A2"<< endl;
+
 	wrap_evtchn_send(channel);
 
 	ara_timing_info(20, 20);
 	kout << "A3"<< endl;
+
 	TerminateTask();
-	// ShutdownMachine();
 }

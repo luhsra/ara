@@ -14,19 +14,21 @@ int main(void) {
 
 TASK(B2) {
 
-	kout << "B2 Start"<< endl;
   	ara_timing_info(10, 12);
-	
+	kout << "B2"<< endl;
+
 	TerminateTask();
-	// ShutdownMachine();
 }
 
 
 TASK(B) {
-	kout << "B"<< endl;
+
   	ara_timing_info(25, 25);
+	kout << "B"<< endl;
+
 	wrap_evtchn_bind_interdomain(remote_dom, channel, reinterpret_cast<void*>(AUTOSAR_TASK_FUNC_B2));
 
   	ara_timing_info(25, 25);
+	
 	TerminateTask();
 }
