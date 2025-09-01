@@ -80,7 +80,7 @@ foreach case: xen_testcases
   conf_data.set('name', case['name'])
   conf_data.set('do_timings', case['do_timings'])
   conf_data.set('guests', case['guests'])
-  conf_data.set('do_stats', 'false') # 'true' or 'false'
+  conf_data.set('do_stats', 'true') # 'true' or 'false'
 
   name = case['name']
   settings = configure_file(input : files(f'hypersse.json.in'), output : f'hypersse-@name@.json',

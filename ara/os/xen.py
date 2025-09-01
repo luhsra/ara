@@ -309,7 +309,7 @@ class XEN(OSBase):
                 sender_channel = evtchn
                 break
         if not sender_channel:
-            logger.error(f"Wrap_evtchn_send do not has an evtchn for channel: {channel_id}")
+            logger.warning(f"Wrap_evtchn_send do not has an evtchn for channel: {channel_id}")
             return state
 
         # Raise CrossCoreAction to get receiver and return here again
@@ -325,12 +325,12 @@ class XEN(OSBase):
                 receiver_channel = evtchn
                 break
         if not receiver_channel:
-            logger.error(f"Wrap_evtchn_send's does not find the right channel: {channel_id} at the receiver")
-            logger.error("Hypercall is ignored!")
+            logger.warning(f"Wrap_evtchn_send's does not find the right channel: {channel_id} at the receiver")
+            logger.warning("Hypercall is ignored!")
             return state
         if not receiver_channel.event:
-            logger.error(f"Wrap_evtchn_send Receiver's event is None")
-            logger.error("Hypercall is ignored!")
+            logger.warning(f"Wrap_evtchn_send Receiver's event is None")
+            logger.warning("Hypercall is ignored!")
             return state
 
         # Trigger event
