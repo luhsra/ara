@@ -102,6 +102,10 @@ class ZephyrKernel(ZephyrInstance):
     def __hash__(self):
         return hash(("ZephyrKernel", self.heap_size, self.symbol, self.queue))
 
+    def __str__(self):
+        """Prettyprint selected content."""
+        # \33 escape sequenze, 1 for bold, 36 for color, m for end of sequenze
+        return f"\33[1;36mZephyrKernel\033[0m: heap_size={self.heap_size}, symbol={self.symbol}, queue={self.queue}"
 
 @dataclass
 class ZephyrIRQ(IRQ):
@@ -171,6 +175,15 @@ class Thread(ZephyrInstance, ControlInstance):
     def __hash__(self):
         return hash(("Thread", self.function, self.artificial, self.symbol, self.stack, self.stack_size,
         self.entry_name, self.entry_params, self.priority, self.options, self.delay))
+    
+    def __str__(self):
+        """Prettyprint selected content."""
+        # \33 escape sequenze, 1 for bold, 36 for color, m for end of sequenze
+        try:
+            cfg_name = self.cfg.name
+        except AttributeError:
+            cfg_name = "?"
+        return f"\33[1;36mThread-{self.name}\033[0m: cpu_id={self.cpu_id}/{cfg_name}, priority={self.priority}, entry_name={self.entry_name}"
 
 
 # Interrupt service routine. Like every other kernel resource, these can be created
@@ -383,6 +396,11 @@ class MSGQ(ZephyrInstance):
 
     def __hash__(self):
         return hash(("MSGQ", self.symbol, self.msg_size, self.max_msgs))
+    
+    def __str__(self):
+        """Prettyprint selected content."""
+        # \33 escape sequenze, 1 for bold, 36 for color, m for end of sequenze
+        return f"\33[1;36mMSGQ\033[0m: msg_size={self.msg_size}, max_msgs={self.max_msgs}"
 
 
 class ZephyrEdgeType(IntEnum):
@@ -446,7 +464,13 @@ class Zephyr(OSBase):
     @staticmethod
     def get_cpu_local_contexts(context, cpu_id, instances):
         # for now we are single core only, whole context is in here, also for IRQCPUS that all target CPU 0
-        return context
+
+        # HyperSSE needs multicore contexts, some ZephyrInstance are Zephyr wide global, so they are always needed!
+        local_contexts = []
+        for inst, ctx in context.items():
+            if getattr(inst, "cpu_id", None) == cpu_id or isinstance(inst, ZephyrInstance):
+                local_contexts.append((inst, ctx))
+        return dict(local_contexts)
 
     @staticmethod
     def get_global_contexts(context, instances):

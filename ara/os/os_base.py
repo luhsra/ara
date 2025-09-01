@@ -198,7 +198,7 @@ class IRQ(ControlInstance):
         return hash((self.id, self.name))
 
     def __str__(self):
-        s = f"\33[1;36mCPU-{self.cpu_id}\033[0m: {self.name} @{self.cfg.name}"
+        s = f"\33[1;36m{self.name}\033[0m: cpu_id={self.cpu_id}/{self.cfg.name} ({self.__class__.__name__ })"
         # active={self.active} func={self.cfg.vertex_index[self.function]}"
         return s
 

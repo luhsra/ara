@@ -213,6 +213,10 @@ class MSGQContext:
             flags=self.flags,
         )
 
+    def __str__(self):
+        """Prettyprint selected content."""
+        # \33 escape sequenze, 1 for bold, 36 for color, m for end of sequenze
+        return f"wait_q={self.wait_q}, lock={self.lock}, used_msgs={self.used_msgs}"
 
 # FIXME: move this to e.g. zephyr.adapters?
 # counterpart of ara.os.os_base.TaskStatus

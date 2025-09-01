@@ -96,7 +96,7 @@ class AUTOSARInstance(CPUBounded):
         return hash(self.__class__.__name__ + self.name)
 
     def __str__(self):
-        return f"\33[1;36mCPU-{self.cpu_id}\033[0m: {self.name}"
+        return f"\33[1;36m{self.name}\033[0m: cpu_id={self.cpu_id} ({self.__class__.__name__ })"
     
     def __repr__(self):
         return self.name
