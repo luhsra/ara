@@ -26,6 +26,10 @@ class HyperSSE(Step):
                           help="How printed graphs should be named.",
                           ty=String(),
                           default_value="testsg")
+    do_stats: Option = Option(name="do_stats",
+                          help="If *STG stats should be collected.",
+                          ty=Bool(),
+                          default_value=False)
     
     # Syntax is: OSName;config1;config2;OSNAME ...
     guests: Option = Option(name="guests",
@@ -107,6 +111,9 @@ class HyperSSE(Step):
                     log.error(f"Unkown guest OS: {guests[0]}")
                     exit(1)
 
+            if self.do_stats.get():
+                extra["steps"].insert(extra["steps"].index('DumpCFG'), 'MSTGStats')
+                extra["MSTGStats"] = {"dump": True, "log_level": "info"}
 
             extra["DumpCFG"]["dot"] = str(self.testname.get()) + ".dom" + str(HyperSSE.runid)
             extra["DumpInstances"]["dot"] = str(self.testname.get()) + ".dom" + str(HyperSSE.runid)
@@ -144,6 +151,9 @@ class HyperSSE(Step):
         # Call another MultiSSE once this step is finished
         self._step_manager.chain_step({"name": "MultiSSE", "with_times": self.do_timings.get(), "dump": True, 
                                        "log_level": "debug", "hyper_sse": True, "file_name": str(self.testname.get()), "add_legend": False})
+
+        if self.do_stats.get():
+            self._step_manager.chain_step({"name": "MSTGStats", "dump": True, "log_level": "info"}, after="MultiSSE")
 
         log.warning("Done with single MultiSSEs, starting HyperSSE MultiSSE now!")
         HyperSSE.done = True

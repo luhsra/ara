@@ -189,6 +189,7 @@ autosar_apps += [
   {'core': '../Xen',  'path': 'hypercall-ext'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'minimal'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'minimal'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'alarm'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'complex'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'complex'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'hypercomplex'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},

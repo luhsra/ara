@@ -54,6 +54,7 @@
 
     "HyperSSE": {
         "do_timings": true,
+		"do_stats": true,
         "testname": "Hypercall",
         "guests": "Autosar;subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_a.pi4.ll;../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercall/a.json;Autosar;subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_b.pi4.ll;../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercall/b.json"
     }

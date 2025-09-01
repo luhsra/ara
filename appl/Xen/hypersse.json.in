@@ -52,6 +52,7 @@
 	},
 
 	"HyperSSE": {
+		"do_stats": @do_stats@,
 		"testname": "@name@",
 		"do_timings": @do_timings@,
 		"guests": "@guests@"
