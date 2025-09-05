@@ -92,6 +92,12 @@ class HyperSSE(Step):
                         extra["steps"] = ['MultiSSE', 'DumpCFG', 'DumpInstances', 'SVFReset', 'HyperSSE']
 
     
+                    # WARNING ONLY AUTOSAR
+                    if self.do_stats.get():
+                        extra["steps"].insert(extra["steps"].index('DumpCFG'), 'MSTGStats')
+                        extra["MSTGStats"] = {"dump": True, "log_level": "info"}
+
+
                 case "Zephyr":
                     # other Zepyhr build also adds --with-stubs and --va-corrections with an emtpy json file
                     self._graph.os = Zephyr
@@ -103,17 +109,16 @@ class HyperSSE(Step):
                     extra["RemoveSysfuncBody"] = {"drop_llvm_suffix": True, "disable": False}
                     extra["ZephyrStatic"] = {"log_level": "debug"}
                     extra["steps"] = ['MergeStructs', 'RemoveSysfuncBody', 'ZephyrThreadEntry', 'SIA', "LoadKernelLL",
-                                      'SSE', 'DumpCFG', 'DumpInstances', 'SVFReset', 'HyperSSE']
+                                      'DumpCFG', 'DumpInstances', 'SSE', 'SVFReset', 'HyperSSE']
                     
+                    log.warning(f"Starting Zephyr: {guests[1]}")
+
                     # Remove first 2 elements
-                    guests = guests[2:] 
+                    guests = guests[2:]
                 case _:
                     log.error(f"Unkown guest OS: {guests[0]}")
                     exit(1)
 
-            if self.do_stats.get():
-                extra["steps"].insert(extra["steps"].index('DumpCFG'), 'MSTGStats')
-                extra["MSTGStats"] = {"dump": True, "log_level": "info"}
 
             extra["DumpCFG"]["dot"] = str(self.testname.get()) + ".dom" + str(HyperSSE.runid)
             extra["DumpInstances"]["dot"] = str(self.testname.get()) + ".dom" + str(HyperSSE.runid)

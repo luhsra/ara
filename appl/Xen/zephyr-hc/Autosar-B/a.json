@@ -6,6 +6,12 @@
           "A": {
             "activation": 1,
             "autostart": true,
+            "priority": 5,
+            "schedule": true
+            },
+          "IR": {
+            "activation": 1,
+            "autostart": false,
             "priority": 4,
             "schedule": true
             }

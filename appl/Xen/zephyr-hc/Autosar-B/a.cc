@@ -9,13 +9,13 @@ int main(void) {
 	StartOS(0);
 }
 
-TASK(A) {
-	kout << "Hello World - A" << endl;
-	wrap_evtchn_alloc_unbound(remote_dom, channel, nullptr);
+TASK(IR) {
 
-	kout << "A2"<< endl;
-	
-	wrap_evtchn_send(channel);
+	TerminateTask();
+}
+
+TASK(A) {
+	wrap_evtchn_bind_interdomain(remote_dom, channel, reinterpret_cast<void*>(AUTOSAR_TASK_FUNC_IR));
 
 	TerminateTask();
 }
