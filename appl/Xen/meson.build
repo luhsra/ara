@@ -36,14 +36,14 @@ xen_testcases = [
   # With Zephyr
   # Zephyr
   {'name': 'zephyr', 'do_timings': 'false', 'guests': 
-      'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-static_msgq.ll;' +
+      'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-A.ll;' +
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_zephyr_Autosar_B_a.pi4.ll;../subprojects/ara/appl/Xen/zephyr/Autosar-B/a.json'
   },
   # "Zephyr", "subprojects/ara-zephyr-apps/appl/native_sim-xen_static_msgq.ll",
   # Zephyr with hypercalls
   {'name': 'zephyr-hc', 'do_timings': 'false', 'guests': 
-      'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-xen_static_msgq.ll;' +
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_zephyr_Autosar_B_a.pi4.ll;../subprojects/ara/appl/Xen/zephyr/Autosar-B/a.json'
+      'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-A2.ll;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_zephyr_hc_Autosar_B_a.pi4.ll;../subprojects/ara/appl/Xen/zephyr-hc/Autosar-B/a.json'
   },
 
   # No Hypercalls
@@ -56,6 +56,12 @@ xen_testcases = [
   # MultiSSE und HyperSSE sollten hierbei das gleiche Ergebnis liefern
   {'name': 'alarm', 'do_timings': 'true', 'guests': 
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_alarm_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/alarm/Autosar-A/a.json;'
+      
+  },
+  # Port of Automotive Benchmark
+  {'name': 'automotiveB', 'do_timings': 'true', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_automotiveB_Autosar_A_tasks.pi4.ll;../subprojects/ara/appl/Xen/automotiveB/Autosar-A/tasks.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_automotiveB_Autosar_B_tasks.pi4.ll;../subprojects/ara/appl/Xen/automotiveB/Autosar-B/tasks.json;'
       
   },
 ]
@@ -74,7 +80,7 @@ custom_target('xen-ara-autosar',
             depends: ll_targets)
 
 # must call: meson compile sse-native_sim-xen_static_msgq -v
-# Create ninja target, run with: ninja subprojects/ara/appl/Xen/HyperSSE.hypercallv2.hstg.dot
+# Create ninja target, run with: ninja subprojects/ara/appl/Xen/hypercall
 foreach case: xen_testcases
   conf_data = configuration_data()
   conf_data.set('name', case['name'])
