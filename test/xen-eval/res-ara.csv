@@ -1,0 +1,10 @@
+2025-09-01T17:16:02-Testcase,AnalysisStatus,AnalysisDuration[s],#LocalCoreAbstractSystemState/#SynchronisationPoints/#Edges/#Vertices,Guest-1,Guest-2,Guest-3,Guest-4
+zephyr-hc,Error,1.26,-
+minimal,Passed,2.03,6/1/14/10
+hypercall-not,Passed,2.10,16/7/66/27
+alarm,Passed,2.30,7/3/29/13
+hypercall,Passed,2.58,14/3/40/21
+hypercall-ext,Passed,2.58,16/3/44/23
+zephyr,Passed,2.58,6/1/14/10
+complex,Passed,2.71,14/3/44/21
+hypercomplex,Passed,3.37,41/11/140/61

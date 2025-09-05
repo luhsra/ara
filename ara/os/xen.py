@@ -127,7 +127,7 @@ class XEN(OSBase):
          Possible this could also return multiple States with a wierd OS."""
 
         syscall = state.get_syscall_name(cpu_id)
-        # logger.info(f"Interpret: cpu_id: {cpu_id} System count: {XEN.system_count} {XEN.graph_list}\nCurrent graph: {graph}")
+        logger.info(f"Interpret: cpu_id: {cpu_id} System count: {XEN.system_count} {XEN.graph_list}\nCurrent graph: {graph}")
 
         # A Xen syscall is a hypercall
         if XEN.is_syscall(syscall):
