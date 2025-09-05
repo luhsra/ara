@@ -2,7 +2,7 @@
 #include "xen/events.h"
 
 DeclareTask(A);
-domid_t remote_dom = 1;
+domid_t remote_dom = 0;
 channel_t channel = 42;
 
 int main(void) {
@@ -10,7 +10,7 @@ int main(void) {
 }
 
 TASK(IR) {
-
+	kout << "hello" << endl;
 	TerminateTask();
 }
 

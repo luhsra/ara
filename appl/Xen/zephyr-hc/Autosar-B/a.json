@@ -12,7 +12,7 @@
           "IR": {
             "activation": 1,
             "autostart": false,
-            "priority": 4,
+            "priority": 3,
             "schedule": true
             }
       },

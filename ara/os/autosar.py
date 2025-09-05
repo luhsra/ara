@@ -772,7 +772,7 @@ class AUTOSAR(OSBase):
 
         # Autosar specific renaming 
         if cb.startswith("AUTOSAR_TASK_FUNC_"):
-            cb = cb.strip("AUTOSAR_TASK_FUNC_")
+            cb = cb.removeprefix("AUTOSAR_TASK_FUNC_")
         
         for k, _ in state.context.items():
             if isinstance(k, CrossOSEvent):

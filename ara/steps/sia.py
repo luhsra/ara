@@ -14,11 +14,12 @@ from ara.graph.mix import GraphType, ARA_ENTRY_POINT
 
 from .cfg_traversal import Visitor, run_sse, AnalysisContext
 from .step import Step
-from .option import Option, String, Choice, Integer
+from .option import Bool, Option, String, Choice, Integer
 from .util import is_in_condition, is_usually_taken, is_recursive
 
 
 from ara.os.os_base import CPU, ExecState
+from ara.os.xen import XEN
 
 from graph_tool import GraphView, Vertex
 from graph_tool.topology import all_paths
@@ -66,6 +67,12 @@ class FlatAnalysis(Step):
                               " -1 deactivates the feature."),
                         default_value=-1,
                         ty=Integer())
+    
+    xen_syscall = Option(name="xen_syscall",
+                        help="Additionally find any xen syscalls as any operating system,"
+                        "used for HyperSSE",
+                        ty=Bool(),
+                        default_value=False)
 
     def get_single_dependencies(self):
         raise NotImplementedError
@@ -226,7 +233,11 @@ class FlatAnalysis(Step):
         syscalls = CFGView(cfg, vfilt=cfg.vp.type.fa == ABBType.syscall)
         for syscall in syscalls.vertices():
             sys_name = cfg.get_syscall_name(syscall)
-            m_syscall = os.syscalls[sys_name]
+            if self.xen_syscall.get():
+                # first search in os.syscalls, if not found in XEN.syscalls
+                m_syscall = os.syscalls.get(sys_name, XEN.syscalls.get(sys_name))
+            else:
+                m_syscall = os.syscalls[sys_name]
             if not self._search_category() & m_syscall.categories:
                 continue
 

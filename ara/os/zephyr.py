@@ -17,7 +17,7 @@ from .os_util import (
     find_instance_node,
     find_return_value
 )
-from .os_base import CPUBounded, OSBase, ControlInstance, CPUList, CPU, OSState, ExecState, TaskStatus, ControlContext, IRQ, IRQContext
+from .os_base import CPUBounded, CrossOSEvent, OSBase, ControlInstance, CPUList, CPU, OSState, ExecState, TaskStatus, ControlContext, IRQ, IRQContext
 from ara.util import get_logger
 from ara.graph import SyscallCategory, SigType, CallPath, CFG, Graph
 from ara.steps import get_native_component
@@ -890,6 +890,12 @@ class Zephyr(OSBase):
         logger.debug(f"Get syscall: {syscall_name}, ABB: {cfg.vp.name[abb]}"
                      f" (in {cfg.vp.name[cfg.get_function(abb)]})")
 
+        if not hasattr(Zephyr, syscall_name):
+            logger.info("Skipping syscall, since from hypervisor")
+            state = state.copy()
+            set_next_abb(state, cpu_id)
+            return state
+        
         syscall = getattr(Zephyr, syscall_name)
 
         if Zephyr.syscall_in_category(syscall, categories):
@@ -1140,7 +1146,18 @@ class Zephyr(OSBase):
                 new_context[k] = v
 
         return new_context
-    
+    @staticmethod
+    def find_cross_os_event(state: OSState, cb: str) -> CrossOSEvent:
+        """Zephyr currently does no support any CrossOSEvents"""
+
+        return None
+
+    # @staticmethod
+    # def trigger_cross_os_event(state: OSState, cpu_id: int, event: CrossOSEvent) -> OSState:
+    #     """Wrapper to apply the event to the given state, currently only ActivateTask is supported."""
+
+    #     return AUTOSAR.ActivateTask(state, cpu_id, event)
+
 
     # ------------------------------- Syscalls -----------------------------------
 

@@ -108,6 +108,7 @@ class HyperSSE(Step):
                     extra["LoadKernelLL"] = {"kernel_ll": trimmed + "-kernel.ll"}
                     extra["RemoveSysfuncBody"] = {"drop_llvm_suffix": True, "disable": False}
                     extra["ZephyrStatic"] = {"log_level": "debug"}
+                    extra["SIA"] = {"xen_syscall": True}
                     extra["steps"] = ['MergeStructs', 'RemoveSysfuncBody', 'ZephyrThreadEntry', 'SIA', "LoadKernelLL",
                                       'DumpCFG', 'DumpInstances', 'SSE', 'SVFReset', 'HyperSSE']
                     

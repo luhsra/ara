@@ -28,7 +28,7 @@ extern "C" {
 	typedef int channel_t;
 
 
-	void wrap_evtchn_alloc_unbound(domid_t remote_dom, channel_t channel, evtchn_cb_t cb) {
+	void XEN_wrap_evtchn_alloc_unbound(domid_t remote_dom, channel_t channel, evtchn_cb_t cb) {
 		/**
 		 * Create a new event channel
 		 * @param domid_t remote_dom: target domain
@@ -52,7 +52,7 @@ extern "C" {
 		*/
 	}
 
-	void wrap_evtchn_bind_interdomain(domid_t remote_dom, channel_t channel, evtchn_cb_t cb) {
+	void XEN_wrap_evtchn_bind_interdomain(domid_t remote_dom, channel_t channel, evtchn_cb_t cb) {
 		/**
 		 * Bind to a new event channel
 		 * @param domid_t remote_dom: target domain
@@ -77,7 +77,7 @@ extern "C" {
 		*/
 	}
 
-	void wrap_evtchn_send(channel_t channel) {
+	void XEN_wrap_evtchn_send(channel_t channel) {
 		/**
 		 * Send event on an existing channel
 		 * @param channel_t channel: choosen channel

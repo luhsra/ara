@@ -10,22 +10,22 @@
  * Send a Xen Hypercall using the Wrapper
  */
 
-K_MSGQ_DEFINE(work, sizeof(int), MAX_WORK, 4);
-
-domid_t remote_dom = 0;
+domid_t remote_dom = 1;
 channel_t channel = 42;
 
 void sender(void* a, void* b, void* c) {
-    printk("Hello");
-    int w = 0;
-    k_tid_t x = k_current_get();
-
     int done = 0;
-	// wrap_evtchn_alloc_unbound(remote_dom, channel, NULL);
-	// wrap_evtchn_send(channel);
-
     printk("Hello");
-    k_msgq_get(&work, &w, K_FOREVER);
+    k_tid_t x;
+    x = k_current_get();
+    printk(x);
+
+	XEN_wrap_evtchn_alloc_unbound(remote_dom, channel, NULL);
+	XEN_wrap_evtchn_send(channel);
+
+    k_timeout_t t = Z_TIMEOUT_TICKS(1000);
+    k_sleep(t);
+
 }
 
 
