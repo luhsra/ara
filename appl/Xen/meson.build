@@ -60,9 +60,17 @@ xen_testcases = [
   },
   # Port of Automotive Benchmark
   {'name': 'automotiveB', 'do_timings': 'true', 'guests': 
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_automotiveB_Autosar_A_tasks.pi4.ll;../subprojects/ara/appl/Xen/automotiveB/Autosar-A/tasks.json;' +
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_automotiveB_Autosar_B_tasks.pi4.ll;../subprojects/ara/appl/Xen/automotiveB/Autosar-B/tasks.json;'
-      
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_automotiveB_Autosar_A_tasks.pi4.ll;../subprojects/ara/appl/Xen/automotiveB/Autosar-A/tasks.json;'
+  },
+  # Port of Automotive Benchmark
+  {'name': 'automotiveBdouble', 'do_timings': 'true', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_automotiveBdouble_Autosar_A_tasks.pi4.ll;../subprojects/ara/appl/Xen/automotiveBdouble/Autosar-A/tasks.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_automotiveBdouble_Autosar_B_tasks.pi4.ll;../subprojects/ara/appl/Xen/automotiveBdouble/Autosar-B/tasks.json;'      
+  },
+  # Port of Automotive Benchmark
+  {'name': 'automotiveBshared', 'do_timings': 'true', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_automotiveBshared_Autosar_A_tasks.pi4.ll;../subprojects/ara/appl/Xen/automotiveBshared/Autosar-A/tasks.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_automotiveBshared_Autosar_A_tasks.pi4.ll;../subprojects/ara/appl/Xen/automotiveBshared/Autosar-A/tasks.json;'      
   },
 ]
 

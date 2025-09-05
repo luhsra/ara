@@ -198,7 +198,9 @@ autosar_apps += [
   {'core': '../Xen',  'path': 'zephyr' / 'Autosar-B', 'name': 'a', 'oil':   'a.json'},
   {'core': '../Xen',  'path': 'zephyr-hc' / 'Autosar-B', 'name': 'a', 'oil'  : 'a.json'},
   {'core': '../Xen',  'path': 'automotiveB' / 'Autosar-A', 'name': 'tasks', 'oil'  : 'tasks.json'},
-  {'core': '../Xen',  'path': 'automotiveB' / 'Autosar-B', 'name': 'tasks', 'oil'  : 'tasks.json'},
+  {'core': '../Xen',  'path': 'automotiveBdouble' / 'Autosar-A', 'name': 'tasks', 'oil'  : 'tasks.json'},
+  {'core': '../Xen',  'path': 'automotiveBdouble' / 'Autosar-B', 'name': 'tasks', 'oil'  : 'tasks.json'},
+  {'core': '../Xen',  'path': 'automotiveBshared' / 'Autosar-A', 'name': 'tasks', 'oil'  : 'tasks.json'},
 # Only Autosar cases
   # {'core': 'singlecore', 'path': 'xen' / 'minimal',    'name': 'multi_core',            'oil': 'multi_core.json', 'timing': 'BB'},
   # {'core': 'singlecore', 'path': 'xen' / 'hypercall',   'name': 'multi_core',           'oil': 'multi_core.json', 'timing': 'BB'},
