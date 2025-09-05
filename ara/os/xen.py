@@ -182,13 +182,14 @@ class XEN(OSBase):
          The input state is modifed by adding any required interupt cores, byiterate over all systems and 
          finding each local interrupts"""
         cpu_idx = max([x.id for x in state.cpus]) + 1
-        for idx, instances in enumerate(XEN.instances_list):
 
-            tmp_instances_list = []
+        tmp_instances_list = []
+        # Care to not iterate an extending list
+        for idx, instances in enumerate(XEN.instances_list):
 
             # TODO: Xen interrupts are wierd!
             if XEN.system_types[idx] == Zephyr:
-                logger.warning("Zephyr's IRQs are not supported!")
+                logger.error("Zephyr's IRQs are not supported!")
                 continue
 
             for _, irq in instances.get(IRQ):

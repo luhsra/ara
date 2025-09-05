@@ -7,6 +7,7 @@ from ara.graph import Graph
 from ara.os.autosar import AUTOSAR
 from ara.os.zephyr import Zephyr
 from ara.os.os_base import reset_id
+from ara.os.os_util import _clear_cache
 from ara.stepmanager import StepManager
 import logging
 
@@ -54,6 +55,8 @@ class HyperSSE(Step):
         if HyperSSE.runid != 0:
             HyperSSE.graphs.append(self._graph)
 
+        # clear valueanalyser cache from os_util.py cache!
+        _clear_cache()
 
         # Iterate one guest systems, which calls another HyperSSE round to here
         if self.guests.get():
@@ -62,7 +65,6 @@ class HyperSSE(Step):
 
             # Create a new root graph object
             self._graph = Graph()
-
             # Copy old config
             program = self._step_manager._config.program
             extra = self._step_manager._config.extra

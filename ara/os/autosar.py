@@ -89,11 +89,11 @@ class AUTOSARInstance(CPUBounded):
 
     def __eq__(self, other):
         # the name of an arbitrary AUTOSAR instance must be unique
-        return self.name == other.name
+        return self.name == other.name and self.cpu_id == other.cpu_id
 
     def __hash__(self):
         # the name of an arbitrary AUTOSAR instance must be unique
-        return hash(self.__class__.__name__ + self.name)
+        return hash(self.__class__.__name__ + self.name + str(self.cpu_id))
 
     def __str__(self):
         return f"\33[1;36m{self.name}\033[0m: cpu_id={self.cpu_id} ({self.__class__.__name__ })"
@@ -751,6 +751,11 @@ class AUTOSAR(OSBase):
         for k,v in context.items():
             # logger.info(f"Found context: {k} : {v}")
             if isinstance(k, Task):
+                k.name = k.name + f"d{target_cpu_id}"
+                k.cpu_id = target_cpu_id
+                new_context[k] = v
+            elif isinstance(k, Alarm):
+                k.name = k.name + f"d{target_cpu_id}"
                 k.cpu_id = target_cpu_id
                 new_context[k] = v
             elif isinstance(k, AUTOSARInstance):
@@ -758,6 +763,7 @@ class AUTOSAR(OSBase):
                 k.cpu_id = target_cpu_id
                 new_context[k] = v
             elif isinstance(k, IRQ):
+                k.name = k.name + f"d{target_cpu_id}"
                 k.cpu_id = target_cpu_id
                 new_context[k] = v
             else:

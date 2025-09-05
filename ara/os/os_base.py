@@ -390,7 +390,10 @@ class OSState:
         for cpu in self.cpus:
             if isinstance(cpu, IRQCPU):
                 # TODO: change abb id print name name
-                s += f"\n\t\33[1;36mIRQCPU-{cpu.id}\033[0m: ABB={cpu.abb}, state={cpu.exec_state.name}"
+                try:
+                    s += f"\n\t\33[1;36mIRQCPU-{cpu.id}\033[0m: ABB={cpu.abb}, state={cpu.exec_state.name}"
+                except ValueError:
+                    s += f"\n\t\33[1;36mIRQCPU-{cpu.id}\033[0m: ABB=???, state={cpu.exec_state.name}"
                 s += f", ref_cpu={cpu.reference_cpu_id}, irq={cpu.irq.name}"
             else:
                 s += f"\n\t\33[1;36mCPU-{cpu.id}\033[0m: on {cpu.cfg.name} "
