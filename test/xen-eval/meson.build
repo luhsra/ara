@@ -7,14 +7,12 @@
     # ninja
     # Single Test/ Multiple Test/ Suite (with 36 cores)
         # meson test ara-xen-eval-minial
-        # meson test ara-xen-eval-minial ara-xen-eval-hypercall
+        # meson test ara-xen-eval-minimal ara-xen-eval-hypercall
         # meson test --suite ara-xen-eval
 
     # Goto "cd ../subprojects/ara/test/xen-eval":
     # Parse testlog into csv, plot [and save to png]
-        # python3 ara_meson_parser.py ../../../../build/meson-logs/testlog.txt res-ara.csv && python3 ara_plot.py res-ara.csv [--save out.png]
-        # python3 pi_meson_parser.py ../../../../build/meson-logs/testlog.txt res-pi.csv && python3 pi_plot.py res-pi.csv [--save out.png]
-
+        # python3 ara_meson_parser.py ../../../../build/meson-logs/testlog.txt res-ara.csv
 
 foreach app : xen_testcases
     # 1. Compile and run ara

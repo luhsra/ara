@@ -18,7 +18,7 @@ class Testcase:
     name: str
     status: str
     duration: float
-
+    
     # MSTGStats, last entry is HyperSSE
     sps: List[int]       # Synchronisation Point
     labsss: List[int]    # Local-Core Abstract System State
@@ -86,13 +86,19 @@ def main():
   
     with open(out, mode='w', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow([datetime.today().strftime('%Y-%m-%dT%H:%M:%S')+"-Testcase", "AnalysisStatus", "AnalysisDuration[s]", 
-                         "#LocalCoreAbstractSystemState/#SynchronisationPoints/#Edges/#Vertices", 
-                         "Guest-1", "Guest-2", "Guest-3", "Guest-4"])
+        writer.writerow([datetime.today().strftime('%Y-%m-%dT%H:%M:%S')+"-Testcase", "AnalysisStatus", 
+                         "AnalysisDuration[s]", 
+                         "#LocalAbSS-XEN", "#SP-XEN", "#Edges-XEN", "#Vertices-XEN",
+                         "#LocalAbSS-dom1", "#SP-dom1", "#Edges-dom1", "#Vertices-dom1",
+                         "#LocalAbSS-dom2", "#SP-dom2", "#Edges-dom2", "#Vertices-dom2",
+                         "#LocalAbSS-domX", "#SP-domX", "#Edges-domX", "#Vertices-domX"])
         for i in cases:
             if i.status == "Passed":
-                # TODO: reverse List
-                row = [i.name, i.status, i.duration, i.labsss[-1] + "/" + i.sps[-1] + "/" + i.edges[-1] + "/" + i.vertices[-1]]
+                row = [i.name, i.status, i.duration, i.labsss[-1], i.sps[-1], i.edges[-1], i.vertices[-1]]
+
+                # iterate over all except the last entry
+                for j in range(0, len(i.labsss) - 1):
+                    row += [i.labsss[j], i.sps[j], i.edges[j], i.vertices[j]]
             else:
                 row = [i.name, i.status, i.duration, "-"]
             writer.writerow(row)
