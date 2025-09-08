@@ -23,12 +23,6 @@ class HyperSSE(Experiment):
 
         cwd = os.getcwd()
 
-        print("(Re)build Autosar apps")
-        meson_testuite_cmd = ["ninja", "subprojects/ara/appl/Xen/xen-ara-autosar"]
-        build_path = cwd + parrot_dir + "build/"
-        subprocess.run(meson_testuite_cmd, cwd=build_path, stdout=None)
-
-
         # NOT WORKING YET!
         # print("(Re)build Zephyr apps")
         # meson_testuite_cmd = ["ninja", "ara-zephyr-apps@@build-zephyr-apps"]

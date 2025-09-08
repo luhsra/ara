@@ -75,17 +75,18 @@ xen_testcases = [
 ]
 
 # Compile Autosar ll files
-ll_targets = []
+autosar_ll_targets = []
 foreach app: autosar_targets
   if app['core'].contains('Xen')
-    ll_targets += app['ll_pi4']
+    autosar_ll_targets += app['ll_pi4']
   endif
 endforeach
 
-custom_target('xen-ara-autosar', 
+# To rebuild while debuging
+autosar_lls = custom_target('xen-ara-autosar', 
             command: find_program('true'),
             output: 'xen-ara-autosar',
-            depends: ll_targets)
+            depends: autosar_ll_targets)
 
 # must call: meson compile sse-native_sim-xen_static_msgq -v
 # Create ninja target, run with: ninja subprojects/ara/appl/Xen/hypercall
@@ -104,7 +105,7 @@ foreach case: xen_testcases
             command: [py3_inst, ara_py, 'ignored', '--os', 'XEN', '--log-level', 'warn',
                 '--step-settings', settings],
             output: name,
-            depends : ll_targets
+            depends : autosar_lls,
 
   )
 endforeach

@@ -20,20 +20,9 @@ foreach app : xen_testcases
         py3_inst,
         args: [files('run_ara.py'), app['name']],
         env: [python_path],
-        depends: [ara_py],
+        depends: [ara_py, autosar_lls],
         suite: 'ara-xen-eval',
         timeout: 100 
     )
 
-    # # 2. Deploy binary and run ara on pi4
-    # test('pi_' + app['name'] + '_' + app['variant'].to_lower(),
-    #     py3_inst,
-    #     args: [files('run_pi.py'), app['full_name']],
-    #     env: [python_path],
-    #     depends: [ara_py],
-    #     # depends: [ara_py, app['ll_pi4_mod_noopt']],
-    #     is_parallel: false,
-    #     suite: 'automotive_benchmark_pi',
-    #     timeout: 180
-    # )
 endforeach
