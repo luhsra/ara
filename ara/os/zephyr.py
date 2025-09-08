@@ -19,7 +19,7 @@ from .os_util import (
 )
 from .os_base import CPUBounded, CrossOSEvent, OSBase, ControlInstance, CPUList, CPU, OSState, ExecState, TaskStatus, ControlContext, IRQ, IRQContext
 from ara.util import get_logger
-from ara.graph import SyscallCategory, SigType, CallPath, CFG, Graph
+from ara.graph import SyscallCategory, SigType, CallPath, CFG, Graph, InstanceGraph
 from ara.steps import get_native_component
 # from ara.stepmanager import StepManager
 from dataclasses import dataclass, field
@@ -1146,6 +1146,15 @@ class Zephyr(OSBase):
                 new_context[k] = v
 
         return new_context
+    
+    def move_irqhandler(irq: IRQ, inst: InstanceGraph, target_cpu_id: int) -> None:
+        """When FakeIRQ-CPUs get added in add_interrupts(...) at the beginning of MultiSSE, the IRQ
+         are generated from the InstanceGraph, which does not know the cpu_id's in HyperSSE.
+         Since Zephyr and Autosar use a different IRQ-obj an OS-wrapper is needed."""
+
+        # in Zephyr isr_handler should be of type Zephyr.ISR
+        irq.isr_handler.cpu_id = target_cpu_id
+
     @staticmethod
     def find_cross_os_event(state: OSState, cb: str) -> CrossOSEvent:
         """Zephyr currently does no support any CrossOSEvents"""

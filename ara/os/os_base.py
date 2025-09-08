@@ -189,6 +189,7 @@ class IRQ(ControlInstance):
     """
     id: int
     name: str
+    # Different for Zehpyr, there this is a seperate class!
     isr_handler: int  # node in the instance graph that handles this IRQ
     active: bool
 
@@ -535,12 +536,19 @@ class OSBase(metaclass=OSCreator):
         """
         raise NotImplementedError()
 
-    # For HyperSSE
+    # For HyperSSE/Xen
     @staticmethod
     def move_context(context: dict, target_cpu_id: int) -> dict:
         """HyperSSE starts with each system thinking its running on cpu 0, 
-        this function moves the context to target_cpu_id
-        single core contexte mit cpu0 -> single core contexte mit cpuNEW"""
+         this function moves the context to target_cpu_id
+         single core contexte mit cpu0 -> single core contexte mit cpuNEW"""
+
+        raise NotImplementedError()
+    
+    def move_irqhandler(irq: IRQ, inst: InstanceGraph, target_cpu_id: int) -> None:
+        """When FakeIRQ-CPUs get added in add_interrupts(...) at the beginning of MultiSSE, the 
+         IRQ is generated from the InstanceGraph, which does not know the cpu_id's 
+         in HyperSSE. Since Zephyr and Autosar use a different IRQ-obj an OS-wrapper is needed."""
 
         raise NotImplementedError()
 

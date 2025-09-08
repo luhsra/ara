@@ -187,12 +187,13 @@ class XEN(OSBase):
         # Care to not iterate an extending list
         for idx, instances in enumerate(XEN.instances_list):
 
-            # TODO: Xen interrupts are wierd!
-            if XEN.system_types[idx] == Zephyr:
-                logger.error("Zephyr's IRQs are not supported!")
-                continue
-
             for _, irq in instances.get(IRQ):
+
+                # TODO: Xen IRQs are not needed for now!
+                if XEN.system_types[idx] == Zephyr:
+                    logger.warning("Zephyr's IRQs are ignored for now!")
+                    continue
+
                 # every irq gets an own CPU
                 ctx = state.context[irq]
                 if ctx.status == TaskStatus.running:
@@ -216,9 +217,8 @@ class XEN(OSBase):
                 XEN.system_count += 1
                 XEN.irq_ids.append(irq.cpu_id)
 
-                # das ist alles ein bissel yikes
-                # IRQ Handling needs to find cpu core
-                XEN.instances_list[idx].vp.obj[irq.isr_handler].cpu_id = idx
+                # Move IRQ-Handler/ISR
+                XEN.system_types[idx].move_irqhandler(irq, XEN.instances_list[idx], idx)
 
                 tmp_instances_list.append(XEN.instances_list[idx])
 

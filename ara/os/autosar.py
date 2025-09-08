@@ -739,7 +739,7 @@ class AUTOSAR(OSBase):
             ctx.status = TaskStatus.ready
         return state
 
-    # For HyperSSE
+    # For HyperSSE/Xen
     @staticmethod
     def move_context(context: dict, target_cpu_id: int) -> dict:
         """HyperSSE starts with each system thinking its running on cpu 0, 
@@ -771,6 +771,13 @@ class AUTOSAR(OSBase):
                 new_context[k] = v
 
         return new_context
+    
+    def move_irqhandler(irq: IRQ, inst: InstanceGraph, target_cpu_id: int) -> None:
+        """When FakeIRQ-CPUs get added in add_interrupts(...) at the beginning of MultiSSE, the IRQ
+         are generated from the InstanceGraph, which does not know the cpu_id's in HyperSSE.
+         Since Zephyr and Autosar use a different IRQ-obj an OS-wrapper is needed."""
+
+        inst.vp.obj[irq.isr_handler].cpu_id = target_cpu_id
     
     @staticmethod
     def find_cross_os_event(state: OSState, cb: str) -> CrossOSEvent:
