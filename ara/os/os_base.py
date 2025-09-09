@@ -553,7 +553,7 @@ class OSBase(metaclass=OSCreator):
         raise NotImplementedError()
 
     @staticmethod
-    def find_cross_os_event(state: OSState, cb: str) -> CrossOSEvent:
+    def find_cross_os_event(state: OSState, cpu_id: int, cb: str) -> CrossOSEvent:
         """Autosar currently only supports its Task as CrossOSEvents"""
 
         raise NotImplementedError()

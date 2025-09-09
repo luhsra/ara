@@ -248,7 +248,7 @@ class XEN(OSBase):
         channel = args.channel.value.get_initializer().get()
         cb: str = args.cb.value.get_name()
 
-        task = XEN.system_types[cpu_id].find_cross_os_event(state=state, cb=cb)
+        task = XEN.system_types[cpu_id].find_cross_os_event(state=state, cpu_id=cpu_id, cb=cb)
         if not task:
             logger.warning(f"Could not find CrossOSEvent: \"{cb}\" on dom-{cpu_id}")
 
@@ -271,7 +271,7 @@ class XEN(OSBase):
         channel = args.channel.value.get_initializer().get()
         cb: str = args.cb.value.get_name()
 
-        task = XEN.system_types[cpu_id].find_cross_os_event(state=state, cb=cb)
+        task = XEN.system_types[cpu_id].find_cross_os_event(state=state, cpu_id=cpu_id, cb=cb)
         if not task:
             logger.warning(f"Could not find CrossOSEvent: \"{cb}\" on dom-{cpu_id}")
 

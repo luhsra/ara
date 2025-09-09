@@ -780,12 +780,15 @@ class AUTOSAR(OSBase):
         inst.vp.obj[irq.isr_handler].cpu_id = target_cpu_id
     
     @staticmethod
-    def find_cross_os_event(state: OSState, cb: str) -> CrossOSEvent:
+    def find_cross_os_event(state: OSState, cpu_id: int, cb: str) -> CrossOSEvent:
         """Autosar currently only supports its Task as CrossOSEvents"""
 
         # Autosar specific renaming 
         if cb.startswith("AUTOSAR_TASK_FUNC_"):
             cb = cb.removeprefix("AUTOSAR_TASK_FUNC_")
+
+        # Add Autosar specifc postfix
+        cb += "d" + str(cpu_id)
         
         for k, _ in state.context.items():
             if isinstance(k, CrossOSEvent):

@@ -1156,7 +1156,7 @@ class Zephyr(OSBase):
         irq.isr_handler.cpu_id = target_cpu_id
 
     @staticmethod
-    def find_cross_os_event(state: OSState, cb: str) -> CrossOSEvent:
+    def find_cross_os_event(state: OSState, cpu_id: int, cb: str) -> CrossOSEvent:
         """Zephyr currently does no support any CrossOSEvents"""
 
         return None
