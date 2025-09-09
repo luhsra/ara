@@ -1,0 +1,56 @@
+digraph G {
+label="HyperSSE.hypercall.hstg.dot";
+1 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=1];
+subgraph cluster_6 {
+label="M6: Dom-0-AUTOSAR";
+2 [color=green, fontsize=14, label=<State 4<br/><font point-size='12'><i>instance</i>: A<br/><i>type</i>: computation<br/><i>abb</i>: dom-0/ABB1<br/><i>bcet/wcet</i>: 45/50</font>>, style=bold, tooltip=2];
+3 [color=blue, fontsize=14, label=<State 6<br/><font point-size='12'><i>instance</i>: A<br/><i>type</i>: syscall<br/><i>abb</i>: dom-0/ABB5<br/><i>sys</i>: XEN_wrap_evtchn_alloc_unbound</font>>, shape=box, tooltip=3];
+4 [color=green, fontsize=14, label=<State 7<br/><font point-size='12'><i>instance</i>: A<br/><i>type</i>: computation<br/><i>abb</i>: dom-0/ABB2<br/><i>bcet/wcet</i>: 50/50</font>>, style=bold, tooltip=4];
+5 [color=blue, fontsize=14, label=<State 8<br/><font point-size='12'><i>instance</i>: A<br/><i>type</i>: syscall<br/><i>abb</i>: dom-0/ABB6<br/><i>sys</i>: XEN_wrap_evtchn_send</font>>, shape=box, tooltip=5];
+}
+
+subgraph cluster_12 {
+label="M12: Dom-1-AUTOSAR";
+7 [color=green, fontsize=14, label=<State 5<br/><font point-size='12'><i>instance</i>: B<br/><i>type</i>: computation<br/><i>abb</i>: dom-1/ABB5<br/><i>bcet/wcet</i>: 25/25</font>>, style=bold, tooltip=7];
+8 [color=blue, fontsize=14, label=<State 10<br/><font point-size='12'><i>instance</i>: B<br/><i>type</i>: syscall<br/><i>abb</i>: dom-1/ABB8<br/><i>sys</i>: XEN_wrap_evtchn_bind_interdomain</font>>, shape=box, tooltip=8];
+9 [color=green, fontsize=14, label=<State 11<br/><font point-size='12'><i>instance</i>: B<br/><i>type</i>: computation<br/><i>abb</i>: dom-1/ABB6<br/><i>bcet/wcet</i>: 25/25</font>>, style=bold, tooltip=9];
+10 [color=blue, fontsize=14, label=<State 12<br/><font point-size='12'><i>instance</i>: B<br/><i>type</i>: syscall<br/><i>abb</i>: dom-1/ABB9<br/><i>sys</i>: AUTOSAR_TerminateTask</font>>, shape=box, tooltip=10];
+11 [color=violet, fontsize=14, label=<State 13<br/><font point-size='12'><i>instance</i>: Idle<br/><i>type</i>: idle<br/><i>abb</i>: None</font>>, style=bold, tooltip=11];
+19 [color=green, fontsize=14, label=<State 19<br/><font point-size='12'><i>instance</i>: B2<br/><i>type</i>: computation<br/><i>abb</i>: dom-1/ABB2<br/><i>bcet/wcet</i>: 10/12</font>>, style=bold, tooltip=19];
+20 [color=blue, fontsize=14, label=<State 22<br/><font point-size='12'><i>instance</i>: B2<br/><i>type</i>: syscall<br/><i>abb</i>: dom-1/ABB3<br/><i>sys</i>: AUTOSAR_TerminateTask</font>>, shape=box, tooltip=20];
+}
+
+subgraph cluster_18 {
+label="M18: Dom-0-AUTOSAR";
+16 [color=blue, fontsize=14, label=<State 20<br/><font point-size='12'><i>instance</i>: A<br/><i>type</i>: syscall<br/><i>abb</i>: dom-0/ABB7<br/><i>sys</i>: AUTOSAR_TerminateTask</font>>, shape=box, tooltip=16];
+17 [color=violet, fontsize=14, label=<State 21<br/><font point-size='12'><i>instance</i>: Idle<br/><i>type</i>: idle<br/><i>abb</i>: None</font>>, style=bold, tooltip=17];
+15 [color=green, fontsize=14, label=<State 18<br/><font point-size='12'><i>instance</i>: A<br/><i>type</i>: computation<br/><i>abb</i>: dom-0/ABB3<br/><i>bcet/wcet</i>: 25/30</font>>, style=bold, tooltip=15];
+}
+
+subgraph cluster_Metasync13 {
+label="";
+13 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=13];
+14 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=14];
+}
+
+1:c0 -> 2  [color=black];
+1:c1 -> 7  [color=black];
+1 -> 13  [color=darkred, style=dashed];
+1 -> 13  [color=darkgreen, label="95 - 100", style=dotted];
+2 -> 3  [color=black];
+3 -> 4  [color=black];
+4 -> 5  [color=black];
+5 -> 13:c0  [color=black];
+7 -> 8  [color=black];
+8 -> 9  [color=black];
+9 -> 10  [color=black];
+10 -> 11  [color=black];
+11 -> 13:c1  [color=black];
+13 -> 14  [color=black];
+14:c0 -> 15  [color=black];
+14:c1 -> 19  [color=black];
+15 -> 16  [color=black];
+16 -> 17  [color=black];
+19 -> 20  [color=black];
+20 -> 11  [color=black];
+}

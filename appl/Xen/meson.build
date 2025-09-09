@@ -21,6 +21,10 @@ xen_testcases = [
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercall_ext_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hypercall-ext/Autosar-A/a.json;' +
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercall_ext_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hypercall-ext/Autosar-B/b.json'
   },
+  {'name': 'hypercall-periodic', 'do_timings': 'true', 'guests':
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercall_periodic_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hypercall-periodic/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercall_periodic_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hypercall-periodic/Autosar-B/b.json'
+  },
   # Complex without Hypercalls: 2 systems, one with alarm
   {'name': 'complex', 'do_timings': 'true', 'guests': 
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_complex_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/complex/Autosar-A/a.json;' +
