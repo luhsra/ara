@@ -6,6 +6,10 @@
 # Testcases
 xen_testcases = [
   # Hypercalls
+  # Classic MultiSSE with 2 cores
+#   {'name': 'multicore', 'do_timings': 'true', 'guests':
+#       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_multicore_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/multicore/Autosar-A/a.json;'
+#   },
   # Minimal Example for hypercalls
   {'name': 'hypercall', 'do_timings': 'true', 'guests':
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercall_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hypercall/Autosar-A/a.json;' +
@@ -48,6 +52,11 @@ xen_testcases = [
   {'name': 'zephyr-hc', 'do_timings': 'false', 'guests': 
       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-A2.ll;' +
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_zephyr_hc_Autosar_B_a.pi4.ll;../subprojects/ara/appl/Xen/zephyr-hc/Autosar-B/a.json'
+  },
+  # Testing sleep with zephyr
+  {'name': 'zephyr-sleep', 'do_timings': 'false', 'guests': 
+      'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-A3.ll;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_zephyr_sleep_Autosar_B_a.pi4.ll;../subprojects/ara/appl/Xen/zephyr-sleep/Autosar-B/a.json'
   },
 
   # No Hypercalls

@@ -159,7 +159,9 @@ def _sstg_state_as_dot(sstg, state_vert, with_times: bool = True, OS: OSBase = A
                 # ("irq_on", cpu.irq_on),
                 ("instance", instance),
                 # ("call_path", cpu.call_path),
+                # FIXME less verbose output
                 ("type", ExecState(cpu.exec_state).name),
+                # FIXME less verbose output
                 ("abb", abb),
                 # ("kernel", str(kernel)),
             ] + more_tupels
@@ -476,8 +478,11 @@ def mstg_to_dot(mstg: MSTGraph, label: str = "MSTG", OS: OSBase = AUTOSAR, with_
             if flow.ep.type[edge] == MSTType.sy2sy:
                 attrs = {"color": "darkred",
                          "style": "dashed"}
+                # FIXME remove dashed red line
+                continue
             if flow.ep.type[edge] == MSTType.follow_sync:
-                attrs = {"color": "darkgreen",
+                # FIXME change color from darkgreen to darkred
+                attrs = {"color": "darkred",
                          "style": "dotted"}
                 if with_times:
                     attrs["label"] = f"{flow.ep.bcet[edge]} - {flow.ep.wcet[edge]}"
