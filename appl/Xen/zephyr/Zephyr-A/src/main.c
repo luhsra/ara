@@ -9,12 +9,12 @@
  * Minimal Zephyr App
  */
 
-void do_something(void* a, void* b, void* c) {
+void calc(void* a, void* b, void* c) {
     int done = 0;
     printk("Hello");
     k_timeout_t t = Z_TIMEOUT_TICKS(1000);
     k_sleep(t);
 }
 
-K_THREAD_DEFINE(thread_a, STACKSIZE, do_something, NULL, NULL, NULL,
+K_THREAD_DEFINE(thread_a, STACKSIZE, calc, NULL, NULL, NULL,
 		PRIORITY, 0, 0);
