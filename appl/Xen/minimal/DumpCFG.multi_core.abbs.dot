@@ -1,87 +1,0 @@
-digraph G {
-label=ABBs;
-subgraph cluster_main {
-label=main;
-}
-
-subgraph cluster_AUTOSAR_GetCoreID {
-label=AUTOSAR_GetCoreID;
-}
-
-subgraph cluster_AUTOSAR_StartCore {
-label=AUTOSAR_StartCore;
-}
-
-subgraph cluster_AUTOSAR_StartOS {
-label=AUTOSAR_StartOS;
-}
-
-subgraph cluster_AUTOSAR_TASK_FUNC_A {
-label=AUTOSAR_TASK_FUNC_A;
-74 [color=blue, label=ABB5, shape=oval, tooltip=<74 (entry,BB6,BB7,BB8,BB9)bcet/wcet: 0 / 0>];
-75 [color=violet, label=ABB6, shape=oval, tooltip=<75 (BB11)bcet/wcet: 0 / 0>];
-76 [color=green, label=ABB7, shape=diamond, tooltip=<76 (BB10)bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster__ZN8O_StreamI6SerialElsEPKc {
-label=_ZN8O_StreamI6SerialElsEPKc;
-}
-
-subgraph cluster__ZN8O_StreamI6SerialElsEPFRS1_S2_E {
-label=_ZN8O_StreamI6SerialElsEPFRS1_S2_E;
-}
-
-subgraph cluster__Z4endlI6SerialER8O_StreamIT_ES4_ {
-label=_Z4endlI6SerialER8O_StreamIT_ES4_;
-}
-
-subgraph cluster_AUTOSAR_TerminateTask {
-color="#eeeeee";
-label=AUTOSAR_TerminateTask;
-style=filled;
-73 [label="", shape=box, tooltip=<73 (empty)bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster_AUTOSAR_TASK_FUNC_B {
-label=AUTOSAR_TASK_FUNC_B;
-70 [color=blue, label=ABB1, shape=oval, tooltip=<70 (entry,BB18,BB19,BB20,BB21)bcet/wcet: 0 / 0>];
-71 [color=violet, label=ABB2, shape=oval, tooltip=<71 (BB23)bcet/wcet: 0 / 0>];
-72 [color=green, label=ABB3, shape=diamond, tooltip=<72 (BB22)bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster___OS_HOOK_DEFINED_PreIdleHook {
-label=__OS_HOOK_DEFINED_PreIdleHook;
-}
-
-subgraph cluster__ZN7Machine5resetEv {
-label=_ZN7Machine5resetEv;
-}
-
-subgraph cluster__ZN8O_StreamI6SerialElsEPc {
-label=_ZN8O_StreamI6SerialElsEPc;
-}
-
-subgraph cluster__ZN8O_StreamI6SerialE7putcharEc {
-label=_ZN8O_StreamI6SerialE7putcharEc;
-}
-
-subgraph cluster__ZN6Serial7putcharEc {
-label=_ZN6Serial7putcharEc;
-}
-
-subgraph cluster___ara_fake_entry {
-label=__ara_fake_entry;
-69 [color=violet, label=ABB0, shape=oval, tooltip=<69 (entry,BB30,BB31)bcet/wcet: 0 / 0>];
-}
-
-70 -> 72  [color=red];
-70 -> 72  [color=blue];
-72 -> 71  [color=red];
-72 -> 73  [color=blue];
-73 -> 71  [color=blue];
-73 -> 75  [color=blue];
-74 -> 76  [color=red];
-74 -> 76  [color=blue];
-76 -> 75  [color=red];
-76 -> 73  [color=blue];
-}

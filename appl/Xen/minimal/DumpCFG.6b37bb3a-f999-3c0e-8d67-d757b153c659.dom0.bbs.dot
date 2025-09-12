@@ -1,143 +1,0 @@
-digraph G {
-label=BBs;
-subgraph cluster_main {
-label=main;
-1 [color=blue, label=entry, shape=oval, tooltip=<1bcet/wcet: 0 / 0>];
-2 [color=red, label=BB0, shape=box, tooltip=<2bcet/wcet: 0 / 0>];
-3 [color=violet, label=BB1, shape=oval, tooltip=<3bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster_AUTOSAR_StartOS {
-color="#eeeeee";
-label=AUTOSAR_StartOS;
-style=filled;
-5 [label="", shape=box, tooltip=<5bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster_AUTOSAR_TASK_FUNC_A {
-label=AUTOSAR_TASK_FUNC_A;
-7 [color=blue, label=entry, shape=oval, tooltip=<7bcet/wcet: 0 / 0>];
-8 [color=blue, label=BB2, shape=oval, tooltip=<8bcet/wcet: 0 / 0>];
-9 [color=blue, label=BB3, shape=oval, tooltip=<9bcet/wcet: 0 / 0>];
-10 [color=blue, label=BB4, shape=oval, tooltip=<10bcet/wcet: 0 / 0>];
-11 [color=violet, label=BB5, shape=oval, tooltip=<11bcet/wcet: 0 / 0>];
-12 [color=violet, label=BB6, shape=box, tooltip=<12bcet/wcet: 0 / 0>];
-13 [color=violet, label=BB7, shape=oval, tooltip=<13bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster__ZN8O_StreamI6SerialElsEPKc {
-label=_ZN8O_StreamI6SerialElsEPKc;
-15 [color=blue, label=entry, shape=oval, tooltip=<15bcet/wcet: 0 / 0>];
-16 [color=red, label=BB8, shape=box, tooltip=<16bcet/wcet: 0 / 0>];
-17 [color=violet, label=BB9, shape=oval, tooltip=<17bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster__ZN8O_StreamI6SerialElsEPFRS1_S2_E {
-label=_ZN8O_StreamI6SerialElsEPFRS1_S2_E;
-19 [color=blue, label=entry, shape=oval, tooltip=<19bcet/wcet: 0 / 0>];
-20 [color=red, label=BB10, shape=box, tooltip=<20bcet/wcet: 0 / 0>];
-21 [color=violet, label=BB11, shape=oval, tooltip=<21bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster__Z4endlI6SerialER8O_StreamIT_ES4_ {
-label=_Z4endlI6SerialER8O_StreamIT_ES4_;
-23 [color=blue, label=entry, shape=oval, tooltip=<23bcet/wcet: 0 / 0>];
-24 [color=red, label=BB12, shape=box, tooltip=<24bcet/wcet: 0 / 0>];
-25 [color=violet, label=BB13, shape=oval, tooltip=<25bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster_AUTOSAR_TerminateTask {
-color="#eeeeee";
-label=AUTOSAR_TerminateTask;
-style=filled;
-27 [label="", shape=box, tooltip=<27bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster___OS_HOOK_DEFINED_PreIdleHook {
-label=__OS_HOOK_DEFINED_PreIdleHook;
-29 [color=blue, label=entry, shape=oval, tooltip=<29bcet/wcet: 0 / 0>];
-30 [color=red, label=BB14, shape=box, tooltip=<30bcet/wcet: 0 / 0>];
-31 [color=violet, label=BB15, shape=oval, tooltip=<31bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster__ZN7Machine5resetEv {
-color="#eeeeee";
-label=_ZN7Machine5resetEv;
-style=filled;
-33 [label="", shape=box, tooltip=<33bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster__ZN8O_StreamI6SerialElsEPc {
-label=_ZN8O_StreamI6SerialElsEPc;
-35 [color=blue, label=entry, shape=oval, tooltip=<35bcet/wcet: 0 / 0>];
-36 [color=blue, label="while.cond", shape=oval, style=dashed, tooltip=<36bcet/wcet: 0 / 0>];
-37 [color=blue, label="while.body", shape=oval, style=dashed, tooltip=<37bcet/wcet: 0 / 0>];
-38 [color=red, label=BB16, shape=box, style=dashed, tooltip=<38bcet/wcet: 0 / 0>];
-39 [color=blue, label=BB17, shape=oval, style=dashed, tooltip=<39bcet/wcet: 0 / 0>];
-40 [color=violet, label="while.end", shape=oval, tooltip=<40bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster__ZN8O_StreamI6SerialE7putcharEc {
-label=_ZN8O_StreamI6SerialE7putcharEc;
-42 [color=blue, label=entry, shape=oval, tooltip=<42bcet/wcet: 0 / 0>];
-43 [color=red, label=BB18, shape=box, tooltip=<43bcet/wcet: 0 / 0>];
-44 [color=violet, label=BB19, shape=oval, tooltip=<44bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster__ZN6Serial7putcharEc {
-color="#eeeeee";
-label=_ZN6Serial7putcharEc;
-style=filled;
-46 [label="", shape=box, tooltip=<46bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster___ara_fake_entry {
-label=__ara_fake_entry;
-48 [color=blue, label=entry, shape=oval, tooltip=<48bcet/wcet: 0 / 0>];
-49 [color=red, label=BB20, shape=box, tooltip=<49bcet/wcet: 0 / 0>];
-50 [color=violet, label=BB21, shape=oval, tooltip=<50bcet/wcet: 0 / 0>];
-}
-
-1 -> 2  [color=red];
-2 -> 3  [color=red];
-7 -> 8  [color=red];
-7 -> 8  [color=blue];
-8 -> 9  [color=red];
-8 -> 9  [color=blue];
-9 -> 10  [color=red];
-9 -> 10  [color=blue];
-10 -> 11  [color=red];
-10 -> 11  [color=blue];
-11 -> 12  [color=red];
-11 -> 12  [color=blue];
-12 -> 13  [color=red];
-12 -> 27  [color=blue];
-15 -> 16  [color=red];
-16 -> 17  [color=red];
-19 -> 20  [color=red];
-20 -> 21  [color=red];
-23 -> 24  [color=red];
-24 -> 25  [color=red];
-27 -> 13  [color=blue];
-29 -> 30  [color=red];
-30 -> 31  [color=red];
-35 -> 36  [color=red];
-36 -> 37  [color=red];
-36 -> 40  [color=red];
-37 -> 38  [color=red];
-38 -> 39  [color=red];
-39 -> 36  [color=red];
-42 -> 43  [color=red];
-43 -> 44  [color=red];
-48 -> 49  [color=red];
-49 -> 50  [color=red];
-subgraph cluster_legend {
-label="CFG-Legend\n(Each box is a function)";
-comp [color=blue, label="Computation Block", shape=oval];
-syscall [color=green, label=Syscall, shape=diamond];
-comp -> syscall  [color=blue, label="Interprocedural\nControl\nFlow"];
-exit [color=violet, label="Exit Node", shape=oval];
-syscall -> exit  [color=red, label="Local\nControl\nFlow"];
-}
-
-}

@@ -1,13 +1,13 @@
 #include "autosar/os.h"
 
-DeclareTask(B);
+DeclareTask(A);
 
 int main(void) {
 	StartOS(0);
 }
 
-TASK(B) {
-	kout << "Hello World - b"<< endl;
+TASK(A) {
+	kout << "Hello World - A"<< endl;
 
 	TerminateTask();
 }

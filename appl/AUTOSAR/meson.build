@@ -183,14 +183,20 @@ subdir('multicore' / 'trampoline')
 
 # Add Autosar xen guests here
 autosar_apps += [
+  # --------------------------- minimal ----------------------------------
+  {'core': '../Xen',  'path': 'min-autosar'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'min-autosar'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'min-1'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'min-2'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+  
   {'core': '../Xen',  'path': 'hypercall'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'hypercall'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'hypercall-periodic'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'hypercall-periodic'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'hypercall-ext'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'hypercall-ext'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'minimal'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'minimal'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+  # {'core': '../Xen',  'path': 'min-autosar'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+  # {'core': '../Xen',  'path': 'min-autosar'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'multicore'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'alarm'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'complex'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},

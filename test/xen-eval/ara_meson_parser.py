@@ -92,6 +92,7 @@ def main():
                          "#LocalAbSS-dom1", "#SP-dom1", "#Edges-dom1", "#Vertices-dom1",
                          "#LocalAbSS-dom2", "#SP-dom2", "#Edges-dom2", "#Vertices-dom2",
                          "#LocalAbSS-domX", "#SP-domX", "#Edges-domX", "#Vertices-domX"])
+        rows = []
         for i in cases:
             if i.status == "Passed":
                 row = [i.name, i.status, i.duration, i.labsss[-1], i.sps[-1], i.edges[-1], i.vertices[-1]]
@@ -101,7 +102,11 @@ def main():
                     row += [i.labsss[j], i.sps[j], i.edges[j], i.vertices[j]]
             else:
                 row = [i.name, i.status, i.duration, "-"]
+            
+            rows.append(row)
+        for row in sorted(rows, key=lambda row: row[0]):
             writer.writerow(row)
+
 
     print(f"Done, wrote {len(cases)} lines.")
 

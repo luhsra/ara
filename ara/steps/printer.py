@@ -625,6 +625,12 @@ def sp_mstg_to_dot(mstg, cfg, label="SyncPoints MSTG"):
 class Printer(Step):
     """Print graphs to dot."""
 
+    # TODO invert CFG colors!
+    # SHAPES = {
+    #     ABBType.computation: ("oval", "green"),
+    #     ABBType.call: ("box", "red"),
+    #     ABBType.syscall: ("diamond", "blue")
+    # }
     SHAPES = {
         ABBType.computation: ("oval", "blue"),
         ABBType.call: ("box", "red"),

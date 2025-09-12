@@ -5,6 +5,31 @@
 
 # Testcases
 xen_testcases = [
+
+  # -------------------------- Without hypercalls ------------------------
+  # --------------------------- minimal ----------------------------------
+  # load two singlecore autosar guests into HyperSSE
+  {'name': 'min-autosar', 'do_timings': 'false', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_min_autosar_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/min-autosar/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_min_autosar_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/min-autosar/Autosar-B/b.json'
+  },
+  # load two singlecore zephyr guests into HyperSSE
+  {'name': 'min-zephyr', 'do_timings': 'false', 'guests': 
+      'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-min-1.ll;' +
+      'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-min-2.ll;'
+  },
+  # load one autosar and one zephyr guest into HyperSSE
+  {'name': 'min-1', 'do_timings': 'false', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_min_1_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/min-1/Autosar-A/a.json;' +
+      'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-min-3.ll;'
+  },
+  # load one zephyr and one autosar guest into HyperSSE
+  {'name': 'min-2', 'do_timings': 'false', 'guests': 
+      'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-min-4.ll;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_min_2_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/min-2/Autosar-B/b.json'
+  },
+
+
   # Hypercalls
   # Classic MultiSSE with 2 cores
 #   {'name': 'multicore', 'do_timings': 'true', 'guests':
@@ -59,12 +84,6 @@ xen_testcases = [
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_zephyr_sleep_Autosar_B_a.pi4.ll;../subprojects/ara/appl/Xen/zephyr-sleep/Autosar-B/a.json'
   },
 
-  # No Hypercalls
-  # Load 2x Autosar in HyperSSE: Kleinstmöglichestes System, verschmelzen der beiden SingleCore Systeme zu einem Hypervisor System.
-  {'name': 'minimal', 'do_timings': 'false', 'guests': 
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_minimal_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/minimal/Autosar-A/a.json;' +
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_minimal_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/minimal/Autosar-B/b.json'
-  },
   # Load alarms into HyperSSE: indirekt wird aus dem SingleCore System ein MultiCore System.
   # MultiSSE und HyperSSE sollten hierbei das gleiche Ergebnis liefern
   {'name': 'alarm', 'do_timings': 'true', 'guests': 

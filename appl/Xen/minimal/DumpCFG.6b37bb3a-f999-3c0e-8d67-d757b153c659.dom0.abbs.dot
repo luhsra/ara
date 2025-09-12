@@ -1,75 +1,0 @@
-digraph G {
-label=ABBs;
-subgraph cluster_main {
-label=main;
-}
-
-subgraph cluster_AUTOSAR_StartOS {
-label=AUTOSAR_StartOS;
-}
-
-subgraph cluster_AUTOSAR_TASK_FUNC_A {
-label=AUTOSAR_TASK_FUNC_A;
-51 [color=blue, label=ABB0, shape=oval, tooltip=<51 (entry,BB2,BB3,BB4,BB5)bcet/wcet: 0 / 0>];
-52 [color=violet, label=ABB1, shape=oval, tooltip=<52 (BB7)bcet/wcet: 0 / 0>];
-53 [color=green, label=ABB2, shape=diamond, tooltip=<53 (BB6)bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster__ZN8O_StreamI6SerialElsEPKc {
-label=_ZN8O_StreamI6SerialElsEPKc;
-}
-
-subgraph cluster__ZN8O_StreamI6SerialElsEPFRS1_S2_E {
-label=_ZN8O_StreamI6SerialElsEPFRS1_S2_E;
-}
-
-subgraph cluster__Z4endlI6SerialER8O_StreamIT_ES4_ {
-label=_Z4endlI6SerialER8O_StreamIT_ES4_;
-}
-
-subgraph cluster_AUTOSAR_TerminateTask {
-color="#eeeeee";
-label=AUTOSAR_TerminateTask;
-style=filled;
-54 [label="", shape=box, tooltip=<54 (empty)bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster___OS_HOOK_DEFINED_PreIdleHook {
-label=__OS_HOOK_DEFINED_PreIdleHook;
-}
-
-subgraph cluster__ZN7Machine5resetEv {
-label=_ZN7Machine5resetEv;
-}
-
-subgraph cluster__ZN8O_StreamI6SerialElsEPc {
-label=_ZN8O_StreamI6SerialElsEPc;
-}
-
-subgraph cluster__ZN8O_StreamI6SerialE7putcharEc {
-label=_ZN8O_StreamI6SerialE7putcharEc;
-}
-
-subgraph cluster__ZN6Serial7putcharEc {
-label=_ZN6Serial7putcharEc;
-}
-
-subgraph cluster___ara_fake_entry {
-label=__ara_fake_entry;
-}
-
-51 -> 53  [color=red];
-51 -> 53  [color=blue];
-53 -> 52  [color=red];
-53 -> 54  [color=blue];
-54 -> 52  [color=blue];
-subgraph cluster_legend {
-label="CFG-Legend\n(Each box is a function)";
-comp [color=blue, label="Computation Block", shape=oval];
-syscall [color=green, label=Syscall, shape=diamond];
-comp -> syscall  [color=blue, label="Interprocedural\nControl\nFlow"];
-exit [color=violet, label="Exit Node", shape=oval];
-syscall -> exit  [color=red, label="Local\nControl\nFlow"];
-}
-
-}
