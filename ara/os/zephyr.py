@@ -468,7 +468,7 @@ class Zephyr(OSBase):
         # HyperSSE needs multicore contexts, some ZephyrInstance are Zephyr wide global, so they are always needed!
         local_contexts = []
         for inst, ctx in context.items():
-            if getattr(inst, "cpu_id", None) == cpu_id or isinstance(inst, ZephyrInstance):
+            if getattr(inst, "cpu_id", None) == cpu_id or isinstance(inst, ZephyrKernel):
                 local_contexts.append((inst, ctx))
         return dict(local_contexts)
 
@@ -955,7 +955,10 @@ class Zephyr(OSBase):
         for cpu in filter(lambda cpu: cpu.id in cpus, state.cpus):
             # logger.debug(f"cpu.id: {cpu.id}")
 
-            assert cpu.id == 0 # only support one cpu
+            # TODO: temporary disabled for HyperSSE
+            if cpu.id != 0:
+                logger.warning("HyperSSE disabled check for only 1 cpu, this should crash!")
+            # assert cpu.id == 0 # only support one cpu
 
             # # if the idle thread is active (new_vertex = idle_thread) -> activate next timeout in queue
             # if new_vertex == Zephyr.idle_threads[cpu.id]:
@@ -1145,6 +1148,13 @@ class Zephyr(OSBase):
                 # Same for MSGQ?
                 new_context[k] = v
 
+        # TODO running on another cpu currently needs to move the idle thread
+        # for k,v in Zephyr.idle_threads.items():
+        #     print(type(k))
+        #     print(type(v))
+        # This does not work, because the idle_thread is not found later
+        Zephyr.idle_threads[target_cpu_id] = Zephyr.idle_threads[0]
+            
         return new_context
     
     def move_irqhandler(irq: IRQ, inst: InstanceGraph, target_cpu_id: int) -> None:
