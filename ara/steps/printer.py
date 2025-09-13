@@ -435,7 +435,7 @@ def mstg_to_dot(mstg: MSTGraph, label: str = "MSTG", OS: OSBase = AUTOSAR, with_
             if OS == XEN:
                 # filter IRQ CPUs
                 if cpu_id in XEN.irq_ids:
-                    label = f"M{int(metastate)}: {domain_type}-{cpu_id}-IRQ(dom-{cpu_id-1})"
+                    label = f"M{int(metastate)}: {domain_type}-{cpu_id}-IRQ(dom-{XEN.irq_ids[cpu_id]})"
                 else:
                     label = f"M{int(metastate)}: {domain_type}-{cpu_id}-{XEN.system_types[cpu_id].get_name()}"
             dot_m = pydot.Cluster(_to_str(metastate),label=label)

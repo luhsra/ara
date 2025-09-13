@@ -52,7 +52,7 @@ class XEN(OSBase):
     graph_list: list[Graph] = []
 
     # Used for output in printer
-    irq_ids: list[int] = []
+    irq_ids: dict[int, int] = {}
     
     # ------------------- From OSBase --------------------
 
@@ -215,7 +215,7 @@ class XEN(OSBase):
                 XEN.graph_list.append(XEN.graph_list[idx])
                 XEN.system_types.append(XEN.system_types[idx])
                 XEN.system_count += 1
-                XEN.irq_ids.append(irq.cpu_id)
+                XEN.irq_ids[irq.cpu_id] = idx
 
                 # Move IRQ-Handler/ISR
                 XEN.system_types[idx].move_irqhandler(irq, XEN.instances_list[idx], idx)
