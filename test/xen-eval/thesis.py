@@ -29,10 +29,10 @@ class HyperSSE(Experiment):
         build_path = cwd + parrot_dir + "build/"
         subprocess.run(meson_testuite_cmd, cwd=build_path, stdout=None)
 
-        # TODO: Automate this
-        meson_testuite_cmd = ["ninja", "sse-native_sim-zephyr-a", "sse-native_sim-zephyr-a2", "sse-native_sim-zephyr-a3"]
-        build_path = cwd + parrot_dir + "build/"
-        subprocess.run(meson_testuite_cmd, cwd=build_path, stdout=None)
+        # # TODO: Automate this
+        # meson_testuite_cmd = ["ninja", "sse-native_sim-zephyr-a", "sse-native_sim-zephyr-a2", "sse-native_sim-zephyr-a3"]
+        # build_path = cwd + parrot_dir + "build/"
+        # subprocess.run(meson_testuite_cmd, cwd=build_path, stdout=None)
 
 
         # print("Running meson testsuite")

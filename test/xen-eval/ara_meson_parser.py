@@ -101,7 +101,7 @@ def main():
                 for j in range(0, len(i.labsss) - 1):
                     row += [i.labsss[j], i.sps[j], i.edges[j], i.vertices[j]]
             else:
-                row = [i.name, i.status, i.duration, "-"]
+                row = [i.name, i.status, i.duration, "-", "-"]
             
             rows.append(row)
         for row in sorted(rows, key=lambda row: row[0]):

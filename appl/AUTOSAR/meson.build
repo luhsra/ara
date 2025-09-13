@@ -188,15 +188,23 @@ autosar_apps += [
   {'core': '../Xen',  'path': 'min-autosar'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'min-1'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'min-2'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
-  
-  {'core': '../Xen',  'path': 'hypercall'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'hypercall'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+
+  # --------------------------- hypercalls  ----------------------------------
+  {'core': '../Xen',  'path': 'hc-autosar'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'hc-autosar'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'hc-autosar-iit'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'hc-autosar-iit'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'hc-1'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'hc-2'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+
+  # --------------------------- TODO ----------------------------------
+
+
+
   {'core': '../Xen',  'path': 'hypercall-periodic'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'hypercall-periodic'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'hypercall-ext'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'hypercall-ext'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
-  # {'core': '../Xen',  'path': 'min-autosar'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
-  # {'core': '../Xen',  'path': 'min-autosar'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'multicore'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'alarm'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'complex'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
@@ -204,9 +212,6 @@ autosar_apps += [
   {'core': '../Xen',  'path': 'hypercomplex'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'hypercomplex'/ 'Autosar-B','name': 'worker', 'oil': 'worker.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'hypercomplex'/ 'Autosar-C','name': 'loop', 'oil': 'loop.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'zephyr' / 'Autosar-B', 'name': 'a', 'oil':   'a.json'},
-  {'core': '../Xen',  'path': 'zephyr-hc' / 'Autosar-B', 'name': 'a', 'oil'  : 'a.json'},
-  {'core': '../Xen',  'path': 'zephyr-sleep' / 'Autosar-B', 'name': 'a', 'oil'  : 'a.json'},
   {'core': '../Xen',  'path': 'automotiveB' / 'Autosar-A', 'name': 'tasks', 'oil'  : 'tasks.json'},
   {'core': '../Xen',  'path': 'automotiveBdouble' / 'Autosar-A', 'name': 'tasks', 'oil'  : 'tasks.json'},
   {'core': '../Xen',  'path': 'automotiveBdouble' / 'Autosar-B', 'name': 'tasks', 'oil'  : 'tasks.json'},

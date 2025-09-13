@@ -6,7 +6,6 @@
 # Testcases
 xen_testcases = [
 
-  # -------------------------- Without hypercalls ------------------------
   # --------------------------- minimal ----------------------------------
   # load two singlecore autosar guests into HyperSSE
   {'name': 'min-autosar', 'do_timings': 'false', 'guests': 
@@ -29,22 +28,55 @@ xen_testcases = [
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_min_2_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/min-2/Autosar-B/b.json'
   },
 
+  # --------------------------- hypercalls  ----------------------------------
+  # 2x autosar notify using hypercall a->b
+  {'name': 'hc-autosar', 'do_timings': 'false', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar/Autosar-B/b.json'
+  },
+  # 2x autosar notify using hypercall a->b, with iit
+  {'name': 'hc-autosar-iit', 'do_timings': 'true', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_iit_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-iit/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_iit_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-iit/Autosar-B/b.json'
+  },
+  # 2x zephyr notify using hypercall a->b TODO
+  {'name': 'hc-zephyr', 'do_timings': 'false', 'guests': 
+      'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-1.ll;' +
+      'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-2.ll;'
+  },
+  # notify using hypercall a->b TODO
+  {'name': 'hc-1', 'do_timings': 'false', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_1_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-1/Autosar-A/a.json;' +
+      'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-3.ll;'
+  },
+  # notify using hypercall a->b 
+  {'name': 'hc-2', 'do_timings': 'false', 'guests': 
+      'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-4.ll;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_2_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hc-2/Autosar-B/b.json'
+  },
+
+
+  # IDEAs
+  # notify using hypercall a->b, with IIT
+  # what about b->a
+  # back and forth notify
+  # chain a->b
+  # higher vs lower prio signal
+  # IIT
+  # 5er system / 10er system
+
+  # --------------------------- TODO ----------------------------------
+  # second sleep does not get found in SSE
+  {'name': 'zephyr-bug', 'do_timings': 'false', 'guests': 
+      'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-bug.ll;'
+  },
 
   # Hypercalls
   # Classic MultiSSE with 2 cores
 #   {'name': 'multicore', 'do_timings': 'true', 'guests':
 #       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_multicore_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/multicore/Autosar-A/a.json;'
 #   },
-  # Minimal Example for hypercalls
-  {'name': 'hypercall', 'do_timings': 'true', 'guests':
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercall_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hypercall/Autosar-A/a.json;' +
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercall_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hypercall/Autosar-B/b.json'
-  },
-  # Minimal Example for hypercalls without timing information
-  {'name': 'hypercall-not', 'do_timings': 'false', 'guests': 
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercall_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hypercall/Autosar-A/a.json;' +
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercall_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hypercall/Autosar-B/b.json'
-  },
+
   # Hypercalls with more syscalls
   {'name': 'hypercall-ext', 'do_timings': 'true', 'guests': 
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercall_ext_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hypercall-ext/Autosar-A/a.json;' +
@@ -64,24 +96,6 @@ xen_testcases = [
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercomplex_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hypercomplex/Autosar-A/a.json;' +
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercomplex_Autosar_B_worker.pi4.ll;../subprojects/ara/appl/Xen/hypercomplex/Autosar-B/worker.json;' +
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercomplex_Autosar_C_loop.pi4.ll;../subprojects/ara/appl/Xen/hypercomplex/Autosar-C/loop.json'
-  },
-
-  # With Zephyr
-  # Zephyr
-  {'name': 'zephyr', 'do_timings': 'false', 'guests': 
-      'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-A.ll;' +
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_zephyr_Autosar_B_a.pi4.ll;../subprojects/ara/appl/Xen/zephyr/Autosar-B/a.json'
-  },
-  # "Zephyr", "subprojects/ara-zephyr-apps/appl/native_sim-xen_static_msgq.ll",
-  # Zephyr with hypercalls
-  {'name': 'zephyr-hc', 'do_timings': 'false', 'guests': 
-      'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-A2.ll;' +
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_zephyr_hc_Autosar_B_a.pi4.ll;../subprojects/ara/appl/Xen/zephyr-hc/Autosar-B/a.json'
-  },
-  # Testing sleep with zephyr
-  {'name': 'zephyr-sleep', 'do_timings': 'false', 'guests': 
-      'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-A3.ll;' +
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_zephyr_sleep_Autosar_B_a.pi4.ll;../subprojects/ara/appl/Xen/zephyr-sleep/Autosar-B/a.json'
   },
 
   # Load alarms into HyperSSE: indirekt wird aus dem SingleCore System ein MultiCore System.
