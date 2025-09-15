@@ -57,16 +57,23 @@ _sysshort = {
 # log = get_logger("Printer")
 
 
-def _abb_name(cfg: CFG | list[CFG], abb) -> str:
+def _abb_name(cfg: CFG | list[CFG], abb, cpu_id: int = None) -> str:
     """Get an ABB as str."""
     if abb is None:
         return 'None'
+    
     # Xen os does not have one complete cfg, therefore it passes a list of cfgs
     if isinstance(cfg, list):
-        for cfg in cfg:
+        if cpu_id:
+            cfg = cfg[cpu_id]
             for v in cfg.vertices():
                 if v == abb:
                     return cfg.vp.name[abb]
+        else:
+            for cfg in cfg:
+                for v in cfg.vertices():
+                    if v == abb:
+                        return cfg.vp.name[abb]
         return "ERROR-ABB-NAME"
     else:
         return cfg.vp.name[abb]
@@ -153,20 +160,21 @@ def _sstg_state_as_dot(sstg, state_vert, with_times: bool = True, OS: OSBase = A
     #     more_tupels.append(("D:", ansi_escape.sub('', str(x[0]))))
 
     graph_attrs = "<br/>".join(
-        [
-            f"<i>{k}</i>: {html.escape(str(v))}"
+        [   
+            # FIXME removed <i> </i> html tags because of issue in typst rendering
+            f"{k}: {html.escape(str(v))}"
             for k, v in [
                 # ("irq_on", cpu.irq_on),
                 ("instance", instance),
                 # ("call_path", cpu.call_path),
                 # FIXME less verbose output
-                ("type", ExecState(cpu.exec_state).name),
+                ("type" , ExecState(cpu.exec_state).name),
                 # FIXME less verbose output
                 ("abb", abb),
                 # ("kernel", str(kernel)),
             ] + more_tupels
         ] + [
-            f"<i>{k}</i>: {str(v)}"
+            f"{k}: {str(v)}"
             for k, v in [
                 # attr that should not be escaped
             ] + thread_info
@@ -220,7 +228,7 @@ def sstg_to_dot(sstg, label="SSTG", reduced=False, OS=AUTOSAR):
     return dot_graph
 
 
-def reduced_mstg_to_dot(mstg, cfg, label="MSTG"):
+def reduced_mstg_to_dot(mstg: MSTGraph, cfg: CFG | list[CFG], label: str = "MSTG", domain_type: str = "CPU"):
     def _to_str(v):
         return str(int(v))
 
@@ -233,12 +241,12 @@ def reduced_mstg_to_dot(mstg, cfg, label="MSTG"):
             if mstg.ep.type[e] == MSTType.st2sy:
                 cpu_id = mstg.ep.cpu_id[e]
                 cores.add(cpu_id)
-                cpu_name = f"CPU {cpu_id}"
+                cpu_name = f"{domain_type} {cpu_id}"
                 cpu = mstg.vp.state[sync].cpus[cpu_id]
                 if isinstance(cpu, IRQCPU):
                     cpu_name = ("\u26A1" + f"{cpu.reference_cpu_id} " +
                                 f"({cpu_id}, {cpu.irq.name})")
-                abb_name = _abb_name(cfg, cpu.abb)
+                abb_name = _abb_name(cfg, cpu.abb, cpu_id=cpu_id)
                 cols.append((f"<TD PORT=\"c{cpu_id}\">{cpu_name}</TD>",
                              f"<TD PORT=\"a{cpu_id}\">{abb_name}</TD>"))
         if cols:
@@ -519,20 +527,20 @@ def mstg_to_dot(mstg: MSTGraph, label: str = "MSTG", OS: OSBase = AUTOSAR, with_
 
     return dot_graph
 
-
-def sp_mstg_to_dot(mstg, cfg, label="SyncPoints MSTG"):
-    legend = '<br/>'.join([html.escape(x) for x in [
-        "state format:",
-        "$entry sync point$ -> $exit sync point$",
-        "coreX, stateY (trggering syscall)",
-        "abbs of entry SP",
-        "abbs of exit SP",
-        "",
-        "edge format:",
-        "dashed, red: sy2sy (sync point to sync point)",
-        "dotted, green: follow_sync (following SPs in time)",
-        ]])
-    label = f"<{html.escape(str(label))}<br/><br/>{legend}>"
+def sp_mstg_to_dot(mstg: MSTGraph, cfg: CFG | list[CFG], label: str = "SyncPoints MSTG", domain_type: str = "CPU"):
+    # FIXME restore legend
+    # legend = '<br/>'.join([html.escape(x) for x in [
+    #     "state format:",
+    #     "$entry sync point$ -> $exit sync point$",
+    #     "coreX, stateY (trggering syscall)",
+    #     "abbs of entry SP",
+    #     "abbs of exit SP",
+    #     "",
+    #     "edge format:",
+    #     "dashed, red: sy2sy (sync point to sync point)",
+    #     "dotted, green: follow_sync (following SPs in time)",
+    #     ]])
+    # label = f"<{html.escape(str(label))}<br/><br/>{legend}>"
     dot_graph = pydot.Dot(graph_type="digraph", label=label)
 
     def _dsp(vertex, label=None):
@@ -556,7 +564,7 @@ def sp_mstg_to_dot(mstg, cfg, label="SyncPoints MSTG"):
         sync_point = mstg.vertex(sync_point)
         sys_state, core, irq = mstg.get_syscall_state(sync_point)
         entry_abbs = mstg.get_synchronized_abbs(sync_point)
-        entry_lbl = "en: " + _prettify_abbs(entry_abbs)
+        # entry_lbl = "en: " + _prettify_abbs(entry_abbs)
         label = f"c{core}, s{int(sys_state)}"
         if irq >= 0:
             irq_name = "None"
@@ -574,7 +582,7 @@ def sp_mstg_to_dot(mstg, cfg, label="SyncPoints MSTG"):
             # draw entry_sync
             sync_m.add_node(_dsp(sync_point, label=[
                 str(int(sync_point)),
-                entry_lbl,
+                # entry_lbl,
                 label
             ]))
             # draw exit_sync
@@ -582,7 +590,7 @@ def sp_mstg_to_dot(mstg, cfg, label="SyncPoints MSTG"):
                 exit_abbs = mstg.get_synchronized_abbs(follow)
                 sync_m.add_node(_dsp(follow, label=[
                     str(int(follow)),
-                    "ex: " + _prettify_abbs(exit_abbs)
+                    # "ex: " + _prettify_abbs(exit_abbs)
                 ]))
         else:
             # draw only the exit_sync
@@ -590,8 +598,8 @@ def sp_mstg_to_dot(mstg, cfg, label="SyncPoints MSTG"):
             title = f"{str(int(sync_point))}->{str(int(exit_s))}"
             dot_graph.add_node(_dsp(exit_s, label=[
                 title,
-                entry_lbl,
-                "ex: " + _prettify_abbs(mstg.get_synchronized_abbs(exit_s)),
+                # entry_lbl,
+                # "ex: " + _prettify_abbs(mstg.get_synchronized_abbs(exit_s)),
                 label
             ]))
 
@@ -625,17 +633,18 @@ def sp_mstg_to_dot(mstg, cfg, label="SyncPoints MSTG"):
 class Printer(Step):
     """Print graphs to dot."""
 
-    # TODO invert CFG colors!
-    # SHAPES = {
-    #     ABBType.computation: ("oval", "green"),
-    #     ABBType.call: ("box", "red"),
-    #     ABBType.syscall: ("diamond", "blue")
-    # }
+    # Invert CFG colors!
     SHAPES = {
-        ABBType.computation: ("oval", "blue"),
+        ABBType.computation: ("oval", "green"),
         ABBType.call: ("box", "red"),
-        ABBType.syscall: ("diamond", "green")
+        ABBType.syscall: ("diamond", "blue")
     }
+    # old colors
+    # SHAPES = {
+    #     ABBType.computation: ("oval", "blue"),
+    #     ABBType.call: ("box", "red"),
+    #     ABBType.syscall: ("diamond", "green")
+    # }
 
     dot = Option(name="dot",
                  help="Path to a dot file, '-' will write to stdout.",
@@ -923,14 +932,26 @@ class Printer(Step):
 
     def print_reduced_mstg(self):
         name = self._print_init()
-        dot_graph = reduced_mstg_to_dot(self._graph.mstg,
-                                        self._graph.cfg,
-                                        name)
+
+        if self._graph.os == XEN:
+            cfg = XEN.cfg_list
+        else:
+            cfg = self._graph.cfg
+        domain_type = self.domain_type.get()
+
+        dot_graph = reduced_mstg_to_dot(mstg=self._graph.mstg, cfg=cfg, label=name, domain_type=domain_type)
         self._write_dot(dot_graph)
 
     def print_sp_mstg(self):
         name = self._print_init()
-        dot_graph = sp_mstg_to_dot(self._graph.mstg, self._graph.cfg, name)
+
+        if self._graph.os == XEN:
+            cfg = XEN.cfg_list
+        else:
+            cfg = self._graph.cfg
+        domain_type = self.domain_type.get()
+
+        dot_graph = sp_mstg_to_dot(mstg=self._graph.mstg, cfg=cfg, label=name, domain_type=domain_type)
         self._write_dot(dot_graph)
 
     def print_callgraph(self, only_systemrelevant=False):
