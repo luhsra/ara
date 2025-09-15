@@ -140,7 +140,7 @@ class Timer(ZephyrInstance):
     
 
 @dataclass
-class Thread(ZephyrInstance, ControlInstance):
+class Thread(ZephyrInstance, ControlInstance, CrossOSEvent):
     # Pointer to uninitialized struct k_thread.
     symbol: object
     # Pointer to the stack space.
@@ -1169,14 +1169,23 @@ class Zephyr(OSBase):
     def find_cross_os_event(state: OSState, cpu_id: int, cb: str) -> CrossOSEvent:
         """Zephyr currently does no support any CrossOSEvents"""
 
+        for k, _ in state.context.items():
+            if isinstance(k, CrossOSEvent):
+                if k.name == "thread_event":
+                    # k.entry_name = cb
+                    return k
         return None
 
-    # @staticmethod
-    # def trigger_cross_os_event(state: OSState, cpu_id: int, event: CrossOSEvent) -> OSState:
-    #     """Wrapper to apply the event to the given state, currently only ActivateTask is supported."""
+
+    @staticmethod
+    def trigger_cross_os_event(state: OSState, cpu_id: int, event: CrossOSEvent) -> OSState:
+        """Wrapper to apply the event to the given state, currently only ActivateTask is supported."""
 
         # set_next_abb(event)
-        # return AUTOSAR.ActivateTask(state, cpu_id, event)
+        # ctx.abb = state.cfg.get_entry_abb(task.function)
+        # ctx.abb_name = state.cfg.vp.name[state.cfg.get_entry_abb(task.function)]
+        # TODO
+        return state
 
 
     # ------------------------------- Syscalls -----------------------------------

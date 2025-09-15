@@ -54,7 +54,7 @@ xen_testcases = [
       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-2.ll;'
   },
   # notify using hypercall a->b TODO
-  {'name': 'hc-1', 'do_timings': 'false', 'guests': 
+  {'name': 'hc-1', 'do_timings': 'true', 'guests': 
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_1_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-1/Autosar-A/a.json;' +
       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-3.ll;'
   },
