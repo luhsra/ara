@@ -1175,7 +1175,8 @@ class Zephyr(OSBase):
     # def trigger_cross_os_event(state: OSState, cpu_id: int, event: CrossOSEvent) -> OSState:
     #     """Wrapper to apply the event to the given state, currently only ActivateTask is supported."""
 
-    #     return AUTOSAR.ActivateTask(state, cpu_id, event)
+        # set_next_abb(event)
+        # return AUTOSAR.ActivateTask(state, cpu_id, event)
 
 
     # ------------------------------- Syscalls -----------------------------------

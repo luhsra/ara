@@ -105,9 +105,17 @@ class HyperSSE(Step):
                     extra["RemoveSysfuncBody"] = {"drop_llvm_suffix": True, "disable": False}
                     extra["ZephyrStatic"] = {"log_level": "debug"}
                     extra["SIA"] = {"xen_syscall": True}
-                    extra["steps"] = ['MergeStructs', 'RemoveSysfuncBody', 'ZephyrThreadEntry', 'SIA', "LoadKernelLL",
+
+                    if self.do_timings.get():
+                        extra["MultiSSE"]["with_times"] = True
+                        extra["ApplyTimings"] = {"timings":"BB"}
+                        
+                        extra["steps"] = ['MergeStructs', 'RemoveSysfuncBody', 'ZephyrThreadEntry', 'SIA', "LoadKernelLL",
+                                      'DumpCFG', 'DumpInstances', 'ApplyTimings', 'SSE', 'SVFReset', 'HyperSSE']
+                    else:
+                        extra["steps"] = ['MergeStructs', 'RemoveSysfuncBody', 'ZephyrThreadEntry', 'SIA', "LoadKernelLL",
                                       'DumpCFG', 'DumpInstances', 'SSE', 'SVFReset', 'HyperSSE']
-      
+
                     log.warning(f"Starting Zephyr: {guests[1]}")
 
                     # Remove first 2 elements
