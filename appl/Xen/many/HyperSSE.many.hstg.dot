@@ -1,0 +1,64 @@
+digraph G {
+label="HyperSSE.many.hstg.dot";
+1 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD><TD PORT="c2">Dom 2</TD><TD PORT="c3">Dom 3</TD><TD PORT="c4">Dom 4</TD><TD PORT="c5">Dom 5</TD></TR></TABLE>>, shape=plaintext, tooltip=1];
+subgraph cluster_5 {
+label="M5: Dom-0-AUTOSAR";
+2 [color=green, fontsize=14, label=<State 8<br/><font point-size='12'><i>instance</i>: A<br/><i>type</i>: computation<br/><i>abb</i>: dom-0/ABB0</font>>, style=bold, tooltip=2];
+3 [color=blue, fontsize=14, label=<State 14<br/><font point-size='12'><i>instance</i>: A<br/><i>type</i>: syscall<br/><i>abb</i>: dom-0/ABB2<br/><i>sys</i>: AUTOSAR_TerminateTask</font>>, shape=box, tooltip=3];
+4 [color=violet, fontsize=14, label=<State 15<br/><font point-size='12'><i>instance</i>: Idle<br/><i>type</i>: idle<br/><i>abb</i>: None</font>>, style=bold, tooltip=4];
+}
+
+subgraph cluster_9 {
+label="M9: Dom-1-AUTOSAR";
+8 [color=violet, fontsize=14, label=<State 17<br/><font point-size='12'><i>instance</i>: Idle<br/><i>type</i>: idle<br/><i>abb</i>: None</font>>, style=bold, tooltip=8];
+6 [color=green, fontsize=14, label=<State 9<br/><font point-size='12'><i>instance</i>: B<br/><i>type</i>: computation<br/><i>abb</i>: dom-1/ABB0</font>>, style=bold, tooltip=6];
+7 [color=blue, fontsize=14, label=<State 16<br/><font point-size='12'><i>instance</i>: B<br/><i>type</i>: syscall<br/><i>abb</i>: dom-1/ABB2<br/><i>sys</i>: AUTOSAR_TerminateTask</font>>, shape=box, tooltip=7];
+}
+
+subgraph cluster_13 {
+label="M13: Dom-2-AUTOSAR";
+10 [color=green, fontsize=14, label=<State 10<br/><font point-size='12'><i>instance</i>: C<br/><i>type</i>: computation<br/><i>abb</i>: dom-2/ABB0</font>>, style=bold, tooltip=10];
+11 [color=blue, fontsize=14, label=<State 18<br/><font point-size='12'><i>instance</i>: C<br/><i>type</i>: syscall<br/><i>abb</i>: dom-2/ABB2<br/><i>sys</i>: AUTOSAR_TerminateTask</font>>, shape=box, tooltip=11];
+12 [color=violet, fontsize=14, label=<State 19<br/><font point-size='12'><i>instance</i>: Idle<br/><i>type</i>: idle<br/><i>abb</i>: None</font>>, style=bold, tooltip=12];
+}
+
+subgraph cluster_17 {
+label="M17: Dom-3-AUTOSAR";
+16 [color=violet, fontsize=14, label=<State 21<br/><font point-size='12'><i>instance</i>: Idle<br/><i>type</i>: idle<br/><i>abb</i>: None</font>>, style=bold, tooltip=16];
+14 [color=green, fontsize=14, label=<State 11<br/><font point-size='12'><i>instance</i>: D<br/><i>type</i>: computation<br/><i>abb</i>: dom-3/ABB0</font>>, style=bold, tooltip=14];
+15 [color=blue, fontsize=14, label=<State 20<br/><font point-size='12'><i>instance</i>: D<br/><i>type</i>: syscall<br/><i>abb</i>: dom-3/ABB2<br/><i>sys</i>: AUTOSAR_TerminateTask</font>>, shape=box, tooltip=15];
+}
+
+subgraph cluster_21 {
+label="M21: Dom-4-AUTOSAR";
+18 [color=green, fontsize=14, label=<State 12<br/><font point-size='12'><i>instance</i>: E<br/><i>type</i>: computation<br/><i>abb</i>: dom-4/ABB0</font>>, style=bold, tooltip=18];
+19 [color=blue, fontsize=14, label=<State 22<br/><font point-size='12'><i>instance</i>: E<br/><i>type</i>: syscall<br/><i>abb</i>: dom-4/ABB2<br/><i>sys</i>: AUTOSAR_TerminateTask</font>>, shape=box, tooltip=19];
+20 [color=violet, fontsize=14, label=<State 23<br/><font point-size='12'><i>instance</i>: Idle<br/><i>type</i>: idle<br/><i>abb</i>: None</font>>, style=bold, tooltip=20];
+}
+
+subgraph cluster_25 {
+label="M25: Dom-5-AUTOSAR";
+24 [color=violet, fontsize=14, label=<State 25<br/><font point-size='12'><i>instance</i>: Idle<br/><i>type</i>: idle<br/><i>abb</i>: None</font>>, style=bold, tooltip=24];
+22 [color=green, fontsize=14, label=<State 13<br/><font point-size='12'><i>instance</i>: F<br/><i>type</i>: computation<br/><i>abb</i>: dom-5/ABB0</font>>, style=bold, tooltip=22];
+23 [color=blue, fontsize=14, label=<State 24<br/><font point-size='12'><i>instance</i>: F<br/><i>type</i>: syscall<br/><i>abb</i>: dom-5/ABB2<br/><i>sys</i>: AUTOSAR_TerminateTask</font>>, shape=box, tooltip=23];
+}
+
+1:c0 -> 2  [color=black];
+1:c1 -> 6  [color=black];
+1:c2 -> 10  [color=black];
+1:c3 -> 14  [color=black];
+1:c4 -> 18  [color=black];
+1:c5 -> 22  [color=black];
+2 -> 3  [color=black];
+3 -> 4  [color=black];
+6 -> 7  [color=black];
+7 -> 8  [color=black];
+10 -> 11  [color=black];
+11 -> 12  [color=black];
+14 -> 15  [color=black];
+15 -> 16  [color=black];
+18 -> 19  [color=black];
+19 -> 20  [color=black];
+22 -> 23  [color=black];
+23 -> 24  [color=black];
+}

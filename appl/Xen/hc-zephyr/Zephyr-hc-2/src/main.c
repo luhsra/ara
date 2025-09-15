@@ -13,6 +13,10 @@
 domid_t remote_dom = 0;
 channel_t channel = 42;
 
+void event_rcv() {
+
+}
+
 void recv(void* a, void* b, void* c) {
     int done = 0;
     printk("Hello");
@@ -20,7 +24,7 @@ void recv(void* a, void* b, void* c) {
     x = k_current_get();
     printk(x);
 
-	// wrap_evtchn_bind_interdomain(remote_dom, channel, NULL);
+	wrap_evtchn_bind_interdomain(remote_dom, channel, event_rcv);
 
 	// XEN_wrap_evtchn_alloc_unbound(remote_dom, channel, NULL);
 	// XEN_wrap_evtchn_send(channel);

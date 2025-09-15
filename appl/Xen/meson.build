@@ -27,6 +27,15 @@ xen_testcases = [
       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-min-4.ll;' +
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_min_2_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/min-2/Autosar-B/b.json'
   },
+  # load two singlecore zephyr guests into HyperSSE
+  {'name': 'many', 'do_timings': 'false', 'guests':
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_many_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/many/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_many_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/many/Autosar-B/b.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_many_Autosar_C_c.pi4.ll;../subprojects/ara/appl/Xen/many/Autosar-C/c.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_many_Autosar_D_d.pi4.ll;../subprojects/ara/appl/Xen/many/Autosar-D/d.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_many_Autosar_E_e.pi4.ll;../subprojects/ara/appl/Xen/many/Autosar-E/e.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_many_Autosar_F_f.pi4.ll;../subprojects/ara/appl/Xen/many/Autosar-F/f.json'
+  },
 
   # --------------------------- hypercalls  ----------------------------------
   # 2x autosar notify using hypercall a->b
@@ -54,6 +63,11 @@ xen_testcases = [
       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-4.ll;' +
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_2_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hc-2/Autosar-B/b.json'
   },
+  # Send Receive Autosar example
+  {'name': 'sendrecv', 'do_timings': 'true', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_sendrecv_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/sendrecv/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_sendrecv_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/sendrecv/Autosar-B/b.json'
+  },
 
 
   # IDEAs
@@ -67,8 +81,12 @@ xen_testcases = [
 
   # --------------------------- TODO ----------------------------------
   # second sleep does not get found in SSE
-  {'name': 'zephyr-bug', 'do_timings': 'false', 'guests': 
+  {'name': 'zephyr-bug', 'do_timings': 'true', 'guests': 
       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-bug.ll;'
+  },
+  {'name': 'optimize', 'do_timings': 'true', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_optimize_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/optimize/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_optimize_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/optimize/Autosar-B/b.json'
   },
 
   # Hypercalls
