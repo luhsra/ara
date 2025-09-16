@@ -68,6 +68,11 @@ xen_testcases = [
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_sendrecv_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/sendrecv/Autosar-A/a.json;' +
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_sendrecv_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/sendrecv/Autosar-B/b.json'
   },
+  # 2x autosar, shows Hypercalls back and forth
+  {'name': 'pingpong', 'do_timings': 'true', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_pingpong_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/pingpong/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_pingpong_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/pingpong/Autosar-B/b.json'
+  },
 
 
   # IDEAs

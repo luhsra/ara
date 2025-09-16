@@ -204,6 +204,8 @@ autosar_apps += [
   {'core': '../Xen',  'path': 'hc-2'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'sendrecv'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'sendrecv'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'pingpong'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'pingpong'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
 
   # --------------------------- TODO ----------------------------------
 
