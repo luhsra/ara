@@ -15,15 +15,14 @@ void ara_timing_info(int a, int b);
 domid_t remote_dom = 0;
 channel_t channel = 42;
 
-void event_rcv_a(void* a, void* b, void* c) {
+void dummy_event_rcv(void* a, void* b, void* c) {
 
-  	ara_timing_info(10, 20);
-    printk("Hello");
-}
-
-void event_rcv_b(void* a, void* b, void* c) {
-
-  	ara_timing_info(5, 7);
+  	// ara_timing_info(5, 7);
+    // printk("Hello");
+    // k_tid_t x;
+    // x = k_current_get();
+    // printk(x);
+  	ara_timing_info(6, 8);
     printk("Hello");
 }
 
@@ -32,33 +31,21 @@ void recv(void* a, void* b, void* c) {
   	ara_timing_info(20, 30);
     printk("B");
 
-    XEN_wrap_evtchn_bind_interdomain(remote_dom, channel, event_rcv_b);
+    // k_tid_t x;
+    // x = k_current_get();
+    // printk(x);
+  	// ara_timing_info(5, 10);
 
-    // XEN_wrap_evtchn_bind_interdomain(remote_dom, channel, NULL);
-    // XEN_wrap_evtchn_alloc_unbound(remote_dom, channel, NULL);
+    XEN_wrap_evtchn_bind_interdomain(remote_dom, channel, dummy_event_rcv);
 
 
   	ara_timing_info(20, 30);
 
-    // int done = 0;
-    // printk("Hello");
-    // k_tid_t x;
-    // x = k_current_get();
-    // printk(x);
-
-	// wrap_evtchn_bind_interdomain(remote_dom, channel, event_rcv);
-
-	// XEN_wrap_evtchn_alloc_unbound(remote_dom, channel, NULL);
-	// XEN_wrap_evtchn_send(channel);
-
-    // k_timeout_t t = Z_TIMEOUT_TICKS(1000);
-    // k_sleep(t);
-
 }
 
-
 K_THREAD_DEFINE(thread_a, STACKSIZE, recv, NULL, NULL, NULL,
-		PRIORITY, 0, 0);
+		PRIORITY+4, 0, 0);
 
-K_THREAD_DEFINE(thread_event, STACKSIZE, event_rcv_a, NULL, NULL, NULL,
-		PRIORITY+1, 0, 0);
+// to receive hypercalls, we need another IR-Handler Thread, that holds the same func, as the cb!
+K_THREAD_DEFINE(thread_event, STACKSIZE, dummy_event_rcv, NULL, NULL, NULL,
+		PRIORITY, 0, -1);
