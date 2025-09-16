@@ -766,6 +766,9 @@ class AUTOSAR(OSBase):
                 k.name = k.name + f"d{target_cpu_id}"
                 k.cpu_id = target_cpu_id
                 new_context[k] = v
+            elif isinstance(k, CPUBounded):
+                k.cpu_id = target_cpu_id
+                new_context[k] = v
             else:
                 logger.error(f"move_context: Unkown context of type: {type(k)}")
                 new_context[k] = v

@@ -8,8 +8,7 @@ from graph_tool import Graph
 from ara.util import get_logger
 
 # For V1 Hypercalls
-from .autosar import AUTOSARInstance
-from .zephyr import Zephyr
+from .autosar import AUTOSAR, AUTOSARInstance
 
 from copy import copy
 
@@ -54,6 +53,31 @@ class XEN(OSBase):
     # Used for output in printer
     irq_ids: dict[int, int] = {}
     
+    @staticmethod
+    def merge_states(states: list[OSState]) -> OSState:
+        """Combines multiple state into one, changes ids to ascending numbers"""
+
+        cpus: list[CPU] = []
+        for idx, s in enumerate(states):
+            # TODO add support for multicore guests
+            assert len(s.cpus) == 1, f"Tried to merge state that is already multicore {len(s.cpus)}."
+            cpu: CPU = s.cpus.one()
+            cpu.id = idx
+            cpu.cfg = XEN.cfg_list[idx]
+            cpus.append(cpu)
+
+        state = OSState(cpus=CPUList(cpus), cfg=None, instances=None)
+        state.hypersse_state(system_count=XEN.system_count, cfg_list=XEN.cfg_list, 
+                            instances_list=XEN.instances_list)
+
+        for i, s in enumerate(states):
+            # OS specific
+            new_context = XEN.system_types[i].move_context(s.context, i)
+            for k,v in new_context.items():
+                state.context[k] = v
+
+        return state
+    
     # ------------------- From OSBase --------------------
 
     @staticmethod
@@ -61,37 +85,13 @@ class XEN(OSBase):
         """Creates the inital state over all guests, parameters are not used, instead the class 
          attributes cfg_list/instances-list."""
 
-        def merge_states(states: list[OSState]) -> OSState:
-            """Combines multiple state into one, changes ids to ascending numbers"""
-
-            cpus: list[CPU] = []
-            for idx, s in enumerate(states):
-                # TODO add support for multicore guests
-                assert len(s.cpus) == 1, f"Tried to merge state that is already multicore {len(s.cpus)}."
-                cpu: CPU = s.cpus.one()
-                cpu.id = idx
-                cpu.cfg = XEN.cfg_list[idx]
-                cpus.append(cpu)
-
-            state = OSState(cpus=CPUList(cpus), cfg=None, instances=None)
-            state.hypersse_state(system_count=XEN.system_count, cfg_list=XEN.cfg_list, 
-                                instances_list=XEN.instances_list)
-
-            for i, s in enumerate(states):
-                # OS specific
-                new_context = XEN.system_types[i].move_context(s.context, i)
-                for k,v in new_context.items():
-                    state.context[k] = v
-
-            return state
-        
         logger.info(f"Get inital state from {XEN.system_count} systems.")
 
         states: OSState = []
         for i in range(XEN.system_count):
             states.append(XEN.system_types[i].get_initial_state(cfg=XEN.cfg_list[i], 
                                                             instances=XEN.instances_list[i]))
-        return merge_states(states)
+        return XEN.merge_states(states)
     
     @staticmethod
     def get_cpu_local_contexts(context: dict, cpu_id: int, instances: InstanceGraph) -> dict[Any, Any]:
@@ -190,7 +190,7 @@ class XEN(OSBase):
             for _, irq in instances.get(IRQ):
 
                 # TODO: Xen IRQs are not needed for now!
-                if XEN.system_types[idx] == Zephyr:
+                if XEN.system_types[idx] != AUTOSAR:
                     logger.warning("Zephyr's IRQs are ignored for now!")
                     continue
 
@@ -336,9 +336,9 @@ class XEN(OSBase):
 
         # Trigger event
         state.cfg = XEN.cfg_list[receiver_channel.cpu_id]
-        XEN.system_types[receiver_channel.cpu_id].trigger_cross_os_event(state, receiver_channel.cpu_id, receiver_channel.event)
-
-        return state
+        # XEN.system_types[receiver_channel.cpu_id].trigger_cross_os_event(state, receiver_channel.cpu_id, receiver_channel.event)
+        return XEN.system_types[receiver_channel.cpu_id].trigger_cross_os_event(state, receiver_channel.cpu_id, receiver_channel.event)
+        # return state
 
     # --------------------------- Old Hypercalls ---------------------
 
@@ -467,7 +467,7 @@ class EventChannel(CPUBounded):
     event: CrossOSEvent | None  # event that happens on hypercall
 
     def __str__(self):
-        s = f"\33[1;36m{self.name}\033[0m: dom-{self.source_domain} to dom-{self.target_domain},"\
+        s = f"\33[1;36m{self.name}\033[0m: cpu_id={self.cpu_id} dom-{self.source_domain} to dom-{self.target_domain},"\
              f" via channel: {self.channel} and event: {self.event}"
         return s
     

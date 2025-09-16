@@ -405,7 +405,10 @@ class OSState:
                 s += f", state={cpu.exec_state.name}"
                 # for syscalls print name of syscall aswell
                 if cpu.exec_state == ExecState.syscall:
-                    s += f":{self.cfg.get_syscall_name(cpu.abb)}"
+                    if self.system_count:
+                        s += f":{self.cfg_list[cpu.id].get_syscall_name(cpu.abb)}"
+                    else:
+                        s += f":{self.cfg.get_syscall_name(cpu.abb)}"
         s += "\n\t-----"
         for k, v in self.context.items():
             s += f"\n\t{k} -- {v}"

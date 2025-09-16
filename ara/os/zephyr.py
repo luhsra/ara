@@ -5,6 +5,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from ara.steps.instance_graph_stats import MissingInteractions
+from ara.steps.multisse_helper.common import get_single_core_states
+from .xen import XEN
 from .os_util import (
     UnknownArgument,
     AutoDotInstance,
@@ -463,13 +465,17 @@ class Zephyr(OSBase):
 
     @staticmethod
     def get_cpu_local_contexts(context, cpu_id, instances):
+        # Zephyr model is mostly singlecore, for this the whole context can be returend
         # for now we are single core only, whole context is in here, also for IRQCPUS that all target CPU 0
+        # return context
 
         # HyperSSE needs multicore contexts, some ZephyrInstance are Zephyr wide global, so they are always needed!
+        # TODO this breaks IRQ CPU, because they are not found
         local_contexts = []
         for inst, ctx in context.items():
             if getattr(inst, "cpu_id", None) == cpu_id or isinstance(inst, ZephyrKernel):
                 local_contexts.append((inst, ctx))
+            # TODO find targets of IRQ if they belong to this local context
         return dict(local_contexts)
 
     @staticmethod
@@ -1168,24 +1174,50 @@ class Zephyr(OSBase):
     @staticmethod
     def find_cross_os_event(state: OSState, cpu_id: int, cb: str) -> CrossOSEvent:
         """Zephyr currently does no support any CrossOSEvents"""
+        
+        # k: ZephyrCrossOS = ZephyrCrossOS(cpu_id=cpu_id, function_name=cb)
+        # state.context[k] = 1
 
         for k, _ in state.context.items():
             if isinstance(k, CrossOSEvent):
-                if k.name == "thread_event":
-                    # k.entry_name = cb
+                if k.entry_name == cb:
                     return k
         return None
-
 
     @staticmethod
     def trigger_cross_os_event(state: OSState, cpu_id: int, event: CrossOSEvent) -> OSState:
         """Wrapper to apply the event to the given state, currently only ActivateTask is supported."""
 
-        # set_next_abb(event)
-        # ctx.abb = state.cfg.get_entry_abb(task.function)
-        # ctx.abb_name = state.cfg.vp.name[state.cfg.get_entry_abb(task.function)]
-        # TODO
-        return state
+        assert isinstance(event, Thread), "Zephyr currently only supports Threads as event!"
+
+        # prepare right instance graph
+        if state.system_count:
+            state.instances = state.instances_list[cpu_id]
+
+        # workarround because zephyr cant multicore
+        states = get_single_core_states(state, XEN)
+        state = states[cpu_id].copy()
+
+        # similar to k_thread_start
+        if Zephyr.enable_sse:
+            ic = za.InterpreterContext(Zephyr.irx, state, cpu_id)
+            thread = ic.thread_sym_2_ptr(event)
+            ic.zi.irm.skip(["memcpy", "memset"])
+            ic.run_function_with_arch_swap("z_impl_k_thread_start", [thread.ptr], ['PTR'])
+
+        # TODO do not have a real zephyr interrupt here, can not connect in instance graph
+        # but does work without it
+        # add_self_edge(state, cpu_id, "k_thread_start", ty=ZephyrEdgeType.interaction)
+
+        # workarround because zephyr cant multicore
+        states[cpu_id] = state
+        state_list = []
+        for s in states:
+            # mantain order of states
+            state_list.insert(s, states[s])
+
+        merged =  XEN.merge_states(state_list)
+        return merged
 
 
     # ------------------------------- Syscalls -----------------------------------
