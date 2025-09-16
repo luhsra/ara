@@ -63,7 +63,7 @@ class ZephyrKernelContext:
             threads.append(str(v))
         s = "[ready_q: "
         s += ", ".join(threads)
-        s += "]"
+        s += f", cache: {int(self.cache)}]"
         return s
 
     def __copy__(self):

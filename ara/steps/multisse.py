@@ -1580,19 +1580,19 @@ class MultiSSE(StatsStep):
                 "reduced" : True,
                 "domain_type" : "Dom" if self._graph.os == XEN else "CPU"
             })
-            self._step_manager.chain_step({
-                "name": "Printer",
-                "dot": ".".join(dot.split(".")[:-1]) + ".reduced.dot",
-                "graph_name": ".".join(dot.split("/")[1].split(".")[:-1]) + ".reduced.dot",
-                "subgraph": "reduced_mstg",
-                "reduced" : True,
-                "domain_type" : "Dom" if self._graph.os == XEN else "CPU"
-            })
-            self._step_manager.chain_step({
-                "name": "Printer",
-                "dot": ".".join(dot.split(".")[:-1]) + ".sps.dot",
-                "graph_name":".".join(dot.split("/")[1].split(".")[:-1]) + ".sps.dot",
-                "subgraph": "sp_mstg",
-                "reduced" : True,
-                "domain_type" : "Dom" if self._graph.os == XEN else "CPU"
-            })
+            # self._step_manager.chain_step({
+            #     "name": "Printer",
+            #     "dot": ".".join(dot.split(".")[:-1]) + ".reduced.dot",
+            #     "graph_name": ".".join(dot.split("/")[1].split(".")[:-1]) + ".reduced.dot",
+            #     "subgraph": "reduced_mstg",
+            #     "reduced" : True,
+            #     "domain_type" : "Dom" if self._graph.os == XEN else "CPU"
+            # })
+            # self._step_manager.chain_step({
+            #     "name": "Printer",
+            #     "dot": ".".join(dot.split(".")[:-1]) + ".sps.dot",
+            #     "graph_name":".".join(dot.split("/")[1].split(".")[:-1]) + ".sps.dot",
+            #     "subgraph": "sp_mstg",
+            #     "reduced" : True,
+            #     "domain_type" : "Dom" if self._graph.os == XEN else "CPU"
+            # })
