@@ -3,12 +3,12 @@ label="HyperSSE.hc-1.hstg.dot";
 1 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=1];
 subgraph cluster_7 {
 label="M7: Dom-0-AUTOSAR";
-2 [color=green, fontsize=14, label=<State 4<br/><font point-size='12'>instance: A<br/>type: computation<br/>abb: dom-0/ABB6<br/>bcet/wcet: 20/30</font>>, style=bold, tooltip=2];
+2 [color=green, fontsize=14, label=<State 4<br/><font point-size='12'>instance: A<br/>type: computation<br/>abb: dom-0/ABB5<br/>bcet/wcet: 20/30</font>>, style=bold, tooltip=2];
 3 [color=blue, fontsize=14, label=<State 6<br/><font point-size='12'>instance: A<br/>type: syscall<br/>abb: dom-0/ABB8<br/>sys: XEN_wrap_evtchn_bind_interdomain</font>>, shape=box, tooltip=3];
-4 [color=green, fontsize=14, label=<State 7<br/><font point-size='12'>instance: A<br/>type: computation<br/>abb: dom-0/ABB7<br/>bcet/wcet: 20/30</font>>, style=bold, tooltip=4];
+4 [color=green, fontsize=14, label=<State 7<br/><font point-size='12'>instance: A<br/>type: computation<br/>abb: dom-0/ABB6<br/>bcet/wcet: 20/30</font>>, style=bold, tooltip=4];
 5 [color=blue, fontsize=14, label=<State 8<br/><font point-size='12'>instance: A<br/>type: syscall<br/>abb: dom-0/ABB9<br/>sys: AUTOSAR_TerminateTask</font>>, shape=box, tooltip=5];
 6 [color=violet, fontsize=14, label=<State 9<br/><font point-size='12'>instance: Idle<br/>type: idle<br/>abb: None</font>>, style=bold, tooltip=6];
-18 [color=green, fontsize=14, label=<State 19<br/><font point-size='12'>instance: IR<br/>type: computation<br/>abb: dom-0/ABB2<br/>bcet/wcet: 10/20</font>>, style=bold, tooltip=18];
+18 [color=green, fontsize=14, label=<State 19<br/><font point-size='12'>instance: IR<br/>type: computation<br/>abb: dom-0/ABB1<br/>bcet/wcet: 10/20</font>>, style=bold, tooltip=18];
 19 [color=blue, fontsize=14, label=<State 21<br/><font point-size='12'>instance: IR<br/>type: syscall<br/>abb: dom-0/ABB3<br/>sys: AUTOSAR_TerminateTask</font>>, shape=box, tooltip=19];
 }
 

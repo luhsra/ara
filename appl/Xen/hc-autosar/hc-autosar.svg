@@ -67,7 +67,7 @@
 <text text-anchor="start" x="450" y="-1048.34" font-family="Times,serif" font-size="14.00">State 5</text>
 <text text-anchor="start" x="442.5" y="-1035.94" font-family="Times,serif" font-size="12.00">instance: B</text>
 <text text-anchor="start" x="426.5" y="-1023.94" font-family="Times,serif" font-size="12.00">type: computation</text>
-<text text-anchor="start" x="424.5" y="-1011.94" font-family="Times,serif" font-size="12.00">abb: dom&#45;1/ABB6</text>
+<text text-anchor="start" x="424.5" y="-1011.94" font-family="Times,serif" font-size="12.00">abb: dom&#45;1/ABB5</text>
 <text text-anchor="start" x="429.5" y="-999.94" font-family="Times,serif" font-size="12.00">bcet/wcet: 20/30</text>
 </a>
 </g>
@@ -186,7 +186,7 @@
 <text text-anchor="start" x="613.5" y="-791.34" font-family="Times,serif" font-size="14.00">State 11</text>
 <text text-anchor="start" x="609.5" y="-778.94" font-family="Times,serif" font-size="12.00">instance: B</text>
 <text text-anchor="start" x="593.5" y="-766.94" font-family="Times,serif" font-size="12.00">type: computation</text>
-<text text-anchor="start" x="591.5" y="-754.94" font-family="Times,serif" font-size="12.00">abb: dom&#45;1/ABB7</text>
+<text text-anchor="start" x="591.5" y="-754.94" font-family="Times,serif" font-size="12.00">abb: dom&#45;1/ABB6</text>
 <text text-anchor="start" x="596.5" y="-742.94" font-family="Times,serif" font-size="12.00">bcet/wcet: 20/30</text>
 </a>
 </g>
@@ -248,7 +248,7 @@
 <text text-anchor="start" x="433.5" y="-791.34" font-family="Times,serif" font-size="14.00">State 19</text>
 <text text-anchor="start" x="427.5" y="-778.94" font-family="Times,serif" font-size="12.00">instance: IR</text>
 <text text-anchor="start" x="413.5" y="-766.94" font-family="Times,serif" font-size="12.00">type: computation</text>
-<text text-anchor="start" x="411.5" y="-754.94" font-family="Times,serif" font-size="12.00">abb: dom&#45;1/ABB2</text>
+<text text-anchor="start" x="411.5" y="-754.94" font-family="Times,serif" font-size="12.00">abb: dom&#45;1/ABB1</text>
 <text text-anchor="start" x="416.5" y="-742.94" font-family="Times,serif" font-size="12.00">bcet/wcet: 10/20</text>
 </a>
 </g>

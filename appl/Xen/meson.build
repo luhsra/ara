@@ -3,7 +3,6 @@
 # The folder name must match the 'name', guests are listed by their OS and afterwards OS specific config
 #   Autosar: needs .ll and .json, for .ll add to ../AUTOSAR/meson.build
 
-# Testcases
 xen_testcases = [
 
   # --------------------------- minimal ----------------------------------
@@ -46,6 +45,7 @@ xen_testcases = [
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_alarm_2_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/alarm-2/Autosar-B/b.json'
   },
   # Single Zephyr guest, bug in SSE does not continue after one sleep
+  # TODO: thread does not wake up from first sleep
   {'name': 'zephyr-sleep', 'do_timings': 'true', 'guests': 
       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-sleep.ll;'
   },
@@ -102,27 +102,18 @@ xen_testcases = [
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_channels_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/channels/Autosar-B/b.json;' +
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_channels_Autosar_C_c.pi4.ll;../subprojects/ara/appl/Xen/channels/Autosar-C/c.json'
   },
-
-
-
-  {'name': 'hypercall-periodic', 'do_timings': 'true', 'guests':
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercall_periodic_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hypercall-periodic/Autosar-A/a.json;' +
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercall_periodic_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hypercall-periodic/Autosar-B/b.json'
+  # Port of Automotive Benchmark, 2 instances
+  {'name': 'automotive-1', 'do_timings': 'true', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_automotive_1_Autosar_A_tasks.pi4.ll;../subprojects/ara/appl/Xen/automotive-1/Autosar-A/tasks.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_automotive_1_Autosar_B_tasks.pi4.ll;../subprojects/ara/appl/Xen/automotive-1/Autosar-B/tasks.json;'      
   },
-  # Port of Automotive Benchmark
-  {'name': 'automotiveB', 'do_timings': 'true', 'guests': 
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_automotiveB_Autosar_A_tasks.pi4.ll;../subprojects/ara/appl/Xen/automotiveB/Autosar-A/tasks.json;'
+  # Port of Automotive Benchmark, the same instance twice (addional stress test)
+  {'name': 'automotive-2', 'do_timings': 'true', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_automotive_2_Autosar_A_tasks.pi4.ll;../subprojects/ara/appl/Xen/automotive-2/Autosar-A/tasks.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_automotive_2_Autosar_A_tasks.pi4.ll;../subprojects/ara/appl/Xen/automotive-2/Autosar-A/tasks.json;'      
   },
-  # Port of Automotive Benchmark
-  {'name': 'automotiveBdouble', 'do_timings': 'true', 'guests': 
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_automotiveBdouble_Autosar_A_tasks.pi4.ll;../subprojects/ara/appl/Xen/automotiveBdouble/Autosar-A/tasks.json;' +
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_automotiveBdouble_Autosar_B_tasks.pi4.ll;../subprojects/ara/appl/Xen/automotiveBdouble/Autosar-B/tasks.json;'      
-  },
-  # Port of Automotive Benchmark
-  {'name': 'automotiveBshared', 'do_timings': 'true', 'guests': 
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_automotiveBshared_Autosar_A_tasks.pi4.ll;../subprojects/ara/appl/Xen/automotiveBshared/Autosar-A/tasks.json;' +
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_automotiveBshared_Autosar_A_tasks.pi4.ll;../subprojects/ara/appl/Xen/automotiveBshared/Autosar-A/tasks.json;'      
-  },
+  # TODO: IPI
+  # TODO: Bare Metal
 ]
 
 # Compile Autosar ll files

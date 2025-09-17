@@ -214,6 +214,9 @@ autosar_apps += [
   {'core': '../Xen',  'path': 'channels'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'channels'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'channels'/ 'Autosar-C','name': 'c', 'oil': 'c.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'automotive-1' / 'Autosar-A', 'name': 'tasks', 'oil'  : 'tasks.json'},
+  {'core': '../Xen',  'path': 'automotive-1' / 'Autosar-B', 'name': 'tasks', 'oil'  : 'tasks.json'},
+  {'core': '../Xen',  'path': 'automotive-2' / 'Autosar-A', 'name': 'tasks', 'oil'  : 'tasks.json'},
 
   # --------------------------- Thesis ----------------------------------
   # for images in MA, not in test suite, manually renamed/modified!
@@ -223,15 +226,6 @@ autosar_apps += [
   {'core': '../Xen',  'path': 'thesis'/ 'Autosar-B','name': 'multicore', 'oil': 'multicore.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'thesis'/ 'Autosar-C','name': 'multi_core', 'oil': 'multi_core.json', 'timing': 'BB'},
   # min-2, hc-autosar, hc-autosar-noiit, alarm-2 are used from test-suite
-
-
-
-  {'core': '../Xen',  'path': 'hypercall-periodic'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'hypercall-periodic'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'automotiveB' / 'Autosar-A', 'name': 'tasks', 'oil'  : 'tasks.json'},
-  {'core': '../Xen',  'path': 'automotiveBdouble' / 'Autosar-A', 'name': 'tasks', 'oil'  : 'tasks.json'},
-  {'core': '../Xen',  'path': 'automotiveBdouble' / 'Autosar-B', 'name': 'tasks', 'oil'  : 'tasks.json'},
-  {'core': '../Xen',  'path': 'automotiveBshared' / 'Autosar-A', 'name': 'tasks', 'oil'  : 'tasks.json'},
 ]
 
 no_timing_settings = custom_target(

@@ -11,14 +11,14 @@ label="M6: Dom-0-AUTOSAR";
 
 subgraph cluster_12 {
 label="M12: Dom-1-AUTOSAR";
-7 [color=green, fontsize=14, label=<State 5<br/><font point-size='12'>instance: B<br/>type: computation<br/>abb: dom-1/ABB5</font>>, style=bold, tooltip=7];
+7 [color=green, fontsize=14, label=<State 5<br/><font point-size='12'>instance: B<br/>type: computation<br/>abb: dom-1/ABB4</font>>, style=bold, tooltip=7];
 8 [color=blue, fontsize=14, label=<State 10<br/><font point-size='12'>instance: B<br/>type: syscall<br/>abb: dom-1/ABB7<br/>sys: XEN_wrap_evtchn_bind_interdomain</font>>, shape=box, tooltip=8];
-9 [color=green, fontsize=14, label=<State 11<br/><font point-size='12'>instance: B<br/>type: computation<br/>abb: dom-1/ABB6</font>>, style=bold, tooltip=9];
+9 [color=green, fontsize=14, label=<State 11<br/><font point-size='12'>instance: B<br/>type: computation<br/>abb: dom-1/ABB5</font>>, style=bold, tooltip=9];
 10 [color=blue, fontsize=14, label=<State 12<br/><font point-size='12'>instance: B<br/>type: syscall<br/>abb: dom-1/ABB8<br/>sys: AUTOSAR_TerminateTask</font>>, shape=box, tooltip=10];
 11 [color=violet, fontsize=14, label=<State 13<br/><font point-size='12'>instance: Idle<br/>type: idle<br/>abb: None</font>>, style=bold, tooltip=11];
 24 [color=blue, fontsize=14, label=<State 30<br/><font point-size='12'>instance: IR<br/>type: syscall<br/>abb: dom-1/ABB2<br/>sys: AUTOSAR_TerminateTask</font>>, shape=box, tooltip=24];
-23 [color=green, fontsize=14, label=<State 27<br/><font point-size='12'>instance: IR<br/>type: computation<br/>abb: dom-1/ABB1</font>>, style=bold, tooltip=23];
-25 [color=green, fontsize=14, label=<State 33<br/><font point-size='12'>instance: B<br/>type: computation<br/>abb: dom-1/ABB6</font>>, style=bold, tooltip=25];
+23 [color=green, fontsize=14, label=<State 27<br/><font point-size='12'>instance: IR<br/>type: computation<br/>abb: dom-1/ABB0</font>>, style=bold, tooltip=23];
+25 [color=green, fontsize=14, label=<State 33<br/><font point-size='12'>instance: B<br/>type: computation<br/>abb: dom-1/ABB5</font>>, style=bold, tooltip=25];
 26 [color=blue, fontsize=14, label=<State 34<br/><font point-size='12'>instance: B<br/>type: syscall<br/>abb: dom-1/ABB8<br/>sys: AUTOSAR_TerminateTask</font>>, shape=box, tooltip=26];
 }
 

@@ -25,8 +25,10 @@ void do_something(void* a, void* b, void* c) {
     printk(x);  // need print here!
     k_timeout_t t = Z_TIMEOUT_TICKS(1000);
 
+    // first sleep works
     k_sleep(t);
     
+    // TODO: does not continue here!
     ara_timing_info(10,20);
     printk("End1");
     
