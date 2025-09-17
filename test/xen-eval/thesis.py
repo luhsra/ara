@@ -83,7 +83,7 @@ class HyperSSE(Experiment):
                 
                 if filecmp.cmp(file_path, f"HyperSSE.{name}.hstg.dot"):
                     print(f"{name:<20} Matched \U0001F44D")
-                    compare.append("matching")
+                    compare.append("correct")
                 else:
                     print(f"{name:<20} Differs \u274c")
                     compare.append("differs")
@@ -98,7 +98,7 @@ class HyperSSE(Experiment):
             reader = csv.reader(file)
             data = list(reader)
 
-        data[0].insert(2, "Verified")
+        data[0].insert(2, "Compared")
         for i in range(1, len(data)):
             data[i].insert(2, compare[i-1])
 

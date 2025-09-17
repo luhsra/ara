@@ -61,9 +61,9 @@ def main():
             elif line.startswith("result:"):
                 r = line.removeprefix("result:").strip()
                 if r == "exit status 0":
-                    current.status = "Passed"
+                    current.status = "True"
                 elif r == "exit status 1":
-                    current.status = "Error"
+                    current.status = "ERROR"
                 elif r == "killed by signal 15 SIGTERM":
                     current.status = "Timeout"
                 else:
@@ -86,7 +86,7 @@ def main():
   
     with open(out, mode='w', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow([datetime.today().strftime('%Y-%m-%dT%H:%M:%S')+"-Testcase", "AnalysisStatus", 
+        writer.writerow([datetime.today().strftime('%Y-%m-%dT%H:%M:%S')+"-Testcase", "Finished", 
                          "AnalysisDuration[s]", 
                          "#LocalAbSS-XEN", "#SP-XEN", "#Edges-XEN", "#Vertices-XEN",
                          "#LocalAbSS-dom1", "#SP-dom1", "#Edges-dom1", "#Vertices-dom1",
@@ -94,14 +94,14 @@ def main():
                          "#LocalAbSS-domX", "#SP-domX", "#Edges-domX", "#Vertices-domX"])
         rows = []
         for i in cases:
-            if i.status == "Passed":
+            if i.status == "True":
                 row = [i.name, i.status, i.duration, i.labsss[-1], i.sps[-1], i.edges[-1], i.vertices[-1]]
 
                 # iterate over all except the last entry
                 for j in range(0, len(i.labsss) - 1):
                     row += [i.labsss[j], i.sps[j], i.edges[j], i.vertices[j]]
             else:
-                row = [i.name, i.status, i.duration, "-", "-"]
+                row = [i.name, i.status, i.duration, "-", "-", "-", "-"]
             
             rows.append(row)
         for row in sorted(rows, key=lambda row: row[0]):
