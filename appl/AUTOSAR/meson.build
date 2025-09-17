@@ -228,16 +228,10 @@ autosar_apps += [
 
   {'core': '../Xen',  'path': 'hypercall-periodic'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'hypercall-periodic'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'hypercall-ext'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'hypercall-ext'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'automotiveB' / 'Autosar-A', 'name': 'tasks', 'oil'  : 'tasks.json'},
   {'core': '../Xen',  'path': 'automotiveBdouble' / 'Autosar-A', 'name': 'tasks', 'oil'  : 'tasks.json'},
   {'core': '../Xen',  'path': 'automotiveBdouble' / 'Autosar-B', 'name': 'tasks', 'oil'  : 'tasks.json'},
   {'core': '../Xen',  'path': 'automotiveBshared' / 'Autosar-A', 'name': 'tasks', 'oil'  : 'tasks.json'},
-# Only Autosar cases
-  # {'core': 'singlecore', 'path': 'xen' / 'minimal',    'name': 'multi_core',            'oil': 'multi_core.json', 'timing': 'BB'},
-  # {'core': 'singlecore', 'path': 'xen' / 'hypercall',   'name': 'multi_core',           'oil': 'multi_core.json', 'timing': 'BB'},
-  # {'core': 'singlecore', 'path': 'xen' / 'complex',    'name': 'multi_core',            'oil': 'multi_core.json'},
 ]
 
 no_timing_settings = custom_target(
