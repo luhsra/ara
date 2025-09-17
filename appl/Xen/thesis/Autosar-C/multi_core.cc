@@ -6,6 +6,8 @@ DeclareTask(B);
 DeclareCounter(C1);
 DeclareAlarm(ALARM);
 
+extern "C" void ara_timing_info(int a, int b);
+
 int main() {
 	StatusType rv;
 	switch (GetCoreID()) {
@@ -17,28 +19,25 @@ int main() {
 }
 
 TASK(A1) {
+
+  	ara_timing_info(5, 5);
 	kout << "Hello A-1."<< endl;
 
-	ActivateTask(A2);
-	TerminateTask();
+	ChainTask(A2);
 }
 
 TASK(A2) {
+	
+  	ara_timing_info(20, 20);
 	kout << "A-2 done."<< endl;
 
 	TerminateTask();
 }
 
-static unsigned c = 0;
 TASK(B) {
+
+  	ara_timing_info(7, 8);
 	kout << "Recurring B!"<< endl;
-
-	c++;
-
-	if (c > 3){
-		kout << "Done" << endl;
-		ShutdownMachine();
-	}
 
 	TerminateTask();
 }

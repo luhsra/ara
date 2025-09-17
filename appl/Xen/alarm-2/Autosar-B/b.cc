@@ -10,17 +10,10 @@ int main(void) {;
 	StartOS(0);
 }
 
-static unsigned c = 0;
 TASK(B) {
+
+  	ara_timing_info(7, 8);
 	kout << "Recurring B!"<< endl;
-  	ara_timing_info(15, 15);
-
-	c++;
-
-	if (c > 3){
-		kout << "Done" << endl;
-		ShutdownMachine();
-	}
 
 	TerminateTask();
 }

@@ -1,259 +1,0 @@
-digraph G {
-label=BBs;
-subgraph cluster_main {
-label=main;
-1 [color=blue, label=entry, shape=oval, tooltip=<1bcet/wcet: 0 / 0>];
-2 [color=blue, label=BB0, shape=oval, tooltip=<2bcet/wcet: 0 / 0>];
-3 [color=blue, label=BB1, shape=oval, tooltip=<3bcet/wcet: 0 / 0>];
-4 [color=blue, label="sw.bb", shape=oval, tooltip=<4bcet/wcet: 0 / 0>];
-5 [color=blue, label=BB2, shape=oval, tooltip=<5bcet/wcet: 0 / 0>];
-6 [color=blue, label=BB3, shape=oval, tooltip=<6bcet/wcet: 0 / 0>];
-7 [color=blue, label="sw.default", shape=oval, tooltip=<7bcet/wcet: 0 / 0>];
-8 [color=blue, label=BB4, shape=oval, tooltip=<8bcet/wcet: 0 / 0>];
-9 [color=violet, label=BB5, shape=oval, tooltip=<9bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster_AUTOSAR_GetCoreID {
-color="#eeeeee";
-label=AUTOSAR_GetCoreID;
-style=filled;
-11 [label="", shape=box, tooltip=<11bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster_AUTOSAR_StartCore {
-color="#eeeeee";
-label=AUTOSAR_StartCore;
-style=filled;
-13 [label="", shape=box, tooltip=<13bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster_AUTOSAR_StartOS {
-color="#eeeeee";
-label=AUTOSAR_StartOS;
-style=filled;
-15 [label="", shape=box, tooltip=<15bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster_AUTOSAR_TASK_FUNC_A1 {
-label=AUTOSAR_TASK_FUNC_A1;
-17 [color=blue, label=entry, shape=oval, tooltip=<17bcet/wcet: 0 / 0>];
-18 [color=blue, label=BB6, shape=oval, tooltip=<18bcet/wcet: 0 / 0>];
-19 [color=blue, label=BB7, shape=oval, tooltip=<19bcet/wcet: 0 / 0>];
-20 [color=blue, label=BB8, shape=oval, tooltip=<20bcet/wcet: 0 / 0>];
-21 [color=violet, label=BB9, shape=oval, tooltip=<21bcet/wcet: 0 / 0>];
-22 [color=violet, label=BB10, shape=box, tooltip=<22bcet/wcet: 0 / 0>];
-23 [color=violet, label=BB11, shape=oval, tooltip=<23bcet/wcet: 0 / 0>];
-24 [color=violet, label=BB12, shape=box, tooltip=<24bcet/wcet: 0 / 0>];
-25 [color=violet, label=BB13, shape=oval, tooltip=<25bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster__ZN8O_StreamI6SerialElsEPKc {
-label=_ZN8O_StreamI6SerialElsEPKc;
-27 [color=blue, label=entry, shape=oval, tooltip=<27bcet/wcet: 0 / 0>];
-28 [color=red, label=BB14, shape=box, tooltip=<28bcet/wcet: 0 / 0>];
-29 [color=violet, label=BB15, shape=oval, tooltip=<29bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster__ZN8O_StreamI6SerialElsEPFRS1_S2_E {
-label=_ZN8O_StreamI6SerialElsEPFRS1_S2_E;
-31 [color=blue, label=entry, shape=oval, tooltip=<31bcet/wcet: 0 / 0>];
-32 [color=red, label=BB16, shape=box, tooltip=<32bcet/wcet: 0 / 0>];
-33 [color=violet, label=BB17, shape=oval, tooltip=<33bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster__Z4endlI6SerialER8O_StreamIT_ES4_ {
-label=_Z4endlI6SerialER8O_StreamIT_ES4_;
-35 [color=blue, label=entry, shape=oval, tooltip=<35bcet/wcet: 0 / 0>];
-36 [color=red, label=BB18, shape=box, tooltip=<36bcet/wcet: 0 / 0>];
-37 [color=violet, label=BB19, shape=oval, tooltip=<37bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster_AUTOSAR_ActivateTask {
-color="#eeeeee";
-label=AUTOSAR_ActivateTask;
-style=filled;
-39 [label="", shape=box, tooltip=<39bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster_AUTOSAR_TerminateTask {
-color="#eeeeee";
-label=AUTOSAR_TerminateTask;
-style=filled;
-41 [label="", shape=box, tooltip=<41bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster_AUTOSAR_TASK_FUNC_A2 {
-label=AUTOSAR_TASK_FUNC_A2;
-43 [color=blue, label=entry, shape=oval, tooltip=<43bcet/wcet: 0 / 0>];
-44 [color=blue, label=BB20, shape=oval, tooltip=<44bcet/wcet: 0 / 0>];
-45 [color=blue, label=BB21, shape=oval, tooltip=<45bcet/wcet: 0 / 0>];
-46 [color=blue, label=BB22, shape=oval, tooltip=<46bcet/wcet: 0 / 0>];
-47 [color=violet, label=BB23, shape=oval, tooltip=<47bcet/wcet: 0 / 0>];
-48 [color=violet, label=BB24, shape=box, tooltip=<48bcet/wcet: 0 / 0>];
-49 [color=violet, label=BB25, shape=oval, tooltip=<49bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster_AUTOSAR_TASK_FUNC_B {
-label=AUTOSAR_TASK_FUNC_B;
-51 [color=blue, label=entry, shape=oval, tooltip=<51bcet/wcet: 0 / 0>];
-52 [color=blue, label=BB26, shape=oval, tooltip=<52bcet/wcet: 0 / 0>];
-53 [color=blue, label=BB27, shape=oval, tooltip=<53bcet/wcet: 0 / 0>];
-54 [color=blue, label=BB28, shape=oval, tooltip=<54bcet/wcet: 0 / 0>];
-55 [color=blue, label=BB29, shape=oval, tooltip=<55bcet/wcet: 0 / 0>];
-56 [color=blue, label="if.then", shape=oval, tooltip=<56bcet/wcet: 0 / 0>];
-57 [color=blue, label=BB30, shape=oval, tooltip=<57bcet/wcet: 0 / 0>];
-58 [color=blue, label=BB31, shape=oval, tooltip=<58bcet/wcet: 0 / 0>];
-59 [color=blue, label=BB32, shape=oval, tooltip=<59bcet/wcet: 0 / 0>];
-60 [color=blue, label=BB33, shape=oval, tooltip=<60bcet/wcet: 0 / 0>];
-61 [color=blue, label=BB34, shape=oval, tooltip=<61bcet/wcet: 0 / 0>];
-62 [color=blue, label=BB35, shape=oval, tooltip=<62bcet/wcet: 0 / 0>];
-63 [color=violet, label="if.end", shape=oval, tooltip=<63bcet/wcet: 0 / 0>];
-64 [color=violet, label=BB36, shape=box, tooltip=<64bcet/wcet: 0 / 0>];
-65 [color=violet, label=BB37, shape=oval, tooltip=<65bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster__ZN7Machine5resetEv {
-color="#eeeeee";
-label=_ZN7Machine5resetEv;
-style=filled;
-67 [label="", shape=box, tooltip=<67bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster__ZN8O_StreamI6SerialElsEPc {
-label=_ZN8O_StreamI6SerialElsEPc;
-69 [color=blue, label=entry, shape=oval, tooltip=<69bcet/wcet: 0 / 0>];
-70 [color=blue, label="while.cond", shape=oval, style=dashed, tooltip=<70bcet/wcet: 0 / 0>];
-71 [color=blue, label="while.body", shape=oval, style=dashed, tooltip=<71bcet/wcet: 0 / 0>];
-72 [color=red, label=BB38, shape=box, style=dashed, tooltip=<72bcet/wcet: 0 / 0>];
-73 [color=blue, label=BB39, shape=oval, style=dashed, tooltip=<73bcet/wcet: 0 / 0>];
-74 [color=violet, label="while.end", shape=oval, tooltip=<74bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster__ZN8O_StreamI6SerialE7putcharEc {
-label=_ZN8O_StreamI6SerialE7putcharEc;
-76 [color=blue, label=entry, shape=oval, tooltip=<76bcet/wcet: 0 / 0>];
-77 [color=red, label=BB40, shape=box, tooltip=<77bcet/wcet: 0 / 0>];
-78 [color=violet, label=BB41, shape=oval, tooltip=<78bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster__ZN6Serial7putcharEc {
-color="#eeeeee";
-label=_ZN6Serial7putcharEc;
-style=filled;
-80 [label="", shape=box, tooltip=<80bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster___ara_fake_entry {
-label=__ara_fake_entry;
-82 [color=blue, label=entry, shape=oval, tooltip=<82bcet/wcet: 0 / 0>];
-83 [color=blue, label=BB42, shape=oval, tooltip=<83bcet/wcet: 0 / 0>];
-84 [color=violet, label=BB43, shape=oval, tooltip=<84bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster_C1 {
-label=C1;
-}
-
-subgraph cluster_C1_sc {
-label="C1.sc";
-}
-
-1 -> 2  [color=red];
-1 -> 2  [color=blue];
-2 -> 3  [color=red];
-2 -> 3  [color=blue];
-3 -> 4  [color=red];
-3 -> 7  [color=red];
-3 -> 4  [color=blue];
-3 -> 7  [color=blue];
-4 -> 5  [color=red];
-4 -> 5  [color=blue];
-5 -> 6  [color=red];
-5 -> 6  [color=blue];
-6 -> 7  [color=red];
-6 -> 7  [color=blue];
-7 -> 8  [color=red];
-7 -> 8  [color=blue];
-8 -> 9  [color=red];
-8 -> 9  [color=blue];
-17 -> 18  [color=red];
-17 -> 18  [color=blue];
-18 -> 19  [color=red];
-18 -> 19  [color=blue];
-19 -> 20  [color=red];
-19 -> 20  [color=blue];
-20 -> 21  [color=red];
-20 -> 21  [color=blue];
-21 -> 22  [color=red];
-21 -> 22  [color=blue];
-22 -> 23  [color=red];
-22 -> 39  [color=blue];
-23 -> 24  [color=red];
-23 -> 24  [color=blue];
-24 -> 25  [color=red];
-24 -> 41  [color=blue];
-27 -> 28  [color=red];
-28 -> 29  [color=red];
-31 -> 32  [color=red];
-32 -> 33  [color=red];
-35 -> 36  [color=red];
-36 -> 37  [color=red];
-39 -> 23  [color=blue];
-41 -> 65  [color=blue];
-41 -> 49  [color=blue];
-41 -> 25  [color=blue];
-43 -> 44  [color=red];
-43 -> 44  [color=blue];
-44 -> 45  [color=red];
-44 -> 45  [color=blue];
-45 -> 46  [color=red];
-45 -> 46  [color=blue];
-46 -> 47  [color=red];
-46 -> 47  [color=blue];
-47 -> 48  [color=red];
-47 -> 48  [color=blue];
-48 -> 49  [color=red];
-48 -> 41  [color=blue];
-51 -> 52  [color=red];
-51 -> 52  [color=blue];
-52 -> 53  [color=red];
-52 -> 53  [color=blue];
-53 -> 54  [color=red];
-53 -> 54  [color=blue];
-54 -> 55  [color=red];
-54 -> 55  [color=blue];
-55 -> 56  [color=red];
-55 -> 63  [color=red];
-55 -> 56  [color=blue];
-55 -> 63  [color=blue];
-56 -> 57  [color=red];
-56 -> 57  [color=blue];
-57 -> 58  [color=red];
-57 -> 58  [color=blue];
-58 -> 59  [color=red];
-58 -> 59  [color=blue];
-59 -> 60  [color=red];
-59 -> 60  [color=blue];
-60 -> 61  [color=red];
-60 -> 61  [color=blue];
-61 -> 62  [color=red];
-61 -> 62  [color=blue];
-62 -> 63  [color=red];
-62 -> 63  [color=blue];
-63 -> 64  [color=red];
-63 -> 64  [color=blue];
-64 -> 65  [color=red];
-64 -> 41  [color=blue];
-69 -> 70  [color=red];
-70 -> 71  [color=red];
-70 -> 74  [color=red];
-71 -> 72  [color=red];
-72 -> 73  [color=red];
-73 -> 70  [color=red];
-76 -> 77  [color=red];
-77 -> 78  [color=red];
-82 -> 83  [color=red];
-82 -> 83  [color=blue];
-83 -> 84  [color=red];
-83 -> 84  [color=blue];
-}

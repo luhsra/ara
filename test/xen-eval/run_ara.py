@@ -21,7 +21,7 @@ def main():
         print(f"Errors:\n{stderr_log}\n")
         print(f"StdOut:\n{stdout_log}\n")
 
-    if "ERROR" in stdout_log or "Aborted" in stdout_log:
+    if "ERROR" in stdout_log or "Error" in stdout_log or "Aborted" in stdout_log:
         sys.exit(1)
     # Test ok
     sys.exit(0)

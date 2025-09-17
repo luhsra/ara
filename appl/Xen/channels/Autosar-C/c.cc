@@ -2,13 +2,14 @@
 #include "xen/events.h"
 
 DeclareTask(C);
+DeclareTask(L);
 DeclareCounter(C1);
 DeclareAlarm(ALARM);
 
 extern "C" void ara_timing_info(int a, int b);
 
 domid_t remote_dom = 1;
-evtchn_port_t port_z = 48;
+channel_t channel_c = 52;
 
 int main(void) {;
 	StartOS(0);
@@ -17,8 +18,9 @@ int main(void) {;
 TASK(L) {
 
   	ara_timing_info(5, 5);
-	test_notify_evtchn(remote_dom, port_z);
 
+	wrap_evtchn_send(channel_c);
+	
   	ara_timing_info(5, 5);
 
 	TerminateTask();
@@ -26,8 +28,10 @@ TASK(L) {
 
 TASK(C) {
   	ara_timing_info(45, 45);
-	test_send_event_channel(remote_dom, port_z);
+	
+	wrap_evtchn_alloc_unbound(remote_dom, channel_c, nullptr);
 
   	ara_timing_info(5, 5);
+
 	TerminateTask();
 }

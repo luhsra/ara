@@ -40,10 +40,16 @@ xen_testcases = [
   {'name': 'alarm', 'do_timings': 'true', 'guests': 
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_alarm_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/alarm/Autosar-A/a.json;'
   },
+  # Autosar alarm on 2nd domain, with additonal hypercalls
+  {'name': 'alarm-2', 'do_timings': 'true', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_alarm_2_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/alarm-2/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_alarm_2_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/alarm-2/Autosar-B/b.json'
+  },
   # Single Zephyr guest, bug in SSE does not continue after one sleep
   {'name': 'zephyr-sleep', 'do_timings': 'true', 'guests': 
       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-sleep.ll;'
   },
+
 
   # --------------------------- hypercalls  ----------------------------------
   # 2x autosar notify using hypercall a -> a
@@ -79,60 +85,30 @@ xen_testcases = [
   },
 
 
-  # --------------------------- OTHER ----------------------------------
-  # Send Receive Autosar example
-  {'name': 'sendrecv', 'do_timings': 'true', 'guests': 
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_sendrecv_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/sendrecv/Autosar-A/a.json;' +
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_sendrecv_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/sendrecv/Autosar-B/b.json'
-  },
+  # --------------------------- COMPLEX ----------------------------------
   # 2x autosar, shows Hypercalls back and forth
   {'name': 'pingpong', 'do_timings': 'true', 'guests': 
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_pingpong_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/pingpong/Autosar-A/a.json;' +
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_pingpong_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/pingpong/Autosar-B/b.json'
   },
-
-
-  # IDEAs
-  # notify using hypercall a->b, with IIT
-  # what about b->a
-  # back and forth notify
-  # chain a->b
-  # higher vs lower prio signal
-  # IIT
-  # 5er system / 10er system
-
-  {'name': 'optimize', 'do_timings': 'true', 'guests': 
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_optimize_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/optimize/Autosar-A/a.json;' +
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_optimize_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/optimize/Autosar-B/b.json'
+  # Send Receive Autosar example
+  {'name': 'sendrecv', 'do_timings': 'true', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_sendrecv_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/sendrecv/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_sendrecv_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/sendrecv/Autosar-B/b.json'
+  },
+  # 3 systems, A sends via 2 different channels to B, while C also sends to B
+  {'name': 'channels', 'do_timings': 'true', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_channels_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/channels/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_channels_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/channels/Autosar-B/b.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_channels_Autosar_C_c.pi4.ll;../subprojects/ara/appl/Xen/channels/Autosar-C/c.json'
   },
 
-  # Hypercalls
-  # Classic MultiSSE with 2 cores
-#   {'name': 'multicore', 'do_timings': 'true', 'guests':
-#       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_multicore_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/multicore/Autosar-A/a.json;'
-#   },
 
-  # Hypercalls with more syscalls
-  {'name': 'hypercall-ext', 'do_timings': 'true', 'guests': 
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercall_ext_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hypercall-ext/Autosar-A/a.json;' +
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercall_ext_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hypercall-ext/Autosar-B/b.json'
-  },
+
   {'name': 'hypercall-periodic', 'do_timings': 'true', 'guests':
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercall_periodic_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hypercall-periodic/Autosar-A/a.json;' +
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercall_periodic_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hypercall-periodic/Autosar-B/b.json'
   },
-  # Complex without Hypercalls: 2 systems, one with alarm
-  {'name': 'complex', 'do_timings': 'true', 'guests': 
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_complex_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/complex/Autosar-A/a.json;' +
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_complex_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/complex/Autosar-B/b.json'
-  },
-  # Big example with Hypercalls: 3 Systeme, A sendet zu festen Zeitpunkten Signale an B, C sendet ebenfalls an B, 3 verschiedene Events auf B.
-  {'name': 'hypercomplex', 'do_timings': 'true', 'guests': 
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercomplex_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hypercomplex/Autosar-A/a.json;' +
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercomplex_Autosar_B_worker.pi4.ll;../subprojects/ara/appl/Xen/hypercomplex/Autosar-B/worker.json;' +
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hypercomplex_Autosar_C_loop.pi4.ll;../subprojects/ara/appl/Xen/hypercomplex/Autosar-C/loop.json'
-  },
-
   # Port of Automotive Benchmark
   {'name': 'automotiveB', 'do_timings': 'true', 'guests': 
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_automotiveB_Autosar_A_tasks.pi4.ll;../subprojects/ara/appl/Xen/automotiveB/Autosar-A/tasks.json;'

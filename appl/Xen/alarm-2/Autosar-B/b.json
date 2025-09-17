@@ -27,8 +27,8 @@
             "task": "B"
           },
           "autostart": true,
-          "cycletime": 1000,
-          "alarmtime": 1000
+          "cycletime": 10,
+          "alarmtime": 10
         }
       }
     }

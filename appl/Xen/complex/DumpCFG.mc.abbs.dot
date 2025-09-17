@@ -1,128 +1,0 @@
-digraph G {
-label=ABBs;
-subgraph cluster_main {
-label=main;
-}
-
-subgraph cluster_AUTOSAR_GetCoreID {
-label=AUTOSAR_GetCoreID;
-}
-
-subgraph cluster_AUTOSAR_StartCore {
-label=AUTOSAR_StartCore;
-}
-
-subgraph cluster_AUTOSAR_StartOS {
-label=AUTOSAR_StartOS;
-}
-
-subgraph cluster_AUTOSAR_TASK_FUNC_A1 {
-label=AUTOSAR_TASK_FUNC_A1;
-98 [color=blue, label=ABB8, shape=oval, tooltip=<98 (entry,BB6,BB7,BB8,BB9)bcet/wcet: 0 / 0>];
-99 [color=blue, label=ABB9, shape=oval, tooltip=<99 (BB11)bcet/wcet: 0 / 0>];
-100 [color=violet, label=ABB10, shape=oval, tooltip=<100 (BB13)bcet/wcet: 0 / 0>];
-101 [color=green, label=ABB11, shape=diamond, tooltip=<101 (BB12)bcet/wcet: 0 / 0>];
-102 [color=green, label=ABB12, shape=diamond, tooltip=<102 (BB10)bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster__ZN8O_StreamI6SerialElsEPKc {
-label=_ZN8O_StreamI6SerialElsEPKc;
-}
-
-subgraph cluster__ZN8O_StreamI6SerialElsEPFRS1_S2_E {
-label=_ZN8O_StreamI6SerialElsEPFRS1_S2_E;
-}
-
-subgraph cluster__Z4endlI6SerialER8O_StreamIT_ES4_ {
-label=_Z4endlI6SerialER8O_StreamIT_ES4_;
-}
-
-subgraph cluster_AUTOSAR_ActivateTask {
-color="#eeeeee";
-label=AUTOSAR_ActivateTask;
-style=filled;
-103 [label="", shape=box, tooltip=<103 (empty)bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster_AUTOSAR_TerminateTask {
-color="#eeeeee";
-label=AUTOSAR_TerminateTask;
-style=filled;
-94 [label="", shape=box, tooltip=<94 (empty)bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster_AUTOSAR_TASK_FUNC_A2 {
-label=AUTOSAR_TASK_FUNC_A2;
-95 [color=blue, label=ABB5, shape=oval, tooltip=<95 (entry,BB20,BB21,BB22,BB23)bcet/wcet: 0 / 0>];
-96 [color=violet, label=ABB6, shape=oval, tooltip=<96 (BB25)bcet/wcet: 0 / 0>];
-97 [color=green, label=ABB7, shape=diamond, tooltip=<97 (BB24)bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster_AUTOSAR_TASK_FUNC_B {
-label=AUTOSAR_TASK_FUNC_B;
-91 [color=violet, label=ABB1, shape=oval, tooltip=<91 (BB37)bcet/wcet: 0 / 0>];
-92 [color=blue, label=ABB2, shape=oval, tooltip=<92 (entry,BB26,BB27,BB28,BB29,if.then,BB30,BB31,BB32,BB33,BB34,BB35,if.end)bcet/wcet: 0 / 0>];
-93 [color=green, label=ABB3, shape=diamond, tooltip=<93 (BB36)bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster__ZN7Machine5resetEv {
-label=_ZN7Machine5resetEv;
-}
-
-subgraph cluster__ZN8O_StreamI6SerialElsEPc {
-label=_ZN8O_StreamI6SerialElsEPc;
-}
-
-subgraph cluster__ZN8O_StreamI6SerialE7putcharEc {
-label=_ZN8O_StreamI6SerialE7putcharEc;
-}
-
-subgraph cluster__ZN6Serial7putcharEc {
-label=_ZN6Serial7putcharEc;
-}
-
-subgraph cluster___ara_fake_entry {
-label=__ara_fake_entry;
-85 [color=violet, label=ABB0, shape=oval, tooltip=<85 (entry,BB42,BB43)bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster_C1 {
-label=C1;
-87 [color=blue, label="C1.iit", shape=oval, style=bold, tooltip=<87 ()bcet/wcet: 0 / 9223372036854775807>];
-88 [color=green, label="C1.sc", shape=diamond, tooltip=<88 ()bcet/wcet: 0 / 0>];
-88 [color=green, label="C1.sc", shape=diamond, tooltip=<88 ()bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster_C1_sc {
-color="#eeeeee";
-label="C1.sc";
-style=filled;
-90 [label="", shape=box, tooltip=<90 ()bcet/wcet: 0 / 0>];
-}
-
-87 -> 88  [color=red];
-87 -> 88  [color=blue];
-88 -> 87  [color=red];
-88 -> 90  [color=blue];
-90 -> 87  [color=blue];
-92 -> 93  [color=red];
-92 -> 93  [color=blue];
-93 -> 91  [color=red];
-93 -> 94  [color=blue];
-94 -> 91  [color=blue];
-94 -> 96  [color=blue];
-94 -> 100  [color=blue];
-95 -> 97  [color=red];
-95 -> 97  [color=blue];
-97 -> 96  [color=red];
-97 -> 94  [color=blue];
-98 -> 102  [color=red];
-98 -> 102  [color=blue];
-99 -> 101  [color=red];
-99 -> 101  [color=blue];
-101 -> 100  [color=red];
-101 -> 94  [color=blue];
-102 -> 99  [color=red];
-102 -> 103  [color=blue];
-103 -> 99  [color=blue];
-}

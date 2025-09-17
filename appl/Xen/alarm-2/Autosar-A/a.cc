@@ -10,21 +10,17 @@ int main(void) {
 }
 
 TASK(A1) {
-	kout << "Hello A-1."<< endl;
-  	ara_timing_info(5, 5);
 
-	ActivateTask(A2);
   	ara_timing_info(5, 5);
-	TerminateTask();
+	kout << "Hello A-1."<< endl;
+
+	ChainTask(A2);
 }
 
 TASK(A2) {
+
+  	ara_timing_info(20, 20);
 	kout << "A-2 done."<< endl;
-  	ara_timing_info(10, 10);
 
 	TerminateTask();
-}
-
-void PreIdleHook() {
-	ShutdownMachine();
 }

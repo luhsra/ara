@@ -25,26 +25,26 @@ class HyperSSE(Experiment):
 
         # TODO: Automato build zephyr 
 
-        # Force Rebuild by deleting build folder, SLOW!!!
+        # Force Rebuild by deleting build folder, VERY SLOW!!!
         # meson_testuite_cmd = ["rm", "-dr", "appl"]
         # build_path = cwd + parrot_dir + "build/subprojects/ara-zephyr-apps/"
         # subprocess.run(meson_testuite_cmd, cwd=build_path, stdout=None)
 
-        # THIS IS VERY SLOW:
+        # THIS IS VERY VERY SLOW:
         # print("(Re)build Zephyr apps")
         # meson_testuite_cmd = ["ninja", "ara-zephyr-apps@@build-zephyr-apps"]
         # build_path = cwd + parrot_dir + "build/"
         # subprocess.run(meson_testuite_cmd, cwd=build_path, stdout=None)
 
         # THIS IS SLOW:
-        meson_testuite_cmd = ["ninja", "sse-native_sim-zephyr-min-1", "sse-native_sim-zephyr-min-2", 
-                            "sse-native_sim-zephyr-min-3", "sse-native_sim-zephyr-min-4",
-                            "sse-native_sim-zephyr-hc-1", "sse-native_sim-zephyr-hc-2", 
-                            "sse-native_sim-zephyr-hc-3", "sse-native_sim-zephyr-hc-4",
-                            "sse-native_sim-zephyr-hc-5", "sse-native_sim-zephyr-hc-6",
-                            "sse-native_sim-zephyr-sleep"]
-        build_path = cwd + parrot_dir + "build/"
-        subprocess.run(meson_testuite_cmd, cwd=build_path, stdout=None)
+        # meson_testuite_cmd = ["ninja", "sse-native_sim-zephyr-min-1", "sse-native_sim-zephyr-min-2", 
+        #                     "sse-native_sim-zephyr-min-3", "sse-native_sim-zephyr-min-4",
+        #                     "sse-native_sim-zephyr-hc-1", "sse-native_sim-zephyr-hc-2", 
+        #                     "sse-native_sim-zephyr-hc-3", "sse-native_sim-zephyr-hc-4",
+        #                     "sse-native_sim-zephyr-hc-5", "sse-native_sim-zephyr-hc-6",
+        #                     "sse-native_sim-zephyr-sleep"]
+        # build_path = cwd + parrot_dir + "build/"
+        # subprocess.run(meson_testuite_cmd, cwd=build_path, stdout=None)
 
 
         # print("Running meson testsuite")

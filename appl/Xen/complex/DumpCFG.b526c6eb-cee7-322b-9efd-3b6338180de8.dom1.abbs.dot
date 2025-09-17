@@ -1,90 +1,0 @@
-digraph G {
-label=ABBs;
-subgraph cluster_main {
-label=main;
-}
-
-subgraph cluster_AUTOSAR_StartOS {
-label=AUTOSAR_StartOS;
-}
-
-subgraph cluster_AUTOSAR_TASK_FUNC_B {
-label=AUTOSAR_TASK_FUNC_B;
-60 [color=blue, label=ABB0, shape=oval, tooltip=<60 (entry,BB2,BB3,BB4,BB5,if.then,BB6,BB7,BB8,BB9,BB10,BB11,if.end)bcet/wcet: 0 / 0>];
-61 [color=violet, label=ABB1, shape=oval, tooltip=<61 (BB13)bcet/wcet: 0 / 0>];
-62 [color=green, label=ABB2, shape=diamond, tooltip=<62 (BB12)bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster__ZN8O_StreamI6SerialElsEPKc {
-label=_ZN8O_StreamI6SerialElsEPKc;
-}
-
-subgraph cluster__ZN8O_StreamI6SerialElsEPFRS1_S2_E {
-label=_ZN8O_StreamI6SerialElsEPFRS1_S2_E;
-}
-
-subgraph cluster__Z4endlI6SerialER8O_StreamIT_ES4_ {
-label=_Z4endlI6SerialER8O_StreamIT_ES4_;
-}
-
-subgraph cluster_AUTOSAR_TerminateTask {
-color="#eeeeee";
-label=AUTOSAR_TerminateTask;
-style=filled;
-63 [label="", shape=box, tooltip=<63 (empty)bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster__ZN7Machine5resetEv {
-label=_ZN7Machine5resetEv;
-}
-
-subgraph cluster__ZN8O_StreamI6SerialElsEPc {
-label=_ZN8O_StreamI6SerialElsEPc;
-}
-
-subgraph cluster__ZN8O_StreamI6SerialE7putcharEc {
-label=_ZN8O_StreamI6SerialE7putcharEc;
-}
-
-subgraph cluster__ZN6Serial7putcharEc {
-label=_ZN6Serial7putcharEc;
-}
-
-subgraph cluster___ara_fake_entry {
-label=__ara_fake_entry;
-}
-
-subgraph cluster_C1 {
-label=C1;
-56 [color=blue, label="C1.iit", shape=oval, style=bold, tooltip=<56 ()bcet/wcet: 0 / 9223372036854775807>];
-57 [color=green, label="C1.sc", shape=diamond, tooltip=<57 ()bcet/wcet: 0 / 0>];
-57 [color=green, label="C1.sc", shape=diamond, tooltip=<57 ()bcet/wcet: 0 / 0>];
-}
-
-subgraph cluster_C1_sc {
-color="#eeeeee";
-label="C1.sc";
-style=filled;
-59 [label="", shape=box, tooltip=<59 ()bcet/wcet: 0 / 0>];
-}
-
-56 -> 57  [color=red];
-56 -> 57  [color=blue];
-57 -> 56  [color=red];
-57 -> 59  [color=blue];
-59 -> 56  [color=blue];
-60 -> 62  [color=red];
-60 -> 62  [color=blue];
-62 -> 61  [color=red];
-62 -> 63  [color=blue];
-63 -> 61  [color=blue];
-subgraph cluster_legend {
-label="CFG-Legend\n(Each box is a function)";
-comp [color=blue, label="Computation Block", shape=oval];
-syscall [color=green, label=Syscall, shape=diamond];
-comp -> syscall  [color=blue, label="Interprocedural\nControl\nFlow"];
-exit [color=violet, label="Exit Node", shape=oval];
-syscall -> exit  [color=red, label="Local\nControl\nFlow"];
-}
-
-}

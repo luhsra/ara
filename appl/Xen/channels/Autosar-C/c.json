@@ -3,28 +3,13 @@
     {
       "id": 0,
       "tasks": {
-        "A1": {
+        "C": {
           "activation": 1,
           "autostart": true,
-          "priority": 4,
-          "schedule": true
-        },
-        "A2": {
-          "activation": 1,
-          "autostart": false,
           "priority": 5,
           "schedule": true
-        }
-      },
-      "resources": {},
-      "events": {},
-      "counters": {},
-      "alarms": {}
-    },
-    {
-      "id": 1,
-      "tasks": {
-        "B": {
+          },
+        "L": {
           "activation": 1,
           "autostart": false,
           "priority": 4,
@@ -45,11 +30,11 @@
           "counter": "C1",
           "action": {
             "action": "activatetask",
-            "task": "B"
+            "task": "L"
           },
           "autostart": true,
-          "cycletime": 1000,
-          "alarmtime": 1000
+          "cycletime": 10,
+          "alarmtime": 10
         }
       }
     }
