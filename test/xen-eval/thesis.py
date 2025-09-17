@@ -23,16 +23,28 @@ class HyperSSE(Experiment):
 
         cwd = os.getcwd()
 
-        # NOT WORKING YET!
-        print("(Re)build Zephyr apps")
-        meson_testuite_cmd = ["ninja", "ara-zephyr-apps@@build-zephyr-apps"]
-        build_path = cwd + parrot_dir + "build/"
-        subprocess.run(meson_testuite_cmd, cwd=build_path, stdout=None)
+        # TODO: Automato build zephyr 
 
-        # # TODO: Automate this
-        # meson_testuite_cmd = ["ninja", "sse-native_sim-zephyr-a", "sse-native_sim-zephyr-a2", "sse-native_sim-zephyr-a3"]
+        # Force Rebuild by deleting build folder, SLOW!!!
+        # meson_testuite_cmd = ["rm", "-dr", "appl"]
+        # build_path = cwd + parrot_dir + "build/subprojects/ara-zephyr-apps/"
+        # subprocess.run(meson_testuite_cmd, cwd=build_path, stdout=None)
+
+        # THIS IS VERY SLOW:
+        # print("(Re)build Zephyr apps")
+        # meson_testuite_cmd = ["ninja", "ara-zephyr-apps@@build-zephyr-apps"]
         # build_path = cwd + parrot_dir + "build/"
         # subprocess.run(meson_testuite_cmd, cwd=build_path, stdout=None)
+
+        # THIS IS SLOW:
+        meson_testuite_cmd = ["ninja", "sse-native_sim-zephyr-min-1", "sse-native_sim-zephyr-min-2", 
+                            "sse-native_sim-zephyr-min-3", "sse-native_sim-zephyr-min-4",
+                            "sse-native_sim-zephyr-hc-1", "sse-native_sim-zephyr-hc-2", 
+                            "sse-native_sim-zephyr-hc-3", "sse-native_sim-zephyr-hc-4",
+                            "sse-native_sim-zephyr-hc-5", "sse-native_sim-zephyr-hc-6",
+                            "sse-native_sim-zephyr-sleep"]
+        build_path = cwd + parrot_dir + "build/"
+        subprocess.run(meson_testuite_cmd, cwd=build_path, stdout=None)
 
 
         # print("Running meson testsuite")
@@ -67,9 +79,8 @@ class HyperSSE(Experiment):
         compare = []
         for name in names:
             file_path = cwd + "/../../../appl/Xen/" + name + "/" + "HyperSSE." + name + ".hstg.dot"
-            if os.path.exists(file_path):
-                # print(file_path)
-                # print(f"HyperSSE.{name}.hstg.dot")
+            if os.path.exists(file_path) and os.path.exists(f"HyperSSE.{name}.hstg.dot"):
+                
                 if filecmp.cmp(file_path, f"HyperSSE.{name}.hstg.dot"):
                     print(f"{name:<20} Matched \U0001F44D")
                     compare.append("matching")

@@ -29,6 +29,7 @@ TASK(B) {
 	wrap_evtchn_bind_interdomain(remote_dom, channel, reinterpret_cast<void*>(AUTOSAR_TASK_FUNC_IR));
 
   	ara_timing_info(20, 30);
+	kout << "B2"<< endl;
 	
 	TerminateTask();
 }

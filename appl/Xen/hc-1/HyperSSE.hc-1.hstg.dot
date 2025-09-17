@@ -1,0 +1,53 @@
+digraph G {
+label="HyperSSE.hc-1.hstg.dot";
+1 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=1];
+subgraph cluster_7 {
+label="M7: Dom-0-AUTOSAR";
+2 [color=green, fontsize=14, label=<State 4<br/><font point-size='12'>instance: A<br/>type: computation<br/>abb: dom-0/ABB6<br/>bcet/wcet: 20/30</font>>, style=bold, tooltip=2];
+3 [color=blue, fontsize=14, label=<State 6<br/><font point-size='12'>instance: A<br/>type: syscall<br/>abb: dom-0/ABB8<br/>sys: XEN_wrap_evtchn_bind_interdomain</font>>, shape=box, tooltip=3];
+4 [color=green, fontsize=14, label=<State 7<br/><font point-size='12'>instance: A<br/>type: computation<br/>abb: dom-0/ABB7<br/>bcet/wcet: 20/30</font>>, style=bold, tooltip=4];
+5 [color=blue, fontsize=14, label=<State 8<br/><font point-size='12'>instance: A<br/>type: syscall<br/>abb: dom-0/ABB9<br/>sys: AUTOSAR_TerminateTask</font>>, shape=box, tooltip=5];
+6 [color=violet, fontsize=14, label=<State 9<br/><font point-size='12'>instance: Idle<br/>type: idle<br/>abb: None</font>>, style=bold, tooltip=6];
+18 [color=green, fontsize=14, label=<State 19<br/><font point-size='12'>instance: IR<br/>type: computation<br/>abb: dom-0/ABB2<br/>bcet/wcet: 10/20</font>>, style=bold, tooltip=18];
+19 [color=blue, fontsize=14, label=<State 21<br/><font point-size='12'>instance: IR<br/>type: syscall<br/>abb: dom-0/ABB3<br/>sys: AUTOSAR_TerminateTask</font>>, shape=box, tooltip=19];
+}
+
+subgraph cluster_12 {
+label="M12: Dom-1-Zephyr";
+8 [color=green, fontsize=14, label=<State 5<br/><font point-size='12'>instance: Thread<br/>type: computation<br/>abb: dom-1/ABB1<br/>bcet/wcet: 40/50</font>>, style=bold, tooltip=8];
+9 [color=blue, fontsize=14, label=<State 10<br/><font point-size='12'>instance: Thread<br/>type: syscall<br/>abb: dom-1/ABB5<br/>sys: XEN_wrap_evtchn_alloc_unbound</font>>, shape=box, tooltip=9];
+10 [color=green, fontsize=14, label=<State 11<br/><font point-size='12'>instance: Thread<br/>type: computation<br/>abb: dom-1/ABB2<br/>bcet/wcet: 40/50</font>>, style=bold, tooltip=10];
+11 [color=blue, fontsize=14, label=<State 12<br/><font point-size='12'>instance: Thread<br/>type: syscall<br/>abb: dom-1/ABB4<br/>sys: XEN_wrap_evtchn_send</font>>, shape=box, tooltip=11];
+}
+
+subgraph cluster_17 {
+label="M17: Dom-1-Zephyr";
+16 [color=violet, fontsize=14, label=<State 20<br/><font point-size='12'>instance: Idle<br/>type: idle<br/>abb: None</font>>, style=bold, tooltip=16];
+15 [color=green, fontsize=14, label=<State 18<br/><font point-size='12'>instance: Thread<br/>type: computation<br/>abb: dom-1/ABB3<br/>bcet/wcet: 20/30</font>>, style=bold, tooltip=15];
+}
+
+subgraph cluster_Metasync13 {
+label="";
+13 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=13];
+14 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=14];
+}
+
+1:c0 -> 2  [color=black];
+1:c1 -> 8  [color=black];
+1 -> 13  [color=darkred, label="80 - 100", style=dotted];
+2 -> 3  [color=black];
+3 -> 4  [color=black];
+4 -> 5  [color=black];
+5 -> 6  [color=black];
+6 -> 13:c0  [color=black];
+8 -> 9  [color=black];
+9 -> 10  [color=black];
+10 -> 11  [color=black];
+11 -> 13:c1  [color=black];
+13 -> 14  [color=black];
+14:c1 -> 15  [color=black];
+14:c0 -> 18  [color=black];
+15 -> 16  [color=black];
+18 -> 19  [color=black];
+19 -> 6  [color=black];
+}

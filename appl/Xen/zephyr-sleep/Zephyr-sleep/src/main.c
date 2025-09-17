@@ -13,21 +13,27 @@ void ara_timing_info(int a, int b) {
  * Minimal Zephyr App
  */
 
-void event_rcv(void* a, void* b, void* c) {
-
-}
-
-
 void do_something(void* a, void* b, void* c) {
-    int done = 0;
 
     ara_timing_info(10,20);
+    k_tid_t x;
 
-    printk("Hello");
-    // k_timeout_t t = Z_TIMEOUT_TICKS(1000);
-    // k_sleep(t);
+    // Working system call
+    x = k_current_get();
 
-    // ara_timing_info(10,50);
+    ara_timing_info(10,20);
+    printk(x);  // need print here!
+    k_timeout_t t = Z_TIMEOUT_TICKS(1000);
+
+    k_sleep(t);
+    
+    ara_timing_info(10,20);
+    printk("End1");
+    
+    k_sleep(t);
+    
+    ara_timing_info(10,20);
+    printk("End2");
 }
 
 K_THREAD_DEFINE(thread_a, STACKSIZE, do_something, NULL, NULL, NULL,

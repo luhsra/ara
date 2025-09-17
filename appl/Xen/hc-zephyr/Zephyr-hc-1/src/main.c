@@ -6,6 +6,8 @@
 #define MAX_WORK (1 << 2)
 #define PRIORITY 1
 
+void ara_timing_info(int a, int b);
+
 /*
  * Send a Xen Hypercall using the Wrapper
  */
@@ -14,20 +16,21 @@ domid_t remote_dom = 1;
 channel_t channel = 42;
 
 void sender(void* a, void* b, void* c) {
-    int done = 0;
-    printk("Hello");
-    k_tid_t x;
-    x = k_current_get();
-    printk(x);
+
+	ara_timing_info(40, 50);
+    printk("A");
 
 	XEN_wrap_evtchn_alloc_unbound(remote_dom, channel, NULL);
+
+	ara_timing_info(40, 50);
+    printk("A2");
+
 	XEN_wrap_evtchn_send(channel);
 
-    k_timeout_t t = Z_TIMEOUT_TICKS(1000);
-    k_sleep(t);
+	ara_timing_info(20, 30);
+    printk("A3");
 
 }
-
 
 K_THREAD_DEFINE(thread_a, STACKSIZE, sender, NULL, NULL, NULL,
 		PRIORITY, 0, 0);

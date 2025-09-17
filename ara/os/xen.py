@@ -127,7 +127,7 @@ class XEN(OSBase):
          Possible this could also return multiple States with a wierd OS."""
 
         syscall = state.get_syscall_name(cpu_id)
-        logger.info(f"Interpret: cpu_id: {cpu_id} System count: {XEN.system_count} {XEN.graph_list}\nCurrent graph: {graph}")
+        # logger.info(f"Interpret: cpu_id: {cpu_id} System count: {XEN.system_count} {XEN.graph_list}\nCurrent graph: {graph}")
 
         # A Xen syscall is a hypercall
         if XEN.is_syscall(syscall):
@@ -169,7 +169,8 @@ class XEN(OSBase):
                 sc_states.append(state)
 
             # Schedule each state, works because sc_states contains linked/shallow copy of state
-            for idx, sc_state in enumerate(sc_states):
+            for sc_state in sc_states:
+                idx = sc_state.cpus.one().id
                 XEN.system_types[idx].schedule(state=sc_state, cpus=cpus)        
     
 

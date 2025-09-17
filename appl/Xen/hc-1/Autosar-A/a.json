@@ -6,7 +6,13 @@
           "A": {
             "activation": 1,
             "autostart": true,
-            "priority": 4,
+            "priority": 5,
+            "schedule": true
+            },
+          "IR": {
+            "activation": 1,
+            "autostart": false,
+            "priority": 3,
             "schedule": true
             }
       },

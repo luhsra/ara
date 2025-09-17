@@ -307,7 +307,7 @@ class AUTOSAR(OSBase):
                 cpus = AUTOSAR.get_cpus_of_spinlock(inst, instances)
                 if len(cpus) == 1:
                     continue
-            if not hasattr(inst, "cpu_id"):
+            if not hasattr(inst, "cpu_id") and isinstance(inst, AUTOSARInstance):
                 local_contexts.append((inst, ctx))
         return dict(local_contexts)
 

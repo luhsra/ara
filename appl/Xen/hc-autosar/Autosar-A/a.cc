@@ -13,8 +13,8 @@ int main(void) {
 
 TASK(A) {
 
-	kout << "A"<< endl;
 	ara_timing_info(40, 50);
+	kout << "A"<< endl;
 
 	wrap_evtchn_alloc_unbound(remote_dom, channel, nullptr);
 
