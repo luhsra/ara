@@ -112,14 +112,10 @@
 #define GetNumberOfActivatedCores() AUTOSAR_GetNumberOfActivatedCores()
 
 // Xen hypercalls
+// Autosar does this prefix, it is not mandatory for XEN
 #define wrap_evtchn_alloc_unbound(remote_dom, channel, cb) XEN_wrap_evtchn_alloc_unbound(remote_dom, channel, cb)
 #define wrap_evtchn_bind_interdomain(remote_dom, channel, cb) XEN_wrap_evtchn_bind_interdomain(remote_dom, channel, cb)
 #define wrap_evtchn_send(channel) XEN_wrap_evtchn_send(channel)
-
-// Old Xen hypercalls
-#define test_send_event_channel(remote_dom, port) XEN_test_send_event_channel(remote_dom, port)
-#define test_receive_event_channel(remote_dom, port, cb) XEN_test_receive_event_channel(remote_dom, port, cb)
-#define test_notify_evtchn(remote_dom, port) XEN_test_notify_evtchn(remote_dom, port)
 
 #define OS_CORE_ID_0 0
 #define OS_CORE_ID_1 1
@@ -360,11 +356,6 @@ extern void AUTOSAR_ResumeOSInterrupts();
 // extern void XEN_wrap_evtchn_alloc_unbound(RemoteDomainType remote_dom, PortType channel, EventChannelCallbackType cb);
 // extern void XEN_wrap_evtchn_bind_interdomain(RemoteDomainType remote_dom, PortType channel, EventChannelCallbackType cb);
 // extern void XEN_wrap_evtchn_send(PortType channel);
-
-// Old Xen hypercalls
-// extern void XEN_test_send_event_channel(RemoteDomainType remote_dom, PortType port);
-// extern void XEN_test_notify_evtchn(RemoteDomainType remote_dom, PortType port);
-// extern void XEN_test_receive_event_channel(RemoteDomainType remote_dom, PortType port, EventChannelCallbackType cb);
 
 
 /******************************************************************************

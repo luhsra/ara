@@ -97,20 +97,6 @@ extern "C" {
 		*/
 	}
 
-	// Old version of hypercalls wrapper
-
-	void test_send_event_channel(domid_t remote_dom, evtchn_port_t port) {
-		return;
-	}
-	
-	void test_receive_event_channel(domid_t remote_dom, evtchn_port_t port, evtchn_cb_t cb) {
-		return;
-	}
-
-	void test_notify_evtchn(domid_t remote_dom, evtchn_port_t port) {
-		return;
-	}
-
 #ifdef __cplusplus
 }
 #endif
