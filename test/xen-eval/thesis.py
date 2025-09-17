@@ -74,7 +74,7 @@ class HyperSSE(Experiment):
                     print(f"{name:<20} Matched \U0001F44D")
                     compare.append("matching")
                 else:
-                    print(f"{name:<20} Differs \U0001F44E")
+                    print(f"{name:<20} Differs \u274c")
                     compare.append("differs")
             else:
                 print(f"{name:<20} has no verified solution")

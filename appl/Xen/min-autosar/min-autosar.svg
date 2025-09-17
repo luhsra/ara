@@ -24,10 +24,10 @@
 <g id="node1" class="node">
 <title>1</title>
 <g id="a_node1"><a xlink:title="1">
-<polygon fill="none" stroke="black" points="154,-391.05 154,-412.05 199,-412.05 199,-391.05 154,-391.05"/>
-<text text-anchor="start" x="157" y="-397.85" font-family="Times,serif" font-size="14.00">Dom 0</text>
-<polygon fill="none" stroke="black" points="199,-391.05 199,-412.05 244,-412.05 244,-391.05 199,-391.05"/>
-<text text-anchor="start" x="202" y="-397.85" font-family="Times,serif" font-size="14.00">Dom 1</text>
+<polygon fill="none" stroke="black" points="155,-391.05 155,-412.05 200,-412.05 200,-391.05 155,-391.05"/>
+<text text-anchor="start" x="158" y="-397.85" font-family="Times,serif" font-size="14.00">Dom 0</text>
+<polygon fill="none" stroke="black" points="200,-391.05 200,-412.05 245,-412.05 245,-391.05 200,-391.05"/>
+<text text-anchor="start" x="203" y="-397.85" font-family="Times,serif" font-size="14.00">Dom 1</text>
 </a>
 </g>
 </g>
@@ -35,43 +35,37 @@
 <g id="node2" class="node">
 <title>2</title>
 <g id="a_node2"><a xlink:title="2">
-<ellipse fill="none" stroke="green" stroke-width="2" cx="105" cy="-304.04" rx="75.82" ry="41.02"/>
-<text text-anchor="start" x="86" y="-318.84" font-family="Times,serif" font-size="14.00">State 4</text>
-<text text-anchor="start" x="77.5" y="-306.44" font-family="Times,serif" font-style="italic" font-size="12.00">instance</text>
-<text text-anchor="start" x="117.5" y="-306.44" font-family="Times,serif" font-size="12.00">: A</text>
-<text text-anchor="start" x="62.5" y="-294.44" font-family="Times,serif" font-style="italic" font-size="12.00">type</text>
-<text text-anchor="start" x="82.5" y="-294.44" font-family="Times,serif" font-size="12.00">: computation</text>
-<text text-anchor="start" x="59.5" y="-282.44" font-family="Times,serif" font-style="italic" font-size="12.00">abb</text>
-<text text-anchor="start" x="78.5" y="-282.44" font-family="Times,serif" font-size="12.00">: dom&#45;0/ABB0</text>
+<ellipse fill="none" stroke="green" stroke-width="2" cx="106" cy="-304.04" rx="74.49" ry="41.02"/>
+<text text-anchor="start" x="87" y="-318.84" font-family="Times,serif" font-size="14.00">State 4</text>
+<text text-anchor="start" x="79.5" y="-306.44" font-family="Times,serif" font-size="12.00">instance: A</text>
+<text text-anchor="start" x="63.5" y="-294.44" font-family="Times,serif" font-size="12.00">type: computation</text>
+<text text-anchor="start" x="61.5" y="-282.44" font-family="Times,serif" font-size="12.00">abb: dom&#45;0/ABB0</text>
 </a>
 </g>
 </g>
 <!-- 1&#45;&gt;2 -->
 <g id="edge1" class="edge">
 <title>1:c0&#45;&gt;2</title>
-<path fill="none" stroke="black" d="M153,-401.05C129.85,-401.05 117.86,-378.43 111.66,-355.15"/>
-<polygon fill="black" stroke="black" points="115.01,-354.14 109.34,-345.2 108.2,-355.73 115.01,-354.14"/>
+<path fill="none" stroke="black" d="M154,-401.05C130.85,-401.05 118.86,-378.43 112.66,-355.15"/>
+<polygon fill="black" stroke="black" points="116.01,-354.14 110.34,-345.2 109.2,-355.73 116.01,-354.14"/>
 </g>
 <!-- 6 -->
 <g id="node6" class="node">
 <title>6</title>
 <g id="a_node6"><a xlink:title="6">
-<ellipse fill="none" stroke="green" stroke-width="2" cx="290" cy="-304.04" rx="75.82" ry="41.02"/>
-<text text-anchor="start" x="271" y="-318.84" font-family="Times,serif" font-size="14.00">State 5</text>
-<text text-anchor="start" x="262.5" y="-306.44" font-family="Times,serif" font-style="italic" font-size="12.00">instance</text>
-<text text-anchor="start" x="302.5" y="-306.44" font-family="Times,serif" font-size="12.00">: B</text>
-<text text-anchor="start" x="247.5" y="-294.44" font-family="Times,serif" font-style="italic" font-size="12.00">type</text>
-<text text-anchor="start" x="267.5" y="-294.44" font-family="Times,serif" font-size="12.00">: computation</text>
-<text text-anchor="start" x="244.5" y="-282.44" font-family="Times,serif" font-style="italic" font-size="12.00">abb</text>
-<text text-anchor="start" x="263.5" y="-282.44" font-family="Times,serif" font-size="12.00">: dom&#45;1/ABB0</text>
+<ellipse fill="none" stroke="green" stroke-width="2" cx="289" cy="-304.04" rx="74.49" ry="41.02"/>
+<text text-anchor="start" x="270" y="-318.84" font-family="Times,serif" font-size="14.00">State 5</text>
+<text text-anchor="start" x="262.5" y="-306.44" font-family="Times,serif" font-size="12.00">instance: B</text>
+<text text-anchor="start" x="246.5" y="-294.44" font-family="Times,serif" font-size="12.00">type: computation</text>
+<text text-anchor="start" x="244.5" y="-282.44" font-family="Times,serif" font-size="12.00">abb: dom&#45;1/ABB0</text>
 </a>
 </g>
 </g>
 <!-- 1&#45;&gt;6 -->
 <g id="edge2" class="edge">
 <title>1:c1&#45;&gt;6</title>
-<path fill="none" stroke="black" d="M245,-401.05C267.87,-401.05 279.14,-378.43 284.69,-355.15"/>
-<polygon fill="black" stroke="black" points="288.15,-355.7 286.73,-345.2 281.29,-354.29 288.15,-355.7"/>
+<path fill="none" stroke="black" d="M246,-401.05C268.69,-401.05 279.49,-378.43 284.59,-355.15"/>
+<polygon fill="black" stroke="black" points="288.05,-355.67 286.44,-345.2 281.17,-354.39 288.05,-355.67"/>
 </g>
 <!-- 3 -->
 <g id="node3" class="node">
@@ -79,35 +73,28 @@
 <g id="a_node3"><a xlink:title="3">
 <polygon fill="none" stroke="blue" points="186,-227.02 16,-227.02 16,-157.02 186,-157.02 186,-227.02"/>
 <text text-anchor="start" x="82" y="-212.82" font-family="Times,serif" font-size="14.00">State 6</text>
-<text text-anchor="start" x="73.5" y="-200.42" font-family="Times,serif" font-style="italic" font-size="12.00">instance</text>
-<text text-anchor="start" x="113.5" y="-200.42" font-family="Times,serif" font-size="12.00">: A</text>
-<text text-anchor="start" x="72" y="-188.42" font-family="Times,serif" font-style="italic" font-size="12.00">type</text>
-<text text-anchor="start" x="92" y="-188.42" font-family="Times,serif" font-size="12.00">: syscall</text>
-<text text-anchor="start" x="55.5" y="-176.42" font-family="Times,serif" font-style="italic" font-size="12.00">abb</text>
-<text text-anchor="start" x="74.5" y="-176.42" font-family="Times,serif" font-size="12.00">: dom&#45;0/ABB2</text>
-<text text-anchor="start" x="24" y="-164.42" font-family="Times,serif" font-style="italic" font-size="12.00">sys</text>
-<text text-anchor="start" x="39" y="-164.42" font-family="Times,serif" font-size="12.00">: AUTOSAR_TerminateTask</text>
+<text text-anchor="start" x="74.5" y="-200.42" font-family="Times,serif" font-size="12.00">instance: A</text>
+<text text-anchor="start" x="72" y="-188.42" font-family="Times,serif" font-size="12.00">type: syscall</text>
+<text text-anchor="start" x="56.5" y="-176.42" font-family="Times,serif" font-size="12.00">abb: dom&#45;0/ABB2</text>
+<text text-anchor="start" x="24" y="-164.42" font-family="Times,serif" font-size="12.00">sys: AUTOSAR_TerminateTask</text>
 </a>
 </g>
 </g>
 <!-- 2&#45;&gt;3 -->
 <g id="edge3" class="edge">
 <title>2&#45;&gt;3</title>
-<path fill="none" stroke="black" d="M103.54,-263.01C103.24,-254.62 102.92,-245.73 102.61,-237.21"/>
-<polygon fill="black" stroke="black" points="106.1,-236.91 102.24,-227.04 99.1,-237.16 106.1,-236.91"/>
+<path fill="none" stroke="black" d="M104.18,-263.01C103.8,-254.62 103.4,-245.73 103.01,-237.21"/>
+<polygon fill="black" stroke="black" points="106.5,-236.87 102.55,-227.04 99.5,-237.19 106.5,-236.87"/>
 </g>
 <!-- 4 -->
 <g id="node4" class="node">
 <title>4</title>
 <g id="a_node4"><a xlink:title="4">
-<ellipse fill="none" stroke="violet" stroke-width="2" cx="101" cy="-80.01" rx="57.05" ry="41.02"/>
+<ellipse fill="none" stroke="violet" stroke-width="2" cx="101" cy="-80.01" rx="55.72" ry="41.02"/>
 <text text-anchor="start" x="82" y="-94.81" font-family="Times,serif" font-size="14.00">State 7</text>
-<text text-anchor="start" x="68.5" y="-82.41" font-family="Times,serif" font-style="italic" font-size="12.00">instance</text>
-<text text-anchor="start" x="108.5" y="-82.41" font-family="Times,serif" font-size="12.00">: Idle</text>
-<text text-anchor="start" x="79" y="-70.41" font-family="Times,serif" font-style="italic" font-size="12.00">type</text>
-<text text-anchor="start" x="99" y="-70.41" font-family="Times,serif" font-size="12.00">: idle</text>
-<text text-anchor="start" x="75" y="-58.41" font-family="Times,serif" font-style="italic" font-size="12.00">abb</text>
-<text text-anchor="start" x="94" y="-58.41" font-family="Times,serif" font-size="12.00">: None</text>
+<text text-anchor="start" x="69.5" y="-82.41" font-family="Times,serif" font-size="12.00">instance: Idle</text>
+<text text-anchor="start" x="79" y="-70.41" font-family="Times,serif" font-size="12.00">type: idle</text>
+<text text-anchor="start" x="76" y="-58.41" font-family="Times,serif" font-size="12.00">abb: None</text>
 </a>
 </g>
 </g>
@@ -121,14 +108,11 @@
 <g id="node5" class="node">
 <title>8</title>
 <g id="a_node5"><a xlink:title="8">
-<ellipse fill="none" stroke="violet" stroke-width="2" cx="295" cy="-80.01" rx="57.05" ry="41.02"/>
+<ellipse fill="none" stroke="violet" stroke-width="2" cx="295" cy="-80.01" rx="55.72" ry="41.02"/>
 <text text-anchor="start" x="276" y="-94.81" font-family="Times,serif" font-size="14.00">State 9</text>
-<text text-anchor="start" x="262.5" y="-82.41" font-family="Times,serif" font-style="italic" font-size="12.00">instance</text>
-<text text-anchor="start" x="302.5" y="-82.41" font-family="Times,serif" font-size="12.00">: Idle</text>
-<text text-anchor="start" x="273" y="-70.41" font-family="Times,serif" font-style="italic" font-size="12.00">type</text>
-<text text-anchor="start" x="293" y="-70.41" font-family="Times,serif" font-size="12.00">: idle</text>
-<text text-anchor="start" x="269" y="-58.41" font-family="Times,serif" font-style="italic" font-size="12.00">abb</text>
-<text text-anchor="start" x="288" y="-58.41" font-family="Times,serif" font-size="12.00">: None</text>
+<text text-anchor="start" x="263.5" y="-82.41" font-family="Times,serif" font-size="12.00">instance: Idle</text>
+<text text-anchor="start" x="273" y="-70.41" font-family="Times,serif" font-size="12.00">type: idle</text>
+<text text-anchor="start" x="270" y="-58.41" font-family="Times,serif" font-size="12.00">abb: None</text>
 </a>
 </g>
 </g>
@@ -138,22 +122,18 @@
 <g id="a_node7"><a xlink:title="7">
 <polygon fill="none" stroke="blue" points="380,-227.02 210,-227.02 210,-157.02 380,-157.02 380,-227.02"/>
 <text text-anchor="start" x="276" y="-212.82" font-family="Times,serif" font-size="14.00">State 8</text>
-<text text-anchor="start" x="267.5" y="-200.42" font-family="Times,serif" font-style="italic" font-size="12.00">instance</text>
-<text text-anchor="start" x="307.5" y="-200.42" font-family="Times,serif" font-size="12.00">: B</text>
-<text text-anchor="start" x="266" y="-188.42" font-family="Times,serif" font-style="italic" font-size="12.00">type</text>
-<text text-anchor="start" x="286" y="-188.42" font-family="Times,serif" font-size="12.00">: syscall</text>
-<text text-anchor="start" x="249.5" y="-176.42" font-family="Times,serif" font-style="italic" font-size="12.00">abb</text>
-<text text-anchor="start" x="268.5" y="-176.42" font-family="Times,serif" font-size="12.00">: dom&#45;1/ABB2</text>
-<text text-anchor="start" x="218" y="-164.42" font-family="Times,serif" font-style="italic" font-size="12.00">sys</text>
-<text text-anchor="start" x="233" y="-164.42" font-family="Times,serif" font-size="12.00">: AUTOSAR_TerminateTask</text>
+<text text-anchor="start" x="268.5" y="-200.42" font-family="Times,serif" font-size="12.00">instance: B</text>
+<text text-anchor="start" x="266" y="-188.42" font-family="Times,serif" font-size="12.00">type: syscall</text>
+<text text-anchor="start" x="250.5" y="-176.42" font-family="Times,serif" font-size="12.00">abb: dom&#45;1/ABB2</text>
+<text text-anchor="start" x="218" y="-164.42" font-family="Times,serif" font-size="12.00">sys: AUTOSAR_TerminateTask</text>
 </a>
 </g>
 </g>
 <!-- 6&#45;&gt;7 -->
 <g id="edge5" class="edge">
 <title>6&#45;&gt;7</title>
-<path fill="none" stroke="black" d="M291.82,-263.01C292.2,-254.62 292.6,-245.73 292.99,-237.21"/>
-<polygon fill="black" stroke="black" points="296.5,-237.19 293.45,-227.04 289.5,-236.87 296.5,-237.19"/>
+<path fill="none" stroke="black" d="M291.18,-263.01C291.64,-254.62 292.13,-245.73 292.59,-237.21"/>
+<polygon fill="black" stroke="black" points="296.09,-237.22 293.14,-227.04 289.11,-236.84 296.09,-237.22"/>
 </g>
 <!-- 7&#45;&gt;8 -->
 <g id="edge6" class="edge">
