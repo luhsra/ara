@@ -102,6 +102,13 @@ xen_testcases = [
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_channels_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/channels/Autosar-B/b.json;' +
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_channels_Autosar_C_c.pi4.ll;../subprojects/ara/appl/Xen/channels/Autosar-C/c.json'
   },
+  # port of autosar/multicore/andreas/ipi/b
+  {'name': 'ipi', 'do_timings': 'true', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_ipi_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/ipi/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_ipi_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/ipi/Autosar-B/b.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_ipi_Autosar_C_c.pi4.ll;../subprojects/ara/appl/Xen/ipi/Autosar-C/c.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_ipi_Autosar_D_d.pi4.ll;../subprojects/ara/appl/Xen/ipi/Autosar-D/d.json'
+  },
   # Port of Automotive Benchmark, 2 instances
   {'name': 'automotive-1', 'do_timings': 'true', 'guests': 
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_automotive_1_Autosar_A_tasks.pi4.ll;../subprojects/ara/appl/Xen/automotive-1/Autosar-A/tasks.json;' +
