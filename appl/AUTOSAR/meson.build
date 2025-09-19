@@ -229,8 +229,10 @@ autosar_apps += [
   {'core': '../Xen',  'path': 'thesis'/ 'Autosar-A','name': 'cfg', 'oil': 'cfg.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'thesis'/ 'Autosar-B','name': 'multicore', 'oil': 'multicore.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'thesis'/ 'Autosar-C','name': 'multi_core', 'oil': 'multi_core.json', 'timing': 'BB'},
-  # min-2, hc-autosar, hc-autosar-noiit, alarm-2 are used from test-suite
-  {'core': '../Xen',  'path': 'thesis'/ 'Autosar-D','name': 'b', 'oil': 'system.json', 'timing': 'BB'},
+  # ninja subprojects/ara/appl/AUTOSAR/autosar____Xen_thesis_Autosar_D_ipi_noopt_mod.pi4.ll
+  {'core': '../Xen',  'path': 'thesis'/ 'Autosar-D','name': 'ipi', 'oil': 'ipi.json', 'timing': 'BB'},
+
+  # min-2, hc-autosar, hc-autosar-noiit, alarm-2, ipi are used from test-suite
 ]
 
 no_timing_settings = custom_target(
