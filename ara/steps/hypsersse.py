@@ -6,6 +6,7 @@
 from ara.graph import Graph
 from ara.os.autosar import AUTOSAR
 from ara.os.zephyr import Zephyr
+from ara.os.bare_metal import BareMetal
 from ara.os.os_base import reset_id
 from ara.os.os_util import _clear_cache
 from ara.stepmanager import StepManager
@@ -120,11 +121,33 @@ class HyperSSE(Step):
 
                     # Remove first 2 elements
                     guests = guests[2:]
+
+                case "BareMetal":
+                    self._graph.os = BareMetal
+                    log.info(f"Found bareMetal: {guests[1]}")
+
+                    program["input_file"] = guests[1]
+
+                    # Remove first 2 elements
+                    guests = guests[2:] 
+
+                    if self.do_timings.get():
+                        extra["MultiSSE"]["with_times"] = True
+                        extra["ApplyTimings"] = {"timings":"BB"}
+
+                        # Readadd all steps, end with returning to HyperSSE
+                        extra["steps"] = ['ApplyTimings', 'MultiSSE', 'DumpCFG', 'DumpInstances', 'SVFReset', 'HyperSSE']
+                    else:
+                        # extra["steps"] = ['DumpCFG', 'DumpInstances', 'SVFReset', 'HyperSSE']
+                        extra["steps"] = ['MultiSSE', 'DumpCFG', 'DumpInstances', 'SVFReset', 'HyperSSE']
+
+
                 case _:
                     log.error(f"Unkown guest OS: {guests[0]}")
                     exit(1)
 
 
+            # TODO readdafter baremetal
             if self.do_stats.get():
                 extra["steps"].insert(extra["steps"].index('DumpCFG'), 'MSTGStats')
                 extra["MSTGStats"] = {"dump": True, "log_level": "info"}

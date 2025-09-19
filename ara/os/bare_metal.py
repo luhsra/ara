@@ -20,11 +20,20 @@ from .os_util import (
     syscall,
 )
 from .os_base import (
-    CPUBounded,
     OSBase,
     OSState,
+    CPUList,
+    CPU,
+    ControlInstance,
     CrossOSEvent,
+    TaskStatus,
+    ControlContext,
+    CrossCoreAction,
+    ExecState,
+    CPUBounded,
     IRQ,
+    IRQContext,
+    InterruptMissing,
 )
 
 from ara.util import get_logger
@@ -45,17 +54,35 @@ class BareMetal(OSBase):
         cfg       -- the control flow graph
         instances -- the already detected global instances
         """
-        raise NotImplementedError
+        
+        cpu_id = 0
+        cpus = [CPU(id=cpu_id,
+                irq_on=True,
+                control_instance=None,
+                abb=None,
+                call_path=CallPath(),
+                exec_state=ExecState.idle,
+                analysis_context=None,
+                cfg=cfg)]
+        
+        state = OSState(cpus=CPUList(cpus), instances=instances, cfg=cfg)
+
+        state.context["BareMetal"] = 1
+
+        return state
 
     @staticmethod
     def get_cpu_local_contexts(context: dict, cpu_id: int, instances: InstanceGraph) -> dict:
         """Get all contexts that affect cpu_id."""
-        raise NotImplementedError
+
+        local_contexts = []
+        local_contexts.append(("BareMetal", context["BareMetal"]))
+        return dict(local_contexts)
 
     @staticmethod
     def get_global_contexts(contexts, instances):
         """Get all contexts that affect multiple CPUs."""
-        raise NotImplementedError
+        return {}
 
     @staticmethod
     def handle_irq(graph, state, cpu_id, irq):
@@ -90,7 +117,7 @@ class BareMetal(OSBase):
         raise NotImplementedError
 
     @staticmethod
-    def interpret(graph: graph_tool.Graph, state: OSState, cpu_id, categories=SyscallCategory.every) -> OSState:
+    def interpret(graph: Graph, state: OSState, cpu_id, categories=SyscallCategory.every) -> OSState:
         """Entry point for a synchronous os action (system call).
 
         Arguments:
@@ -102,7 +129,7 @@ class BareMetal(OSBase):
         Return:
         The follow up state.
         """
-        raise NotImplementedError()
+        return state
 
     @staticmethod
     def schedule(state: OSState, cpus=None) -> None:
@@ -112,7 +139,7 @@ class BareMetal(OSBase):
         state -- the current system state
         cpus  -- a list of cpu_ids, defaults to all CPUs
         """
-        raise NotImplementedError()
+        return
 
     # For HyperSSE/Xen
     @staticmethod
@@ -121,7 +148,17 @@ class BareMetal(OSBase):
          this function moves the context to target_cpu_id
          single core contexte mit cpu0 -> single core contexte mit cpuNEW"""
 
-        raise NotImplementedError()
+        logger.info(f"Moved context to CPU {target_cpu_id} for HyperSSE.")
+        new_context = {}
+        for k,v in context.items():
+            if isinstance(k, CPUBounded):
+                k.cpu_id = target_cpu_id
+                new_context[k] = v
+            else:
+                logger.error(f"move_context: Unkown context of type: {type(k)}")
+                new_context[k] = v
+    
+        return new_context
     
     def move_irqhandler(irq: IRQ, inst: InstanceGraph, target_cpu_id: int) -> None:
         """When FakeIRQ-CPUs get added in add_interrupts(...) at the beginning of MultiSSE, the 

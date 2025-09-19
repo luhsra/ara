@@ -119,8 +119,12 @@ xen_testcases = [
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_automotive_2_Autosar_A_tasks.pi4.ll;../subprojects/ara/appl/Xen/automotive-2/Autosar-A/tasks.json;' +
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_automotive_2_Autosar_A_tasks.pi4.ll;../subprojects/ara/appl/Xen/automotive-2/Autosar-A/tasks.json;'      
   },
-  # TODO: IPI
-  # TODO: Bare Metal
+
+  # --------------------------- BareMetal ----------------------------------
+  {'name': 'baremetal', 'do_timings': 'false', 'guests': 
+      'BareMetal;subprojects/ara/appl/Xen/bareMetal/BareMetal_A_other.pi4.ll'      
+  },
+  
 ]
 
 # Compile Autosar ll files
