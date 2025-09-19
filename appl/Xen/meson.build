@@ -124,6 +124,9 @@ xen_testcases = [
   {'name': 'baremetal', 'do_timings': 'true', 'guests': 
       'BareMetal;subprojects/ara/appl/Xen/bareMetal/BareMetal_A_main.pi4.ll'      
   },
+  {'name': 'hardware', 'do_timings': 'false', 'guests':  
+      'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hw.ll;'
+  },
   
 ]
 
