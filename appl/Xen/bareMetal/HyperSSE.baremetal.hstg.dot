@@ -1,0 +1,30 @@
+digraph G {
+label="HyperSSE.baremetal.hstg.dot";
+1 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD></TR></TABLE>>, shape=plaintext, tooltip=1];
+subgraph cluster_13 {
+label="M13: Dom-0-BareMetal";
+2 [color=green, fontsize=14, label=<State 3<br/><font point-size='12'>instance: BareMetal<br/>type: computation<br/>abb: dom-0/ABB1</font>>, style=bold, tooltip=2];
+3 [fontsize=14, label=<State 4<br/><font point-size='12'>instance: BareMetal<br/>type: call<br/>abb: dom-0/ABB2</font>>, tooltip=3];
+4 [color=green, fontsize=14, label=<State 5<br/><font point-size='12'>instance: BareMetal<br/>type: computation<br/>abb: dom-0/ABB4<br/>bcet/wcet: 1/2</font>>, style=bold, tooltip=4];
+5 [color=blue, fontsize=14, label=<State 6<br/><font point-size='12'>instance: BareMetal<br/>type: syscall<br/>abb: dom-0/ABB7<br/>sys: BareMetal_Dummy</font>>, shape=box, tooltip=5];
+6 [color=green, fontsize=14, label=<State 7<br/><font point-size='12'>instance: BareMetal<br/>type: computation<br/>abb: dom-0/ABB5<br/>bcet/wcet: 3/4</font>>, style=bold, tooltip=6];
+7 [fontsize=14, label=<State 8<br/><font point-size='12'>instance: BareMetal<br/>type: call<br/>abb: dom-0/ABB6</font>>, tooltip=7];
+8 [color=green, fontsize=14, label=<State 9<br/><font point-size='12'>instance: BareMetal<br/>type: computation<br/>abb: dom-0/ABB9<br/>bcet/wcet: 5/6</font>>, style=bold, tooltip=8];
+9 [color=blue, fontsize=14, label=<State 10<br/><font point-size='12'>instance: BareMetal<br/>type: syscall<br/>abb: dom-0/ABB11<br/>sys: BareMetal_Dummy</font>>, shape=box, tooltip=9];
+10 [color=green, fontsize=14, label=<State 11<br/><font point-size='12'>instance: BareMetal<br/>type: computation<br/>abb: dom-0/ABB10<br/>bcet/wcet: 7/8</font>>, style=bold, tooltip=10];
+11 [color=green, fontsize=14, label=<State 12<br/><font point-size='12'>instance: BareMetal<br/>type: computation<br/>abb: dom-0/ABB3<br/>bcet/wcet: 9/10</font>>, style=bold, tooltip=11];
+12 [color=violet, fontsize=14, label=<State 13<br/><font point-size='12'>instance: BareMetal<br/>type: idle<br/>abb: dom-0/ABB0</font>>, style=bold, tooltip=12];
+}
+
+1:c0 -> 2  [color=black];
+2 -> 3  [color=black];
+3 -> 4  [color=black];
+4 -> 5  [color=black];
+5 -> 6  [color=black];
+6 -> 7  [color=black];
+7 -> 8  [color=black];
+8 -> 9  [color=black];
+9 -> 10  [color=black];
+10 -> 11  [color=black];
+11 -> 12  [color=black];
+}

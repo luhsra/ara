@@ -10,8 +10,8 @@ if posix_enabled
   subdir('AUTOSAR')
 endif
 
-# Xen must be loaded after AUTOSAR, since its guest include Autosar targets
-subdir('Xen')
-
 # Bare Metal OS for Xen
 subdir('Xen/bareMetal')
+
+# Xen must be loaded after AUTOSAR, since its guest include Autosar targets
+subdir('Xen')

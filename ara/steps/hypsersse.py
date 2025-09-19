@@ -136,18 +136,17 @@ class HyperSSE(Step):
                         extra["ApplyTimings"] = {"timings":"BB"}
 
                         # Readadd all steps, end with returning to HyperSSE
-                        extra["steps"] = ['ApplyTimings', 'MultiSSE', 'DumpCFG', 'DumpInstances', 'SVFReset', 'HyperSSE']
+                        # Somehow we need to include Syscall here!
+                        extra["steps"] = ['ApplyTimings', 'Syscall', 'MultiSSE', 'DumpCFG', 'DumpInstances', 'SVFReset', 'HyperSSE']
                     else:
-                        # extra["steps"] = ['DumpCFG', 'DumpInstances', 'SVFReset', 'HyperSSE']
-                        extra["steps"] = ['MultiSSE', 'DumpCFG', 'DumpInstances', 'SVFReset', 'HyperSSE']
+                        # Somehow we need to include Syscall here!
+                        extra["steps"] = ['Syscall', 'MultiSSE', 'DumpCFG', 'DumpInstances', 'SVFReset', 'HyperSSE']
 
 
                 case _:
                     log.error(f"Unkown guest OS: {guests[0]}")
                     exit(1)
 
-
-            # TODO readdafter baremetal
             if self.do_stats.get():
                 extra["steps"].insert(extra["steps"].index('DumpCFG'), 'MSTGStats')
                 extra["MSTGStats"] = {"dump": True, "log_level": "info"}

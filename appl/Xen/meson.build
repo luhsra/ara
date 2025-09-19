@@ -121,8 +121,8 @@ xen_testcases = [
   },
 
   # --------------------------- BareMetal ----------------------------------
-  {'name': 'baremetal', 'do_timings': 'false', 'guests': 
-      'BareMetal;subprojects/ara/appl/Xen/bareMetal/BareMetal_A_other.pi4.ll'      
+  {'name': 'baremetal', 'do_timings': 'true', 'guests': 
+      'BareMetal;subprojects/ara/appl/Xen/bareMetal/BareMetal_A_main.pi4.ll'      
   },
   
 ]
@@ -135,11 +135,17 @@ foreach app: autosar_targets
   endif
 endforeach
 
+# Compile BareMetal ll files
+bareMetal_ll_targets = []
+foreach app: baremetal_targets
+    bareMetal_ll_targets += app['ll_pi4']
+endforeach
+
 # To rebuild while debuging
-autosar_lls = custom_target('xen-ara-autosar', 
+rebuild_lls = custom_target('xen-ara-autosar', 
             command: find_program('true'),
             output: 'xen-ara-autosar',
-            depends: autosar_ll_targets)
+            depends: [autosar_ll_targets, bareMetal_ll_targets])
 
 # must call: meson compile sse-native_sim-xen_static_msgq -v
 # Create ninja target, run with: ninja subprojects/ara/appl/Xen/hypercall
@@ -158,7 +164,7 @@ foreach case: xen_testcases
             command: [py3_inst, ara_py, 'ignored', '--os', 'XEN', '--log-level', 'warn',
                 '--step-settings', settings],
             output: name,
-            depends : autosar_lls,
+            depends : rebuild_lls,
 
   )
 endforeach

@@ -16,7 +16,10 @@ import pyllco
 from ara.util import get_logger, has_path
 from ara.graph import CallPath, InstanceGraph, SyscallCategory, SigType, single_check, edge_types, CFG
 
+from ara.graph.mix import ARA_ENTRY_POINT
+
 from .os_util import (
+    Arg,
     syscall,
 )
 from .os_base import (
@@ -55,18 +58,22 @@ class BareMetal(OSBase):
         instances -- the already detected global instances
         """
         
+        # hardcoded as singlecore 0
         cpu_id = 0
+     
+        # find ara fake entry point and create CPU on it
+        entry_abb = int(cfg.get_entry_abb(cfg.get_function_by_name(ARA_ENTRY_POINT)))
         cpus = [CPU(id=cpu_id,
                 irq_on=True,
                 control_instance=None,
-                abb=None,
+                abb=entry_abb,
                 call_path=CallPath(),
-                exec_state=ExecState.idle,
+                exec_state=ExecState.computation,
                 analysis_context=None,
                 cfg=cfg)]
         
+        # create initial state with a dummy context
         state = OSState(cpus=CPUList(cpus), instances=instances, cfg=cfg)
-
         state.context["BareMetal"] = 1
 
         return state
@@ -100,7 +107,7 @@ class BareMetal(OSBase):
         raise NotImplementedError
 
     @staticmethod
-    def handle_exit(graph, state, cpu_id):
+    def handle_exit(graph: Graph, state: OSState, cpu_id: int) -> List[OSState]:
         """Handle an irregular exit.
 
         Some exits cannot be followed within the ICFG (most notably ISR exits).
@@ -114,10 +121,10 @@ class BareMetal(OSBase):
         Return:
         A list of follow up states.
         """
-        raise NotImplementedError
+        return []
 
     @staticmethod
-    def interpret(graph: Graph, state: OSState, cpu_id, categories=SyscallCategory.every) -> OSState:
+    def interpret(graph: Graph, state: OSState, cpu_id: int, categories=SyscallCategory.every) -> OSState:
         """Entry point for a synchronous os action (system call).
 
         Arguments:
@@ -129,7 +136,18 @@ class BareMetal(OSBase):
         Return:
         The follow up state.
         """
-        return state
+        cfg = graph.cfg
+        abb = state.cpus[cpu_id].abb
+        syscall = cfg.get_syscall_name(abb)
+        logger.debug(
+            f"Get syscall: {syscall}, CPU {cpu_id}, "
+            f"ABB: {cfg.vp.name[abb]}"
+            f" (in {cfg.vp.name[cfg.get_function(abb)]})"
+        )
+
+        syscall_function = getattr(BareMetal, syscall)
+
+        return syscall_function(graph, state, cpu_id)
 
     @staticmethod
     def schedule(state: OSState, cpus=None) -> None:
@@ -139,6 +157,12 @@ class BareMetal(OSBase):
         state -- the current system state
         cpus  -- a list of cpu_ids, defaults to all CPUs
         """
+        # manually set to cpu to idle at last ABB
+        exit_abb = int(state.cfg.get_exit_abb(state.cfg.get_function_by_name(ARA_ENTRY_POINT)))
+        cpu: CPU = state.cpus.one()
+        if int(cpu.abb) == exit_abb:
+            cpu.exec_state = ExecState.idle
+
         return
 
     # For HyperSSE/Xen
@@ -153,6 +177,8 @@ class BareMetal(OSBase):
         for k,v in context.items():
             if isinstance(k, CPUBounded):
                 k.cpu_id = target_cpu_id
+                new_context[k] = v
+            if isinstance(k, str):
                 new_context[k] = v
             else:
                 logger.error(f"move_context: Unkown context of type: {type(k)}")
@@ -178,3 +204,16 @@ class BareMetal(OSBase):
         """Wrapper to apply the event to the given state, currently only ActivateTask is supported."""
         
         raise NotImplementedError()
+    
+    @syscall(
+        categories={SyscallCategory.comm},
+        signature=(Arg("int_arg", ty=int, raw_value=True, hint=SigType.value),),
+    )
+    def BareMetal_Dummy(cfg, state, cpu_id, args, va):
+        
+
+        int_arg = args.int_arg.value.get()
+        logger.warning(f"Dummy syscall with arg: {int_arg}")
+
+        return state
+    

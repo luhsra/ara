@@ -32,6 +32,7 @@ from itertools import chain
 from ..os.zephyr import Thread as ZephyrThread
 from ..os.zephyr import ZephyrIRQ
 from ..os.xen import XEN
+from ..os.bare_metal import BareMetal
 
 _sysshort = {
     "AUTOSAR_GetSpinlock": "GL",
@@ -132,7 +133,11 @@ def _sstg_state_as_dot(sstg, state_vert, with_times: bool = True, OS: OSBase = A
                     thread_info.append(("timeout_list", ", ".join(timeouts)))
 
     else:
-        instance = "Idle"
+        # for BareMetal
+        if OS == XEN and XEN.system_types[cpu.id] == BareMetal:
+            instance = "BareMetal"
+        else:
+            instance = "Idle"
 
     more_tupels = []
 

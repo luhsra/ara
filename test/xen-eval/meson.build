@@ -20,7 +20,7 @@ foreach app : xen_testcases
         py3_inst,
         args: [files('run_ara.py'), app['name']],
         env: [python_path],
-        depends: [ara_py, autosar_lls],
+        depends: [ara_py, rebuild_lls],
         suite: 'ara-xen-eval',
         timeout: 100 
     )

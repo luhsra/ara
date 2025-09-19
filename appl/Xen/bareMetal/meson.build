@@ -1,4 +1,5 @@
 # list of applications
+baremetal_targets = []
 baremetal_apps = [
   {'path': 'BareMetal-A', 'name': 'main'},
   {'path': 'BareMetal-A', 'name': 'other'},
@@ -18,11 +19,11 @@ foreach app : baremetal_apps
         output : fullname + '.pi4.ll',
         depfile : fullname + '.pi4.ll.dep',
         command : clang_cpp +
-                arm_autosar_includes +
-                autosar_includes +
                 clang_flags +
-                variant_flags +
                 autosar_pi4_clang_flags +
                 '-O0' + # dont optimize before IR
                 ir_flags)
+
+    app += {'ll_pi4': app_ll_pi4}
+    baremetal_targets += [app]
 endforeach
