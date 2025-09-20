@@ -10,6 +10,7 @@ from itertools import chain
 from typing import Any, List
 from graph_tool import Graph, GraphView
 from graph_tool.search import dfs_iterator
+from ara.graph.mix import CFType
 
 from ara.util import get_logger
 from ara.graph import CallPath, InstanceGraph, SyscallCategory, SigType, single_check, edge_types, CFG
@@ -84,7 +85,9 @@ class BareMetal(OSBase):
         
         # create initial state with a dummy context
         state = OSState(cpus=CPUList(cpus), instances=instances, cfg=cfg)
-        state.context["BareMetal"] = 1
+
+        # dummy context
+        # state.context["BareMetal"] = 1
 
         return state
 
@@ -93,7 +96,6 @@ class BareMetal(OSBase):
         """Get all contexts that affect cpu_id."""
 
         # local_contexts = []
-        # local_contexts.append(("BareMetal", context["BareMetal"]))
         # return dict(local_contexts)
         return context
 
@@ -174,14 +176,22 @@ class BareMetal(OSBase):
         state -- the current system state
         cpus  -- a list of cpu_ids, defaults to all CPUs
         """
-
-        # check if the cross OS event callback was interrupted when going idle
-
-        # manually set to cpu to idle at last ABB
+        # check for exit abb
         exit_abb = int(state.cfg.get_exit_abb(state.cfg.get_function_by_name(ARA_ENTRY_POINT)))
         cpu: CPU = state.cpus.one()
+
+        # manually set to cpu to idle at last ABB
         if int(cpu.abb) == exit_abb:
             cpu.exec_state = ExecState.idle
+
+        # check if the cross OS event callback was interrupted when going idle
+        # cb_list: Callback = state.context_get_instances(str)
+        # if cb_list:
+        #     # TODO check for multiple callback
+        #     cb: Callback = state.context[cb_list[0]]
+        #     if cb.prev_abb and state.cfg.vp.is_exit[cpu.abb]:
+        #         cpu.abb = cb.prev_abb
+        #         cb.prev_abb = None
 
         return
 
@@ -219,7 +229,6 @@ class BareMetal(OSBase):
 
         # @staticmethod
         # def trim_llvm(s: str) -> str:
-        #     # TODO expand this
         #     return s[3:-2]
             
         # cb = trim_llvm(cb)
@@ -244,10 +253,15 @@ class BareMetal(OSBase):
                 cpu: CPU = c
         assert cpu, "No CPU found!"
 
-        callback.prev_abb = cpu.abb
+        callback.prev_abb = int(cpu.abb)
         cpu.abb = callback.abb
         cpu.exec_state = ExecState.computation
-        # TODO add return path from interrupt
+        
+        # hack return function into CFG
+        # e = state.cfg.add_edge(callback.abb, callback.prev_abb)
+        # state.cfg.ep.type[e] = CFType.icf
+        # TODO add callpath
+
         return state
     
     @syscall(
@@ -255,7 +269,7 @@ class BareMetal(OSBase):
         signature=(Arg("int_arg", ty=int, raw_value=True, hint=SigType.value),),
     )
     def BareMetal_Dummy(cfg, state, cpu_id, args, va):
-        
+        """Example for a custom system call/function"""
 
         int_arg = args.int_arg.value.get()
         logger.warning(f"Dummy syscall with arg: {int_arg}")

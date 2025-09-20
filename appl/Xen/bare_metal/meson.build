@@ -1,8 +1,8 @@
 # list of applications
 baremetal_targets = []
 baremetal_apps = [
-  {'path': 'BareMetal-A', 'name': 'main'},
-  {'path': 'BareMetal-A', 'name': 'other'},
+  {'path': '../min-bm/BareMetal-A', 'name': 'main'},
+  {'path': '../min-bm/BareMetal-B', 'name': 'other'},
   {'path': '../hardware/BareMetal-A', 'name': 'hardware'},
 #   {'path': 'BareMetal-A', 'name': 'main.c', 'timing': 'BB'},
 ]

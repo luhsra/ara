@@ -465,7 +465,7 @@ class CFG(graph_tool.Graph):
             print(f"Node: {v} - {str(self.vp.name[v])} - {str(ABBType(self.vp.type[v]))} {str(NodeLevel(self.vp.level[v]))}")
             #Type={str(HyperStateType(cfg.vp.type[v]))} domain_id={cfg.vp.domain_id[v]} cpu_id={hstg.vp.cpu_id[v]} bcet={hstg.vp.bcet[v]} wcet={hstg.vp.wcet[v]}")
         for e in self.edges():
-            print(f"Edge: {e} is_entry: {self.ep.is_entry[e]}")
+            print(f"Edge: {e} is_entry: {self.ep.is_entry[e]} ep:{self.ep.type[e]}")
             #Type={str(HSTType(cfg.ep.type[e]))} irq={cfg.ep.irq[e]} domain_id={cfg.ep.domain_id[e]} cpu_id={hstg.ep.cpu_id[e]} bcet={hstg.ep.bcet[e]} wcet={hstg.ep.wcet[e]}")
 
 

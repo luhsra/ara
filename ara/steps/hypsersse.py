@@ -144,7 +144,6 @@ class HyperSSE(Step):
                         extra["BareMetal"] = {"entry_point": guests[2]}
                         extra["steps"].insert(extra["steps"].index('Syscall') + 1, "BareMetal")
                         
-
                     # Remove first 3 elements
                     guests = guests[3:] 
                 case _:

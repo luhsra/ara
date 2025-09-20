@@ -121,8 +121,8 @@ xen_testcases = [
   },
 
   # --------------------------- BareMetal ----------------------------------
-  {'name': 'bare_metal', 'do_timings': 'true', 'guests': 
-      'BareMetal;subprojects/ara/appl/Xen/bare_metal/BareMetal_A_main.pi4.ll;None'      
+  {'name': 'min-bm', 'do_timings': 'true', 'guests': 
+      'BareMetal;subprojects/ara/appl/Xen/bare_metal/___min_bm_BareMetal_A_main.pi4.ll;None'      
   },
   {'name': 'hardware', 'do_timings': 'true', 'guests':
       'BareMetal;subprojects/ara/appl/Xen/bare_metal/___hardware_BareMetal_A_hardware.pi4.ll;_Z8callbackPv;'  +

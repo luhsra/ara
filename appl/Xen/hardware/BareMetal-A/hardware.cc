@@ -5,7 +5,7 @@ extern int printf (const char *__restrict __format, ...);
 void ara_timing_info(int a, int b);
 
 void callback(void* priv) {
-	ara_timing_info(5, 15);
+	ara_timing_info(25, 35);
 	printf("Received callback!\n");
 }	
 
@@ -28,9 +28,9 @@ int main(int argc, char *argv[])
 	domid_t REMOTE_DOMAIN = remote_domain;
 	channel_t REMOTE_CHANNEL = 42;
 
-	ara_timing_info(15, 25);
+	ara_timing_info(5, 10);
     XEN_wrap_evtchn_bind_interdomain(REMOTE_DOMAIN, REMOTE_CHANNEL, (void *) callback);
 
-	ara_timing_info(25, 35);
+	ara_timing_info(15, 20);
     printf("Binder is done, handler was forked.\n");
 }
