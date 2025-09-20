@@ -33,6 +33,18 @@ from ara.steps.multisse_helper.common import CrossExecState, get_single_core_sta
 
 logger = get_logger("XEN")
 
+@staticmethod
+def read_va_integer(obj: Any) -> Any:
+    """Helper function to extract from value analysis
+        depending if the application uses a global or local variables
+        a different function is needed."""
+    
+    try:
+        res = obj.value.get_initializer().get()
+    except AttributeError:
+        res = obj.value.get()
+    return res
+
 class XEN(OSBase):
     """OS Model for Xen Hypervisor"""
     
@@ -244,8 +256,8 @@ class XEN(OSBase):
                         Arg("cb", ty=CrossOSEvent, hint=SigType.symbol)),)
     def XEN_wrap_evtchn_alloc_unbound(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
         
-        remote_dom = args.remote_dom.value.get_initializer().get()
-        channel = args.channel.value.get_initializer().get()
+        remote_dom = read_va_integer(args.remote_dom)
+        channel = read_va_integer(args.channel)
         cb: str = args.cb.value.get_name()
 
         task = XEN.system_types[cpu_id].find_cross_os_event(state=state, cpu_id=cpu_id, cb=cb)
@@ -261,14 +273,18 @@ class XEN(OSBase):
 
         return state
     
+
+
     @syscall(categories={SyscallCategory.comm},
             signature=(Arg("remote_dom", ty=int, raw_value=True, hint=SigType.value),
                         Arg("channel", ty=int, raw_value=True, hint=SigType.value),
                         Arg("cb", ty=CrossOSEvent, hint=SigType.symbol),),)
     def XEN_wrap_evtchn_bind_interdomain(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
         
-        remote_dom = args.remote_dom.value.get_initializer().get()
-        channel = args.channel.value.get_initializer().get()
+        # remote_dom = args.remote_dom.value.get_initializer().get()
+        # channel = args.channel.value.get_initializer().get()
+        remote_dom = read_va_integer(args.remote_dom)
+        channel = read_va_integer(args.channel)
         cb: str = args.cb.value.get_name()
 
         task = XEN.system_types[cpu_id].find_cross_os_event(state=state, cpu_id=cpu_id, cb=cb)
@@ -303,7 +319,7 @@ class XEN(OSBase):
             return state
         
         # Retrieve active event-channels of sender
-        channel_id = args.channel.value.get_initializer().get()
+        channel_id = read_va_integer(args.channel)
         active_channels = state.context_get_instances(EventChannel)
         for evtchn in active_channels:
             if channel_id == evtchn.channel:

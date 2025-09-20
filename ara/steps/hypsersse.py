@@ -90,9 +90,9 @@ class HyperSSE(Step):
                         extra["ApplyTimings"] = {"timings":"BB"}
 
                         # Readadd all steps, end with returning to HyperSSE
-                        extra["steps"] = ['ApplyTimings', 'MultiSSE', 'DumpCFG', 'DumpInstances', 'SVFReset', 'HyperSSE']
+                        extra["steps"] = ['ApplyTimings', 'MultiSSE', 'DumpCFG', 'DumpInstances', 'DumpCallgraph', 'SVFReset', 'HyperSSE']
                     else:
-                        extra["steps"] = ['MultiSSE', 'DumpCFG', 'DumpInstances', 'SVFReset', 'HyperSSE']
+                        extra["steps"] = ['MultiSSE', 'DumpCFG', 'DumpInstances', 'DumpCallgraph', 'SVFReset', 'HyperSSE']
 
 
                 case "Zephyr":
@@ -112,10 +112,10 @@ class HyperSSE(Step):
                         extra["ApplyTimings"] = {"timings":"BB"}
                         
                         extra["steps"] = ['MergeStructs', 'RemoveSysfuncBody', 'ZephyrThreadEntry', 'SIA', "LoadKernelLL",
-                                      'DumpCFG', 'DumpInstances', 'ApplyTimings', 'SSE', 'SVFReset', 'HyperSSE']
+                                      'DumpCFG', 'DumpInstances', 'DumpCallgraph', 'ApplyTimings', 'SSE', 'SVFReset', 'HyperSSE']
                     else:
                         extra["steps"] = ['MergeStructs', 'RemoveSysfuncBody', 'ZephyrThreadEntry', 'SIA', "LoadKernelLL",
-                                      'DumpCFG', 'DumpInstances', 'SSE', 'SVFReset', 'HyperSSE']
+                                      'DumpCFG', 'DumpInstances', 'DumpCallgraph', 'SSE', 'SVFReset', 'HyperSSE']
 
                     log.warning(f"Starting Zephyr: {guests[1]}")
 
@@ -128,21 +128,25 @@ class HyperSSE(Step):
 
                     program["input_file"] = guests[1]
 
-                    # Remove first 2 elements
-                    guests = guests[2:] 
-
                     if self.do_timings.get():
                         extra["MultiSSE"]["with_times"] = True
-                        extra["ApplyTimings"] = {"timings":"BB"}
+                        extra["ApplyTimings"] = {"timings": "BB"}
 
                         # Readadd all steps, end with returning to HyperSSE
                         # Somehow we need to include Syscall here!
-                        extra["steps"] = ['ApplyTimings', 'Syscall', 'MultiSSE', 'DumpCFG', 'DumpInstances', 'SVFReset', 'HyperSSE']
+
+                        extra["steps"] = ['ApplyTimings', 'Syscall', 'BareMetal', 'MultiSSE', 'DumpCFG', 'DumpInstances', 'DumpCallgraph', 'SVFReset', 'HyperSSE']
                     else:
                         # Somehow we need to include Syscall here!
-                        extra["steps"] = ['Syscall', 'MultiSSE', 'DumpCFG', 'DumpInstances', 'SVFReset', 'HyperSSE']
+                        extra["steps"] = ['Syscall', 'BareMetal', 'MultiSSE', 'DumpCFG', 'DumpInstances', 'DumpCallgraph', 'SVFReset', 'HyperSSE']
 
+                    if guests[2] != "None":
+                        extra["BareMetal"] = {"entry_point": guests[2]}
+                        extra["steps"].insert(extra["steps"].index('Syscall') + 1, "BareMetal")
+                        
 
+                    # Remove first 3 elements
+                    guests = guests[3:] 
                 case _:
                     log.error(f"Unkown guest OS: {guests[0]}")
                     exit(1)
@@ -153,6 +157,7 @@ class HyperSSE(Step):
 
             extra["DumpCFG"]["dot"] = str(self.testname.get()) + ".dom" + str(HyperSSE.runid)
             extra["DumpInstances"]["dot"] = str(self.testname.get()) + ".dom" + str(HyperSSE.runid)
+            extra["DumpCallgraph"] = {"dot": str(self.testname.get()) + ".dom" + str(HyperSSE.runid)}
             extra["MultiSSE"]["file_name"] = str(self.testname.get()) + ".dom" + str(HyperSSE.runid)
             extra["HyperSSE"]["guests"] = ';'.join(guests)
 

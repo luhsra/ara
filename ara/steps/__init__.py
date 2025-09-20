@@ -35,6 +35,7 @@ def provide_steps():
     from .find_pointer_loops import FindPointerLoops
     from .generator import Generator
     from .hypsersse import HyperSSE
+    from .baremetal import BareMetal
     from .icfg import ICFG
     from .instance_graph_stats import InstanceGraphStats
     from .ipi_avoidance import IPIAvoidance
@@ -78,6 +79,7 @@ def provide_steps():
     yield FindPointerLoops
     yield Generator
     yield HyperSSE
+    yield BareMetal
     yield ICFG
     yield IPIAvoidance
     yield InstanceGraphStats

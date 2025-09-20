@@ -11,9 +11,7 @@ from typing import Any, List
 from graph_tool import Graph, GraphView
 from graph_tool.search import dfs_iterator
 
-import pyllco
-
-from ara.util import get_logger, has_path
+from ara.util import get_logger
 from ara.graph import CallPath, InstanceGraph, SyscallCategory, SigType, single_check, edge_types, CFG
 
 from ara.graph.mix import ARA_ENTRY_POINT
@@ -21,6 +19,7 @@ from ara.graph.mix import ARA_ENTRY_POINT
 from .os_util import (
     Arg,
     syscall,
+    set_next_abb
 )
 from .os_base import (
     OSBase,
@@ -43,8 +42,19 @@ from ara.util import get_logger
 logger = get_logger("BareMetal")
 
 @dataclass(repr=False)
-class Task(CrossOSEvent, CPUBounded):
+class Callback(CrossOSEvent):
+
     name: str
+    abb: int
+    prev_abb: int | None
+
+    def __hash__(self):
+        return hash(self.__class__.__name__ + self.name)
+    
+    def __str__(self):
+        s = f"\33[1;36mCallback\033[0m: cpu_id={self.cpu_id} name={self.name} abb={self.abb} prev={self.prev_abb}"
+        return s
+
 
 class BareMetal(OSBase):
     """BareMetal model."""
@@ -82,9 +92,10 @@ class BareMetal(OSBase):
     def get_cpu_local_contexts(context: dict, cpu_id: int, instances: InstanceGraph) -> dict:
         """Get all contexts that affect cpu_id."""
 
-        local_contexts = []
-        local_contexts.append(("BareMetal", context["BareMetal"]))
-        return dict(local_contexts)
+        # local_contexts = []
+        # local_contexts.append(("BareMetal", context["BareMetal"]))
+        # return dict(local_contexts)
+        return context
 
     @staticmethod
     def get_global_contexts(contexts, instances):
@@ -145,6 +156,12 @@ class BareMetal(OSBase):
             f" (in {cfg.vp.name[cfg.get_function(abb)]})"
         )
 
+        if not hasattr(BareMetal, syscall):
+            logger.info("Skipping syscall, since from hypervisor")
+            state = state.copy()
+            set_next_abb(state, cpu_id)
+            return state
+
         syscall_function = getattr(BareMetal, syscall)
 
         return syscall_function(graph, state, cpu_id)
@@ -157,6 +174,9 @@ class BareMetal(OSBase):
         state -- the current system state
         cpus  -- a list of cpu_ids, defaults to all CPUs
         """
+
+        # check if the cross OS event callback was interrupted when going idle
+
         # manually set to cpu to idle at last ABB
         exit_abb = int(state.cfg.get_exit_abb(state.cfg.get_function_by_name(ARA_ENTRY_POINT)))
         cpu: CPU = state.cpus.one()
@@ -195,15 +215,40 @@ class BareMetal(OSBase):
 
     @staticmethod
     def find_cross_os_event(state: OSState, cpu_id: int, cb: str) -> CrossOSEvent:
-        """Autosar currently only supports its Task as CrossOSEvents"""
+        """BareMetal supports a function as CrossOSEvents"""
 
-        raise NotImplementedError()
+        # @staticmethod
+        # def trim_llvm(s: str) -> str:
+        #     # TODO expand this
+        #     return s[3:-2]
+            
+        # cb = trim_llvm(cb)
+        entry_abb = state.cfg.get_entry_abb(state.cfg.get_function_by_name(cb))
+        c = Callback(cpu_id=cpu_id, name=cb, abb=entry_abb, prev_abb=None)
+        state.context[cb] = c
+
+        return cb
 
     @staticmethod
     def trigger_cross_os_event(state: OSState, cpu_id: int, event: CrossOSEvent) -> OSState:
         """Wrapper to apply the event to the given state, currently only ActivateTask is supported."""
         
-        raise NotImplementedError()
+        # change active ABB on CPU, set to compution from idle
+
+        assert isinstance(event, str), "BareMetal uses strings"
+        callback: Callback = state.context[event]
+        assert callback, "No callback found!"
+
+        for c in state.cpus:
+            if c.id == cpu_id:
+                cpu: CPU = c
+        assert cpu, "No CPU found!"
+
+        callback.prev_abb = cpu.abb
+        cpu.abb = callback.abb
+        cpu.exec_state = ExecState.computation
+        # TODO add return path from interrupt
+        return state
     
     @syscall(
         categories={SyscallCategory.comm},

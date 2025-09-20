@@ -94,6 +94,7 @@ def main():
                          "#LocalAbSS-domX", "#SP-domX", "#Edges-domX", "#Vertices-domX"])
         rows = []
         for i in cases:
+            # print(f"{i} {i.name} {i.status}")
             if i.status == "True":
                 row = [i.name, i.status, i.duration, i.labsss[-1], i.sps[-1], i.edges[-1], i.vertices[-1]]
 

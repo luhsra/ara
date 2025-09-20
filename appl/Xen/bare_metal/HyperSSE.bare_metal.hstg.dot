@@ -1,5 +1,5 @@
 digraph G {
-label="HyperSSE.baremetal.hstg.dot";
+label="HyperSSE.bare_metal.hstg.dot";
 1 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD></TR></TABLE>>, shape=plaintext, tooltip=1];
 subgraph cluster_13 {
 label="M13: Dom-0-BareMetal";
