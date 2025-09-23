@@ -373,6 +373,11 @@ class EventChannel(CPUBounded):
     channel: int
     event: CrossOSEvent | None  # event that happens on hypercall
 
+    # TODO Add masking and poll hypercalls
+    # masked: bool
+    # pending: bool
+
+
     def __str__(self):
         s = f"\33[1;36m{self.name}\033[0m: cpu_id={self.cpu_id} dom-{self.source_domain} to dom-{self.target_domain},"\
              f" via channel: {self.channel} and event: {self.event}"

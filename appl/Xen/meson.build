@@ -125,7 +125,7 @@ xen_testcases = [
       'BareMetal;subprojects/ara/appl/Xen/bare_metal/___min_bm_BareMetal_A_main.pi4.ll;None'      
   },
   {'name': 'hardware', 'do_timings': 'true', 'guests':
-      'BareMetal;subprojects/ara/appl/Xen/bare_metal/___hardware_BareMetal_A_hardware.pi4.ll;_Z8callbackPv;'  +
+      'BareMetal;subprojects/ara/appl/Xen/bare_metal/___hardware_BareMetal_A_hardware.pi4.ll;callback;'  +
       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hw.ll;'
   },
   

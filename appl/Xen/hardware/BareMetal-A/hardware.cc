@@ -4,7 +4,7 @@
 extern int printf (const char *__restrict __format, ...);
 void ara_timing_info(int a, int b);
 
-void callback(void* priv) {
+extern "C" void callback(void* priv) {
 	ara_timing_info(25, 35);
 	printf("Received callback!\n");
 }	
@@ -12,7 +12,6 @@ void callback(void* priv) {
 int main(int argc, char *argv[])
 {   
     printf("Starting binder.\n");
-    callback(nullptr);
 
     // in analysis this values are hard coded
     int remote_domain;

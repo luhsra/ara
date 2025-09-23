@@ -39,7 +39,7 @@
             "task": "REG"
           },
           "autostart": true,
-          "cycletime": 124,
+          "cycletime": 300,
           "alarmtime": 0
         }
       }
