@@ -92,9 +92,14 @@ xen_testcases = [
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_pingpong_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/pingpong/Autosar-B/b.json'
   },
   # Send Receive Autosar example
-  {'name': 'sendrecv', 'do_timings': 'true', 'guests': 
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_sendrecv_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/sendrecv/Autosar-A/a.json;' +
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_sendrecv_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/sendrecv/Autosar-B/b.json'
+  {'name': 'sendrecv-a', 'do_timings': 'true', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_sendrecv_a_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/sendrecv-a/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_sendrecv_a_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/sendrecv-a/Autosar-B/b.json'
+  },
+  # Send Receive Autosar example
+  {'name': 'sendrecv-b', 'do_timings': 'true', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_sendrecv_b_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/sendrecv-b/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_sendrecv_b_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/sendrecv-b/Autosar-B/b.json'
   },
   # 3 systems, A sends via 2 different channels to B, while C also sends to B
   {'name': 'channels', 'do_timings': 'true', 'guests': 

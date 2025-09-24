@@ -9,7 +9,7 @@
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 759.04)">
 <title>G</title>
 <polygon fill="white" stroke="transparent" points="-4,4 -4,-759.04 2000.55,-759.04 2000.55,4 -4,4"/>
-<text text-anchor="middle" x="998.27" y="-7.8" font-family="Times,serif" font-size="14.00">HyperSSE.sendrecv.hstg.dot</text>
+<text text-anchor="middle" x="998.27" y="-7.8" font-family="Times,serif" font-size="14.00">HyperSSE.sendrecv&#45;a.hstg.dot</text>
 <g id="clust1" class="cluster">
 <title>cluster_7</title>
 <polygon fill="none" stroke="black" points="1100.55,-31 1100.55,-678.04 1474.55,-678.04 1474.55,-31 1100.55,-31"/>

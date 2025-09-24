@@ -209,8 +209,10 @@ autosar_apps += [
   # --------------------------- COMPLEX ----------------------------------
   {'core': '../Xen',  'path': 'pingpong'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'pingpong'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'sendrecv'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'sendrecv'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'sendrecv-a'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'sendrecv-a'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'sendrecv-b'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'sendrecv-b'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'channels'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'channels'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'channels'/ 'Autosar-C','name': 'c', 'oil': 'c.json', 'timing': 'BB'},

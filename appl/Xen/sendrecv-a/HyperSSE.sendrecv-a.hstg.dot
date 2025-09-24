@@ -1,5 +1,5 @@
 digraph G {
-label="HyperSSE.sendrecv.hstg.dot";
+label="HyperSSE.sendrecv-a.hstg.dot";
 1 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD><TD PORT="c2">Dom 2</TD><TD PORT="c3">Dom 3</TD></TR></TABLE>>, shape=plaintext, tooltip=1];
 subgraph cluster_7 {
 label="M7: Dom-0-AUTOSAR";
