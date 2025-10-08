@@ -63,6 +63,7 @@ def main():
                 else:
                     current.status = "Unknown"
             elif "Number of vertices" in line:
+                # TODO: müsste es nicht [1] sein?
                 v = line.split(":")[3].strip()
                 current.vertices = int(v)
                 current.stats = True

@@ -7,10 +7,7 @@
 		"AutosarGeneratorIR",
 		"IRWriter",
 		"Generator",
-		"MSTGStats",
-		"DumpCFG", 
-		"DumpCallgraph",
-		"DumpInstances"
+		"MSTGStats"
 	],
 	"LLVMMap": {
 		"log_level": "error"
@@ -37,9 +34,9 @@
 	},
 	"MultiSSE": {
 		"log_level": "debug",
-		"with_times": true,
+		"with_times": false,
     	"dump" : true,
-		"per_round_dump" : true
+		"per_round_dump" : false
 	},
 	"MSTGStats": {
     	"dump" : true

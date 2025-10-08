@@ -304,14 +304,14 @@ class GenericSystemCalls(BaseCoder):
         allowed = self.access_check(task, curr_cpu)
         if not allowed:
             kernelspace.add(Statement('debug_core << "Access denied" << endl'))
-            kernelspace.add(Statement("*p_*p_result = E_OS_ACCESS"))
+            kernelspace.add(Statement("*p_result = E_OS_ACCESS"))
             return
 
         # dynamic spinlock check, TODO make static
         ifblock = If(
             f"scheduler_[{curr_cpu}].CheckSpinlock_impl({self.task_desc(curr_task)})"
         )
-        ifblock.add(Statement("*p_*p_result = E_OS_SPINLOCK"))
+        ifblock.add(Statement("*p_result = E_OS_SPINLOCK"))
         kernelspace.add(ifblock)
 
         no_error = Else()

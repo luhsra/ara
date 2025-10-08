@@ -128,9 +128,14 @@ class TimingCalculator():
             # - no path if it is not continued
             # - a path of 2 edges (entry state - entry SP - exit SP) when it
             #   is continued.
-            _, elist = shortest_path(g,
+            
+            try:
+                _, elist = shortest_path(g,
                                      g.vertex(entry_state),
                                      g.vertex(exit_sp))
+            except ValueError:
+                self._log.warning(f"Tried to find path between {int(entry_state)} to {int(exit_sp)} where no path exist.")
+                elist = []
 
             # sanity handling
             if len(elist) > 2:

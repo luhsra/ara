@@ -315,18 +315,31 @@ if get_option('enable_step_tests')
   #   endforeach
   # endif
 
-  # if arm_enabled
-  #   foreach app : autosar_generated_targets_pi4
-  #     test('autosar_generator_pi4_' + app['full_name'],
-  #       py3_inst,
-  #       args: [files('autosar_generator.py'), app['run_cmd_pi4_noopt']],
-  #       env: [python_path],
-  #       depends: ara_py,
-  #       is_parallel: false,
-  #       suite: ['autosar_generator', 'autosar_generator_pi4']
-  #     )
-  #   endforeach
-  # endif
+  if arm_enabled
+    foreach app : autosar_generated_targets_pi4
+    
+      if app['path'].contains('automotive_benchmark')
+          continue
+      endif
+      if app['path'].contains('complex')
+          continue
+      endif
+
+      # if not app['full_name'].contains('bcc')
+      #     continue
+      # endif
+
+
+      test('autosar_generator_pi4_' + app['full_name'],
+        py3_inst,
+        args: [files('autosar_generator.py'), app['run_cmd_pi4_noopt']],
+        env: [python_path],
+        depends: ara_py,
+        is_parallel: false,
+        suite: ['autosar_generator', 'autosar_generator_pi4']
+      )
+    endforeach
+  endif
 
   # if riscv_enabled
   #   foreach app : autosar_generated_targets_riscv
