@@ -541,7 +541,7 @@ foreach app: autosar_targets
                             '--ssh-host', libplatforms_proj.get_variable('tftp_host'),
                             '--scp', scp.full_path(),
                             '--ssh', ssh.full_path(),
-                            '--path', '/proj/tftp/research/rpi4',
+                            '--path', '/proj/tftp/research/rpi4/autosar',
                             '--rpi',
                           ])
       summary('Flash @0@ on RPI with TFTP'.format(opt_app_name), 'meson compile ' + rt, bool_yn: true, section: 'MACAW, AUTOSAR synthesis')
