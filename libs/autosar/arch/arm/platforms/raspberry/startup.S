@@ -9,6 +9,20 @@
 #define ARML_PRESCALER	0x08
 #define NSACR_VAL	0xc00
 
+.section .header,"ax"
+	b _start                      // branch to kernel start
+	.long	0                     // reserved
+	.long	0                     // reserved
+	.long	0                     // reserved
+	.long	0                     // reserved
+	.long	0                     // reserved
+	.long	0                     // reserved
+	.long	0                     // reserved
+	.long	0                     // reserved
+	.long   0x016f2818            // Magic number
+	.long	__kernel_start        // start address of zImage
+	.long   __kernel_end          // end address of zImage
+
 .section .text.startup,"ax"
 .globl _start
 .globl _boot

@@ -25,8 +25,14 @@ SECTIONS {
     }
 
     /* Code and readonly data */
-    /* . = 0x0; */
+    . = 0x0;
+    .header : {
+        KEEP(*(.header))
+    } > ROM
+
     .text : {
+        . = 0x8000;
+        __kernel_start = .;
 
         /* interrupt vectors */
         /* . = 0; */
@@ -36,7 +42,6 @@ SECTIONS {
         /* fill gaps with invalid opcode to detect invalid jumps */
         /* FILL(0xFEDEFFE7)*/
 
-        . = 0x8000;
 
         /* start of interrupt handlers */
         _stext_irqs = .;
@@ -196,5 +201,7 @@ SECTIONS {
         _edata = .;
     } > RAM AT> ROM
 
+    __kernel_end = .;
+    __kernel_size = __kernel_end - __kernel_start;
 
 }
