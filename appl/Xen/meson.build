@@ -134,6 +134,12 @@ xen_testcases = [
       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hw.ll;'
   },
   
+  # --------------------------- Paper ----------------------------------
+    {'name': 'braking', 'do_timings': 'true', 'guests':
+        'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/braking/Autosar-A/a.json;'
+        # + 'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-B.ll;'
+        # 'BareMetal;subprojects/ara/appl/Xen/bare_metal/___min_bm_BareMetal_A_main.pi4.ll;None'      
+    },
 ]
 
 # Compile Autosar ll files

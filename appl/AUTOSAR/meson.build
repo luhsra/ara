@@ -235,6 +235,10 @@ autosar_apps += [
   {'core': '../Xen',  'path': 'thesis'/ 'Autosar-D','name': 'ipi', 'oil': 'ipi.json', 'timing': 'BB'},
 
   # min-2, hc-autosar, hc-autosar-noiit, alarm-2, ipi are used from test-suite
+
+
+  # --------------------------- ECRTS26-Paper ----------------------------------
+  {'core': '../Xen',  'path': 'braking' / 'Autosar-A', 'name': 'a', 'oil'  : 'a.json'},
 ]
 
 no_timing_settings = custom_target(
