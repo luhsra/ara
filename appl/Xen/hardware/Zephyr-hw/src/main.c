@@ -1,5 +1,5 @@
 #include <zephyr/kernel.h>
-#include <zephyr/events.h>
+#include "../../../events.h"
 
 void ara_timing_info(int a, int b);
 
