@@ -1,0 +1,62 @@
+{
+	"steps": [
+		"HyperSSE"
+	],
+
+	"SystemRelevantFunctions" : {
+		"xen_syscall": true
+	},
+	"SysFuncts" : {
+		"xen_syscall": true
+	},
+	"LLVMMap" : {
+		"log_level": "error"
+	},
+	"SVFAnalyses": {
+		"log_level": "warning",
+		"hide_svf_output": true
+	},
+	"Printer": {
+		"log_level": "warning"
+	},
+	"SysCall": {
+		"log_level": "debug"
+	},
+	"OS_BASE": {
+		"log_level": "debug"
+	},
+	"DumpCFG": {
+		"add_legend": false
+	},
+	"DumpInstances": {
+		"add_legend": false
+	},
+
+	"SIA": {
+		"dump": false
+	},
+	"SSE": {
+		"dump": true
+	},
+
+	"logger": {
+		"AUTOSAR": "warning",
+		"Zephyr": "debug",
+		"XEN": "debug"
+	},
+	"MultiSSE": {
+		"with_times": true,
+		"dump": true,
+		"log_level": "warning",
+		"per_round_dump": false
+	},
+
+
+    "HyperSSE": {
+        "do_timings": true,
+		"do_stats": true,
+        "testname": "Hypercall",
+        "guests": "Autosar;subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_a.pi4.ll;../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercall/a.json;Autosar;subprojects/ara/appl/AUTOSAR/autosar_singlecore_xen_hypercall_b.pi4.ll;../subprojects/ara/appl/AUTOSAR/singlecore/xen/hypercall/b.json"
+    }
+
+}

@@ -1,0 +1,53 @@
+digraph G {
+label="HyperSSE.alarm-2.hstg.dot";
+1 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD><TD PORT="c2">Dom 2</TD></TR></TABLE>>, shape=plaintext, tooltip=1];
+subgraph cluster_7 {
+label="M7: Dom-0-AUTOSAR";
+2 [color=green, fontsize=14, label=<State 4<br/><font point-size='12'>instance: A1<br/>type: computation<br/>abb: dom-0/ABB5<br/>bcet/wcet: 5/5</font>>, style=bold, tooltip=2];
+3 [color=blue, fontsize=14, label=<State 7<br/><font point-size='12'>instance: A1<br/>type: syscall<br/>abb: dom-0/ABB7<br/>sys: AUTOSAR_ChainTask</font>>, shape=box, tooltip=3];
+4 [color=green, fontsize=14, label=<State 8<br/><font point-size='12'>instance: A2<br/>type: computation<br/>abb: dom-0/ABB1<br/>bcet/wcet: 20/20</font>>, style=bold, tooltip=4];
+5 [color=blue, fontsize=14, label=<State 9<br/><font point-size='12'>instance: A2<br/>type: syscall<br/>abb: dom-0/ABB3<br/>sys: AUTOSAR_TerminateTask</font>>, shape=box, tooltip=5];
+6 [color=violet, fontsize=14, label=<State 10<br/><font point-size='12'>instance: Idle<br/>type: idle<br/>abb: None</font>>, style=bold, tooltip=6];
+}
+
+subgraph cluster_9 {
+label="M9: Dom-1-AUTOSAR";
+8 [color=violet, fontsize=14, label=<State 5<br/><font point-size='12'>instance: Idle<br/>type: idle<br/>abb: None</font>>, style=bold, tooltip=8];
+17 [color=green, fontsize=14, label=<State 17<br/><font point-size='12'>instance: B<br/>type: computation<br/>abb: dom-1/ABB1<br/>bcet/wcet: 7/8</font>>, style=bold, tooltip=17];
+18 [color=blue, fontsize=14, label=<State 18<br/><font point-size='12'>instance: B<br/>type: syscall<br/>abb: dom-1/ABB3<br/>sys: AUTOSAR_TerminateTask</font>>, shape=box, tooltip=18];
+}
+
+subgraph cluster_14 {
+label="M14: Dom-2-IRQ(dom-1)";
+10 [color=green, fontsize=14, label=<State 6<br/><font point-size='12'>instance: IRQ_C1<br/>type: computation<br/>abb: dom-1/Startup<br/>bcet/wcet: 10000/10000</font>>, style=bold, tooltip=10];
+11 [color=green, fontsize=14, label=<State 11<br/><font point-size='12'>instance: IRQ_C1<br/>type: computation<br/>abb: dom-1/Loop</font>>, style=bold, tooltip=11];
+12 [color=green, fontsize=14, label=<State 12<br/><font point-size='12'>instance: IRQ_C1<br/>type: computation<br/>abb: dom-1/Cycletime<br/>bcet/wcet: 10000/10000</font>>, style=bold, tooltip=12];
+13 [color=blue, fontsize=14, label=<State 13<br/><font point-size='12'>instance: IRQ_C1<br/>type: syscall<br/>abb: dom-1/C1.sc<br/>sys: C1.sc</font>>, shape=box, tooltip=13];
+}
+
+subgraph cluster_Metasync15 {
+label="";
+15 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c1">Dom 1</TD><TD PORT="c2">Dom 2</TD></TR></TABLE>>, shape=plaintext, tooltip=15];
+16 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c1">Dom 1</TD><TD PORT="c2">Dom 2</TD></TR></TABLE>>, shape=plaintext, tooltip=16];
+}
+
+1:c0 -> 2  [color=black];
+1:c1 -> 8  [color=black];
+1:c2 -> 10  [color=black];
+1 -> 15  [color=darkred, label="20000 - 20000", style=dotted];
+2 -> 3  [color=black];
+3 -> 4  [color=black];
+4 -> 5  [color=black];
+5 -> 6  [color=black];
+8 -> 15:c1  [color=black];
+10 -> 11  [color=black];
+11 -> 12  [color=black];
+12 -> 13  [color=black];
+13 -> 15:c2  [color=black];
+15 -> 16  [color=black];
+16:c2 -> 11  [color=black];
+16:c1 -> 17  [color=black];
+16 -> 15  [color=darkred, label="10000 - 10000", style=dotted];
+17 -> 18  [color=black];
+18 -> 8  [color=black];
+}

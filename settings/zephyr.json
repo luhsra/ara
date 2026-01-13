@@ -5,6 +5,7 @@
 		"InteractionAnalysis",
 		"SSE",
         "Printer",
+        "DumpCFG"
 	],
 
     "IRReader": {

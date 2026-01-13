@@ -1,0 +1,25 @@
+{
+  "cpus": [
+    {
+      "id": 0,
+      "tasks": {
+        "T20": {
+          "activation": 1,
+          "autostart": false,
+          "priority": 1,
+          "schedule": true
+        },
+        "T20PREP": {
+          "activation": 1,
+          "autostart": true,
+          "priority": 5,
+          "schedule": true
+        }
+      },
+      "resources": {},
+      "events": {},
+      "alarms": {},
+      "counters": {}
+    }
+  ]
+}

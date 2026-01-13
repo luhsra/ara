@@ -15,17 +15,17 @@ import pyllco
 from abc import ABC, abstractmethod
 
 from enum import Enum
-from typing import Tuple
+from typing import Any, Tuple
 from copy import copy
 
 from ara.graph import SyscallCategory as _SyscallCategory, SigType as _SigType
 from ara.graph import CFType as _CFType, CFGView as _CFGView
 from ara.steps.util import current_step
 
-from .os_base import ExecState
+from .os_base import ExecState, OSState
 
-# from ara.util import get_logger
-# logger = get_logger("OS_UTIL")
+from ara.util import get_logger
+logger = get_logger("OS_UTIL")
 
 
 class AutoDotInstance(ABC):
@@ -186,19 +186,25 @@ Argument.hint = property(Argument.get_hint, Argument.set_hint)
 Arg = Argument
 
 
-def set_next_abb(state, cpu_id):
+def set_next_abb(state: OSState, cpu_id: int) -> None:
     """Set the CPU specified with cpu_id to the next abb.
 
     Note: Call this functions on syscalls only.
     """
-    lcfg = _CFGView(state.cfg, efilt=state.cfg.ep.type.fa == _CFType.lcf)
+    # for HyperSSE states find right CFG
+    if state.system_count:
+        cfg = state.cpus[cpu_id].cfg
+        lcfg = _CFGView(cfg, efilt=cfg.ep.type.fa == _CFType.lcf)
+    else:
+        cfg = state.cfg
+        lcfg = _CFGView(state.cfg, efilt=state.cfg.ep.type.fa == _CFType.lcf)
     cpu = state.cpus[cpu_id]
     for idx, next_abb in enumerate(lcfg.vertex(cpu.abb).out_neighbors()):
         if idx > 1:
             raise RuntimeError(
                 "A syscall must not have more than one successor.")
-        cpu.abb = next_abb
-        cpu.exec_state = ExecState.from_abbtype(state.cfg.vp.type[next_abb])
+        cpu.abb = int(next_abb)
+        cpu.exec_state = ExecState.from_abbtype(cfg.vp.type[next_abb])
 
 
 class Parenthesis(Enum):
@@ -207,7 +213,7 @@ class Parenthesis(Enum):
 
 
 _argument_value_cache = {"last_added": []}
-def _get_cached_argument_value(va, abb, idx, callpath, hint):
+def _get_cached_argument_value(va, cpu_id: int, abb, idx, callpath, hint) -> Any:
     CACHE_LENGTH = 5
 
     def _shorten_callpath(callpath, length):
@@ -215,7 +221,7 @@ def _get_cached_argument_value(va, abb, idx, callpath, hint):
         while len(short_cp) > length:
             short_cp.pop_front()
 
-    key = (int(abb), idx, hint)
+    key = (cpu_id, int(abb), idx, hint)
     cp_length, s_cache = _argument_value_cache.get(key, (-1, None))
     if cp_length != -1:
         short_cp = _shorten_callpath(callpath, cp_length)
@@ -322,9 +328,11 @@ class SysCall:
         ValueAnalyzer = get_native_component("ValueAnalyzer")
         ValuesUnknown = get_native_component("ValuesUnknown")
 
+        logger.info(f"Syscall analysis of cpu_id: {cpu_id} and graph: {graph}")
+
         class CachingValueAnalyzer(ValueAnalyzer):
-            def get_argument_value(self, abb, idx, callpath=None, hint=None):
-                return _get_cached_argument_value(super(), abb, idx, callpath, hint)
+            def get_argument_value(self, cpu_id, abb, idx, callpath=None, hint=None):
+                return _get_cached_argument_value(super(), cpu_id, abb, idx, callpath, hint)
 
             def assign_system_object(self, value, instance, offset, callpath):
                 _clear_cache()
@@ -351,6 +359,7 @@ class SysCall:
                 hint = _SigType.symbol
             try:
                 result = va.get_argument_value(
+                    cpu_id,
                     abb,
                     idx + sig_offset,
                     callpath=callpath,

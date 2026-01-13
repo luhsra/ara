@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2021 Bastian Fuhlenriede
 # SPDX-FileCopyrightText: 2022 Björn Fiedler <fiedler@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2025 Mareike Burg
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -74,7 +75,7 @@ class ApplyTimings(Step):
         if timings:
             # TODO avoid duplicate assignments if step is executed multiple
             # times
-            self._log.debug("Assign times.")
+            self._log.info("Assign times.")
             if timings == 'BB':
                 self.timings_from_bbs(cfg, abbs)
             else:
@@ -101,19 +102,22 @@ class ApplyTimings(Step):
                 abbs.vp.wcet[abb] = attrs["wcet"]
 
 
+    # Only take times from BB, not from ABB itself!
+    # TODO could be called multiple times
     def timings_from_bbs(self, cfg, abbs):
         for abb in abbs.vertices():
             if abbs.vp.type[abb] != ABBType.computation:
                 continue
-            self._log.debug("abb: %s", cfg.vp.name[abb])
-            wcet, bcet = 0, 0
+            self._log.info("abb: %s bcet: %s wcet: %s", cfg.vp.name[abb], cfg.vp.bcet[abb], cfg.vp.wcet[abb])
+
+            wcet, bcet = 0,0
             for bb in cfg.get_bbs(abb):
                 bb_wcet = cfg.vp.wcet[bb]
                 bb_bcet = cfg.vp.bcet[bb]
-                self._log.debug(" bb: %s   %s / %s", cfg.vp.name[bb], bb_bcet, bb_wcet)
-                if bb_wcet and bb_bcet:
-                    wcet += bb_wcet
-                    bcet += bb_bcet
+                self._log.info(" bb: %s   %s / %s", cfg.vp.name[bb], bb_bcet, bb_wcet)
+                # Changed to add each time seperatly (before only applied times if both != 0)
+                wcet += bb_wcet
+                bcet += bb_bcet
             cfg.vp.bcet[abb] = bcet
             cfg.vp.wcet[abb] = wcet
             self._log.info("result: %s   %s / %s", cfg.vp.name[abb], bcet, wcet)

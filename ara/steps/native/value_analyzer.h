@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2021 Lukas Berg
 // SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
 // SPDX-FileCopyrightText: 2022 Jan Neugebauer
+// SPDX-FileCopyrightText: 2025 Mareike Burg
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -393,9 +394,31 @@ namespace ara::step {
 	};
 
 	struct SVFObjects {
-		SVF::PAG* pag = SVF::PAG::getPAG();
-		SVF::Andersen* ander = SVF::AndersenWaveDiff::createAndersenWaveDiff(pag);
-		SVF::PTACallGraph* s_callgraph = ander->getPTACallGraph();
+		SVF::PTACallGraph* s_callgraph;
+
+		SVFObjects(graph::Graph graph){
+
+			/* HyperSSE switches between different sets of SVF's Singeltons, 
+			* in the step SVFReset the active Singeltons get forgotten,
+			* and their pointers get stored into graph.graph_data.
+			* In loadOil when the first ValueAnalyzer is created new Singeltons are 
+			* created by the code below.
+			*/
+			if(graph.get_graph_data().pags_pointer != nullptr
+				&& graph.get_graph_data().llvm_module != nullptr
+				&& graph.get_graph_data().anderson != nullptr
+				&& graph.get_graph_data().syminfo != nullptr) {
+				
+				SVF::PAG::setPAG(graph.get_graph_data().pags_pointer);
+				SVF::LLVMModuleSet::setLLVMModuleSet(graph.get_graph_data().llvm_module);
+				SVF::AndersenWaveDiff::setAndersenWaveDiff(graph.get_graph_data().anderson);
+				SVF::SymbolTableInfo::SymbolInfo()->setSymbolInfo(graph.get_graph_data().syminfo);
+			}
+
+			SVF::PAG* pag = SVF::PAG::getPAG();
+			SVF::Andersen* ander = SVF::AndersenWaveDiff::createAndersenWaveDiff(pag);
+			this->s_callgraph = ander->getPTACallGraph();
+		}
 	};
 
 	class ValueAnalyzer;
@@ -574,8 +597,10 @@ namespace ara::step {
 		ValueAnalyzer(graph::Graph&& graph, PyObject* tracer, PyObject* logger)
 		    : graph(std::move(graph)), logger(Logger(logger)), tracer(tracer::Tracer(tracer, this->logger)),
 		      cfg(graph.get_cfg()), svfg(graph.get_svfg_graphtool_ptr()), callgraph(graph.get_callgraph_ptr()),
-		      state(graph.get_graph_data().va_state) {}
-
+		      state(graph.get_graph_data().va_state), svf_objects(SVFObjects(this->graph)) {
+				this->logger.info() << "Successfully created ValueAnalyzer," << std::endl;
+			  }
+		
 		static std::unique_ptr<ValueAnalyzer> get(graph::Graph&& graph, PyObject* tracer, PyObject* logger) {
 			return std::make_unique<ValueAnalyzer>(std::move(graph), tracer, logger);
 		}

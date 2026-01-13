@@ -4,15 +4,18 @@
 # SPDX-FileCopyrightText: 2022 Jan Neugebauer
 # SPDX-FileCopyrightText: 2023 Andreas Kässens
 # SPDX-FileCopyrightText: 2024 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2025 Mareike Burg
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from typing import Generator
 import graph_tool
 import graph_tool.util
 import math
 
 from graph_tool.search import bfs_iterator
 from graph_tool.topology import label_out_component
+from graph_tool.libgraph_tool_core import Vertex
 
 from .graph_data import PyGraphData, _get_llvm_obj
 from .mix import ABBType, CFType, SyscallCategory, NodeLevel, StateType, MSTType
@@ -109,6 +112,7 @@ class CFG(graph_tool.Graph):
     The pointer to the respective LLVM datastructure is stored via llvm_link.
     """
     INVALID_ABB = _CFG_INVALID_ABB
+    name: str = ""
 
     def __init__(self, graph=None):
         super().__init__(graph)
@@ -196,12 +200,12 @@ class CFG(graph_tool.Graph):
             return math.inf
         return time
 
-    def get_function_by_name(self, name: str):
+    def get_function_by_name(self, name: str) -> int:
         """Find a specific function."""
         func = graph_tool.util.find_vertex(self, self.vp["name"], name)
         assert len(func) == 1, f'function {name} not unambiguous: {func}'
         assert self.vp.level[func[0]] == NodeLevel.function
-        return func[0]
+        return self.vertex_index[func[0]]
 
     def get_llvm_obj(self, vertex):
         """Return the LLVM object that belongs to the specified vertex.
@@ -211,7 +215,7 @@ class CFG(graph_tool.Graph):
         """
         return _get_llvm_obj(self, vertex)
 
-    def _get_function_generic(self, xbb, edge_type):
+    def _get_function_generic(self, xbb: Vertex | int, edge_type: CFType) -> int | None:
         """Get the function node for an ABB or BB."""
         xbb = self.vertex(xbb)
 
@@ -221,7 +225,7 @@ class CFG(graph_tool.Graph):
         entry = list(filter(is_func, xbb.in_edges()))
         if entry:
             assert len(entry) == 1
-            return entry[0].source()
+            return self.vertex_index[entry[0].source()]
         return None
 
     def get_function(self, abb):
@@ -232,8 +236,9 @@ class CFG(graph_tool.Graph):
         """Get the function node for an BB."""
         return self._get_function_generic(bb, CFType.f2b)
 
-    def get_abbs(self, function):
+    def get_abbs(self, function: Vertex | int) -> Vertex:
         """Get the ABBs of the functions."""
+        function = self.vertex(function)
         for edge in self.vertex(function).out_edges():
             if self.ep.type[edge] == CFType.f2a:
                 yield edge.target()
@@ -246,11 +251,12 @@ class CFG(graph_tool.Graph):
         except StopIteration:
             return False
 
-    def _get_function_xbbs(self, function, edge_type):
+    def _get_function_xbbs(self, function: Vertex | int, edge_type: CFType) -> Generator[int, None, None]:
         """Get all XBBs of a function."""
+        function = self.vertex(function)
         e_type = edge_types(self, self.ep.type, edge_type)
         for neighbor in e_type.vertex(function).out_neighbors():
-            yield neighbor
+            yield self.vertex_index[neighbor]
 
     def get_function_bbs(self, function):
         """Get all BBs of a function."""
@@ -293,7 +299,7 @@ class CFG(graph_tool.Graph):
             raise CFGError("No BB found.")
         return ret
 
-    def _get_entry(self, block, edge_type=CFType.f2a):
+    def _get_entry(self, block: Vertex | int, edge_type=CFType.f2a) -> int:
         """Return the entry block of the given function or block."""
         def is_entry(block):
             return self.ep.is_entry[block] and self.ep.type[block] == edge_type
@@ -309,7 +315,7 @@ class CFG(graph_tool.Graph):
 
         entry = list(filter(is_entry, block.out_edges()))
         assert len(entry) == 1
-        return entry[0].target()
+        return self.vertex_index[entry[0].target()]
 
     def get_entry_abb(self, function):
         """Return the entry abb of the given function."""
@@ -445,6 +451,24 @@ class CFG(graph_tool.Graph):
                 else:
                     yield edge.target
 
+    def __str__(self):
+        s = f"CFG: \"{self.name}\": {self.num_vertices()}v/{self.num_edges()}e," \
+            f"{len(self.vp)}vp/{len(self.ep)}ep at {hex(id(self))}"
+        return s
+    
+    # Prints all properties, nodes and edges to find bbs/abbs
+    def nodes_to_string(self) -> None:
+        print(self.name if self.name != "" else "CFG")
+        self.list_properties()
+        print("-----")
+        for v in self.vertices():
+            print(f"Node: {v} - {str(self.vp.name[v])} - {str(ABBType(self.vp.type[v]))} {str(NodeLevel(self.vp.level[v]))}")
+            #Type={str(HyperStateType(cfg.vp.type[v]))} domain_id={cfg.vp.domain_id[v]} cpu_id={hstg.vp.cpu_id[v]} bcet={hstg.vp.bcet[v]} wcet={hstg.vp.wcet[v]}")
+        for e in self.edges():
+            print(f"Edge: {e} is_entry: {self.ep.is_entry[e]} ep:{self.ep.type[e]}")
+            #Type={str(HSTType(cfg.ep.type[e]))} irq={cfg.ep.irq[e]} domain_id={cfg.ep.domain_id[e]} cpu_id={hstg.ep.cpu_id[e]} bcet={hstg.ep.bcet[e]} wcet={hstg.ep.wcet[e]}")
+
+
 
 class CFGView(graph_tool.GraphView):
     """Class to get CFG functions for a filtered CFG."""
@@ -579,7 +603,6 @@ class Callgraph(graph_tool.Graph):
         new = Callgraph(cfg, self)
         return new
 
-
 class MSTGraph(graph_tool.Graph):
     """The Multi state transition graph"""
     def __init__(self):
@@ -703,11 +726,25 @@ class MSTGraph(graph_tool.Graph):
                                     reversed=True)
         return self._get_cpu_bound_state(m2sy, exit_cp, cpu_id)
 
+    def print_everything(self):
+        self.list_properties()
+        for v in self.vertices():
+            # {mstg.vp.state[v]}
+            if self.vp.type[v] == 0:
+                print(f"Node: {v} Type=Invalid cpu_id={self.vp.cpu_id[v]} bcet={self.vp.bcet[v]} wcet={self.vp.wcet[v]}")
+            else:
+                print(f"Node: {v} Type={str(StateType(self.vp.type[v]))} cpu_id={self.vp.cpu_id[v]} bcet={self.vp.bcet[v]} wcet={self.vp.wcet[v]}")
+        for e in self.edges():
+            print(f"Edge: {e} Type={str(MSTType(self.ep.type[e]))} irq={self.ep.irq[e]} cpu_id={self.ep.cpu_id[e]} bcet={self.ep.bcet[e]} wcet={self.ep.wcet[e]}")
+
 
 class InstanceGraph(graph_tool.Graph):
     """Tracks all instances (nodes) with its flow insensitive interactions
     (edges).
     """
+
+    name: str = ""
+    
     def __init__(self, graph=None):
         super().__init__(graph)
         # vertex properties
@@ -743,6 +780,25 @@ class InstanceGraph(graph_tool.Graph):
         # not distinguishable interactions
         self.edge_properties["quantity"] = self.new_ep("int64_t")
 
+    # copies one InstanceGraph into another
+    def add_instance(self, instance: 'InstanceGraph', id: int = 0) -> None:
+
+        offset: int = self.num_vertices()
+        
+        for v in instance.vertices():
+            h_v = self.add_vertex()
+            for p in instance.vp:
+                if p == "label":
+                    self.vp[p][h_v] = str(id) + "_" + instance.vp[p][v]
+                else:
+                    self.vp[p][h_v] = instance.vp[p][v]
+    
+        for e in instance.edges():
+            h_e = self.add_edge(int(e.source()) + offset, int(e.target()) + offset)
+            for p in instance.ep:
+                self.ep[p][h_e] = instance.ep[p][e]
+
+
     def get_controls(self):
         return graph_tool.GraphView(self, vfilt=self.vp.is_control)
 
@@ -777,6 +833,11 @@ class InstanceGraph(graph_tool.Graph):
             if obj.artificial or obj.function is None:
                 continue
             yield obj.function, inst
+
+    def __str__(self):
+        s = f"InstanceGraph{self.name}: {self.num_vertices()}v/{self.num_edges()}e," \
+            f"{len(self.vp)}vp/{len(self.ep)}ep at {hex(id(self))}"
+        return s
 
 
 class SVFG(graph_tool.Graph):
@@ -849,3 +910,4 @@ class Graph:
         self.svfg = SVFG()
         self.step_data = {}
         self.file_cache = {}
+        self.name = ""

@@ -4,6 +4,7 @@
 # SPDX-FileCopyrightText: 2022 Jan Neugebauer
 # SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2023 Andreas Kässens
+# SPDX-FileCopyrightText: 2025 Mareike Burg
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -15,13 +16,13 @@ from dataclasses import dataclass, field
 from enum import IntEnum
 from itertools import chain
 from typing import Any, List
-from graph_tool import GraphView
+from graph_tool import Graph, GraphView
 from graph_tool.search import dfs_iterator
 
 import pyllco
 
 from ara.util import get_logger, has_path
-from ara.graph import CallPath, SyscallCategory, SigType, single_check, edge_types
+from ara.graph import CallPath, InstanceGraph, SyscallCategory, SigType, single_check, edge_types, CFG
 
 from .os_util import (
     syscall,
@@ -37,6 +38,7 @@ from .os_base import (
     CPUList,
     CPU,
     ControlInstance,
+    CrossOSEvent,
     TaskStatus,
     ControlContext,
     CrossCoreAction,
@@ -87,15 +89,17 @@ class AUTOSARInstance(CPUBounded):
 
     def __eq__(self, other):
         # the name of an arbitrary AUTOSAR instance must be unique
-        return self.name == other.name
+        return self.name == other.name and self.cpu_id == other.cpu_id
 
     def __hash__(self):
         # the name of an arbitrary AUTOSAR instance must be unique
-        return hash(self.__class__.__name__ + self.name)
+        return hash(self.__class__.__name__ + self.name + str(self.cpu_id))
 
+    def __str__(self):
+        return f"\33[1;36m{self.name}\033[0m: cpu_id={self.cpu_id} ({self.__class__.__name__ })"
+    
     def __repr__(self):
         return self.name
-
 
 @dataclass
 class TaskGroup(AUTOSARInstance):
@@ -111,7 +115,7 @@ class OSIRQStatus(AUTOSARInstance):
 
 
 @dataclass(repr=False)
-class Task(AUTOSARInstance, ControlInstance):
+class Task(AUTOSARInstance, ControlInstance, CrossOSEvent):
     priority: int
     activation: Any
     autostart: bool
@@ -133,12 +137,22 @@ class Task(AUTOSARInstance, ControlInstance):
             "sublabel": sublabel,
         }
 
+    def __str__(self):
+        s = f"\33[1;36mTask-{self.name}\033[0m: cpu_id={self.cpu_id}/{self.cfg.name}"
+        # s+= f", abb={self.function}"
+        return s
+
+
+@dataclass
+class AUTOSARCrossOSEvent(CrossOSEvent):
+    task: Task
 
 @dataclass
 class TaskContext(ControlContext):
     received_events: int = 0
     waited_events: int = 0
     in_critical_section: bool = False
+    abb_name: str = "None"
 
     def __hash__(self):
         return hash(
@@ -163,7 +177,14 @@ class TaskContext(ControlContext):
             received_events=self.received_events,
             waited_events=self.waited_events,
             in_critical_section=self.in_critical_section,
+            abb_name=self.abb_name
         )
+
+    def __str__(self):
+        s = f"{self.status.name} {self.abb_name}"
+        # s += f"dyn_prio={self.dyn_prio} received_events={self.received_events} "
+        # s += f"waited_events={self.waited_events} in_critical_section={self.in_critical_section}"
+        return s
 
 
 """
@@ -246,7 +267,6 @@ class Event(AUTOSARInstance):
 class Resource(AUTOSARInstance):
     pass
 
-
 class AUTOSAR(OSBase):
     """AUTOSAR model.
 
@@ -264,7 +284,9 @@ class AUTOSAR(OSBase):
         return False
 
     @staticmethod
-    def get_cpu_local_contexts(context, cpu_id, instances):
+    def get_cpu_local_contexts(context: dict, cpu_id: int, instances: InstanceGraph) -> dict:
+        
+        # logger.debug(f"LocalContext: id={cpu_id} instances={instances}")
         local_contexts = []
         for inst, ctx in context.items():
             if getattr(inst, "cpu_id", None) == cpu_id:
@@ -285,7 +307,7 @@ class AUTOSAR(OSBase):
                 cpus = AUTOSAR.get_cpus_of_spinlock(inst, instances)
                 if len(cpus) == 1:
                     continue
-            if not hasattr(inst, "cpu_id"):
+            if not hasattr(inst, "cpu_id") and isinstance(inst, AUTOSARInstance):
                 local_contexts.append((inst, ctx))
         return dict(local_contexts)
 
@@ -298,7 +320,7 @@ class AUTOSAR(OSBase):
         return OSIRQStatus(name="AUTOSAR_OSIRQ_STATUS_" + str(cpu_id), cpu_id=cpu_id)
 
     @staticmethod
-    def get_initial_state(cfg, instances):
+    def get_initial_state(cfg: CFG, instances: InstanceGraph) -> OSState:
         # technically, AUTOSAR starts with a main function on every core
         # The actual startup happens via StartCore or in HW directly
         # After that, each core calls StartOS which syncs all cores and enables
@@ -339,6 +361,7 @@ class AUTOSAR(OSBase):
                         call_path=CallPath(),
                         exec_state=ExecState.idle,
                         analysis_context=None,
+                        cfg=cfg
                     )
                 )
                 logger.debug(f"Initial: CPU {cpu_id} idles.")
@@ -349,11 +372,12 @@ class AUTOSAR(OSBase):
                     CPU(
                         id=cpu_id,
                         irq_on=True,
-                        control_instance=prio_vert,
-                        abb=entry_abb,
+                        control_instance=int(prio_vert),
+                        abb=int(entry_abb),
                         call_path=CallPath(),
                         exec_state=ExecState.from_abbtype(cfg.vp.type[entry_abb]),
                         analysis_context=None,
+                        cfg=cfg
                     )
                 )
                 running_tasks.append(prio_task)
@@ -378,6 +402,7 @@ class AUTOSAR(OSBase):
                 abb=cfg.get_entry_abb(obj.function),
                 call_path=CallPath(),
                 dyn_prio=[prio],
+                abb_name=f"StartWith: {state.cfg.vp.name[cfg.get_entry_abb(obj.function)]}"
             )
 
         for v, obj in instances.get(Alarm):
@@ -405,6 +430,7 @@ class AUTOSAR(OSBase):
             ctx = state.context[task]
             ctx.status = TaskStatus.running
             ctx.abb = None
+            ctx.abb_name = "Init-ABB"
             ctx.call_path = CallPath()
 
         for _, spinlock in instances.get(Spinlock):
@@ -526,7 +552,7 @@ class AUTOSAR(OSBase):
         return []
 
     @staticmethod
-    def interpret(graph, state, cpu_id, categories=None):
+    def interpret(graph: Graph, state: OSState, cpu_id: int, categories=None) -> OSState:
         if not categories:
             categories = {SyscallCategory.every}
         cfg = graph.cfg
@@ -537,6 +563,12 @@ class AUTOSAR(OSBase):
             f"ABB: {cfg.vp.name[abb]}"
             f" (in {cfg.vp.name[cfg.get_function(abb)]})"
         )
+
+        if not hasattr(AUTOSAR, syscall):
+            logger.info("Skipping syscall, since from hypervisor")
+            state = state.copy()
+            set_next_abb(state, cpu_id)
+            return state
 
         syscall_function = getattr(AUTOSAR, syscall)
 
@@ -580,7 +612,7 @@ class AUTOSAR(OSBase):
         return False
 
     @staticmethod
-    def schedule(state, cpus=None):
+    def schedule(state: OSState, cpus=None) -> None:
         if cpus is None:
             cpus = [cpu.id for cpu in state.cpus]
 
@@ -659,6 +691,7 @@ class AUTOSAR(OSBase):
                 old_ctx = state.context[old_task]
                 if old_ctx.status in [TaskStatus.running, TaskStatus.blocked]:
                     old_ctx.abb = state.cfg.vertex(cpu.abb)
+                    old_ctx.abb_name = state.cfg.vp.name[state.cfg.vertex(cpu.abb)]
                     old_ctx.call_path = cpu.call_path
                 if old_ctx.status == TaskStatus.running:
                     old_ctx.status = TaskStatus.ready
@@ -670,6 +703,7 @@ class AUTOSAR(OSBase):
                 new_ctx.status = TaskStatus.running
                 # "reset" context values, they are irrelevant now
                 new_ctx.abb = None
+                new_ctx.abb_name = "Abb-reset"
                 new_ctx.call_path = CallPath()
 
                 cpu.control_instance = state.instances.vertex(new_vertex)
@@ -692,17 +726,87 @@ class AUTOSAR(OSBase):
             raise CrossCoreAction(set([cpu_id]))
 
     @staticmethod
-    def ActivateTask(state, cpu_id, task):
+    def ActivateTask(state: OSState, cpu_id: int, task: Task):
         assert isinstance(task, Task)
-        logger.debug(f"Setting Task {task} ready.")
+        logger.debug(f"Setting {task} ready.")
 
         AUTOSAR.check_cpu(state, task.cpu_id)
         ctx = state.context[task]
         if ctx.status is not TaskStatus.running:
             if ctx.status is TaskStatus.suspended:
                 ctx.abb = state.cfg.get_entry_abb(task.function)
+                ctx.abb_name = state.cfg.vp.name[state.cfg.get_entry_abb(task.function)]
             ctx.status = TaskStatus.ready
         return state
+
+    # For HyperSSE/Xen
+    @staticmethod
+    def move_context(context: dict, target_cpu_id: int) -> dict:
+        """HyperSSE starts with each system thinking its running on cpu 0, 
+         this function moves the context to target_cpu_id
+         single core contexte mit cpu0 -> single core contexte mit cpuNEW"""
+
+        logger.info(f"Moved context to CPU {target_cpu_id} for HyperSSE.")
+        new_context = {}
+        for k,v in context.items():
+            # logger.info(f"Found context: {k} : {v}")
+            if isinstance(k, Task):
+                k.name = k.name + f"d{target_cpu_id}"
+                k.cpu_id = target_cpu_id
+                new_context[k] = v
+            elif isinstance(k, Alarm):
+                k.name = k.name + f"d{target_cpu_id}"
+                k.cpu_id = target_cpu_id
+                new_context[k] = v
+            elif isinstance(k, AUTOSARInstance):
+                k.name = k.name.replace("_0", f"_{target_cpu_id}")
+                k.cpu_id = target_cpu_id
+                new_context[k] = v
+            elif isinstance(k, IRQ):
+                k.name = k.name + f"d{target_cpu_id}"
+                k.cpu_id = target_cpu_id
+                new_context[k] = v
+            elif isinstance(k, CPUBounded):
+                k.cpu_id = target_cpu_id
+                new_context[k] = v
+            else:
+                logger.error(f"move_context: Unkown context of type: {type(k)}")
+                new_context[k] = v
+
+        return new_context
+    
+    def move_irqhandler(irq: IRQ, inst: InstanceGraph, target_cpu_id: int) -> None:
+        """When FakeIRQ-CPUs get added in add_interrupts(...) at the beginning of MultiSSE, the IRQ
+         are generated from the InstanceGraph, which does not know the cpu_id's in HyperSSE.
+         Since Zephyr and Autosar use a different IRQ-obj an OS-wrapper is needed."""
+
+        inst.vp.obj[irq.isr_handler].cpu_id = target_cpu_id
+    
+    @staticmethod
+    def find_cross_os_event(state: OSState, cpu_id: int, cb: str) -> CrossOSEvent:
+        """Autosar currently only supports its Task as CrossOSEvents"""
+
+        # Autosar specific renaming 
+        if cb.startswith("AUTOSAR_TASK_FUNC_"):
+            cb = cb.removeprefix("AUTOSAR_TASK_FUNC_")
+
+        # Add Autosar specifc postfix
+        cb += "d" + str(cpu_id)
+        
+        for k, _ in state.context.items():
+            if isinstance(k, CrossOSEvent):
+                if k.name == cb:
+                    return k
+        return None
+
+    @staticmethod
+    def trigger_cross_os_event(state: OSState, cpu_id: int, event: CrossOSEvent) -> OSState:
+        """Wrapper to apply the event to the given state, currently only ActivateTask is supported."""
+
+        return AUTOSAR.ActivateTask(state, cpu_id, event)
+
+
+    # ---------------- Syscalls ---------------------
 
     @syscall(
         categories={SyscallCategory.comm},
@@ -1158,6 +1262,7 @@ class AUTOSAR(OSBase):
             abb=state.cfg.get_entry_abb(cur_task.function),
             call_path=CallPath(),
             dyn_prio=[2 * cur_task.priority],
+            abb_name=f"StartWith: {state.cfg.vp.name[state.cfg.get_entry_abb(cur_task.function)]}"
         )
 
         logger.debug(f"Terminate Task {cur_task.name}.")

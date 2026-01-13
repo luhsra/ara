@@ -5,14 +5,35 @@
 		"LockElision",
 		"AutosarGeneratorIR",
 		"IRWriter",
-		"Generator"
+		"Generator",
+		"DumpCFG",
+		"DumpInstances"
 	],
 	"AutosarGeneratorIR": {
-		"log_level": "debug",
+		"log_level": "error",
 		"rename_syscalls": true
 	},
+	"LoadOil" : {
+		"log_level": "warn"
+	},
+	"LLVMMap" : {
+		"log_level": "error"
+	},
+	"RemoveSysfuncBody": {
+		"disable": true
+	},
+	"SystemRelevantFunctions": {
+		"xen_syscall": true
+	},
+	"SysFuncts": {
+		"xen_syscall": true
+	},
+	"SVFAnalyses": {
+		"log_level": "warning",
+		"hide_svf_output": true
+	},
 	"Generator": {
-		"log_level": "debug",
+		"log_level": "warning",
 		"arch": "arm",
 		"os": "autosar",
 		"lock_elision": false,
@@ -22,6 +43,9 @@
 		"fail_on_deadlock": true
 	},
 	"MultiSSE": {
-		"with_times": false
+		"with_times": true,
+		"log_level": "debug",
+		"per_round_dump": true,
+		"dump": true
 	}
 }

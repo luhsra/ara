@@ -6,6 +6,7 @@
 # SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2022 Jan Neugebauer
 # SPDX-FileCopyrightText: 2023 Andreas Kässens
+# SPDX-FileCopyrightText: 2025 Mareike Burg
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -109,6 +110,10 @@ cdef extern from "resolve_function_pointer.h" namespace "ara::step":
 
 cdef extern from "svf_analyses.h" namespace "ara::step":
     cdef cppclass SVFAnalyses:
+        pass
+
+cdef extern from "svf_reset.h" namespace "ara::step":
+    cdef cppclass SVFReset:
         pass
 
 cdef extern from "svf_transformation.h" namespace "ara::step":

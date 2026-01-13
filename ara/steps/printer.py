@@ -4,13 +4,16 @@
 # SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2023 Jan Neugebauer
 # SPDX-FileCopyrightText: 2023 Andreas Kässens
+# SPDX-FileCopyrightText: 2025 Mareike Burg
+# SPDX-FileCopyrightText: 2025 Mareike Burg
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 """Container for Printer."""
-from ara.graph import (ABBType, CFType, CFGView, MSTType, StateType,
+import re
+from ara.graph import (ABBType, CFType, CFG, CFGView, MSTGraph, MSTType, StateType,
                        single_check, vertex_types)
-from ara.os.os_base import ExecState, IRQCPU, IRQ
+from ara.os.os_base import ExecState, IRQCPU, IRQ, OSBase
 
 from .option import Option, String, Choice, Bool
 from .step import Step
@@ -28,6 +31,8 @@ from itertools import chain
 # TODO remove this...
 from ..os.zephyr import Thread as ZephyrThread
 from ..os.zephyr import ZephyrIRQ
+from ..os.xen import XEN
+from ..os.bare_metal import BareMetal
 
 _sysshort = {
     "AUTOSAR_GetSpinlock": "GL",
@@ -40,6 +45,9 @@ _sysshort = {
     "AUTOSAR_SetRelAlarm": "SRA",
     "AUTOSAR_GetAlarm": "GA",
     "AUTOSAR_CancelAlarm": "CA",
+    "XEN_wrap_evtchn_alloc_unbound": "XEA",
+    "XEN_wrap_evtchn_bind_interdomain": "XEB",
+    "XEN_wrap_evtchn_send": "XES",
 
 }
 
@@ -47,11 +55,26 @@ _sysshort = {
 # log = get_logger("Printer")
 
 
-def _abb_name(cfg, abb):
+def _abb_name(cfg: CFG | list[CFG], abb, cpu_id: int = None) -> str:
     """Get an ABB as str."""
     if abb is None:
         return 'None'
-    return cfg.vp.name[abb]
+    
+    # Xen os does not have one complete cfg, therefore it passes a list of cfgs
+    if isinstance(cfg, list):
+        if cpu_id:
+            cfg = cfg[cpu_id]
+            for v in cfg.vertices():
+                if v == abb:
+                    return cfg.vp.name[abb]
+        else:
+            for cfg in cfg:
+                for v in cfg.vertices():
+                    if v == abb:
+                        return cfg.vp.name[abb]
+        return "ERROR-ABB-NAME"
+    else:
+        return cfg.vp.name[abb]
 
 def remap(x, in_min=0.0, in_max=1.0, out_min=0.0, out_max=1.0):
     '''remap taken from https://stackoverflow.com/a/43567380'''
@@ -65,7 +88,7 @@ def with_color(value, color, min=0.0, max=1.0):
 from ara.os.zephyr import Zephyr
 from ara.os.autosar import AUTOSAR
 
-def _sstg_state_as_dot(sstg, state_vert, OS=AUTOSAR):
+def _sstg_state_as_dot(sstg, state_vert, with_times: bool = True, OS: OSBase = AUTOSAR):
     attrs = {"fontsize": 14}
     size = 12
 
@@ -110,33 +133,50 @@ def _sstg_state_as_dot(sstg, state_vert, OS=AUTOSAR):
                     thread_info.append(("timeout_list", ", ".join(timeouts)))
 
     else:
-        instance = "Idle"
+        # for BareMetal
+        if OS == XEN and XEN.system_types[cpu.id] == BareMetal:
+            instance = "BareMetal"
+        else:
+            instance = "Idle"
+
+    more_tupels = []
+
     if cpu.abb:
         syscall = cfg.get_syscall_name(cpu.abb)
         if syscall != "":
-            syscall = f" ({syscall})"
-        abb = f"{cfg.vp.name[cpu.abb]} {syscall}"
-        if cfg.vp.wcet[cpu.abb] != 0:
-            xcet = [("bcet/wcet", f"{cfg.vp.bcet[cpu.abb]}/{cfg.vp.wcet[cpu.abb]}")]
+            more_tupels.append(('sys', f"{syscall}"))
+
+        if OS == XEN:
+            abb = f"{cfg.name.removeprefix('CFG-')}/{cfg.vp.name[cpu.abb]}"
         else:
-            xcet = []
+            abb = f"{cfg.vp.name[cpu.abb]}"
+        if with_times and cfg.vp.bcet[cpu.abb] != 0 and cfg.vp.wcet[cpu.abb] != 0:
+            more_tupels.append(("bcet/wcet", f"{cfg.vp.bcet[cpu.abb]}/{cfg.vp.wcet[cpu.abb]}"))
     else:
         abb = "None"
-        xcet = []
+
+    # Debug testing
+    # x = obj.context_get_instances(EventChannel)
+    # if len(x) > 0:
+    #     ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+    #     more_tupels.append(("D:", ansi_escape.sub('', str(x[0]))))
 
     graph_attrs = "<br/>".join(
-        [
-            f"<i>{k}</i>: {html.escape(str(v))}"
+        [   
+            # FIXME removed <i> </i> html tags because of issue in typst rendering
+            f"{k}: {html.escape(str(v))}"
             for k, v in [
-                ("irq_on", cpu.irq_on),
+                # ("irq_on", cpu.irq_on),
                 ("instance", instance),
-                ("call_path", cpu.call_path),
-                ("type", ExecState(cpu.exec_state).name),
+                # ("call_path", cpu.call_path),
+                # FIXME less verbose output
+                ("type" , ExecState(cpu.exec_state).name),
+                # FIXME less verbose output
                 ("abb", abb),
-                ("kernel", str(kernel)),
-            ] + xcet
+                # ("kernel", str(kernel)),
+            ] + more_tupels
         ] + [
-            f"<i>{k}</i>: {str(v)}"
+            f"{k}: {str(v)}"
             for k, v in [
                 # attr that should not be escaped
             ] + thread_info
@@ -154,7 +194,10 @@ def _sstg_state_as_dot(sstg, state_vert, OS=AUTOSAR):
     attrs["tooltip"] = tooltip
 
     if cpu.exec_state & ExecState.with_time:
+        attrs["style"] = "bold"
         attrs["color"] = "green"
+        if cpu.exec_state == ExecState.idle:
+            attrs["color"] = "violet"
     elif cpu.exec_state & ExecState.syscall:
         attrs["color"] = "blue"
         attrs["shape"] = "box"
@@ -187,7 +230,7 @@ def sstg_to_dot(sstg, label="SSTG", reduced=False, OS=AUTOSAR):
     return dot_graph
 
 
-def reduced_mstg_to_dot(mstg, cfg, label="MSTG"):
+def reduced_mstg_to_dot(mstg: MSTGraph, cfg: CFG | list[CFG], label: str = "MSTG", domain_type: str = "CPU"):
     def _to_str(v):
         return str(int(v))
 
@@ -200,12 +243,12 @@ def reduced_mstg_to_dot(mstg, cfg, label="MSTG"):
             if mstg.ep.type[e] == MSTType.st2sy:
                 cpu_id = mstg.ep.cpu_id[e]
                 cores.add(cpu_id)
-                cpu_name = f"CPU {cpu_id}"
+                cpu_name = f"{domain_type} {cpu_id}"
                 cpu = mstg.vp.state[sync].cpus[cpu_id]
                 if isinstance(cpu, IRQCPU):
                     cpu_name = ("\u26A1" + f"{cpu.reference_cpu_id} " +
                                 f"({cpu_id}, {cpu.irq.name})")
-                abb_name = _abb_name(cfg, cpu.abb)
+                abb_name = _abb_name(cfg, cpu.abb, cpu_id=cpu_id)
                 cols.append((f"<TD PORT=\"c{cpu_id}\">{cpu_name}</TD>",
                              f"<TD PORT=\"a{cpu_id}\">{abb_name}</TD>"))
         if cols:
@@ -348,8 +391,9 @@ def reduced_mstg_to_dot(mstg, cfg, label="MSTG"):
 
     return dot_graph
 
-
-def mstg_to_dot(mstg, label="MSTG", OS=AUTOSAR):
+# this can be called as Printer-Step via run and step settings, or directly
+def mstg_to_dot(mstg: MSTGraph, label: str = "MSTG", OS: OSBase = AUTOSAR, with_times: bool = True, 
+                add_legend: bool = False, domain_type: str = "CPU"):
     def _to_str(v):
         return str(int(v))
 
@@ -358,7 +402,7 @@ def mstg_to_dot(mstg, label="MSTG", OS=AUTOSAR):
         for e in edges:
             if mstg.ep.type[e] == MSTType.st2sy:
                 cpu_id = mstg.ep.cpu_id[e]
-                cols.append(f"<TD PORT=\"c{cpu_id}\">CPU {cpu_id}</TD>")
+                cols.append(f"<TD PORT=\"c{cpu_id}\">{domain_type} {cpu_id}</TD>")
         if cols:
             label = '<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">' \
                     '<TR>{}</TR>' \
@@ -392,12 +436,23 @@ def mstg_to_dot(mstg, label="MSTG", OS=AUTOSAR):
             m2s = mstg.edge_type(MSTType.m2s)
             cpu_id = mstg.vp.cpu_id[metastate]
 
-            dot_m = pydot.Cluster(_to_str(metastate),
-                                  label=f"M{int(metastate)} (CPU {cpu_id})")
+            # TODO add different box for xen hypermetastates
+            # if self._graph.os == XEN:
+            #     dot_m = pydot.Cluster(_to_str(metastate), penwidth=3, color="grey",
+            #                         label=f"M{int(metastate)} (dom {cpu_id}, {XEN.system_types[cpu_id].get_name()})")
+            #     dot_graph.add_subgraph(dot_m)
+            label = f"M{int(metastate)} ({domain_type} {cpu_id})"
+            if OS == XEN:
+                # filter IRQ CPUs
+                if cpu_id in XEN.irq_ids:
+                    label = f"M{int(metastate)}: {domain_type}-{cpu_id}-IRQ(dom-{XEN.irq_ids[cpu_id]})"
+                else:
+                    label = f"M{int(metastate)}: {domain_type}-{cpu_id}-{XEN.system_types[cpu_id].get_name()}"
+            dot_m = pydot.Cluster(_to_str(metastate),label=label)
             dot_graph.add_subgraph(dot_m)
 
             for state in m2s.vertex(metastate).out_neighbors():
-                attrs = _sstg_state_as_dot(mstg, state, OS)
+                attrs = _sstg_state_as_dot(sstg=mstg, state_vert=state, with_times=with_times, OS=OS)
                 dot_state = pydot.Node(_to_str(state), **attrs)
                 dot_m.add_node(dot_state)
 
@@ -433,10 +488,14 @@ def mstg_to_dot(mstg, label="MSTG", OS=AUTOSAR):
             if flow.ep.type[edge] == MSTType.sy2sy:
                 attrs = {"color": "darkred",
                          "style": "dashed"}
+                # FIXME remove dashed red line
+                continue
             if flow.ep.type[edge] == MSTType.follow_sync:
-                attrs = {"color": "darkgreen",
-                         "style": "dotted",
-                         "label": f"{flow.ep.bcet[edge]} - {flow.ep.wcet[edge]}"}
+                # FIXME change color from darkgreen to darkred
+                attrs = {"color": "darkred",
+                         "style": "dotted"}
+                if with_times:
+                    attrs["label"] = f"{flow.ep.bcet[edge]} - {flow.ep.wcet[edge]}"
             if flow.ep.type[edge] in [MSTType.sync_neighbor, MSTType.m2sy]:
                 continue
             src = _to_str(src)
@@ -444,22 +503,46 @@ def mstg_to_dot(mstg, label="MSTG", OS=AUTOSAR):
 
         dot_graph.add_edge(pydot.Edge(src, tgt, **attrs))
 
+    if add_legend:
+        # add a new cluster with the legend
+        legend = pydot.Cluster(graph_name="legend", label="Legend")
+        dot_graph.add_subgraph(legend)
+
+        metastate = pydot.Cluster(graph_name="metastate", label="Metastate - core local control flow")
+        legend.add_subgraph(metastate)
+
+        state = pydot.Node(name="state", label="OS-State\n(e.g. Computation)", color="green")
+        metastate.add_node(state)
+        syscall = pydot.Node(name="syscall", label="Syscall\n(e.g. Terminate Task)", shape="box", color="blue")
+        metastate.add_node(syscall)
+
+        state2 = pydot.Node(name="state2", label="OSState\n(e.g Idle)", color="green")
+        metastate.add_node(state2)
+        flow2 = pydot.Edge(src='syscall', dst='state2')
+        metastate.add_edge(flow2)
+
+        flow = pydot.Edge(src='state', dst='syscall')
+        metastate.add_edge(flow)
+
+
+        # TODO add syncpoints
+
     return dot_graph
 
-
-def sp_mstg_to_dot(mstg, cfg, label="SyncPoints MSTG"):
-    legend = '<br/>'.join([html.escape(x) for x in [
-        "state format:",
-        "$entry sync point$ -> $exit sync point$",
-        "coreX, stateY (trggering syscall)",
-        "abbs of entry SP",
-        "abbs of exit SP",
-        "",
-        "edge format:",
-        "dashed, red: sy2sy (sync point to sync point)",
-        "dotted, green: follow_sync (following SPs in time)",
-        ]])
-    label = f"<{html.escape(str(label))}<br/><br/>{legend}>"
+def sp_mstg_to_dot(mstg: MSTGraph, cfg: CFG | list[CFG], label: str = "SyncPoints MSTG", domain_type: str = "CPU"):
+    # FIXME restore legend
+    # legend = '<br/>'.join([html.escape(x) for x in [
+    #     "state format:",
+    #     "$entry sync point$ -> $exit sync point$",
+    #     "coreX, stateY (trggering syscall)",
+    #     "abbs of entry SP",
+    #     "abbs of exit SP",
+    #     "",
+    #     "edge format:",
+    #     "dashed, red: sy2sy (sync point to sync point)",
+    #     "dotted, green: follow_sync (following SPs in time)",
+    #     ]])
+    # label = f"<{html.escape(str(label))}<br/><br/>{legend}>"
     dot_graph = pydot.Dot(graph_type="digraph", label=label)
 
     def _dsp(vertex, label=None):
@@ -483,7 +566,7 @@ def sp_mstg_to_dot(mstg, cfg, label="SyncPoints MSTG"):
         sync_point = mstg.vertex(sync_point)
         sys_state, core, irq = mstg.get_syscall_state(sync_point)
         entry_abbs = mstg.get_synchronized_abbs(sync_point)
-        entry_lbl = "en: " + _prettify_abbs(entry_abbs)
+        # entry_lbl = "en: " + _prettify_abbs(entry_abbs)
         label = f"c{core}, s{int(sys_state)}"
         if irq >= 0:
             irq_name = "None"
@@ -501,7 +584,7 @@ def sp_mstg_to_dot(mstg, cfg, label="SyncPoints MSTG"):
             # draw entry_sync
             sync_m.add_node(_dsp(sync_point, label=[
                 str(int(sync_point)),
-                entry_lbl,
+                # entry_lbl,
                 label
             ]))
             # draw exit_sync
@@ -509,7 +592,7 @@ def sp_mstg_to_dot(mstg, cfg, label="SyncPoints MSTG"):
                 exit_abbs = mstg.get_synchronized_abbs(follow)
                 sync_m.add_node(_dsp(follow, label=[
                     str(int(follow)),
-                    "ex: " + _prettify_abbs(exit_abbs)
+                    # "ex: " + _prettify_abbs(exit_abbs)
                 ]))
         else:
             # draw only the exit_sync
@@ -517,8 +600,8 @@ def sp_mstg_to_dot(mstg, cfg, label="SyncPoints MSTG"):
             title = f"{str(int(sync_point))}->{str(int(exit_s))}"
             dot_graph.add_node(_dsp(exit_s, label=[
                 title,
-                entry_lbl,
-                "ex: " + _prettify_abbs(mstg.get_synchronized_abbs(exit_s)),
+                # entry_lbl,
+                # "ex: " + _prettify_abbs(mstg.get_synchronized_abbs(exit_s)),
                 label
             ]))
 
@@ -549,15 +632,21 @@ def sp_mstg_to_dot(mstg, cfg, label="SyncPoints MSTG"):
 
 
 
-
 class Printer(Step):
     """Print graphs to dot."""
 
+    # Invert CFG colors!
     SHAPES = {
-        ABBType.computation: ("oval", "blue"),
+        ABBType.computation: ("oval", "green"),
         ABBType.call: ("box", "red"),
-        ABBType.syscall: ("diamond", "green")
+        ABBType.syscall: ("diamond", "blue")
     }
+    # old colors
+    # SHAPES = {
+    #     ABBType.computation: ("oval", "blue"),
+    #     ABBType.call: ("box", "red"),
+    #     ABBType.syscall: ("diamond", "green")
+    # }
 
     dot = Option(name="dot",
                  help="Path to a dot file, '-' will write to stdout.",
@@ -569,7 +658,7 @@ class Printer(Step):
                       help="Choose, what subgraph should be printed.",
                       ty=Choice("bbs", "abbs", "instances", "sysrel_callgraph",
                                 "callgraph", "multistates", "sstg",
-                                "reduced_sstg", "mstg", "reduced_mstg",
+                                "reduced_sstg", "mstg", "hstg", "reduced_mstg",
                                 "sp_mstg"))
     entry_point = Option(name="entry_point",
                          help="system entry point",
@@ -582,18 +671,33 @@ class Printer(Step):
                             help="Generate source code links (with Pygments)",
                             ty=Bool(),
                             default_value=True)
+    add_legend = Option(name="add_legend",
+                            help="Add a legend pydot cluster to the graph. Currently only supports CFGs and MSTGs",
+                            ty=Bool(),
+                            default_value=False)
+    with_times = Option(name="with_times",
+                            help="If WCET/BCET should be shown in the graph",
+                            ty=Bool(),
+                            default_value=True)
+    domain_type = Option(name="domain_type",
+                            help="Used to create a multi OS hypersse hstg, or a multicore multisse mstg.",
+                            ty=Choice("CPU", "Dom"),
+                            default_value="CPU")
 
-    def _print_init(self):
+
+    def _print_init(self) -> str:
         dot = self.dot.get()
         if not dot:
             self._fail("dot file path must be given.")
 
         name = self.graph_name.get()
+        # Overwrite name here
+        # name = "ABBs-dom1"
         if not name:
             name = ''
         return name
 
-    def _write_dot(self, dot):
+    def _write_dot(self, dot: pydot.Dot) -> None:
         dot_path = self.dot.get()
         assert dot_path
         dot_path = os.path.abspath(dot_path)
@@ -670,7 +774,8 @@ class Printer(Step):
                 code = "\r".join([str(cfg.get_llvm_obj(bb))
                                   for bb in current_bbs])
                 code = code.replace('\n', '\r')
-                tooltip += f'\rbcet/wcet: {cfg.vp.bcet[block]} / {cfg.vp.wcet[block]}\r'
+                if self.with_times.get():
+                    tooltip += f'\rbcet/wcet: {cfg.vp.bcet[block]} / {cfg.vp.wcet[block]}\r'
                 # tooltip += code
                 tooltip = f'<{html.escape(tooltip)}>'  # seems to be added automagically
 
@@ -716,6 +821,31 @@ class Printer(Step):
             dot_graph.add_edge(pydot.Edge(str(hash(edge.source())),
                                           str(hash(edge.target())),
                                           color=color))
+        
+        if self.add_legend.get():
+            # add a new cluster with the legend
+            legend = pydot.Cluster(graph_name="legend", label="CFG-Legend\n(Each box is a function)")
+            dot_graph.add_subgraph(legend)
+            
+            comp = pydot.Node(name="comp", label="Computation Block", shape=self.SHAPES[ABBType.computation][0], 
+                                 color=self.SHAPES[ABBType.computation][1])
+            legend.add_node(comp)
+            syscall = pydot.Node(name="syscall", label="Syscall",  shape=self.SHAPES[ABBType.syscall][0], 
+                                 color=self.SHAPES[ABBType.syscall][1])
+            legend.add_node(syscall)
+
+            icf = pydot.Edge(src='comp', dst='syscall', label='Interprocedural\nControl\nFlow', color='blue')
+            legend.add_edge(icf)
+
+            exit_node = pydot.Node(name="exit", label="Exit Node", shape="oval", 
+                                 color="violet")
+            legend.add_node(exit_node)
+            
+            lcf = pydot.Edge(src='syscall', dst='exit', label='Local\nControl\nFlow', color='red')
+            legend.add_edge(lcf)
+
+            # TODO add loop
+            
         self._write_dot(dot_graph)
 
     def print_instances(self):
@@ -796,22 +926,35 @@ class Printer(Step):
     def print_mstg(self):
         OS = self._graph.os
         name = self._print_init()
-        dot_graph = mstg_to_dot(self._graph.mstg, name, OS)
+        add_legend = self.add_legend.get()
+        domain_type = self.domain_type.get()
+        with_times = self.with_times.get()
+        dot_graph = mstg_to_dot(mstg=self._graph.mstg, label=name, OS=OS, add_legend=add_legend, with_times=with_times, domain_type=domain_type)
         self._write_dot(dot_graph)
 
     def print_reduced_mstg(self):
         name = self._print_init()
-        dot_graph = reduced_mstg_to_dot(self._graph.mstg,
-                                        self._graph.cfg,
-                                        name)
+
+        if self._graph.os == XEN:
+            cfg = XEN.cfg_list
+        else:
+            cfg = self._graph.cfg
+        domain_type = self.domain_type.get()
+
+        dot_graph = reduced_mstg_to_dot(mstg=self._graph.mstg, cfg=cfg, label=name, domain_type=domain_type)
         self._write_dot(dot_graph)
 
     def print_sp_mstg(self):
         name = self._print_init()
-        dot_graph = sp_mstg_to_dot(self._graph.mstg, self._graph.cfg, name)
+
+        if self._graph.os == XEN:
+            cfg = XEN.cfg_list
+        else:
+            cfg = self._graph.cfg
+        domain_type = self.domain_type.get()
+
+        dot_graph = sp_mstg_to_dot(mstg=self._graph.mstg, cfg=cfg, label=name, domain_type=domain_type)
         self._write_dot(dot_graph)
-
-
 
     def print_callgraph(self, only_systemrelevant=False):
         name = self._print_init()
@@ -1002,7 +1145,7 @@ class Printer(Step):
         self._write_dot(dot_graph)
 
     def run(self):
-        subgraph = self.subgraph.get()
+        subgraph: str = self.subgraph.get()
         if subgraph == 'bbs':
             self.print_xbbs(bbs=True)
         if subgraph == 'abbs':

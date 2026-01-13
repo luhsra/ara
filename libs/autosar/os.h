@@ -5,6 +5,7 @@
 // SPDX-FileCopyrightText: 2020 Björn Fiedler <fiedler@sra.uni-hannover.de>
 // SPDX-FileCopyrightText: 2020 Gerion Entrup <entrup@sra.uni-hannover.de>
 // SPDX-FileCopyrightText: 2023 Andreas Kässens
+// SPDX-FileCopyrightText: 2025 Mareike Burg
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -109,6 +110,12 @@
 #define StartCore(core, status) AUTOSAR_StartCore(core, status)
 
 #define GetNumberOfActivatedCores() AUTOSAR_GetNumberOfActivatedCores()
+
+// Xen hypercalls
+// Autosar does this prefix, it is not mandatory for XEN
+#define wrap_evtchn_alloc_unbound(remote_dom, channel, cb) XEN_wrap_evtchn_alloc_unbound(remote_dom, channel, cb)
+#define wrap_evtchn_bind_interdomain(remote_dom, channel, cb) XEN_wrap_evtchn_bind_interdomain(remote_dom, channel, cb)
+#define wrap_evtchn_send(channel) XEN_wrap_evtchn_send(channel)
 
 #define OS_CORE_ID_0 0
 #define OS_CORE_ID_1 1
@@ -343,6 +350,13 @@ extern void AUTOSAR_SuspendAllInterrupts();
 extern void AUTOSAR_ResumeAllInterrupts();
 extern void AUTOSAR_SuspendOSInterrupts();
 extern void AUTOSAR_ResumeOSInterrupts();
+
+// Not sure why it works without this
+// Xen hypercalls
+// extern void XEN_wrap_evtchn_alloc_unbound(RemoteDomainType remote_dom, PortType channel, EventChannelCallbackType cb);
+// extern void XEN_wrap_evtchn_bind_interdomain(RemoteDomainType remote_dom, PortType channel, EventChannelCallbackType cb);
+// extern void XEN_wrap_evtchn_send(PortType channel);
+
 
 /******************************************************************************
  *                                                                            *

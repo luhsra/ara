@@ -1,0 +1,62 @@
+digraph G {
+label="HyperSSE.hardware.hstg.dot";
+1 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=1];
+subgraph cluster_8 {
+label="M8: Dom-0-BareMetal";
+2 [color=green, fontsize=14, label=<State 4<br/><font point-size='12'>instance: BareMetal<br/>type: computation<br/>abb: dom-0/ABB0</font>>, style=bold, tooltip=2];
+3 [fontsize=14, label=<State 6<br/><font point-size='12'>instance: BareMetal<br/>type: call<br/>abb: dom-0/ABB2</font>>, tooltip=3];
+4 [color=green, fontsize=14, label=<State 7<br/><font point-size='12'>instance: BareMetal<br/>type: computation<br/>abb: dom-0/ABB3<br/>bcet/wcet: 5/10</font>>, style=bold, tooltip=4];
+5 [color=blue, fontsize=14, label=<State 8<br/><font point-size='12'>instance: BareMetal<br/>type: syscall<br/>abb: dom-0/ABB5<br/>sys: XEN_wrap_evtchn_bind_interdomain</font>>, shape=box, tooltip=5];
+6 [color=green, fontsize=14, label=<State 9<br/><font point-size='12'>instance: BareMetal<br/>type: computation<br/>abb: dom-0/ABB4<br/>bcet/wcet: 15/20</font>>, style=bold, tooltip=6];
+7 [color=violet, fontsize=14, label=<State 10<br/><font point-size='12'>instance: BareMetal<br/>type: idle<br/>abb: dom-0/ABB1</font>>, style=bold, tooltip=7];
+}
+
+subgraph cluster_15 {
+label="M15: Dom-1-Zephyr";
+9 [color=green, fontsize=14, label=<State 5<br/><font point-size='12'>instance: Thread<br/>type: computation<br/>abb: dom-1/ABB1</font>>, style=bold, tooltip=9];
+10 [fontsize=14, label=<State 11<br/><font point-size='12'>instance: Thread<br/>type: call<br/>abb: dom-1/ABB2</font>>, tooltip=10];
+11 [color=green, fontsize=14, label=<State 12<br/><font point-size='12'>instance: Thread<br/>type: computation<br/>abb: dom-1/ABB3<br/>bcet/wcet: 100/200</font>>, style=bold, tooltip=11];
+12 [color=blue, fontsize=14, label=<State 13<br/><font point-size='12'>instance: Thread<br/>type: syscall<br/>abb: dom-1/ABB6<br/>sys: XEN_wrap_evtchn_alloc_unbound</font>>, shape=box, tooltip=12];
+13 [color=green, fontsize=14, label=<State 14<br/><font point-size='12'>instance: Thread<br/>type: computation<br/>abb: dom-1/ABB4<br/>bcet/wcet: 300/400</font>>, style=bold, tooltip=13];
+14 [color=blue, fontsize=14, label=<State 15<br/><font point-size='12'>instance: Thread<br/>type: syscall<br/>abb: dom-1/ABB7<br/>sys: XEN_wrap_evtchn_send</font>>, shape=box, tooltip=14];
+}
+
+subgraph cluster_23 {
+label="M23: Dom-0-BareMetal";
+22 [color=green, fontsize=14, label=<State 22<br/><font point-size='12'>instance: BareMetal<br/>type: computation<br/>abb: dom-0/ABB7<br/>bcet/wcet: 25/35</font>>, style=bold, tooltip=22];
+}
+
+subgraph cluster_21 {
+label="M21: Dom-1-Zephyr";
+18 [color=green, fontsize=14, label=<State 21<br/><font point-size='12'>instance: Thread<br/>type: computation<br/>abb: dom-1/ABB5<br/>bcet/wcet: 500/600</font>>, style=bold, tooltip=18];
+19 [color=green, fontsize=14, label=<State 23<br/><font point-size='12'>instance: Thread<br/>type: computation<br/>abb: dom-1/ABB0</font>>, style=bold, tooltip=19];
+20 [color=violet, fontsize=14, label=<State 24<br/><font point-size='12'>instance: Idle<br/>type: idle<br/>abb: None</font>>, style=bold, tooltip=20];
+}
+
+subgraph cluster_Metasync16 {
+label="";
+16 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=16];
+17 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=17];
+}
+
+1:c0 -> 2  [color=black];
+1:c1 -> 9  [color=black];
+1 -> 16  [color=darkred, label="400 - 600", style=dotted];
+2 -> 3  [color=black];
+3 -> 4  [color=black];
+4 -> 5  [color=black];
+5 -> 6  [color=black];
+6 -> 7  [color=black];
+7 -> 16:c0  [color=black];
+9 -> 10  [color=black];
+10 -> 11  [color=black];
+11 -> 12  [color=black];
+12 -> 13  [color=black];
+13 -> 14  [color=black];
+14 -> 16:c1  [color=black];
+16 -> 17  [color=black];
+17:c1 -> 18  [color=black];
+17:c0 -> 22  [color=black];
+18 -> 19  [color=black];
+19 -> 20  [color=black];
+}

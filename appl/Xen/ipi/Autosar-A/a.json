@@ -1,0 +1,19 @@
+{
+  "cpus": [
+    {
+      "id": 0,
+      "tasks": {
+        "T00": {
+          "activation": 1,
+          "autostart": true,
+          "priority": 1,
+          "schedule": true
+        }
+      },
+      "resources": {},
+      "events": {},
+      "counters": {},
+      "alarms": {}
+    }
+  ]
+}

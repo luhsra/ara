@@ -45,7 +45,7 @@ namespace ara::value_analyzer {
 		//}
 
 
-		std::cout << "Callpath: " << this->callpath << std::endl;
+		// std::cout << "Callpath: " << this->callpath << std::endl;
 	}
 
 	ValueLocation::ValueLocation(const llvm::json::Object& obj) {

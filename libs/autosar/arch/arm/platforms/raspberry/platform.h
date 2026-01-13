@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 Mareike Burg
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // #define PBASE 0x3F000000 //raspi2b
 #define PBASE 0xFE000000 // raspi4b
 
@@ -41,7 +45,21 @@
 #define SERIAL_BASE 0xE0001000
 
 #define PRIVATE_TIMER_BASE 0xF8F00600
-#define CPU_FREQ_HZ 500000000
+#define CPU_FREQ_HZ     500000000
+#define QEMU_FREQ_APROX 998000000
+
+// used in perf.cc to calculate how long it takes to advance one tick
+#ifdef QEMU
+    /* measured time in microsecond that qemu took to wait for 0xFFFFFFFF cycles -> ~4.3s
+    uint32_t measured_time_micro_s = 4300000;
+    uint32_t measured_cycles_qemu = MAX_UINT_32/measured_time_micro_s;
+    calculated number of cpu cycles for arround 1 microsecond -> 998
+    also convert from Mhz to Hz */
+    #define WAIT_FREQUENCE (QEMU_FREQ_APROX / 1000000)
+#else
+    // pi frequency 250 MHz, CPU_FREQ_HZ uses notation that is doubled
+    #define WAIT_FREQUENCE (CPU_FREQ_HZ / 2000000)
+#endif
 
 // According to GICdist().ICTR = 2
 // max IRQs = 32*(ICTR+1)

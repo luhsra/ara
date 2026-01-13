@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2013-2014 Martin Hoffmann <hoffmann@cs.fau.de>
 // SPDX-FileCopyrightText: 2013-2019 Christian Dietrich <christian.dietrich@informatik.uni-erlangen.de>
 // SPDX-FileCopyrightText: 2023 Andreas Kässens
+// SPDX-FileCopyrightText: 2025 Mareike Burg
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -65,6 +66,11 @@ typedef uint32_t* TaskRefType;
 typedef uint32_t ResourceType;
 typedef uint32_t SpinlockType;
 typedef uint32_t CoreIdType;
+
+// Not sure why it works without this
+// typedef uint32_t RemoteDomainType;
+// typedef uint32_t PortType;
+// typedef void * EventChannelCallbackType;
 
 typedef unsigned long EventMaskType;
 typedef unsigned long* EventMaskRefType;

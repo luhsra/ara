@@ -181,6 +181,65 @@ autosar_apps = [
 ]
 subdir('multicore' / 'trampoline')
 
+# Add Autosar xen guests here
+autosar_apps += [
+  # --------------------------- minimal ----------------------------------
+  {'core': '../Xen',  'path': 'min-autosar'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'min-autosar'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'min-1'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'min-2'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'many'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'many'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'many'/ 'Autosar-C','name': 'c', 'oil': 'c.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'many'/ 'Autosar-D','name': 'd', 'oil': 'd.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'many'/ 'Autosar-E','name': 'e', 'oil': 'e.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'many'/ 'Autosar-F','name': 'f', 'oil': 'f.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'alarm'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'alarm-2'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'alarm-2'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+
+  # --------------------------- hypercalls  ----------------------------------
+  {'core': '../Xen',  'path': 'hc-autosar'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'hc-autosar'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'hc-1'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'hc-2'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'hc-autosar-noiit'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'hc-autosar-noiit'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+
+  # --------------------------- COMPLEX ----------------------------------
+  {'core': '../Xen',  'path': 'pingpong'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'pingpong'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'sendrecv-a'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'sendrecv-a'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'sendrecv-b'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'sendrecv-b'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'channels'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'channels'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'channels'/ 'Autosar-C','name': 'c', 'oil': 'c.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'ipi'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'ipi'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'ipi'/ 'Autosar-C','name': 'c', 'oil': 'c.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'ipi'/ 'Autosar-D','name': 'd', 'oil': 'd.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'automotive-1' / 'Autosar-A', 'name': 'tasks', 'oil'  : 'tasks.json'},
+  {'core': '../Xen',  'path': 'automotive-1' / 'Autosar-B', 'name': 'tasks', 'oil'  : 'tasks.json'},
+  {'core': '../Xen',  'path': 'automotive-2' / 'Autosar-A', 'name': 'tasks', 'oil'  : 'tasks.json'},
+
+  # --------------------------- Thesis ----------------------------------
+  # for images in MA, not in test suite, manually renamed/modified!
+  # ninja subprojects/ara/appl/AUTOSAR/autosar____Xen_thesis_Autosar_A_cfg_noopt_mod.pi4.ll
+  # dot -Tsvg MultiSSE.alarm-2.mstg.dot  > MultiSSE.alarm-2.mstg.svg
+  {'core': '../Xen',  'path': 'thesis'/ 'Autosar-A','name': 'cfg', 'oil': 'cfg.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'thesis'/ 'Autosar-B','name': 'multicore', 'oil': 'multicore.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'thesis'/ 'Autosar-C','name': 'multi_core', 'oil': 'multi_core.json', 'timing': 'BB'},
+  # ninja subprojects/ara/appl/AUTOSAR/autosar____Xen_thesis_Autosar_D_ipi_noopt_mod.pi4.ll
+  {'core': '../Xen',  'path': 'thesis'/ 'Autosar-D','name': 'ipi', 'oil': 'ipi.json', 'timing': 'BB'},
+
+  # min-2, hc-autosar, hc-autosar-noiit, alarm-2, ipi are used from test-suite
+
+
+  # --------------------------- ECRTS26-Paper ----------------------------------
+  {'core': '../Xen',  'path': 'braking' / 'Autosar-A', 'name': 'a', 'oil'  : 'a.json'},
+]
 
 no_timing_settings = custom_target(
   output: 'no_timing_settings.json',
@@ -207,6 +266,11 @@ foreach app : autosar_apps
     autosar_apps_with_variants += [app + {'src': files(sys + '.cc')[0], 'full_name': full_name}]
   endif
 endforeach
+
+# foreach key : autosar_apps_with_variants[0].keys()
+#   message(key + ': ' + autosar_apps_with_variants[0].get(key).to_string())
+# endforeach
+# error('exit')
 
 foreach app : autosar_apps_with_variants
   sys = app['core'] / app['path'] / app['name']

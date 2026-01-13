@@ -2,6 +2,7 @@
 # SPDX-FileCopyrightText: 2021 Bastian Fuhlenriede
 # SPDX-FileCopyrightText: 2022 Björn Fiedler <fiedler@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2025 Mareike Burg
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -32,6 +33,7 @@ from ara.os.os_base import (
 )
 from ara.os.os_util import set_next_abb
 from ara.os.interrupts import irq_schedule
+from ara.os.xen import XEN
 
 from .option import Option, String, Bool, Integer
 from .stats import StatsStep, StatData
@@ -42,8 +44,10 @@ from .multisse_helper.common import (
     CrossExecState,
     FakeEdge,
     find_cross_syscalls,
-    get_reachable_states
+    get_reachable_states,
+    get_single_core_states
 )
+from graph_tool import Vertex
 from .multisse_helper.constrained_sps import get_constrained_sps
 from .multisse_helper.equations import TimeRange
 from .multisse_helper.pairing_partner_search import (
@@ -256,6 +260,16 @@ class MultiSSE(StatsStep):
                               ty=Integer(),
                               default_value=-1)
 
+    file_name = Option(name="file_name",
+                help="How the dumped mstg graph should be called.",
+                ty=String(),
+                default_value="")
+
+    add_legend = Option(name="add_legend",
+                help="Add a legend to the mstg.",
+                ty=Bool(),
+                default_value=False)
+
     log_single_core_transitions = Option(
         name="log_single_core_transitions",
         help="Log SSE transitions (logging in cfg_traversal.py)",
@@ -296,15 +310,14 @@ class MultiSSE(StatsStep):
             dot_graph.write(dot_path)
         self._log.info(f"Write reduced MSTG to {dot_path}.")
 
-    def _get_initial_state(self):
-        os_state = self._graph.os.get_initial_state(self._graph.cfg,
-                                                    self._graph.instances)
-        cpu_idx = max([x.id for x in os_state.cpus]) + 1
-        instances = os_state.instances
+    @staticmethod
+    def _add_interrupts(state: OSState):
+        cpu_idx = max([x.id for x in state.cpus]) + 1
+        instances = state.instances
         # add interrupts
         for _, irq in instances.get(IRQ):
             # every irq gets an own CPU
-            ctx = os_state.context[irq]
+            ctx = state.context[irq]
             if ctx.status == TaskStatus.running:
                 exec_state = CrossExecState.computation
                 cur_abb = ctx.abb
@@ -312,18 +325,30 @@ class MultiSSE(StatsStep):
                 exec_state = CrossExecState.idle
                 cur_abb = None
             irq_cpu = IRQCPU(id=cpu_idx,
-                             irq=irq,
-                             reference_cpu_id=irq.cpu_id,
-                             irq_on=False,
-                             control_instance=instances.get_node(irq),
-                             abb=cur_abb,
-                             call_path=copy(ctx.call_path),
-                             exec_state=exec_state,
-                             analysis_context=None)
-            os_state.cpus[irq_cpu.id] = irq_cpu
+                            irq=irq,
+                            reference_cpu_id=irq.cpu_id,
+                            irq_on=False,
+                            control_instance=instances.get_node(irq),
+                            abb=cur_abb,
+                            call_path=copy(ctx.call_path),
+                            exec_state=exec_state,
+                            analysis_context=None,
+                            cfg=state.cfg)
+            state.cpus[irq_cpu.id] = irq_cpu
             # reassign irq
             irq.cpu_id = irq_cpu.id
             cpu_idx += 1
+
+    def _get_initial_state(self):
+        os_state = self._graph.os.get_initial_state(self._graph.cfg,
+                                                    self._graph.instances)
+        # self._log.info(f"Init state: {os_state}")
+
+        # HyperSSE/Xen has a slightly different method for adding interrupts
+        if self._graph.os == XEN:
+            XEN.add_interrupts(os_state)
+        else:
+            MultiSSE._add_interrupts(os_state)
 
         # initial sync point
         mstg = self._mstg.g
@@ -335,18 +360,6 @@ class MultiSSE(StatsStep):
         self._log.debug(f"Add initial sync point {int(sp)}")
 
         return sp
-
-    def _get_single_core_states(self, multi_core_state):
-        single_core_states = {}
-        for cpu in multi_core_state.cpus:
-            # restrict state to this cpu
-            state = multi_core_state.copy()
-            state.cpus = CPUList([cpu])
-            state.context = self._graph.os.get_cpu_local_contexts(
-                multi_core_state.context, cpu.id, state.instances)
-            single_core_states[cpu.id] = state
-
-        return single_core_states
 
     def _get_common_metastate(self, meta_states):
         """Unify all given metastates into one and return it."""
@@ -373,7 +386,7 @@ class MultiSSE(StatsStep):
             mstg.vp.type[other_state] = StateType.invalid
         return living_state
 
-    def _run_sse(self, cpu_id, entry):
+    def _run_sse(self, cpu_id: int, entry: OSState) -> OSState:
         """Run the single core SSE for the given entry.
 
         Collects all states within a metastate and returns it together with
@@ -537,6 +550,12 @@ class MultiSSE(StatsStep):
             sub_log = self._log
         else:
             sub_log = None
+
+        # HyperSSE/Xen modifes the graph obj
+        if self._graph.os == XEN:
+            # Load the correct graph obj but keep Xen as OS
+            self._graph = XEN.graph_list[cpu_id]
+            self._graph.os = XEN
 
         run_sse(
             self._graph,
@@ -1332,7 +1351,7 @@ class MultiSSE(StatsStep):
 
     def _calculate_new_metastates(self, sp):
         """Calculate new metastates from an existing sync point."""
-        states = self._get_single_core_states(self._mstg.g.vp.state[sp])
+        states = get_single_core_states(self._mstg.g.vp.state[sp], self._graph.os)
         mstg = self._mstg.g
 
         metastates = {}
@@ -1535,26 +1554,45 @@ class MultiSSE(StatsStep):
         self._log.info(f"Analysis needed {counter} iterations.")
 
         self._graph.mstg = mstg
+        self._step_manager._graph.mstg = mstg
 
         step_data = [StatData(key="rounds", value=counter)]
-        self._print_and_store(step_data)
+        # self._print_and_store(step_data)
 
         if self.dump.get():
+            fn = self.file_name.get()
+            if fn:
+                if self._graph.os == XEN:
+                    dot = f'{self.dump_prefix.get().split("/")[0]}/HyperSSE.{fn}.hstg.dot'
+                else:
+                    dot = f'{self.dump_prefix.get().split(".")[0]}.{fn}.mstg.dot'
+            else:
+                # Legacy naming
+                dot = f'{self.dump_prefix.get()}.mstg.dot'
+
             self._step_manager.chain_step({
                 "name": "Printer",
-                "dot": self.dump_prefix.get() + "mstg.dot",
-                "graph_name": "MSTG",
+                "dot": dot,
+                "graph_name": dot.split("/")[1],
                 "subgraph": "mstg",
+                "add_legend" : self.add_legend.get(),
+                "with_times": self.with_times.get(),
+                "reduced" : True,
+                "domain_type" : "Dom" if self._graph.os == XEN else "CPU"
             })
-            self._step_manager.chain_step({
-                "name": "Printer",
-                "dot": self.dump_prefix.get() + "mstg.reduced.dot",
-                "graph_name": "Reduced MSTG",
-                "subgraph": "reduced_mstg",
-            })
-            self._step_manager.chain_step({
-                "name": "Printer",
-                "dot": self.dump_prefix.get() + "mstg.sps.dot",
-                "graph_name": "SP MSTG",
-                "subgraph": "sp_mstg",
-            })
+            # self._step_manager.chain_step({
+            #     "name": "Printer",
+            #     "dot": ".".join(dot.split(".")[:-1]) + ".reduced.dot",
+            #     "graph_name": ".".join(dot.split("/")[1].split(".")[:-1]) + ".reduced.dot",
+            #     "subgraph": "reduced_mstg",
+            #     "reduced" : True,
+            #     "domain_type" : "Dom" if self._graph.os == XEN else "CPU"
+            # })
+            # self._step_manager.chain_step({
+            #     "name": "Printer",
+            #     "dot": ".".join(dot.split(".")[:-1]) + ".sps.dot",
+            #     "graph_name":".".join(dot.split("/")[1].split(".")[:-1]) + ".sps.dot",
+            #     "subgraph": "sp_mstg",
+            #     "reduced" : True,
+            #     "domain_type" : "Dom" if self._graph.os == XEN else "CPU"
+            # })

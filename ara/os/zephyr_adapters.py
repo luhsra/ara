@@ -63,7 +63,7 @@ class ZephyrKernelContext:
             threads.append(str(v))
         s = "[ready_q: "
         s += ", ".join(threads)
-        s += "]"
+        s += f", cache: {int(self.cache)}]"
         return s
 
     def __copy__(self):
@@ -213,6 +213,10 @@ class MSGQContext:
             flags=self.flags,
         )
 
+    def __str__(self):
+        """Prettyprint selected content."""
+        # \33 escape sequenze, 1 for bold, 36 for color, m for end of sequenze
+        return f"wait_q={self.wait_q}, lock={self.lock}, used_msgs={self.used_msgs}"
 
 # FIXME: move this to e.g. zephyr.adapters?
 # counterpart of ara.os.os_base.TaskStatus
@@ -573,6 +577,11 @@ class InterpreterContext:
         state = self.state
         cpu_id = self.cpu_id
 
+        # FIXME: temporäry HyperSSE fix, warum ist hier ein array wenn es ehe nur 1ne CPU gibt?
+        true_cpu_id = cpu_id
+        self.true_cpu_id = cpu_id
+        self.cpu_id, cpu_id = 0, 0
+
         kernel = InterpreterContext.Zephyr.get_kernel_context(state)
         # zi.irm.set_print_llvmir(True)
         zi.z_cstart()
@@ -838,7 +847,9 @@ class InterpreterContext:
         # zi.helper_threads_ready(threads)
 
         proxy.get(_kernel)
-        cpu = state.cpus[cpu_id]
+        # FIXME: temporäry HyperSSE fix
+        # cpu = state.cpus[cpu_id]
+        cpu = state.cpus[true_cpu_id]
         _kernel.cpus[cpu_id].nested = cpu.analysis_context.nested # restore ISR lock
         proxy.put(_kernel)
         proxy.get(_kernel)
@@ -1035,8 +1046,9 @@ class InterpreterContext:
                 thread_v = self.kobj_maps[zephyr.k_thread][ptr.ptr].v
                 msgq_ctx.wait_q.append(thread_v)
         
-
-        cpu = state.cpus[self.cpu_id]
+        # FIXME: temporäry HyperSSE fix
+        # cpu = state.cpus[self.cpu_id]
+        cpu = state.cpus[self.true_cpu_id]
         # restore irq lock (nested)
         # cpu.analysis_context.current = threads_map[zi._kernel.cpus[cpu_id].current.ptr]
         

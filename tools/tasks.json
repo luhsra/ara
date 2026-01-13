@@ -1,0 +1,44 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run Ninja Xen a",
+            "type": "shell",
+            "command": "ninja",
+            "args": [
+                "-C",
+                "${workspaceFolder}/build",
+                "ara@@run_autosar_singlecore_xen_a_noopt_pi4"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Run Ninja Xen b",
+            "type": "shell",
+            "command": "ninja",
+            "args": [
+                "-C",
+                "${workspaceFolder}/build",
+                "ara@@run_autosar_singlecore_xen_b_noopt_pi4"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Run all Ninja Xen",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Run Ninja Xen a",
+                "Run Ninja Xen b"
+            ],
+            "problemMatcher": []
+        }
+    ]
+}

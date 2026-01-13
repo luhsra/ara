@@ -6,6 +6,7 @@
 # SPDX-FileCopyrightText: 2022 Björn Fiedler <fiedler@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2023 Andreas Kässens
 # SPDX-FileCopyrightText: 2024 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2025 Mareike Burg
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -13,6 +14,7 @@
 import json
 import functools
 import pyllco
+import math
 
 from itertools import chain
 
@@ -25,6 +27,7 @@ import ara.os.autosar as _autosar
 
 from ara.os.os_base import IRQ
 from ara.os.interrupts import fake_interrupt_function
+from ara.steps.printer import Printer
 
 
 class LoadOIL(Step):
@@ -326,7 +329,9 @@ class LoadOIL(Step):
                         priority=isr["priority"],
                         category=isr["category"],
                         device=isr["device"],
-                        artificial=False
+                        artificial=False,
+                        min_activation_time=isr["min_activation_time"],
+                        max_activation_time=isr["max_activation_time"]
                 )
                 instances.vp.is_control[i] = True
                 instances.vp.label[i] = i_name
@@ -338,21 +343,56 @@ class LoadOIL(Step):
         # artificial IRQ objects
         for v, obj in chain(instances.get(_autosar.Counter),
                             instances.get(_autosar.ISR)):
-            func_v = fake_interrupt_function(cfg, callgraph, os, obj.name)
+
+            self._log.info(f"Added fake_interrupt_function for Counter {obj}")
+
             active = True
+
+            # Interarival Times - iit, not fully verified!
+            # could this be moved below check for no alarm counters?
+            # need to get alarms from counter to extract wcet and bcet
+            # alarmtime=first alarm activation, cycletime=recuring invterval 
+            first_activation = math.inf
+            shortest_cycletime = math.inf
+            # TODO what happens with multiple alarms that are on different intervals
             if isinstance(obj, _autosar.Counter):
                 active = False
                 #if no alarm is triggered, the Counter IRQ can be ignored
                 for a_v, a_obj in instances.get(_autosar.Alarm):
                     if str(a_obj.counter) == str(obj.name):
                         active = True
+                        self._log.debug(f"Found alarm here: {a_obj}")
+                        first_activation = min(first_activation, a_obj.alarmtime)
+                        shortest_cycletime = min(shortest_cycletime, a_obj.cycletime)
 
                 if active == False:
                     continue
+                
+                # Autosar increments counter with a 1 kHz Timer, but other timing measurement is done with microsecond precision
+                # therefore it is converted here
+                first_activation = first_activation * 1000
+                shortest_cycletime = shortest_cycletime * 1000
+                func_v = fake_interrupt_function(cfg, callgraph, os, obj.name, iit_cycle_bcet=shortest_cycletime, 
+                    iit_cycle_wcet=shortest_cycletime, iit_startup_bcet=first_activation, iit_startup_wcet=first_activation)
+
+            if isinstance(obj, _autosar.ISR):
+                # * 1000 same as above
+                bcet = obj.min_activation_time * 1000
+                wcet = obj.max_activation_time * 1000
+                self._log.info(f"Added isr with activation intervall between: {bcet} to {wcet} us.")
+                func_v = fake_interrupt_function(cfg, callgraph, os, obj.name, iit_cycle_bcet=bcet, iit_cycle_wcet=wcet,
+                                                 iit_startup_bcet=1, iit_startup_wcet=1)
+            
+
+
+            # only add counter if there is any alarm attached
+
+            # temp_printer = Printer(self._graph, self._step_manager)
+            # func_v = fake_interrupt_function(temp_printer, cfg, callgraph, os, obj.name, alarmtime=first_activation, cycletime=shortest_cycletime)
 
             irq = IRQ(
                 id=v,
-                name=f"IRQ {obj.name}",
+                name=f"IRQ_{obj.name}",
                 isr_handler=v,
                 active=active,
                 cpu_id=obj.cpu_id,

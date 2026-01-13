@@ -5,6 +5,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from ara.steps.instance_graph_stats import MissingInteractions
+from ara.steps.multisse_helper.common import get_single_core_states
+from .xen import XEN
 from .os_util import (
     UnknownArgument,
     AutoDotInstance,
@@ -17,9 +19,9 @@ from .os_util import (
     find_instance_node,
     find_return_value
 )
-from .os_base import OSBase, ControlInstance, CPUList, CPU, OSState, ExecState, TaskStatus, ControlContext, IRQ, IRQContext
+from .os_base import CPUBounded, CrossOSEvent, OSBase, ControlInstance, CPUList, CPU, OSState, ExecState, TaskStatus, ControlContext, IRQ, IRQContext
 from ara.util import get_logger
-from ara.graph import SyscallCategory, SigType, CallPath, CFG, Graph
+from ara.graph import SyscallCategory, SigType, CallPath, CFG, Graph, InstanceGraph
 from ara.steps import get_native_component
 # from ara.stepmanager import StepManager
 from dataclasses import dataclass, field
@@ -102,6 +104,10 @@ class ZephyrKernel(ZephyrInstance):
     def __hash__(self):
         return hash(("ZephyrKernel", self.heap_size, self.symbol, self.queue))
 
+    def __str__(self):
+        """Prettyprint selected content."""
+        # \33 escape sequenze, 1 for bold, 36 for color, m for end of sequenze
+        return f"\33[1;36mZephyrKernel\033[0m: heap_size={self.heap_size}, symbol={self.symbol}, queue={self.queue}"
 
 @dataclass
 class ZephyrIRQ(IRQ):
@@ -136,7 +142,7 @@ class Timer(ZephyrInstance):
     
 
 @dataclass
-class Thread(ZephyrInstance, ControlInstance):
+class Thread(ZephyrInstance, ControlInstance, CrossOSEvent):
     # Pointer to uninitialized struct k_thread.
     symbol: object
     # Pointer to the stack space.
@@ -171,6 +177,15 @@ class Thread(ZephyrInstance, ControlInstance):
     def __hash__(self):
         return hash(("Thread", self.function, self.artificial, self.symbol, self.stack, self.stack_size,
         self.entry_name, self.entry_params, self.priority, self.options, self.delay))
+    
+    def __str__(self):
+        """Prettyprint selected content."""
+        # \33 escape sequenze, 1 for bold, 36 for color, m for end of sequenze
+        try:
+            cfg_name = self.cfg.name
+        except AttributeError:
+            cfg_name = "?"
+        return f"\33[1;36mThread-{self.name}\033[0m: cpu_id={self.cpu_id}/{cfg_name}, priority={self.priority}, entry_name={self.entry_name}"
 
 
 # Interrupt service routine. Like every other kernel resource, these can be created
@@ -383,6 +398,11 @@ class MSGQ(ZephyrInstance):
 
     def __hash__(self):
         return hash(("MSGQ", self.symbol, self.msg_size, self.max_msgs))
+    
+    def __str__(self):
+        """Prettyprint selected content."""
+        # \33 escape sequenze, 1 for bold, 36 for color, m for end of sequenze
+        return f"\33[1;36mMSGQ\033[0m: msg_size={self.msg_size}, max_msgs={self.max_msgs}"
 
 
 class ZephyrEdgeType(IntEnum):
@@ -445,8 +465,18 @@ class Zephyr(OSBase):
 
     @staticmethod
     def get_cpu_local_contexts(context, cpu_id, instances):
+        # Zephyr model is mostly singlecore, for this the whole context can be returend
         # for now we are single core only, whole context is in here, also for IRQCPUS that all target CPU 0
-        return context
+        # return context
+
+        # HyperSSE needs multicore contexts, some ZephyrInstance are Zephyr wide global, so they are always needed!
+        # TODO this breaks IRQ CPU, because they are not found
+        local_contexts = []
+        for inst, ctx in context.items():
+            if getattr(inst, "cpu_id", None) == cpu_id or isinstance(inst, ZephyrKernel):
+                local_contexts.append((inst, ctx))
+            # TODO find targets of IRQ if they belong to this local context
+        return dict(local_contexts)
 
     @staticmethod
     def get_global_contexts(context, instances):
@@ -700,6 +730,7 @@ class Zephyr(OSBase):
                 call_path=CallPath(),
                 exec_state=ExecState.from_abbtype(cfg.vp.type[entry_abb]),
                 analysis_context=za.ZephyrCPUAnalysisContext(), # current=prio_vert
+                cfg=cfg
             )
         ]
 
@@ -865,6 +896,12 @@ class Zephyr(OSBase):
         logger.debug(f"Get syscall: {syscall_name}, ABB: {cfg.vp.name[abb]}"
                      f" (in {cfg.vp.name[cfg.get_function(abb)]})")
 
+        if not hasattr(Zephyr, syscall_name):
+            logger.info("Skipping syscall, since from hypervisor")
+            state = state.copy()
+            set_next_abb(state, cpu_id)
+            return state
+        
         syscall = getattr(Zephyr, syscall_name)
 
         if Zephyr.syscall_in_category(syscall, categories):
@@ -924,7 +961,10 @@ class Zephyr(OSBase):
         for cpu in filter(lambda cpu: cpu.id in cpus, state.cpus):
             # logger.debug(f"cpu.id: {cpu.id}")
 
-            assert cpu.id == 0 # only support one cpu
+            # TODO: temporary disabled for HyperSSE
+            if cpu.id != 0:
+                logger.warning("HyperSSE disabled check for only 1 cpu, this should crash!")
+            # assert cpu.id == 0 # only support one cpu
 
             # # if the idle thread is active (new_vertex = idle_thread) -> activate next timeout in queue
             # if new_vertex == Zephyr.idle_threads[cpu.id]:
@@ -1094,6 +1134,93 @@ class Zephyr(OSBase):
             return [state]
 
         return []
+
+
+    # ------------------------- Xen HyperSSE ------------------------------
+
+    def move_context(context: dict, target_cpu_id: int) -> dict:
+        """HyperSSE starts with each system thinking its running on cpu 0, 
+         this function moves the context to target_cpu_id
+         single core contexte mit cpu0 -> single core contexte mit cpuNEW"""
+
+        logger.info(f"Moved context to CPU {target_cpu_id} for HyperSSE.")
+        new_context = {}
+        for k,v in context.items():
+            if isinstance(k, CPUBounded):
+                k.cpu_id = target_cpu_id
+                new_context[k] = v
+            else:
+                # ZephyrKernel is global, can not be moved?
+                # Same for MSGQ?
+                new_context[k] = v
+
+        # TODO running on another cpu currently needs to move the idle thread
+        # for k,v in Zephyr.idle_threads.items():
+        #     print(type(k))
+        #     print(type(v))
+        # This does not work, because the idle_thread is not found later
+        Zephyr.idle_threads[target_cpu_id] = Zephyr.idle_threads[0]
+            
+        return new_context
+    
+    def move_irqhandler(irq: IRQ, inst: InstanceGraph, target_cpu_id: int) -> None:
+        """When FakeIRQ-CPUs get added in add_interrupts(...) at the beginning of MultiSSE, the IRQ
+         are generated from the InstanceGraph, which does not know the cpu_id's in HyperSSE.
+         Since Zephyr and Autosar use a different IRQ-obj an OS-wrapper is needed."""
+
+        # in Zephyr isr_handler should be of type Zephyr.ISR
+        irq.isr_handler.cpu_id = target_cpu_id
+
+    @staticmethod
+    def find_cross_os_event(state: OSState, cpu_id: int, cb: str) -> CrossOSEvent:
+        """Zephyr currently does no support any CrossOSEvents"""
+        
+        # k: ZephyrCrossOS = ZephyrCrossOS(cpu_id=cpu_id, function_name=cb)
+        # state.context[k] = 1
+
+        for k, _ in state.context.items():
+            if isinstance(k, CrossOSEvent):
+                if k.entry_name == cb:
+                    return k
+        return None
+
+    @staticmethod
+    def trigger_cross_os_event(state: OSState, cpu_id: int, event: CrossOSEvent) -> OSState:
+        """Wrapper to apply the event to the given state, currently only ActivateTask is supported."""
+
+        assert isinstance(event, Thread), "Zephyr currently only supports Threads as event!"
+
+        # prepare right instance graph
+        if state.system_count:
+            state.instances = state.instances_list[cpu_id]
+
+        # workarround because zephyr cant multicore
+        states = get_single_core_states(state, XEN)
+        state = states[cpu_id].copy()
+
+        # similar to k_thread_start
+        if Zephyr.enable_sse:
+            ic = za.InterpreterContext(Zephyr.irx, state, cpu_id)
+            thread = ic.thread_sym_2_ptr(event)
+            ic.zi.irm.skip(["memcpy", "memset"])
+            ic.run_function_with_arch_swap("z_impl_k_thread_start", [thread.ptr], ['PTR'])
+
+        # TODO do not have a real zephyr interrupt here, can not connect in instance graph
+        # but does work without it
+        # add_self_edge(state, cpu_id, "k_thread_start", ty=ZephyrEdgeType.interaction)
+
+        # workarround because zephyr cant multicore
+        states[cpu_id] = state
+        state_list = []
+        for s in states:
+            # mantain order of states
+            state_list.insert(s, states[s])
+
+        merged =  XEN.merge_states(state_list)
+        return merged
+
+
+    # ------------------------------- Syscalls -----------------------------------
 
     # k_tid_t k_thread_create(struct k_thread *new_thread, k_thread_stack_t *stack, size_t stack_size,
     #   k_thread_entry_t entry, void *p1, void *p2, void *p3, int prio, uint32_t options,

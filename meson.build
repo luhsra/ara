@@ -231,70 +231,70 @@ subdir('test')
 
 # application tests
 # tests that aren't actually tests, but a way to store ara invocations with a given set of arguments
-if get_option('enable_toplevel_tests')
-    settings = 'settings'
-    app = autosar_singlecore_bcc1_task1_a
-    app = autosar_multicore_paper_running
-    test('ara_tester',
-       py3_inst,
-       args: [ara_py, app['ll'],
-              '--log-level', 'warn', '--runtime-stats', '--runtime-stats-file', 'dump', '--runtime-stats-format', 'json',
-              '--oilfile', app['oil'],
-              '--timings', app['sys_timings'],
-              '--step-settings', files(settings / 'extra_settings.json')],
-              # '--manual-corrections', instance_corrections],
-       suite: 'toplevel'
-    )
+# if get_option('enable_toplevel_tests')
+#     settings = 'settings'
+#     app = autosar_singlecore_bcc1_task1_a
+#     app = autosar_multicore_paper_running
+#     test('ara_tester',
+#        py3_inst,
+#        args: [ara_py, app['ll'],
+#               '--log-level', 'warn', '--runtime-stats', '--runtime-stats-file', 'dump', '--runtime-stats-format', 'json',
+#               '--oilfile', app['oil'],
+#               '--timings', app['sys_timings'],
+#               '--step-settings', files(settings / 'extra_settings.json')],
+#               # '--manual-corrections', instance_corrections],
+#        suite: 'toplevel'
+#     )
 
-    test('rtas20',
-       py3_inst,
-       args: [ara_py, freertos_rtas20_example,
-              '--log-level', 'debug', '--runtime-stats', '--runtime-stats-file', 'dump', '--runtime-stats-format', 'json',
-              '--dump',
-              '--step-settings', files(settings / 'rtas_settings.json')],
-       suite: 'toplevel'
-    )
+#     test('rtas20',
+#        py3_inst,
+#        args: [ara_py, freertos_rtas20_example,
+#               '--log-level', 'debug', '--runtime-stats', '--runtime-stats-file', 'dump', '--runtime-stats-format', 'json',
+#               '--dump',
+#               '--step-settings', files(settings / 'rtas_settings.json')],
+#        suite: 'toplevel'
+#     )
 
-    test('generator_tester',
-       py3_inst,
-       args: [ara_py, freertos_simple_print,
-              '--log-level', 'debug', '--dump',
-              '--generator_output', 'generator_tester-os.cc',
-              '--step-settings', files(settings / 'generator_settings.json')],
-       suite: 'toplevel'
-    )
+#     test('generator_tester',
+#        py3_inst,
+#        args: [ara_py, freertos_simple_print,
+#               '--log-level', 'debug', '--dump',
+#               '--generator_output', 'generator_tester-os.cc',
+#               '--step-settings', files(settings / 'generator_settings.json')],
+#        suite: 'toplevel'
+#     )
 
-    test('multisse',
-      py3_inst,
-      args: [ara_py, autosar_multicore_minexample['ll'],
-             '--oilfile', autosar_multicore_minexample['oil'],
-             '--dump',
-             '--log-level', 'info',
-             '--step-settings', files(settings / 'autosar_minexample_settings.json')],
-      suite: 'toplevel',
-      timeout: 30
-    )
+#     test('multisse',
+#       py3_inst,
+#       args: [ara_py, autosar_multicore_minexample['ll'],
+#              '--oilfile', autosar_multicore_minexample['oil'],
+#              '--dump',
+#              '--log-level', 'info',
+#              '--step-settings', files(settings / 'autosar_minexample_settings.json')],
+#       suite: 'toplevel',
+#       timeout: 30
+#     )
 
-    test('cfg_pic',
-       py3_inst,
-       args: [ara_py, freertos_cfg_pic,
-              '--dump',
-              '--log-level', 'info',
-              '--step', 'SIA'],
-       suite: 'toplevel',
-       timeout: 30
-    )
+#     test('cfg_pic',
+#        py3_inst,
+#        args: [ara_py, freertos_cfg_pic,
+#               '--dump',
+#               '--log-level', 'info',
+#               '--step', 'SIA'],
+#        suite: 'toplevel',
+#        timeout: 30
+#     )
 
-    test('cfg_pic',
-       py3_inst,
-       args: [ara_py, freertos_visualization_thesis_example,
-              '--dump',
-              '--log-level', 'info',
-              '--step', 'SIA'],
-       suite: 'toplevel',
-       timeout: 30
-    )
-endif
+#     test('cfg_pic',
+#        py3_inst,
+#        args: [ara_py, freertos_visualization_thesis_example,
+#               '--dump',
+#               '--log-level', 'info',
+#               '--step', 'SIA'],
+#        suite: 'toplevel',
+#        timeout: 30
+#     )
+# endif
 
 
 

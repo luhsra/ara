@@ -8,6 +8,7 @@
 
 from .step import Step
 from .option import Option, Bool
+from ara.os.xen import XEN
 
 
 class SysFuncts(Step):
@@ -19,6 +20,12 @@ class SysFuncts(Step):
                              "and usually only necessary for debugging.Set "
                              "this option also for SystemRelevantFunctions"
                              " or with --with-stubs.",
+                        ty=Bool(),
+                        default_value=False)
+    
+    xen_syscall = Option(name="xen_syscall",
+                        help="Additionally find any xen syscalls as any operating system,"
+                        "used for HyperSSE",
                         ty=Bool(),
                         default_value=False)
 
@@ -33,15 +40,21 @@ class SysFuncts(Step):
         def return_if_no_stub(os, syscall_name):
             if self.with_stubs.get():
                 return True
-            return not os.syscalls[syscall_name].is_stub
+            if self.xen_syscall.get():
+                syscall = os.syscalls.get(syscall_name) or XEN.syscalls.get(syscall_name)
+                return not syscall.is_stub
+            else:
+                return not os.syscalls[syscall_name].is_stub
 
         if self._graph.os is not None:
             if self._graph.os.is_syscall(syscall_name):
                 return return_if_no_stub(self._graph.os, syscall_name)
+            if self.xen_syscall.get() and XEN.is_syscall(syscall_name):
+                return return_if_no_stub(self._graph.os, syscall_name)
         return False
 
     def run(self):
-        for nod in self._graph.functs.vertices():
+        for nod in self._graph.functs.iter_vertices():
             call = self._graph.functs.vp.name[nod]
             self._graph.functs.vp.sysfunc[nod] = self.is_syscall(call)
 

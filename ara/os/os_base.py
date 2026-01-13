@@ -2,6 +2,7 @@
 # SPDX-FileCopyrightText: 2021 Bastian Fuhlenriede
 # SPDX-FileCopyrightText: 2022 Jan Neugebauer
 # SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2025 Mareike Burg
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -9,14 +10,14 @@ import copy
 import enum
 
 from dataclasses import dataclass, field
-from typing import Any, List
+from typing import Any, List, Type, TypeVar
 
 import graph_tool
 
-from ara.graph import SyscallCategory, CallPath, CFG, ABBType
+from ara.graph import InstanceGraph, SyscallCategory, CallPath, CFG, ABBType
 
-# from ara.util import get_logger
-# logger = get_logger("OS_BASE")
+from ara.util import get_logger
+logger = get_logger("OS_BASE")
 
 
 @dataclass
@@ -151,6 +152,9 @@ class ControlContext:
                           call_path=copy.copy(self.call_path),
                           dyn_prio=list(self.dyn_prio))
 
+    def __str__(self):
+        return f"{self.status.name} abb={self.abb}"
+        # "call_path={self.call_path} dyn_prio={self.dyn_prio}"
 
 @dataclass
 class CPUBounded:
@@ -160,7 +164,6 @@ class CPUBounded:
     """
     cpu_id: int
 
-
 @dataclass(kw_only=True)
 class ControlInstance(CPUBounded):
     """All operating system instances (system objects) that contain control
@@ -169,8 +172,13 @@ class ControlInstance(CPUBounded):
     """
     cfg: CFG
     artificial: bool
-    function: graph_tool.Vertex
+    function: graph_tool.libgraph_tool_core.Vertex
 
+class CrossOSEvent(CPUBounded):
+    """OS-Specifc classes inherit this class to allow them to be as part of the eventchannl hypercall. 
+     Autosar maps this to starting a task, in other OS it could be a message/signal.
+    """
+    pass
 
 @dataclass(kw_only=True)
 class IRQ(ControlInstance):
@@ -181,6 +189,7 @@ class IRQ(ControlInstance):
     """
     id: int
     name: str
+    # Different for Zehpyr, there this is a seperate class!
     isr_handler: int  # node in the instance graph that handles this IRQ
     active: bool
 
@@ -189,6 +198,10 @@ class IRQ(ControlInstance):
         # add the name for extra safety
         return hash((self.id, self.name))
 
+    def __str__(self):
+        s = f"\33[1;36m{self.name}\033[0m: cpu_id={self.cpu_id}/{self.cfg.name} ({self.__class__.__name__ })"
+        # active={self.active} func={self.cfg.vertex_index[self.function]}"
+        return s
 
 @dataclass
 class IRQContext(ControlContext):
@@ -196,17 +209,21 @@ class IRQContext(ControlContext):
 
     def __hash__(self):
         return super().__hash__()
+    
+    def __str__(self):
+        return super().__str__()
 
 
 @dataclass
 class CPU:
     id: int
     irq_on: bool  # in a more general form, this would be the hardware state
-    control_instance: graph_tool.Vertex
-    abb: graph_tool.Vertex
+    control_instance: int   # this is a graphtool.libgraph_tool_core.Vertex
+    abb: int                # this is a graphtool.libgraph_tool_core.Vertex
     call_path: CallPath
     exec_state: ExecState
     analysis_context: Any  # analysis specific context information
+    cfg: CFG                # HyperSSE includes CPUs with different CFGs
 
     def copy(self):
         new_ac = None if not self.analysis_context else self.analysis_context.copy()
@@ -216,7 +233,8 @@ class CPU:
                    abb=self.abb,
                    call_path=copy.copy(self.call_path),
                    analysis_context=new_ac,
-                   exec_state=self.exec_state)
+                   exec_state=self.exec_state,
+                   cfg=self.cfg)
 
     def __eq__(self, other):
         return hash(self) == hash(other)
@@ -226,6 +244,16 @@ class CPU:
         abb = self.abb and int(self.abb)
         return hash((self.irq_on, ci, abb, self.call_path, self.exec_state))
 
+    def __str__(self):
+        s = f"CPU: Id={self.id} irq_on={self.irq_on} control_instance={self.control_instance} "
+        try:
+            s += f"Cfg-Abb={self.abb} "
+        except ValueError:
+            s += f"Cfg-Abb=invalid "
+        s += f"callpath={self.call_path} exec_state={self.exec_state.name}"
+        if self.cfg:
+            s += f" cfg={self.cfg.name}"
+        return s
 
 @dataclass
 class IRQCPU(CPU):
@@ -245,8 +273,11 @@ class IRQCPU(CPU):
                       analysis_context=new_ac,
                       exec_state=self.exec_state,
                       irq=self.irq,
-                      reference_cpu_id=self.reference_cpu_id)
-
+                      reference_cpu_id=self.reference_cpu_id,
+                      cfg=self.cfg)
+    
+    def __str__(self):
+        return "IRQ-" + super().__str__() + f" | irq={self.irq} ref_cpu_id {self.reference_cpu_id}"
 
 
 
@@ -256,13 +287,20 @@ def _get_id():
     _state_id += 1
     return _state_id
 
+# Needed for HyperSSE
+def reset_id():
+    global _state_id
+    _state_id = 0
+
 
 @dataclass(kw_only=True)
 class OSState:
+    """Abstract System State, global or local"""
+
     id: int = field(init=False, default_factory=_get_id)
-    cpus: CPUList
-    instances: graph_tool.Graph
-    cfg: CFG
+    cpus: CPUList   # can be cpus or hypervised systems
+    instances: graph_tool.Graph = field(repr=False)
+    cfg: CFG = field(repr=False)
 
     # key: some instance, value: mutable context
     context: dict = field(default_factory=dict, init=False)
@@ -289,6 +327,14 @@ class OSState:
         if cur:
             return self.instances.vp.obj[self.cpus[cpu_id].control_instance]
         return None
+    
+    T = TypeVar('T')    # it gets a class as parameter and returns a list of instances of that class
+    def context_get_instances(self, instance: Type[T]) -> list[T]:
+        inst = []
+        for k, v in self.context.items():
+            if isinstance(k, instance):
+                inst.append(k)
+        return inst
 
     def cur_context(self, cpu_id):
         """Return the context of current running object for the given CPU."""
@@ -296,6 +342,78 @@ class OSState:
         if cur:
             return self.context[self.cur_control_inst(cpu_id)]
         return None
+    
+
+    # Used for HyperSSE multi-OS states
+    system_count: int = None
+    cfg_list: list[CFG] = None
+    instances_list: list[InstanceGraph] = None
+
+    def hypersse_state(self, system_count: int, cfg_list: list[CFG], 
+                       instances_list: list[InstanceGraph]) -> None:
+        """Adds the datastructures for a hypersse state"""
+        self.system_count = system_count
+        self.cfg_list = cfg_list
+        self.instances_list = instances_list
+
+    def is_cross_os(self):
+        """Used to find hypervisor states"""
+        if self.system_count == None:
+            return False
+        return True
+    
+    def get_syscall_name(self, cpu_id: int) -> str:
+        """Helper function for current abb on cpu_id"""
+        abb = self.cpus[cpu_id].abb
+        syscall = self.cfg.get_syscall_name(abb)
+        assert syscall, f"Tried to get syscall name of a state that is not in a syscall, cpud_id={cpu_id}, state={self}"
+        return syscall
+    
+
+    # Helper to view all context, better print whole state with str()
+    def context_dump(self):
+        logger.warning("Printing context:\n")
+        for k, v in self.context.items():
+            logger.warning(f"{type(k)} --- {k}")
+            logger.warning(f"    {v}")
+
+    def __str__(self):
+        """Trying to print the imporant parts of a state."""
+        # \33 escape sequenze, 1 for bold, 35 for magenta, m for end of sequenze
+        s = f"\n\t\33[1;35mOSState-{self.id}\033[0m with \33[1;35m{len(self.cpus)}\033[0m cpu(s) "
+        if self.system_count:
+            s += f"on \33[1;35m{self.system_count}\033[0m domains\n"
+            for i in range(self.system_count):
+                s += f"\t  dom{i} @{str(self.cfg_list[i].name)}/{str(self.instances_list[i].name)}\n"
+        else:
+            s += f"\33[1;35m@{str(self.cfg.name)}\033[0m/{str(self.instances.name)}\n"
+        s += "\t-----"
+        for cpu in self.cpus:
+            if isinstance(cpu, IRQCPU):
+                # TODO: change abb id print name name
+                try:
+                    s += f"\n\t\33[1;36mIRQCPU-{cpu.id}\033[0m: ABB={cpu.abb}, state={cpu.exec_state.name}"
+                except ValueError:
+                    s += f"\n\t\33[1;36mIRQCPU-{cpu.id}\033[0m: ABB=???, state={cpu.exec_state.name}"
+                s += f", ref_cpu={cpu.reference_cpu_id}, irq={cpu.irq.name}"
+            else:
+                s += f"\n\t\33[1;36mCPU-{cpu.id}\033[0m: on {cpu.cfg.name} "
+                try:
+                    s += f"{cpu.cfg.vp.name[cpu.abb]}"
+                except TypeError:
+                    s += f"No-ABB"
+                s += f", state={cpu.exec_state.name}"
+                # for syscalls print name of syscall aswell
+                if cpu.exec_state == ExecState.syscall:
+                    if self.system_count:
+                        s += f":{self.cfg_list[cpu.id].get_syscall_name(cpu.abb)}"
+                    else:
+                        s += f":{self.cfg.get_syscall_name(cpu.abb)}"
+        s += "\n\t-----"
+        for k, v in self.context.items():
+            s += f"\n\t{k} -- {v}"
+        s += "\n"
+        return s
 
 
 class OSCreator(type):
@@ -316,12 +434,12 @@ class OSBase(metaclass=OSCreator):
     config = {}  # compile time config, TODO: this needs to be in the state
 
     @classmethod
-    def get_name(cls):
+    def get_name(cls) -> str:
         """Get the name of the operating System."""
         return cls.__name__
 
     @classmethod
-    def is_syscall(cls, function_name):
+    def is_syscall(cls: "OSBase", function_name) -> bool:
         """Return whether a function name is a system call of this OS."""
         if hasattr(cls, function_name):
             return hasattr(getattr(cls, function_name), "syscall")
@@ -345,7 +463,7 @@ class OSBase(metaclass=OSCreator):
         raise NotImplementedError
 
     @staticmethod
-    def get_initial_state(cfg, instances):
+    def get_initial_state(cfg: CFG, instances: InstanceGraph) -> OSState:
         """Get the OS specific initial state.
 
         Arguments:
@@ -355,7 +473,7 @@ class OSBase(metaclass=OSCreator):
         raise NotImplementedError
 
     @staticmethod
-    def get_cpu_local_contexts(contexts, cpu_id, instances):
+    def get_cpu_local_contexts(context: dict, cpu_id: int, instances: InstanceGraph) -> dict:
         """Get all contexts that affect cpu_id."""
         raise NotImplementedError
 
@@ -397,7 +515,7 @@ class OSBase(metaclass=OSCreator):
         raise NotImplementedError
 
     @staticmethod
-    def interpret(graph, state, cpu_id, categories=SyscallCategory.every):
+    def interpret(graph: graph_tool.Graph, state: OSState, cpu_id, categories=SyscallCategory.every) -> OSState:
         """Entry point for a synchronous os action (system call).
 
         Arguments:
@@ -412,11 +530,39 @@ class OSBase(metaclass=OSCreator):
         raise NotImplementedError()
 
     @staticmethod
-    def schedule(state, cpus=None):
+    def schedule(state: OSState, cpus=None) -> None:
         """Schedule the current state.
 
         Arguments:
         state -- the current system state
         cpus  -- a list of cpu_ids, defaults to all CPUs
         """
+        raise NotImplementedError()
+
+    # For HyperSSE/Xen
+    @staticmethod
+    def move_context(context: dict, target_cpu_id: int) -> dict:
+        """HyperSSE starts with each system thinking its running on cpu 0, 
+         this function moves the context to target_cpu_id
+         single core contexte mit cpu0 -> single core contexte mit cpuNEW"""
+
+        raise NotImplementedError()
+    
+    def move_irqhandler(irq: IRQ, inst: InstanceGraph, target_cpu_id: int) -> None:
+        """When FakeIRQ-CPUs get added in add_interrupts(...) at the beginning of MultiSSE, the 
+         IRQ is generated from the InstanceGraph, which does not know the cpu_id's 
+         in HyperSSE. Since Zephyr and Autosar use a different IRQ-obj an OS-wrapper is needed."""
+
+        raise NotImplementedError()
+
+    @staticmethod
+    def find_cross_os_event(state: OSState, cpu_id: int, cb: str) -> CrossOSEvent:
+        """Autosar currently only supports its Task as CrossOSEvents"""
+
+        raise NotImplementedError()
+
+    @staticmethod
+    def trigger_cross_os_event(state: OSState, cpu_id: int, event: CrossOSEvent) -> OSState:
+        """Wrapper to apply the event to the given state, currently only ActivateTask is supported."""
+        
         raise NotImplementedError()

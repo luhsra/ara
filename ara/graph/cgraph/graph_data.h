@@ -13,6 +13,7 @@
 #include <llvm/IR/Module.h>
 #include <memory>
 #include <vector>
+#include "WPA/Andersen.h"
 
 namespace ara::graph {
 
@@ -42,6 +43,14 @@ namespace ara::graph {
 		std::unique_ptr<SVF::SVFG> svfg;
 
 	  public:
+
+		// pointer for svf singeltons, see step SVFReset
+	  	SVF::SVFIR* pags_pointer = nullptr;
+	  	SVF::LLVMModuleSet* llvm_module = nullptr;
+	  	SVF::AndersenWaveDiff* anderson = nullptr;
+		SVF::SymbolTableInfo* syminfo = nullptr;
+	  	// SVF::SVFModule* svf_module = nullptr;
+
 		/**
 		 * Workaround for LLVM classes where we need additional attributes.
 		 * We cannot inherit this classes, since LLVM type deduction needs global knowledge. Therefore we have a map
