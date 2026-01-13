@@ -20,6 +20,7 @@ from graph_tool import Graph, GraphView
 from graph_tool.search import dfs_iterator
 
 import pyllco
+import math
 
 from ara.util import get_logger, has_path
 from ara.graph import CallPath, InstanceGraph, SyscallCategory, SigType, single_check, edge_types, CFG
@@ -247,6 +248,10 @@ class ISR(AUTOSARInstance, ControlInstance):
     priority: int
     category: int
     device: int
+
+    # Time in ms, this range indicates how often this ISR is triggered
+    min_activation_time: int = math.inf
+    max_activation_time: int = math.inf
 
     def __hash__(self):
         return AUTOSARInstance.__hash__(self)

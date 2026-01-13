@@ -348,7 +348,7 @@ class FreeRTOS(OSBase):
                                          abb=None,
                                          call_path=CallPath(),
                                          exec_state=ExecState.idle,
-                                         analysis_context=None)]),
+                                         analysis_context=None, cfg=cfg)]),
                        instances=instances, cfg=cfg)
 
     @staticmethod

@@ -147,7 +147,8 @@ class FlatAnalysis(Step):
                 loop=ctx.loop,
                 recursive=False,
                 usually_taken=False,
-                scheduler_on=self._is_chained_analysis()))
+                scheduler_on=self._is_chained_analysis()),
+                cfg=cfg)
         fake_cpu = state.cpus[ctx.cpu_id]
         for edge in path:
             new_abb = cfg.vertex(callg.ep.callsite[edge])
