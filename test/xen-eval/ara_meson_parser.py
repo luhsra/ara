@@ -49,11 +49,11 @@ def main():
             
             if line.startswith("test:"):
                 t = line.removeprefix("test:").strip()
-                if "ara:ara-xen-eval / ara-xen-eval-" not in t:
+                if "ara-xen-eval - ara:ara-xen-eval-" not in t:
                     print(f"Wrong benchmark data: \"{t}\" does not contain \"ara:ara-xen-eval / ara-xen-eval-\"")
                     print("Stopping!")
                     exit(1)
-                t = t.removeprefix("ara:ara-xen-eval / ara-xen-eval-")
+                t = t.removeprefix("ara-xen-eval - ara:ara-xen-eval-")
                 current.name = t
             elif line.startswith("duration:"):
                 d = line.removeprefix("duration:").strip().removesuffix("s")
