@@ -153,7 +153,11 @@ class ControlContext:
                           dyn_prio=list(self.dyn_prio))
 
     def __str__(self):
-        return f"{self.status.name} abb={self.abb}"
+        if self.abb:
+            return f"{self.status.name} abb={int(self.abb)}"
+            # logger.error(f"Look here!: {self.status.name}\n")
+        else:
+            return f"{self.status.name} abb=None"
         # "call_path={self.call_path} dyn_prio={self.dyn_prio}"
 
 @dataclass
