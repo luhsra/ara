@@ -8,6 +8,12 @@
             "autostart": true,
             "priority": 5,
             "schedule": true
+            },
+          "B": {
+            "activation": 1,
+            "autostart": false,
+            "priority": 6,
+            "schedule": true
             }
       },
       "resources": {},

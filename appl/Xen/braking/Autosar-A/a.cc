@@ -4,7 +4,7 @@
 extern "C" void ara_timing_info(int a, int b);
 
 DeclareTask(A);
-// DeclareTask(B);
+DeclareTask(B);
 
 // domid_t remote_dom = 1;
 // channel_t channel = 42;
@@ -38,28 +38,46 @@ void emergeny_braking() {
 }
 
 
-// TASK(B) {
+AreaIdType area = 1;
+unsigned int addr = 0x255;
 
-// 	//emergeny_braking
-// 	ara_timing_info(10, 20);
-// 	TerminateTask();
-// }
+TASK(B) {
+
+	//emergeny_braking
+	ara_timing_info(7, 8);
+	TerminateTask();
+}
+
 
 TASK(A) {
 
-	ara_timing_info(30, 50);
-	kout << "A"<< endl;
+	AddressType t = &addr;
+	uint32_t* r;
 
-	int a = check_adjustment();
-	int b = distance_measurement();
+	ara_timing_info(1, 2);
+	ReadPeripheral(area, t, r);
+	ara_timing_info(3, 4);
 
-	int c = process(a, b);
+	int c = 5;
+	int *cp = &c;
 
-	if (c > 10) {
-		// ActivateTask(B);
-		emergeny_braking();
-		ara_timing_info(30, 40);
+	// das müsste eigentlich klappen
+	if (*cp < 2) {
+		ActivateTask(B);
 	}
+	// if (*r < 10) {
+	// 	ActivateTask(B);
+	// }
+	ara_timing_info(5, 6);
+
+	// kout << "A"<< endl;
+
+	// int a = check_adjustment();
+	// int b = distance_measurement();
+
+	// int c = process(a, b);
+
+
 	// wrap_evtchn_alloc_unbound(remote_dom, channel, nullptr);
 
 	// ara_timing_info(40, 50);
