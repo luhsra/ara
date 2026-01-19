@@ -117,6 +117,10 @@
 #define wrap_evtchn_bind_interdomain(remote_dom, channel, cb) XEN_wrap_evtchn_bind_interdomain(remote_dom, channel, cb)
 #define wrap_evtchn_send(channel) XEN_wrap_evtchn_send(channel)
 
+// Read/Write Peripheral
+#define ReadPeripheral(area, address, readvalue) AUTOSAR_ReadPeripheral(area, address, readvalue)
+#define WritePeripheral(area, address, writevalue) AUTOSAR_WritePeripheral(area, address, writevalue)
+
 #define OS_CORE_ID_0 0
 #define OS_CORE_ID_1 1
 #define OS_CORE_ID_2 2
@@ -351,12 +355,14 @@ extern void AUTOSAR_ResumeAllInterrupts();
 extern void AUTOSAR_SuspendOSInterrupts();
 extern void AUTOSAR_ResumeOSInterrupts();
 
-// Not sure why it works without this
-// Xen hypercalls
+// Xen hypercalls are in ara/appl/Xen/events.h
 // extern void XEN_wrap_evtchn_alloc_unbound(RemoteDomainType remote_dom, PortType channel, EventChannelCallbackType cb);
 // extern void XEN_wrap_evtchn_bind_interdomain(RemoteDomainType remote_dom, PortType channel, EventChannelCallbackType cb);
 // extern void XEN_wrap_evtchn_send(PortType channel);
 
+// ReadPeripheral
+extern StatusType AUTOSAR_ReadPeripheral(AreaIdType a, AddressType t, ReadValueType r);
+extern StatusType AUTOSAR_WritePeripheral(AreaIdType a, AddressType t, WriteValueType r);
 
 /******************************************************************************
  *                                                                            *

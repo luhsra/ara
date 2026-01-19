@@ -67,6 +67,12 @@ typedef uint32_t ResourceType;
 typedef uint32_t SpinlockType;
 typedef uint32_t CoreIdType;
 
+// For ReadPeripheral
+typedef uint32_t AreaIdType;
+typedef const uint32_t* AddressType;
+typedef uint32_t* ReadValueType;
+typedef uint32_t* WriteValueType;
+
 // Not sure why it works without this
 // typedef uint32_t RemoteDomainType;
 // typedef uint32_t PortType;

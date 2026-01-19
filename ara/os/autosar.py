@@ -1320,3 +1320,29 @@ class AUTOSAR(OSBase):
         )
 
         return state
+
+    @syscall(
+        categories={SyscallCategory.comm},
+            signature=(Arg("area", ty=int, hint=SigType.value),
+                        Arg("address", hint=SigType.instance),
+                        Arg("readvalue", hint=SigType.instance)),
+        )
+    def AUTOSAR_ReadPeripheral(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
+        
+        logger.error(
+            f"Hello from readPeripheral!."
+        )
+        return state
+    
+    @syscall(
+        categories={SyscallCategory.comm},
+            signature=(Arg("area", ty=int, hint=SigType.value),
+                        Arg("address", hint=SigType.instance),
+                        Arg("writevalue", hint=SigType.instance)),
+        )
+    def AUTOSAR_WritePeripheral(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
+        
+        logger.error(
+            f"Hello from writePeripheral!."
+        )
+        return state
