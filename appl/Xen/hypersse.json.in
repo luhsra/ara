@@ -3,6 +3,9 @@
 		"HyperSSE"
 	],
 
+	"BBSplit": {
+		"dump": true
+	},
 	"SystemRelevantFunctions" : {
 		"xen_syscall": true
 	},
@@ -10,7 +13,8 @@
 		"xen_syscall": true
 	},
 	"LLVMMap" : {
-		"log_level": "error"
+		"log_level": "error",
+		"dump": true
 	},
 	"SVFAnalyses": {
 		"log_level": "warning",

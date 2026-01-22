@@ -1329,7 +1329,7 @@ class AUTOSAR(OSBase):
         )
     def AUTOSAR_ReadPeripheral(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
         
-        logger.error(
+        logger.warning(
             f"Hello from readPeripheral!."
         )
         return state
@@ -1342,7 +1342,7 @@ class AUTOSAR(OSBase):
         )
     def AUTOSAR_WritePeripheral(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
         
-        logger.error(
+        logger.warning(
             f"Hello from writePeripheral!."
         )
         return state

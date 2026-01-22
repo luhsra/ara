@@ -6,8 +6,6 @@ extern "C" void ara_timing_info(int a, int b);
 DeclareTask(A);
 DeclareTask(B);
 
-// domid_t remote_dom = 1;
-// channel_t channel = 42;
 
 int main(void) {
 	StartOS(0);
@@ -49,25 +47,68 @@ TASK(B) {
 }
 
 
-TASK(A) {
+int request_speed_adjustment(int * adj_p) {
 
-	AddressType t = &addr;
-	uint32_t* r;
+	ara_timing_info(12, 16);
+	return a + b;
+}
+
+void setup() {
 
 	ara_timing_info(1, 2);
-	ReadPeripheral(area, t, r);
+	wrap_evtchn_alloc_unbound(remote_dom, channel, nullptr);
 	ara_timing_info(3, 4);
 
-	int c = 5;
-	int *cp = &c;
+	return;
+}
+
+TASK(SETUP) {
+
+	domid_t zephyr_dom = 1;
+	channel_t channel = 42;
+
+}
+TASK(WAITING) {
+
+}
+
+TASK(LOOP) {
+
+}
+
+TASK(EMERGENCY) {
+
+}
+
+TASK(A) {
+
+	int adj = 0;
+	int *adj_p = &adj;
+	request_speed_adjustment(adj_p)
+
+
+	AddressType t = &addr;
+	// Careful, always assign var
+	ReadValueType r = 0;
+	StatusType s;
+
+	ara_timing_info(1, 2);
+	s = ReadPeripheral(area, t, r);
+	ara_timing_info(3, 4);
+
+	// int c = 5;
+	// int *cp = &c;
 
 	// das müsste eigentlich klappen
-	if (*cp < 2) {
-		ActivateTask(B);
-	}
-	// if (*r < 10) {
+	// if (*cp > 2) {
 	// 	ActivateTask(B);
 	// }
+	if (*r <= 10) {
+		ara_timing_info(9, 10);
+		ActivateTask(B);
+	} else {
+		ara_timing_info(13, 17);
+	}
 	ara_timing_info(5, 6);
 
 	// kout << "A"<< endl;
