@@ -179,7 +179,11 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'andreas'/ 'alarmmc','name': 'a',                     'oil': 'system_a.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'alarmmc','name': 'b',                     'oil': 'system_b.json'},
 ]
-subdir('multicore' / 'trampoline')
+
+# This set of testcases depend on posix?
+if posix_enabled
+  subdir('multicore' / 'trampoline')
+endif
 
 # Add Autosar xen guests here
 autosar_apps += [
@@ -582,7 +586,7 @@ foreach app: autosar_targets
       app += {'run_cmd_pi4_' + opt: run_cmd}
       rt = 'run_' + opt_app_name + '_pi4'
       run_target(rt, command: run_cmd)
-      summary('Run @0@ on Qemu'.format(opt_app_name), 'meson compile ' + rt, bool_yn: true, section: 'MACAW, AUTOSAR synthesis')
+      # summary('Run @0@ on Qemu'.format(opt_app_name), 'meson compile ' + rt, bool_yn: true, section: 'MACAW, AUTOSAR synthesis')
 
       pi4_bin = custom_target(opt_app_name + '_pi4_bin',
                           input: [
@@ -608,7 +612,7 @@ foreach app: autosar_targets
                             '--path', '/proj/tftp/research/rpi4/autosar',
                             '--rpi',
                           ])
-      summary('Flash @0@ on RPI with TFTP'.format(opt_app_name), 'meson compile ' + rt, bool_yn: true, section: 'MACAW, AUTOSAR synthesis')
+      # summary('Flash @0@ on RPI with TFTP'.format(opt_app_name), 'meson compile ' + rt, bool_yn: true, section: 'MACAW, AUTOSAR synthesis')
 
       autosar_generated_targets_pi4 += app
     endforeach
@@ -672,7 +676,7 @@ foreach app: autosar_targets
     app += {'run_cmd_riscv': run_cmd}
     rt = 'run_' + full_name + '_riscv'
     run_target(rt, command: run_cmd, depends: app_image_riscv)
-    summary('Run @0@ on RISC-V Qemu'.format(full_name), 'meson compile ' + rt, bool_yn: true, section: 'MACAW, AUTOSAR synthesis')
+    # summary('Run @0@ on RISC-V Qemu'.format(full_name), 'meson compile ' + rt, bool_yn: true, section: 'MACAW, AUTOSAR synthesis')
 
     riscv_bin = custom_target(full_name + '_riscv_bin',
                         input: [
@@ -698,7 +702,7 @@ foreach app: autosar_targets
                           '--path', '/proj/tftp/research/beaglev',
                           '--beaglev',
                         ])
-      summary('Flash @0@ on BeagleV with TFTP'.format(full_name), 'meson compile ' + rt, bool_yn: true, section: 'MACAW, AUTOSAR synthesis')
+      # summary('Flash @0@ on BeagleV with TFTP'.format(full_name), 'meson compile ' + rt, bool_yn: true, section: 'MACAW, AUTOSAR synthesis')
 
 
     autosar_generated_targets_riscv += app

@@ -5,8 +5,7 @@ if arm_enabled
 endif
 
 # AUTOSAR examples
-# it is POSIX only currently
-if posix_enabled
+if arm_enabled or posix_enabled or riscv_enabled
   subdir('AUTOSAR')
 endif
 
