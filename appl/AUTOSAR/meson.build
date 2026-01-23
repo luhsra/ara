@@ -244,6 +244,8 @@ autosar_apps += [
 
   # --------------------------- ECRTS26-Paper ----------------------------------
   {'core': '../Xen',  'path': 'braking' / 'Autosar-A', 'name': 'a', 'oil'  : 'a.json'},
+  {'core': '../Xen',  'path': 'hc-autosar-polled' / 'Autosar-A', 'name': 'a', 'oil'  : 'a.json'},
+  {'core': '../Xen',  'path': 'hc-autosar-polled' / 'Autosar-B', 'name': 'b', 'oil'  : 'b.json'},
 ]
 
 no_timing_settings = custom_target(

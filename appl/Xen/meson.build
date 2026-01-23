@@ -140,6 +140,10 @@ xen_testcases = [
         # + 'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-B.ll;'
         # 'BareMetal;subprojects/ara/appl/Xen/bare_metal/___min_bm_BareMetal_A_main.pi4.ll;None'      
     },
+    {'name': 'hc-autosar-polled', 'do_timings': 'true', 'guests': 
+        'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_polled_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-polled/Autosar-A/a.json;' +
+        'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_polled_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-polled/Autosar-B/b.json'
+    },
 ]
 
 # Compile Autosar ll files
