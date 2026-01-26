@@ -37,14 +37,14 @@ class HyperSSE(Experiment):
         # subprocess.run(meson_testuite_cmd, cwd=build_path, stdout=None)
 
         # THIS IS SLOW:
-        # meson_testuite_cmd = ["ninja", "sse-native_sim-zephyr-min-1", "sse-native_sim-zephyr-min-2", 
-        #                     "sse-native_sim-zephyr-min-3", "sse-native_sim-zephyr-min-4",
-        #                     "sse-native_sim-zephyr-hc-1", "sse-native_sim-zephyr-hc-2", 
-        #                     "sse-native_sim-zephyr-hc-3", "sse-native_sim-zephyr-hc-4",
-        #                     "sse-native_sim-zephyr-hc-5", "sse-native_sim-zephyr-hc-6",
-        #                     "sse-native_sim-zephyr-sleep"]
-        # build_path = cwd + parrot_dir + "build/"
-        # subprocess.run(meson_testuite_cmd, cwd=build_path, stdout=None)
+        meson_testuite_cmd = ["ninja", "sse-native_sim-zephyr-min-1", "sse-native_sim-zephyr-min-2", 
+                            "sse-native_sim-zephyr-min-3", "sse-native_sim-zephyr-min-4",
+                            "sse-native_sim-zephyr-hc-1", "sse-native_sim-zephyr-hc-2", 
+                            "sse-native_sim-zephyr-hc-3", "sse-native_sim-zephyr-hc-4",
+                            "sse-native_sim-zephyr-hc-5", "sse-native_sim-zephyr-hc-6",
+                            "sse-native_sim-zephyr-sleep", "sse-native_sim-zephyr-hw"]
+        build_path = cwd + parrot_dir + "build/"
+        subprocess.run(meson_testuite_cmd, cwd=build_path, stdout=None)
 
 
         # print("Running meson testsuite")
