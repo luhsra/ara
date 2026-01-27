@@ -137,6 +137,7 @@ xen_testcases = [
   # --------------------------- Paper ----------------------------------
     {'name': 'braking', 'do_timings': 'true', 'guests':
         'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/braking/Autosar-A/a.json;'
+        + 'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/braking/Autosar-B/b.json'
         # + 'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-B.ll;'
         # 'BareMetal;subprojects/ara/appl/Xen/bare_metal/___min_bm_BareMetal_A_main.pi4.ll;None'      
     },

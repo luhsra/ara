@@ -3,137 +3,177 @@
 
 extern "C" void ara_timing_info(int a, int b);
 
-DeclareTask(A);
-DeclareTask(B);
-
+DeclareTask(SETUP);
+DeclareTask(LOOP);
+DeclareTask(OTHER);
+DeclareTask(EMERGENCY);
 
 int main(void) {
 	StartOS(0);
 }
 
-int check_adjustment() {
 
-	ara_timing_info(10, 15);
-	return 0;
-}
+// HELPER
+// int check_adjustment() {
 
-int distance_measurement() {
+// 	ara_timing_info(10, 15);
+// 	return 0;
+// }
 
-	ara_timing_info(10, 15);
-	return 6;
-}
+// int distance_measurement() {
 
-int process(int a, int b) {
+// 	ara_timing_info(10, 15);
+// 	return 6;
+// }
 
-	ara_timing_info(12, 16);
-	return a + b;
-}
+// int process(int a, int b) {
 
-void emergeny_braking() {
+// 	ara_timing_info(12, 16);
+// 	return a + b;
+// }
 
-	ara_timing_info(1000, 1200);
-	return 5;
-}
+// void emergeny_braking() {
 
+// 	ara_timing_info(1000, 1200);
+// 	return ;
+// }
 
-AreaIdType area = 1;
-unsigned int addr = 0x255;
+// int request_speed_adjustment(int * adj_p) {
 
-TASK(B) {
+// 	ara_timing_info(12, 16);
+// 	return *adj_p + 3;
+// }
 
-	//emergeny_braking
-	ara_timing_info(7, 8);
-	TerminateTask();
-}
+domid_t zephyr_dom = 1;
+channel_t channel_req = 42;
+channel_t channel_emrg = 43;
+EventChannelState_t e;
+void* data;
 
+void manip(void* data, void* some) {
 
-int request_speed_adjustment(int * adj_p) {
-
-	ara_timing_info(12, 16);
-	return a + b;
-}
-
-void setup() {
-
-	ara_timing_info(1, 2);
-	wrap_evtchn_alloc_unbound(remote_dom, channel, nullptr);
-	ara_timing_info(3, 4);
+	// include some into data
 
 	return;
 }
 
+void read_sensors(void * data) {
+
+	AreaIdType area = 1;
+	unsigned int addr = 0x255;
+	AddressType t = &addr;
+	void * local = nullptr;
+
+	ReadPeripheral(area, t, (ReadValueType)local);
+
+	manip(data, local);
+
+	return;
+}
+
+
+// TASKS
 TASK(SETUP) {
 
-	domid_t zephyr_dom = 1;
-	channel_t channel = 42;
+	ara_timing_info(1, 2);
+	// create the event channel to Zephyr
+	wrap_evtchn_alloc_unbound(zephyr_dom, channel_req, nullptr);
+	wrap_evtchn_alloc_unbound(zephyr_dom, channel_emrg, nullptr);
 
+	ara_timing_info(3, 4);
+	ChainTask(LOOP);
 }
-TASK(WAITING) {
 
-}
 
 TASK(LOOP) {
 
+	ara_timing_info(5, 6);
+	// Check if Zephyr send data
+	e = wrap_evtchn_poll(channel_req);
+
+	// this branch we know in analysis
+	if (e == PENDING_EVNT) {
+		ara_timing_info(7, 8);
+		read_sensors(data);
+	} else {
+		
+	}
+
+	ara_timing_info(9, 10);
+	read_sensors(data);
+
+	// this branch can not be predicted by ara
+	if (*(int *) data > 0) {
+		ara_timing_info(11, 12);
+		ActivateTask(EMERGENCY);
+	}
+
+	ara_timing_info(13, 14);
+	wrap_evtchn_send(channel_req);
+
+	ara_timing_info(15, 16);
+	ChainTask(OTHER);
+}
+
+TASK(OTHER) {
+	ara_timing_info(25, 25);
+	ChainTask(LOOP);
 }
 
 TASK(EMERGENCY) {
-
+	ara_timing_info(100, 100);
+	wrap_evtchn_send(channel_emrg);
+	ChainTask(EMERGENCY);
 }
 
-TASK(A) {
+// TASK(A) {
 
-	int adj = 0;
-	int *adj_p = &adj;
-	request_speed_adjustment(adj_p)
-
-
-	AddressType t = &addr;
-	// Careful, always assign var
-	ReadValueType r = 0;
-	StatusType s;
-
-	ara_timing_info(1, 2);
-	s = ReadPeripheral(area, t, r);
-	ara_timing_info(3, 4);
-
-	// int c = 5;
-	// int *cp = &c;
-
-	// das müsste eigentlich klappen
-	// if (*cp > 2) {
-	// 	ActivateTask(B);
-	// }
-	if (*r <= 10) {
-		ara_timing_info(9, 10);
-		ActivateTask(B);
-	} else {
-		ara_timing_info(13, 17);
-	}
-	ara_timing_info(5, 6);
-
-	// kout << "A"<< endl;
-
-	// int a = check_adjustment();
-	// int b = distance_measurement();
-
-	// int c = process(a, b);
+// 	int adj = 0;
+// 	int *adj_p = &adj;
+// 	request_speed_adjustment(adj_p);
 
 
-	// wrap_evtchn_alloc_unbound(remote_dom, channel, nullptr);
+// 	AddressType t = &addr;
+// 	// Careful, always assign var
+// 	ReadValueType r = 0;
+// 	StatusType s;
 
-	// ara_timing_info(40, 50);
-	// kout << "A2"<< endl;
+// 	ara_timing_info(1, 2);
+// 	s = ReadPeripheral(area, t, r);
+// 	ara_timing_info(3, 4);
 
-	// wrap_evtchn_send(channel);
+// 	// int c = 5;
+// 	// int *cp = &c;
 
-	// ara_timing_info(20, 30);
-	// kout << "A3"<< endl;
+// 	// das müsste eigentlich klappen
+// 	// if (*cp > 2) {
+// 	// 	ActivateTask(B);
+// 	// }
+// 	if (*r <= 10) {
+// 		ara_timing_info(9, 10);
+// 		ActivateTask(B);
+// 	} else {
+// 		ara_timing_info(13, 17);
+// 	}
+// 	ara_timing_info(5, 6);
 
-	TerminateTask();
-}
-// mergen
+// 	// kout << "A"<< endl;
 
-// 3 Task, 1 loop, 1x low prio request, 1x high prio braking
-// get resource syscall
-// GetResource/ReleaseResource
-// ReadPeripheral32 WritePeripheral32
+// 	// int a = check_adjustment();
+// 	// int b = distance_measurement();
+
+// 	// int c = process(a, b);
+
+
+// 	// wrap_evtchn_alloc_unbound(remote_dom, channel, nullptr);
+
+// 	// ara_timing_info(40, 50);
+// 	// kout << "A2"<< endl;
+
+// 	// wrap_evtchn_send(channel);
+
+// 	// ara_timing_info(20, 30);
+// 	// kout << "A3"<< endl;
+
+// 	TerminateTask();
+// }

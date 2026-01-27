@@ -3,16 +3,28 @@
     {
       "id": 0,
         "tasks": {
-          "A": {
+          "SETUP": {
             "activation": 1,
             "autostart": true,
+            "priority": 10,
+            "schedule": true
+            },
+          "LOOP": {
+            "activation": 1,
+            "autostart": false,
             "priority": 5,
             "schedule": true
             },
-          "B": {
-            "activation": 1,
+          "OTHER": {
+            "activation": 5,
             "autostart": false,
-            "priority": 6,
+            "priority": 2,
+            "schedule": true
+            },
+          "EMERGENCY": {
+            "activation": 5,
+            "autostart": false,
+            "priority": 11,
             "schedule": true
             }
       },
