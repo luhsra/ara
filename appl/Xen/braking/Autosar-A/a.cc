@@ -117,8 +117,13 @@ TASK(LOOP) {
 
 TASK(OTHER) {
 	ara_timing_info(25, 25);
-	ChainTask(LOOP);
+
+	// Variant: disable ChainTask to simulate one hyperperiod or a continues analysis
+	// ChainTask(LOOP);
 }
+
+// Variant: Zephyr activates a task to signal its ACK
+// TASK(ZEPHYR_HANDLE)
 
 TASK(EMERGENCY) {
 	ara_timing_info(100, 100);

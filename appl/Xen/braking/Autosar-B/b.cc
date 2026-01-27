@@ -75,7 +75,10 @@ void read_sensors(void * data) {
 
 TASK(CALC) {
 	ara_timing_info(25, 25);
-	wrap_evtchn_send(channel_req);
+
+	// Variant: send an ACK from Zephyr -> creates more SPs
+	// wrap_evtchn_send(channel_req);
+
 	TerminateTask();
 }
 
