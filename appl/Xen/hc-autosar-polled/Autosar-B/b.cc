@@ -23,14 +23,14 @@ TASK(B) {
 
   	ara_timing_info(100, 100);
 
-	EventChannelState_t e;
-	e = wrap_evtchn_poll(channel);
+	// EventChannelState_t e;
+	// e = wrap_evtchn_poll(channel);
 
-	if (e == PENDING_EVNT) {
-  		ara_timing_info(25, 25);
-	} else {
-  		ara_timing_info(75, 75);
-	}
+	// if (e == PENDING_EVNT) {
+  	// 	ara_timing_info(25, 25);
+	// } else {
+  	// 	ara_timing_info(75, 75);
+	// }
 	
 	TerminateTask();
 }

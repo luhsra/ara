@@ -27,9 +27,9 @@ TASK(A) {
 
 	wrap_evtchn_alloc_unbound(remote_dom, channel, nullptr);
 
-	ara_timing_info(30, 30);
+	// ara_timing_info(30, 30);
 
-	wrap_evtchn_send(channel);
+	// wrap_evtchn_send(channel);
 
   	ara_timing_info(100, 100);
 
@@ -41,7 +41,7 @@ TASK(A) {
 		ActivateTask(B);
 	} else {
   		ara_timing_info(15, 15);
-		ActivateTask(C);
+		// ActivateTask(C);
 	}
 
 	TerminateTask();
