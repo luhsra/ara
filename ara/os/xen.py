@@ -331,6 +331,11 @@ class XEN(OSBase):
             logger.warning(f"Wrap_evtchn_send do not has an evtchn for channel: {channel_id}")
             return state
 
+        if sender_channel.target_domain >= XEN.system_count:
+            logger.warning(f"Wrap_evtchn_send for a domain that does not exist: {channel_id}")
+            logger.warning("Hypercall is ignored!")
+            return state
+        
         # Raise CrossCoreAction to get receiver and return here again
         XEN.get_remote_id(state, sender_channel.target_domain)
         # Convert state in hyersse state
@@ -386,6 +391,11 @@ class XEN(OSBase):
                 break
         if not receiver_channel:
             logger.warning(f"Wrap_evtchn_poll do not has an evtchn for channel: {channel_id}")
+            logger.warning("Hypercall is ignored!")
+            return state
+
+        if receiver_channel.target_domain >= XEN.system_count:
+            logger.warning(f"Wrap_evtchn_poll for a domain that does not exist: {channel_id}")
             logger.warning("Hypercall is ignored!")
             return state
 

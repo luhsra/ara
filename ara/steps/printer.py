@@ -48,6 +48,7 @@ _sysshort = {
     "XEN_wrap_evtchn_alloc_unbound": "XEA",
     "XEN_wrap_evtchn_bind_interdomain": "XEB",
     "XEN_wrap_evtchn_send": "XES",
+    "XEN_wrap_evtchn_poll": "XEP",
 
 }
 
