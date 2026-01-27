@@ -116,6 +116,7 @@
 #define wrap_evtchn_alloc_unbound(remote_dom, channel, cb) XEN_wrap_evtchn_alloc_unbound(remote_dom, channel, cb)
 #define wrap_evtchn_bind_interdomain(remote_dom, channel, cb) XEN_wrap_evtchn_bind_interdomain(remote_dom, channel, cb)
 #define wrap_evtchn_send(channel) XEN_wrap_evtchn_send(channel)
+#define wrap_evtchn_poll(channel) XEN_wrap_evtchn_poll(channel)
 
 // Read/Write Peripheral
 #define ReadPeripheral(area, address, readvalue) AUTOSAR_ReadPeripheral(area, address, readvalue)

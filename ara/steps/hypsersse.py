@@ -190,7 +190,7 @@ class HyperSSE(Step):
 
         # Call another MultiSSE once this step is finished
         self._step_manager.chain_step({"name": "MultiSSE", "with_times": self.do_timings.get(), "dump": True, 
-                                       "log_level": "debug", "hyper_sse": True, "file_name": str(self.testname.get()), "add_legend": False})
+                                       "log_level": "warning", "hyper_sse": True, "file_name": str(self.testname.get()), "add_legend": False})
 
         if self.do_stats.get():
             self._step_manager.chain_step({"name": "MSTGStats", "dump": True, "log_level": "info"}, after="MultiSSE")

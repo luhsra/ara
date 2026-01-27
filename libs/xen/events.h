@@ -97,6 +97,17 @@ extern "C" {
 		*/
 	}
 
+
+	typedef enum {PENDING_EVNT, NO_EVNT} EventChannelState_t;
+
+	EventChannelState_t wrap_evtchn_poll(channel_t channel) {
+		/**
+		 * Poll if the sender send its event while the channel was masked by the receiver.
+		 * @param channel_t channel: choosen channel
+		 * @return a real syscall would return its status code here, here only the result of the poll is returned
+		 */
+	}
+
 #ifdef __cplusplus
 }
 #endif

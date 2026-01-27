@@ -260,15 +260,16 @@ class XEN(OSBase):
         channel = read_va_integer(args.channel)
         cb: str = args.cb.value.get_name()
 
+        masked = False
         task = XEN.system_types[cpu_id].find_cross_os_event(state=state, cpu_id=cpu_id, cb=cb)
         if not task:
-            logger.warning(f"Could not find CrossOSEvent: \"{cb}\" on dom-{cpu_id}")
+            logger.info(f"CrossOSEvent {channel} has no task for \"{cb}\" on dom-{cpu_id}, it is masked")
+            masked = True
 
         # TODO: check if channel already exists
         XEN._eventchannel_id += 1
         evtchn = EventChannel(name="Evtchn-"+str(XEN._eventchannel_id), cpu_id=cpu_id, source_domain=cpu_id, target_domain=remote_dom,
-                              channel=channel, event=task)
-        logger.info(evtchn)
+                              channel=channel, event=task, masked=masked, pending=False)
         state.context[evtchn] = 1
 
         return state
@@ -287,33 +288,34 @@ class XEN(OSBase):
         channel = read_va_integer(args.channel)
         cb: str = args.cb.value.get_name()
 
+        masked = False
         task = XEN.system_types[cpu_id].find_cross_os_event(state=state, cpu_id=cpu_id, cb=cb)
         if not task:
-            logger.warning(f"Could not find CrossOSEvent: \"{cb}\" on dom-{cpu_id}")
+            logger.info(f"CrossOSEvent {channel} has no task for \"{cb}\" on dom-{cpu_id}, it is masked")
+            masked = True
 
         # TODO: check if channel already exists
         XEN._eventchannel_id += 1
         evtchn = EventChannel(name="Evtchn-"+str(XEN._eventchannel_id), cpu_id=cpu_id, source_domain=cpu_id, target_domain=remote_dom,
-                              channel=channel, event=task)
-        logger.info(evtchn)
+                              channel=channel, event=task, masked=masked, pending=False)
         state.context[evtchn] = 1
 
         return state
     
+    def get_remote_id(state: OSState, id: int) -> None:
+        """
+        Check, if the cpu/dom id is already in state, otherwise raise a CrossCoreAction,
+            which return here again with the other dom/cpu. Analog to os.Autosar.check_cpu.
+        """
+        ids = set([x.id for x in state.cpus])
+
+        if id not in ids:
+            raise CrossCoreAction(set([id]))
+            
     @syscall(categories={SyscallCategory.comm}, 
             signature=(Arg("channel", ty=int, raw_value=True, hint=SigType.value),),)
     def XEN_wrap_evtchn_send(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
 
-        def get_remote_id(state: OSState, id: int) -> None:
-            """
-            Check, if the cpu/dom id is already in state, otherwise raise a CrossCoreAction,
-             which return here again with the other dom/cpu. Analog to os.Autosar.check_cpu.
-            """
-            ids = set([x.id for x in state.cpus])
-
-            if id not in ids:
-                raise CrossCoreAction(set([id]))
-            
         # If we are not hypervised this does nothing
         if graph.os != XEN:
             return state
@@ -330,7 +332,7 @@ class XEN(OSBase):
             return state
 
         # Raise CrossCoreAction to get receiver and return here again
-        get_remote_id(state, sender_channel.target_domain)
+        XEN.get_remote_id(state, sender_channel.target_domain)
         # Convert state in hyersse state
         state.hypersse_state(system_count=XEN.system_count, cfg_list=XEN.cfg_list, instances_list=XEN.instances_list)
 
@@ -345,17 +347,73 @@ class XEN(OSBase):
             logger.warning(f"Wrap_evtchn_send's does not find the right channel: {channel_id} at the receiver")
             logger.warning("Hypercall is ignored!")
             return state
-        if not receiver_channel.event:
-            logger.warning(f"Wrap_evtchn_send Receiver's event is None")
+        
+        if receiver_channel.masked:
+            if receiver_channel.pending:
+                logger.info(f"Receiver: {receiver_channel.cpu_id} masked interrupts from {channel_id}. It was already pending.")
+            else:
+                logger.info(f"Receiver: {receiver_channel.cpu_id} masked interrupts from {channel_id}. It is now pending.")
+                receiver_channel.pending = True
+            return state
+
+        elif not receiver_channel.event:
+            logger.warning(f"Wrap_evtchn_send Receiver's event has no event, but it is not masked.")
+            logger.warning("Hypercall is ignored!")
+            return state
+        
+        else:
+            # Trigger event
+            logger.info(f"Receiver: {receiver_channel.cpu_id} received send on {channel_id} from {receiver_channel.target_domain}.")
+            state.cfg = XEN.cfg_list[receiver_channel.cpu_id]
+            return XEN.system_types[receiver_channel.cpu_id].trigger_cross_os_event(state, receiver_channel.cpu_id, receiver_channel.event)
+            # return state
+
+    @syscall(categories={SyscallCategory.comm}, 
+            signature=(Arg("channel", ty=int, raw_value=True, hint=SigType.value),),)
+    def XEN_wrap_evtchn_poll(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
+        """ Query if an event occured on this channel. This is usefull for CrossOSEvents that do not trigger an new task, but are required to be polled."""
+        
+        # If we are not hypervised this does nothing, TODO: value analyzer should return false
+        if graph.os != XEN:
+            return state
+        
+        # Retrieve active event-channels of receiver
+        channel_id = read_va_integer(args.channel)
+        active_channels = state.context_get_instances(EventChannel)
+        for evtchn in active_channels:
+            if channel_id == evtchn.channel:
+                receiver_channel = evtchn
+                break
+        if not receiver_channel:
+            logger.warning(f"Wrap_evtchn_poll do not has an evtchn for channel: {channel_id}")
             logger.warning("Hypercall is ignored!")
             return state
 
-        # Trigger event
-        state.cfg = XEN.cfg_list[receiver_channel.cpu_id]
-        # XEN.system_types[receiver_channel.cpu_id].trigger_cross_os_event(state, receiver_channel.cpu_id, receiver_channel.event)
-        return XEN.system_types[receiver_channel.cpu_id].trigger_cross_os_event(state, receiver_channel.cpu_id, receiver_channel.event)
-        # return state
+        # Raise CrossCoreAction to get receiver and return here again
+        XEN.get_remote_id(state, receiver_channel.target_domain)
+        # Convert state in hyersse state
+        state.hypersse_state(system_count=XEN.system_count, cfg_list=XEN.cfg_list, instances_list=XEN.instances_list)
 
+        if receiver_channel.pending:
+            logger.info(f"Found pending event on channel: {channel_id}")
+            receiver_channel.pending = False
+
+            # if there is an CrossOSEvent trigger it
+            if receiver_channel.event:
+                state.cfg = XEN.cfg_list[receiver_channel.cpu_id]
+                return XEN.system_types[receiver_channel.cpu_id].trigger_cross_os_event(state, receiver_channel.cpu_id, receiver_channel.event)
+            else:
+                # TODO: here we know if an event was pending or not, but can not further use the information in the analysis.
+                # idealy we could hint the value analyzer if we found an event or not
+                return state
+
+        else: 
+            logger.info(f"No pending event on {channel_id}")
+            # TODO: here we know if an event was pending or not, but can not further use the information in the analysis.
+            # idealy we could hint the value analyzer if we found an event or not
+            return state
+
+        
 # --------------------------- Classes ---------------------
 
 @dataclass()
@@ -373,12 +431,11 @@ class EventChannel(CPUBounded):
     channel: int
     event: CrossOSEvent | None  # event that happens on hypercall
 
-    # TODO Add masking and poll hypercalls
-    # masked: bool
-    # pending: bool
-
+    # used with a CrossOSEvent of None
+    masked: bool
+    pending: bool
 
     def __str__(self):
         s = f"\33[1;36m{self.name}\033[0m: cpu_id={self.cpu_id} dom-{self.source_domain} to dom-{self.target_domain},"\
-             f" via channel: {self.channel} and event: {self.event}"
+             f" via channel: {self.channel}, event: {self.event}, masked: {self.masked}, pending: {self.pending}"
         return s
