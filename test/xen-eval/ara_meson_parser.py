@@ -25,6 +25,10 @@ class Testcase:
     vertices: List[int]
     edges: List[int]
 
+    def __str__(self):
+        attributes = ', '.join(f'{key}={value}' for key, value in vars(self).items())
+        return f'{self.__class__.__name__}({attributes})'
+
 
 def main():
     """Parses the output of meson into a csv.
@@ -94,8 +98,8 @@ def main():
                          "#LocalAbSS-domX", "#SP-domX", "#Edges-domX", "#Vertices-domX"])
         rows = []
         for i in cases:
-            # print(f"{i} {i.name} {i.status}")
-            if i.status == "True":
+            # print(f"{i}")
+            if i.status == "True" and i.labsss and i.sps and i.edges and i.vertices:
                 row = [i.name, i.status, i.duration, i.labsss[-1], i.sps[-1], i.edges[-1], i.vertices[-1]]
 
                 # iterate over all except the last entry

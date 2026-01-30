@@ -42,11 +42,11 @@
 	"SSE": {
 		"dump": true
 	},
-
+	
 	"logger": {
 		"AUTOSAR": "warning",
 		"Zephyr": "debug",
-		"XEN": "debug"
+		"XEN": "info"
 	},
 	"MultiSSE": {
 		"with_times": true,

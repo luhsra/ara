@@ -1,0 +1,6 @@
+[
+  {
+    "key": {"call_path":"Callpath(to_host_kb_thread)","func":"k_sem_take","inst":"","nr":1},
+    "value": {"type": "value", "name": "-1"}
+  }
+]
