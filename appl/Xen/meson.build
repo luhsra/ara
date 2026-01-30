@@ -178,12 +178,15 @@ foreach case: xen_testcases
   conf_data.set('name', case['name'])
   conf_data.set('do_timings', case['do_timings'])
   conf_data.set('guests', case['guests'])
-  conf_data.set('do_stats', 'true') # 'true' or 'false'
+  conf_data.set('do_stats', 'false') # 'true' or 'false'
 
   name = case['name']
   settings = configure_file(input : files(f'hypersse.json.in'), output : f'hypersse-@name@.json',
               configuration : conf_data)
 
+  # optinally add va_corrections here, file should be in the folder of this meson folder
+  # also add ", '--va-corrections', corrections" to custom_target(command: ...)
+  # corrections = files('va_corrections.json')
   custom_target('xen-ara-' + case['name'], 
             command: [py3_inst, ara_py, 'ignored', '--os', 'XEN', '--log-level', 'warn',
                 '--step-settings', settings],
