@@ -14,13 +14,17 @@ int main(void) {
 }
 
 TASK(B) {
-	kout << "B" << endl;
+	// kout << "B" << endl;
 	TerminateTask();
 }
 TASK(C) {
-	kout << "C" << endl;
+	// kout << "C" << endl;
 	TerminateTask();
 }
+
+// There is a function for the VA to find a global e?
+// unsigned int e = 27;
+
 TASK(A) {
 
 	ara_timing_info(10, 10);
@@ -34,7 +38,7 @@ TASK(A) {
   	ara_timing_info(100, 100);
 
 	EventChannelState_t e;
-	e = wrap_evtchn_poll(channel);
+	e = wrap_evtchn_poll(channel, NO_BRANCH);
 
 	if (e == PENDING_EVNT) {
   		ara_timing_info(12, 12);

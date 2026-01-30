@@ -145,6 +145,10 @@ xen_testcases = [
         'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_polled_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-polled/Autosar-A/a.json;' +
         'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_polled_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-polled/Autosar-B/b.json'
     },
+    {'name': 'hc-autosar-polled-2', 'do_timings': 'true', 'guests': 
+        'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_polled_2_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-polled-2/Autosar-A/a.json;' +
+        'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_polled_2_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-polled-2/Autosar-B/b.json'
+    },
 ]
 
 # Compile Autosar ll files

@@ -247,6 +247,8 @@ autosar_apps += [
   {'core': '../Xen',  'path': 'braking' / 'Autosar-B', 'name': 'b', 'oil'  : 'b.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'hc-autosar-polled' / 'Autosar-A', 'name': 'a', 'oil'  : 'a.json'},
   {'core': '../Xen',  'path': 'hc-autosar-polled' / 'Autosar-B', 'name': 'b', 'oil'  : 'b.json'},
+  {'core': '../Xen',  'path': 'hc-autosar-polled-2' / 'Autosar-A', 'name': 'a', 'oil'  : 'a.json'},
+  {'core': '../Xen',  'path': 'hc-autosar-polled-2' / 'Autosar-B', 'name': 'b', 'oil'  : 'b.json'},
 ]
 
 no_timing_settings = custom_target(
