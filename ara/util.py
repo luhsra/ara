@@ -148,9 +148,10 @@ class LoggerManager:
         """
         try:
             import matplotlib
-            matplotlib.set_loglevel("critical")
             # removes this warning while using debugger "Backend gtk4agg is interactive backend. Turning interactive mode on." 
-            matplotlib.use('TkAgg',force=False)
+            matplotlib.use('svg',force=False)
+            matplotlib.set_loglevel("critical")
+            
         except:
             # absolutely not relevant
             pass
