@@ -14,6 +14,8 @@ from copy import copy
 from .os_util import (
     syscall,
     Arg,
+    set_next_abb,
+    find_return_value
 )
 from ara.graph import CFG, InstanceGraph, SyscallCategory, SigType
 from .os_base import (
@@ -27,8 +29,10 @@ from .os_base import (
     CPUBounded,
     IRQ,
     IRQCPU,
+    ExecState
 )
 
+from ara.graph import CFType as _CFType, CFGView as _CFGView
 from ara.steps.multisse_helper.common import CrossExecState, get_single_core_states
 
 logger = get_logger("XEN")
@@ -373,8 +377,10 @@ class XEN(OSBase):
             return XEN.system_types[receiver_channel.cpu_id].trigger_cross_os_event(state, receiver_channel.cpu_id, receiver_channel.event)
             # return state
 
-    @syscall(categories={SyscallCategory.comm}, 
-            signature=(Arg("channel", ty=int, raw_value=True, hint=SigType.value),),)
+    # @syscall(categories={SyscallCategory.comm}, custom_control_flow=False, 
+    @syscall(categories={SyscallCategory.comm}, custom_control_flow=True, 
+            signature=(Arg("channel", ty=int, raw_value=True, hint=SigType.value),
+                       Arg("is_branch", ty=int, raw_value=True, hint=SigType.value),),)
     def XEN_wrap_evtchn_poll(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
         """ Query if an event occured on this channel. This is usefull for CrossOSEvents that do not trigger an new task, but are required to be polled."""
         
@@ -384,6 +390,7 @@ class XEN(OSBase):
         
         # Retrieve active event-channels of receiver
         channel_id = read_va_integer(args.channel)
+        is_branch = read_va_integer(args.is_branch)
         active_channels = state.context_get_instances(EventChannel)
         for evtchn in active_channels:
             if channel_id == evtchn.channel:
@@ -411,16 +418,77 @@ class XEN(OSBase):
             # if there is an CrossOSEvent trigger it
             if receiver_channel.event:
                 state.cfg = XEN.cfg_list[receiver_channel.cpu_id]
-                return XEN.system_types[receiver_channel.cpu_id].trigger_cross_os_event(state, receiver_channel.cpu_id, receiver_channel.event)
+                state = XEN.system_types[receiver_channel.cpu_id].trigger_cross_os_event(state, receiver_channel.cpu_id, receiver_channel.event)
+
+                # this is needed because of custom_control_flow=True
+                set_next_abb(state=state, cpu_id=cpu_id)
+                return state
             else:
-                # TODO: here we know if an event was pending or not, but can not further use the information in the analysis.
-                # idealy we could hint the value analyzer if we found an event or not
+                # can not use hacky value analyzer replacement from below
+                if is_branch == 0:
+                    set_next_abb(state=state, cpu_id=cpu_id)
+                    return state
+
+                # here we know if an event was pending or not
+                #  idealy we could hint the value analyzer if we found an event or not
+                #  instaed we do this hack, assuming that there is always an IF/Else afterwards
+
+                # Trying to tell the value analyze what our return value is
+                """
+                from ara.steps import get_native_component
+                ValueAnalyzer = get_native_component("ValueAnalyzer")
+                ValuesUnknown = get_native_component("ValuesUnknown")
+                ValueAnalyzerResult = get_native_component("ValueAnalyzerResult")
+                va = ValueAnalyzer(graph)
+                
+                # Try 1
+                # returns: llvm::GlobalValue* / PyObject*
+                # res = va.find_global("e")
+                # va.assign_system_object(args.channel.value, res)
+
+                # Try 2
+                cpu = state.cpus[cpu_id]
+                ret_val = va.get_return_value(cpu.abb, callpath=cpu.call_path)
+                handler = find_return_value(cpu.abb, cpu.call_path, va)
+                va.assign_system_object(handler.value, state.instances.vp.obj[2],
+                                        -1, handler.callpath)
+                """
+                # Try 3 using custom control flow successor
+                # set custom_control_flow=True, which disables set_next_abb() after the syscall
+                # instead it is called twice here
+                set_next_abb(state=state, cpu_id=cpu_id)
+
+                cfg = state.cpus[cpu_id].cfg
+                lcfg = _CFGView(cfg, efilt=cfg.ep.type.fa == _CFType.lcf)
+                cpu = state.cpus[cpu_id]
+                for idx, next_abb in enumerate(lcfg.vertex(cpu.abb).out_neighbors()):
+                    # the next abb is always? the then branch
+                    if idx == 0:
+                        cpu.abb = int(next_abb)
+                        cpu.exec_state = ExecState.from_abbtype(cfg.vp.type[next_abb])
                 return state
 
         else: 
+            # can not use hacky value analyzer replacement from below
+            if is_branch == 0:
+                set_next_abb(state=state, cpu_id=cpu_id)
+                return state
+                
             logger.info(f"No pending event on {channel_id}")
-            # TODO: here we know if an event was pending or not, but can not further use the information in the analysis.
-            # idealy we could hint the value analyzer if we found an event or not
+            # here we know if an event was pending or not
+            #  idealy we could hint the value analyzer if we found an event or not
+            #  instaed we do this hack, assuming that there is always an IF/Else afterwards
+            set_next_abb(state=state, cpu_id=cpu_id)
+
+
+            cfg = state.cpus[cpu_id].cfg
+            lcfg = _CFGView(cfg, efilt=cfg.ep.type.fa == _CFType.lcf)
+            cpu = state.cpus[cpu_id]
+            for idx, next_abb in enumerate(lcfg.vertex(cpu.abb).out_neighbors()):
+                # the idx=0 as then branch, execute else branch
+                if idx == 1:
+                    cpu.abb = int(next_abb)
+                    cpu.exec_state = ExecState.from_abbtype(cfg.vp.type[next_abb])
             return state
 
         

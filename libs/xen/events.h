@@ -27,7 +27,6 @@ extern "C" {
 	// A real OS implementation would need to map this new ports towards the ports it receives from the hypercalls
 	typedef int channel_t;
 
-
 	void wrap_evtchn_alloc_unbound(domid_t remote_dom, channel_t channel, evtchn_cb_t cb) {
 		/**
 		 * Create a new event channel
@@ -99,11 +98,13 @@ extern "C" {
 
 
 	typedef enum {PENDING_EVNT, NO_EVNT} EventChannelState_t;
+	typedef enum {NO_BRANCH, IS_BRANCH} EventChannelIsBranch_t;
 
-	EventChannelState_t wrap_evtchn_poll(channel_t channel) {
+	EventChannelState_t wrap_evtchn_poll(channel_t channel, EventChannelIsBranch_t is_branch) {
 		/**
 		 * Poll if the sender send its event while the channel was masked by the receiver.
 		 * @param channel_t channel: choosen channel
+		 * @param option_t is_branch: help to indeicated that a branch occures after the poll
 		 * @return a real syscall would return its status code here, here only the result of the poll is returned
 		 */
 	}
