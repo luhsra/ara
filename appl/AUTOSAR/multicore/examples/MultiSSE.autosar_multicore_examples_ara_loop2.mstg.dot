@@ -1,0 +1,82 @@
+digraph G {
+label="MultiSSE.autosar_multicore_examples_ara_loop2.mstg.dot";
+1 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">CPU 0</TD><TD PORT="c1">CPU 1</TD><TD PORT="c2">CPU 2</TD></TR></TABLE>>, shape=plaintext, tooltip=1];
+subgraph cluster_7 {
+label="M7 (CPU 0)";
+2 [color=green, fontsize=14, label=<State 2<br/><font point-size='12'>instance: A<br/>type: computation<br/>abb: ABB8<br/>bcet/wcet: 100/100</font>>, style=bold, tooltip=2];
+3 [color=green, fontsize=14, label=<State 5<br/><font point-size='12'>instance: A<br/>type: computation<br/>abb: ABB9<br/>bcet/wcet: 5/5</font>>, style=bold, tooltip=3];
+4 [color=green, fontsize=14, label=<State 6<br/><font point-size='12'>instance: A<br/>type: computation<br/>abb: ABB11<br/>bcet/wcet: 5/5</font>>, style=bold, tooltip=4];
+5 [color=blue, fontsize=14, label=<State 7<br/><font point-size='12'>instance: A<br/>type: syscall<br/>abb: ABB21<br/>sys: AUTOSAR_ActivateTask</font>>, shape=box, tooltip=5];
+6 [color=blue, fontsize=14, label=<State 8<br/><font point-size='12'>instance: A<br/>type: syscall<br/>abb: ABB20<br/>sys: AUTOSAR_ActivateTask</font>>, shape=box, tooltip=6];
+16 [color=green, fontsize=14, label=<State 15<br/><font point-size='12'>instance: A<br/>type: computation<br/>abb: ABB10</font>>, style=bold, tooltip=16];
+17 [color=green, fontsize=14, label=<State 17<br/><font point-size='12'>instance: A<br/>type: computation<br/>abb: ABB13</font>>, style=bold, tooltip=17];
+18 [color=green, fontsize=14, label=<State 18<br/><font point-size='12'>instance: A<br/>type: computation<br/>abb: ABB14</font>>, style=bold, tooltip=18];
+19 [color=green, fontsize=14, label=<State 19<br/><font point-size='12'>instance: A<br/>type: computation<br/>abb: ABB16</font>>, style=bold, tooltip=19];
+20 [color=blue, fontsize=14, label=<State 20<br/><font point-size='12'>instance: A<br/>type: syscall<br/>abb: ABB22<br/>sys: AUTOSAR_ChainTask</font>>, shape=box, tooltip=20];
+21 [color=blue, fontsize=14, label=<State 21<br/><font point-size='12'>instance: A<br/>type: syscall<br/>abb: ABB19<br/>sys: AUTOSAR_TerminateTask</font>>, shape=box, tooltip=21];
+22 [color=violet, fontsize=14, label=<State 23<br/><font point-size='12'>instance: Idle<br/>type: idle<br/>abb: None</font>>, style=bold, tooltip=22];
+25 [color=green, fontsize=14, label=<State 26<br/><font point-size='12'>instance: A<br/>type: computation<br/>abb: ABB12</font>>, style=bold, tooltip=25];
+}
+
+subgraph cluster_9 {
+label="M9 (CPU 1)";
+8 [color=violet, fontsize=14, label=<State 3<br/><font point-size='12'>instance: Idle<br/>type: idle<br/>abb: None</font>>, style=bold, tooltip=8];
+24 [color=blue, fontsize=14, label=<State 24<br/><font point-size='12'>instance: B<br/>type: syscall<br/>abb: ABB7<br/>sys: AUTOSAR_TerminateTask</font>>, shape=box, tooltip=24];
+23 [color=green, fontsize=14, label=<State 16<br/><font point-size='12'>instance: B<br/>type: computation<br/>abb: ABB5<br/>bcet/wcet: 1/1</font>>, style=bold, tooltip=23];
+}
+
+subgraph cluster_11 {
+label="M11 (CPU 2)";
+10 [color=violet, fontsize=14, label=<State 4<br/><font point-size='12'>instance: Idle<br/>type: idle<br/>abb: None</font>>, style=bold, tooltip=10];
+26 [color=green, fontsize=14, label=<State 27<br/><font point-size='12'>instance: C<br/>type: computation<br/>abb: ABB1<br/>bcet/wcet: 1/1</font>>, style=bold, tooltip=26];
+27 [color=blue, fontsize=14, label=<State 29<br/><font point-size='12'>instance: C<br/>type: syscall<br/>abb: ABB3<br/>sys: AUTOSAR_TerminateTask</font>>, shape=box, tooltip=27];
+}
+
+subgraph cluster_Metasync12 {
+label="";
+12 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">CPU 0</TD><TD PORT="c1">CPU 1</TD></TR></TABLE>>, shape=plaintext, tooltip=12];
+13 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">CPU 0</TD><TD PORT="c1">CPU 1</TD></TR></TABLE>>, shape=plaintext, tooltip=13];
+}
+
+subgraph cluster_Metasync14 {
+label="";
+14 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">CPU 0</TD><TD PORT="c2">CPU 2</TD></TR></TABLE>>, shape=plaintext, tooltip=14];
+15 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">CPU 0</TD><TD PORT="c2">CPU 2</TD></TR></TABLE>>, shape=plaintext, tooltip=15];
+}
+
+1:c0 -> 2  [color=black];
+1:c1 -> 8  [color=black];
+1:c2 -> 10  [color=black];
+1 -> 12  [color=darkred, label="105 - 105", style=dotted];
+1 -> 14  [color=darkred, label="105 - 105", style=dotted];
+2 -> 3  [color=black];
+2 -> 4  [color=black];
+3 -> 5  [color=black];
+4 -> 6  [color=black];
+5 -> 12:c0  [color=black];
+6 -> 14:c0  [color=black];
+8 -> 12:c1  [color=black];
+10 -> 14:c2  [color=black];
+12 -> 13  [color=black];
+13:c0 -> 16  [color=black];
+13:c1 -> 23  [color=black];
+13 -> 12  [color=darkred, label="105 - 105", style=dotted];
+13 -> 14  [color=darkred, label="105 - 105", style=dotted];
+14 -> 15  [color=black];
+15:c0 -> 25  [color=black];
+15:c2 -> 26  [color=black];
+15 -> 12  [color=darkred, label="105 - 105", style=dotted];
+15 -> 14  [color=darkred, label="105 - 105", style=dotted];
+16 -> 17  [color=black];
+17 -> 18  [color=black];
+17 -> 19  [color=black];
+18 -> 20  [color=black];
+19 -> 21  [color=black];
+20 -> 2  [color=black];
+21 -> 22  [color=black];
+23 -> 24  [color=black];
+24 -> 8  [color=black];
+25 -> 17  [color=black];
+26 -> 27  [color=black];
+27 -> 10  [color=black];
+}
