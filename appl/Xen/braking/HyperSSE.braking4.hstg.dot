@@ -1,0 +1,305 @@
+digraph G {
+label="HyperSSE.braking4.hstg.dot";
+1 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=1];
+subgraph cluster_10 {
+label="M10: Dom-0-AUTOSAR";
+2 [color=green, fontsize=14, label=<State 4<br/><font point-size='12'>instance: SETUP<br/>type: computation<br/>abb: dom-0/ABB56<br/>bcet/wcet: 1/1</font>>, style=bold, tooltip=2];
+3 [color=blue, fontsize=14, label=<State 6<br/><font point-size='12'>instance: SETUP<br/>type: syscall<br/>abb: dom-0/ABB62<br/>sys: XEN_wrap_evtchn_alloc_unbound</font>>, shape=box, tooltip=3];
+4 [color=green, fontsize=14, label=<State 7<br/><font point-size='12'>instance: SETUP<br/>type: computation<br/>abb: dom-0/ABB57</font>>, style=bold, tooltip=4];
+5 [color=blue, fontsize=14, label=<State 8<br/><font point-size='12'>instance: SETUP<br/>type: syscall<br/>abb: dom-0/ABB60<br/>sys: XEN_wrap_evtchn_alloc_unbound</font>>, shape=box, tooltip=5];
+6 [color=green, fontsize=14, label=<State 9<br/><font point-size='12'>instance: SETUP<br/>type: computation<br/>abb: dom-0/ABB58<br/>bcet/wcet: 2/2</font>>, style=bold, tooltip=6];
+7 [color=blue, fontsize=14, label=<State 10<br/><font point-size='12'>instance: SETUP<br/>type: syscall<br/>abb: dom-0/ABB61<br/>sys: AUTOSAR_ChainTask</font>>, shape=box, tooltip=7];
+8 [color=green, fontsize=14, label=<State 11<br/><font point-size='12'>instance: LOOP<br/>type: computation<br/>abb: dom-0/ABB7<br/>bcet/wcet: 3/3</font>>, style=bold, tooltip=8];
+9 [color=blue, fontsize=14, label=<State 12<br/><font point-size='12'>instance: LOOP<br/>type: syscall<br/>abb: dom-0/ABB44<br/>sys: XEN_wrap_evtchn_poll</font>>, shape=box, tooltip=9];
+}
+
+subgraph cluster_18 {
+label="M18: Dom-1-AUTOSAR";
+11 [color=green, fontsize=14, label=<State 5<br/><font point-size='12'>instance: SETUP<br/>type: computation<br/>abb: dom-1/ABB16<br/>bcet/wcet: 1/1</font>>, style=bold, tooltip=11];
+12 [color=blue, fontsize=14, label=<State 14<br/><font point-size='12'>instance: SETUP<br/>type: syscall<br/>abb: dom-1/ABB20<br/>sys: XEN_wrap_evtchn_alloc_unbound</font>>, shape=box, tooltip=12];
+13 [color=green, fontsize=14, label=<State 15<br/><font point-size='12'>instance: SETUP<br/>type: computation<br/>abb: dom-1/ABB17</font>>, style=bold, tooltip=13];
+14 [color=blue, fontsize=14, label=<State 16<br/><font point-size='12'>instance: SETUP<br/>type: syscall<br/>abb: dom-1/ABB21<br/>sys: XEN_wrap_evtchn_alloc_unbound</font>>, shape=box, tooltip=14];
+15 [color=green, fontsize=14, label=<State 17<br/><font point-size='12'>instance: SETUP<br/>type: computation<br/>abb: dom-1/ABB18<br/>bcet/wcet: 2/2</font>>, style=bold, tooltip=15];
+16 [color=blue, fontsize=14, label=<State 18<br/><font point-size='12'>instance: SETUP<br/>type: syscall<br/>abb: dom-1/ABB19<br/>sys: AUTOSAR_TerminateTask</font>>, shape=box, tooltip=16];
+17 [color=violet, fontsize=14, label=<State 19<br/><font point-size='12'>instance: Idle<br/>type: idle<br/>abb: None</font>>, style=bold, tooltip=17];
+83 [color=green, fontsize=14, label=<State 99<br/><font point-size='12'>instance: CALC<br/>type: computation<br/>abb: dom-1/ABB4<br/>bcet/wcet: 13/13</font>>, style=bold, tooltip=83];
+84 [color=blue, fontsize=14, label=<State 101<br/><font point-size='12'>instance: CALC<br/>type: syscall<br/>abb: dom-1/ABB6<br/>sys: AUTOSAR_TerminateTask</font>>, shape=box, tooltip=84];
+}
+
+subgraph cluster_34 {
+label="M34: Dom-0-AUTOSAR";
+32 [color=green, fontsize=14, label=<State 36<br/><font point-size='12'>instance: EMERGENCY<br/>type: computation<br/>abb: dom-0/ABB1<br/>bcet/wcet: 100/100</font>>, style=bold, tooltip=32];
+33 [color=blue, fontsize=14, label=<State 38<br/><font point-size='12'>instance: EMERGENCY<br/>type: syscall<br/>abb: dom-0/ABB3<br/>sys: XEN_wrap_evtchn_send</font>>, shape=box, tooltip=33];
+21 [color=green, fontsize=14, label=<State 24<br/><font point-size='12'>instance: LOOP<br/>type: computation<br/>abb: dom-0/ABB11<br/>bcet/wcet: 4/4</font>>, style=bold, tooltip=21];
+22 [color=green, fontsize=14, label=<State 26<br/><font point-size='12'>instance: LOOP<br/>type: computation<br/>abb: dom-0/ABB12<br/>bcet/wcet: 6/6</font>>, style=bold, tooltip=22];
+23 [fontsize=14, label=<State 27<br/><font point-size='12'>instance: LOOP<br/>type: call<br/>abb: dom-0/ABB36</font>>, tooltip=23];
+24 [color=green, fontsize=14, label=<State 28<br/><font point-size='12'>instance: LOOP<br/>type: computation<br/>abb: dom-0/ABB51</font>>, style=bold, tooltip=24];
+25 [color=blue, fontsize=14, label=<State 29<br/><font point-size='12'>instance: LOOP<br/>type: syscall<br/>abb: dom-0/ABB53<br/>sys: AUTOSAR_ReadPeripheral</font>>, shape=box, tooltip=25];
+26 [color=green, fontsize=14, label=<State 30<br/><font point-size='12'>instance: LOOP<br/>type: computation<br/>abb: dom-0/ABB52</font>>, style=bold, tooltip=26];
+27 [color=green, fontsize=14, label=<State 31<br/><font point-size='12'>instance: LOOP<br/>type: computation<br/>abb: dom-0/ABB13</font>>, style=bold, tooltip=27];
+28 [color=green, fontsize=14, label=<State 32<br/><font point-size='12'>instance: LOOP<br/>type: computation<br/>abb: dom-0/ABB14<br/>bcet/wcet: 10/10</font>>, style=bold, tooltip=28];
+29 [color=green, fontsize=14, label=<State 33<br/><font point-size='12'>instance: LOOP<br/>type: computation<br/>abb: dom-0/ABB16<br/>bcet/wcet: 7/7</font>>, style=bold, tooltip=29];
+30 [color=blue, fontsize=14, label=<State 34<br/><font point-size='12'>instance: LOOP<br/>type: syscall<br/>abb: dom-0/ABB38<br/>sys: AUTOSAR_ActivateTask</font>>, shape=box, tooltip=30];
+31 [color=blue, fontsize=14, label=<State 35<br/><font point-size='12'>instance: LOOP<br/>type: syscall<br/>abb: dom-0/ABB41<br/>sys: XEN_wrap_evtchn_send</font>>, shape=box, tooltip=31];
+}
+
+subgraph cluster_41 {
+label="M41: Dom-0-AUTOSAR";
+40 [color=blue, fontsize=14, label=<State 50<br/><font point-size='12'>instance: LOOP<br/>type: syscall<br/>abb: dom-0/ABB42<br/>sys: XEN_wrap_evtchn_poll</font>>, shape=box, tooltip=40];
+39 [color=green, fontsize=14, label=<State 48<br/><font point-size='12'>instance: LOOP<br/>type: computation<br/>abb: dom-0/ABB17<br/>bcet/wcet: 1000/1000</font>>, style=bold, tooltip=39];
+}
+
+subgraph cluster_49 {
+label="M49: Dom-1-AUTOSAR";
+42 [color=green, fontsize=14, label=<State 49<br/><font point-size='12'>instance: CALC<br/>type: computation<br/>abb: dom-1/ABB2<br/>bcet/wcet: 11/11</font>>, style=bold, tooltip=42];
+43 [fontsize=14, label=<State 52<br/><font point-size='12'>instance: CALC<br/>type: call<br/>abb: dom-1/ABB8</font>>, tooltip=43];
+44 [color=green, fontsize=14, label=<State 53<br/><font point-size='12'>instance: CALC<br/>type: computation<br/>abb: dom-1/ABB9</font>>, style=bold, tooltip=44];
+45 [color=blue, fontsize=14, label=<State 54<br/><font point-size='12'>instance: CALC<br/>type: syscall<br/>abb: dom-1/ABB11<br/>sys: AUTOSAR_ReadPeripheral</font>>, shape=box, tooltip=45];
+46 [color=green, fontsize=14, label=<State 55<br/><font point-size='12'>instance: CALC<br/>type: computation<br/>abb: dom-1/ABB10</font>>, style=bold, tooltip=46];
+47 [color=green, fontsize=14, label=<State 56<br/><font point-size='12'>instance: CALC<br/>type: computation<br/>abb: dom-1/ABB3<br/>bcet/wcet: 1200/1200</font>>, style=bold, tooltip=47];
+48 [color=blue, fontsize=14, label=<State 57<br/><font point-size='12'>instance: CALC<br/>type: syscall<br/>abb: dom-1/ABB7<br/>sys: XEN_wrap_evtchn_send</font>>, shape=box, tooltip=48];
+}
+
+subgraph cluster_53 {
+label="M53: Dom-0-AUTOSAR";
+52 [color=green, fontsize=14, label=<State 63<br/><font point-size='12'>instance: EMERGENCY<br/>type: computation<br/>abb: dom-0/ABB2<br/>bcet/wcet: 100/100</font>>, style=bold, tooltip=52];
+}
+
+subgraph cluster_55 {
+label="M55: Dom-1-AUTOSAR";
+54 [color=green, fontsize=14, label=<State 64<br/><font point-size='12'>instance: EMERGENCY<br/>type: computation<br/>abb: dom-1/ABB1<br/>bcet/wcet: 100/100</font>>, style=bold, tooltip=54];
+}
+
+subgraph cluster_69 {
+label="M69: Dom-0-AUTOSAR";
+64 [color=green, fontsize=14, label=<State 74<br/><font point-size='12'>instance: LOOP<br/>type: computation<br/>abb: dom-0/ABB26<br/>bcet/wcet: 7/7</font>>, style=bold, tooltip=64];
+65 [color=blue, fontsize=14, label=<State 75<br/><font point-size='12'>instance: LOOP<br/>type: syscall<br/>abb: dom-0/ABB37<br/>sys: AUTOSAR_ActivateTask</font>>, shape=box, tooltip=65];
+66 [color=blue, fontsize=14, label=<State 76<br/><font point-size='12'>instance: LOOP<br/>type: syscall<br/>abb: dom-0/ABB39<br/>sys: XEN_wrap_evtchn_send</font>>, shape=box, tooltip=66];
+67 [color=green, fontsize=14, label=<State 77<br/><font point-size='12'>instance: EMERGENCY<br/>type: computation<br/>abb: dom-0/ABB1<br/>bcet/wcet: 100/100</font>>, style=bold, tooltip=67];
+68 [color=blue, fontsize=14, label=<State 79<br/><font point-size='12'>instance: EMERGENCY<br/>type: syscall<br/>abb: dom-0/ABB3<br/>sys: XEN_wrap_evtchn_send</font>>, shape=box, tooltip=68];
+56 [color=green, fontsize=14, label=<State 65<br/><font point-size='12'>instance: LOOP<br/>type: computation<br/>abb: dom-0/ABB21<br/>bcet/wcet: 5/5</font>>, style=bold, tooltip=56];
+57 [color=green, fontsize=14, label=<State 67<br/><font point-size='12'>instance: LOOP<br/>type: computation<br/>abb: dom-0/ABB22<br/>bcet/wcet: 6/6</font>>, style=bold, tooltip=57];
+58 [fontsize=14, label=<State 68<br/><font point-size='12'>instance: LOOP<br/>type: call<br/>abb: dom-0/ABB49</font>>, tooltip=58];
+59 [color=green, fontsize=14, label=<State 69<br/><font point-size='12'>instance: LOOP<br/>type: computation<br/>abb: dom-0/ABB51</font>>, style=bold, tooltip=59];
+60 [color=blue, fontsize=14, label=<State 70<br/><font point-size='12'>instance: LOOP<br/>type: syscall<br/>abb: dom-0/ABB53<br/>sys: AUTOSAR_ReadPeripheral</font>>, shape=box, tooltip=60];
+61 [color=green, fontsize=14, label=<State 71<br/><font point-size='12'>instance: LOOP<br/>type: computation<br/>abb: dom-0/ABB52</font>>, style=bold, tooltip=61];
+62 [color=green, fontsize=14, label=<State 72<br/><font point-size='12'>instance: LOOP<br/>type: computation<br/>abb: dom-0/ABB23</font>>, style=bold, tooltip=62];
+63 [color=green, fontsize=14, label=<State 73<br/><font point-size='12'>instance: LOOP<br/>type: computation<br/>abb: dom-0/ABB24<br/>bcet/wcet: 10/10</font>>, style=bold, tooltip=63];
+}
+
+subgraph cluster_76 {
+label="M76: Dom-0-AUTOSAR";
+74 [color=green, fontsize=14, label=<State 89<br/><font point-size='12'>instance: LOOP<br/>type: computation<br/>abb: dom-0/ABB27<br/>bcet/wcet: 1000/1000</font>>, style=bold, tooltip=74];
+75 [color=blue, fontsize=14, label=<State 91<br/><font point-size='12'>instance: LOOP<br/>type: syscall<br/>abb: dom-0/ABB40<br/>sys: XEN_wrap_evtchn_poll</font>>, shape=box, tooltip=75];
+}
+
+subgraph cluster_80 {
+label="M80: Dom-0-AUTOSAR";
+79 [color=green, fontsize=14, label=<State 97<br/><font point-size='12'>instance: EMERGENCY<br/>type: computation<br/>abb: dom-0/ABB2<br/>bcet/wcet: 100/100</font>>, style=bold, tooltip=79];
+}
+
+subgraph cluster_82 {
+label="M82: Dom-1-AUTOSAR";
+81 [color=green, fontsize=14, label=<State 98<br/><font point-size='12'>instance: EMERGENCY<br/>type: computation<br/>abb: dom-1/ABB1<br/>bcet/wcet: 100/100</font>>, style=bold, tooltip=81];
+}
+
+subgraph cluster_104 {
+label="M104: Dom-0-AUTOSAR";
+96 [color=blue, fontsize=14, label=<State 117<br/><font point-size='12'>instance: LOOP<br/>type: syscall<br/>abb: dom-0/ABB53<br/>sys: AUTOSAR_ReadPeripheral</font>>, shape=box, tooltip=96];
+97 [color=green, fontsize=14, label=<State 118<br/><font point-size='12'>instance: LOOP<br/>type: computation<br/>abb: dom-0/ABB52</font>>, style=bold, tooltip=97];
+98 [color=green, fontsize=14, label=<State 119<br/><font point-size='12'>instance: LOOP<br/>type: computation<br/>abb: dom-0/ABB33</font>>, style=bold, tooltip=98];
+99 [color=green, fontsize=14, label=<State 120<br/><font point-size='12'>instance: LOOP<br/>type: computation<br/>abb: dom-0/ABB34<br/>bcet/wcet: 10/10</font>>, style=bold, tooltip=99];
+100 [color=green, fontsize=14, label=<State 121<br/><font point-size='12'>instance: LOOP<br/>type: computation<br/>abb: dom-0/ABB6<br/>bcet/wcet: 7/7</font>>, style=bold, tooltip=100];
+101 [color=blue, fontsize=14, label=<State 122<br/><font point-size='12'>instance: LOOP<br/>type: syscall<br/>abb: dom-0/ABB47<br/>sys: AUTOSAR_ActivateTask</font>>, shape=box, tooltip=101];
+102 [color=green, fontsize=14, label=<State 123<br/><font point-size='12'>instance: EMERGENCY<br/>type: computation<br/>abb: dom-0/ABB1<br/>bcet/wcet: 100/100</font>>, style=bold, tooltip=102];
+103 [color=blue, fontsize=14, label=<State 124<br/><font point-size='12'>instance: EMERGENCY<br/>type: syscall<br/>abb: dom-0/ABB3<br/>sys: XEN_wrap_evtchn_send</font>>, shape=box, tooltip=103];
+87 [color=green, fontsize=14, label=<State 107<br/><font point-size='12'>instance: LOOP<br/>type: computation<br/>abb: dom-0/ABB29<br/>bcet/wcet: 4/4</font>>, style=bold, tooltip=87];
+88 [fontsize=14, label=<State 109<br/><font point-size='12'>instance: LOOP<br/>type: call<br/>abb: dom-0/ABB43</font>>, tooltip=88];
+89 [color=green, fontsize=14, label=<State 110<br/><font point-size='12'>instance: LOOP<br/>type: computation<br/>abb: dom-0/ABB51</font>>, style=bold, tooltip=89];
+90 [color=blue, fontsize=14, label=<State 111<br/><font point-size='12'>instance: LOOP<br/>type: syscall<br/>abb: dom-0/ABB53<br/>sys: AUTOSAR_ReadPeripheral</font>>, shape=box, tooltip=90];
+91 [color=green, fontsize=14, label=<State 112<br/><font point-size='12'>instance: LOOP<br/>type: computation<br/>abb: dom-0/ABB52</font>>, style=bold, tooltip=91];
+92 [color=green, fontsize=14, label=<State 113<br/><font point-size='12'>instance: LOOP<br/>type: computation<br/>abb: dom-0/ABB30</font>>, style=bold, tooltip=92];
+93 [color=green, fontsize=14, label=<State 114<br/><font point-size='12'>instance: LOOP<br/>type: computation<br/>abb: dom-0/ABB32<br/>bcet/wcet: 6/6</font>>, style=bold, tooltip=93];
+94 [fontsize=14, label=<State 115<br/><font point-size='12'>instance: LOOP<br/>type: call<br/>abb: dom-0/ABB46</font>>, tooltip=94];
+95 [color=green, fontsize=14, label=<State 116<br/><font point-size='12'>instance: LOOP<br/>type: computation<br/>abb: dom-0/ABB51</font>>, style=bold, tooltip=95];
+}
+
+subgraph cluster_108 {
+label="M108: Dom-0-AUTOSAR";
+107 [color=green, fontsize=14, label=<State 130<br/><font point-size='12'>instance: EMERGENCY<br/>type: computation<br/>abb: dom-0/ABB2<br/>bcet/wcet: 100/100</font>>, style=bold, tooltip=107];
+}
+
+subgraph cluster_Metasync19 {
+label="";
+19 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=19];
+20 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=20];
+}
+
+subgraph cluster_Metasync35 {
+label="";
+35 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=35];
+36 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=36];
+}
+
+subgraph cluster_Metasync37 {
+label="";
+37 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=37];
+38 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=38];
+}
+
+subgraph cluster_Metasync50 {
+label="";
+50 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=50];
+51 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=51];
+}
+
+subgraph cluster_Metasync70 {
+label="";
+70 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=70];
+71 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=71];
+}
+
+subgraph cluster_Metasync72 {
+label="";
+72 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=72];
+73 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=73];
+}
+
+subgraph cluster_Metasync77 {
+label="";
+77 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=77];
+78 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=78];
+}
+
+subgraph cluster_Metasync85 {
+label="";
+85 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=85];
+86 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=86];
+}
+
+subgraph cluster_Metasync105 {
+label="";
+105 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=105];
+106 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=106];
+}
+
+1:c0 -> 2  [color=black];
+1:c1 -> 11  [color=black];
+1 -> 19  [color=darkred, label="6 - 6", style=dotted];
+2 -> 3  [color=black];
+3 -> 4  [color=black];
+4 -> 5  [color=black];
+5 -> 6  [color=black];
+6 -> 7  [color=black];
+7 -> 8  [color=black];
+8 -> 9  [color=black];
+9 -> 19:c0  [color=black];
+11 -> 12  [color=black];
+12 -> 13  [color=black];
+13 -> 14  [color=black];
+14 -> 15  [color=black];
+15 -> 16  [color=black];
+16 -> 17  [color=black];
+17 -> 19:c1  [color=black];
+17 -> 35:c1  [color=black];
+17 -> 37:c1  [color=black];
+17 -> 85:c1  [color=black];
+17 -> 105:c1  [color=black];
+19 -> 20  [color=black];
+20:c0 -> 21  [color=black];
+20:c1 -> 17  [color=black];
+20 -> 35  [color=darkred, label="17 - 17", style=dotted];
+20 -> 37  [color=darkred, label="120 - 120", style=dotted];
+21 -> 22  [color=black];
+22 -> 23  [color=black];
+23 -> 24  [color=black];
+24 -> 25  [color=black];
+25 -> 26  [color=black];
+26 -> 27  [color=black];
+27 -> 28  [color=black];
+27 -> 29  [color=black];
+28 -> 30  [color=black];
+29 -> 31  [color=black];
+30 -> 32  [color=black];
+31 -> 35:c0  [color=black];
+32 -> 33  [color=black];
+33 -> 37:c0  [color=black];
+35 -> 36  [color=black];
+36:c0 -> 39  [color=black];
+36:c1 -> 42  [color=black];
+36 -> 50  [color=darkred, label="1000 - 1000", style=dotted];
+37 -> 38  [color=black];
+38:c0 -> 52  [color=black];
+38:c1 -> 54  [color=black];
+39 -> 40  [color=black];
+40 -> 50:c0  [color=black];
+42 -> 43  [color=black];
+43 -> 44  [color=black];
+44 -> 45  [color=black];
+45 -> 46  [color=black];
+46 -> 47  [color=black];
+47 -> 48  [color=black];
+47 -> 50:c1  [color=black];
+47 -> 70:c1  [color=black];
+47 -> 72:c1  [color=black];
+48 -> 77:c1  [color=black];
+50 -> 51  [color=black];
+51:c0 -> 56  [color=black];
+51:c1 -> 47  [color=black];
+51 -> 70  [color=darkred, label="18 - 18", style=dotted];
+51 -> 72  [color=darkred, label="121 - 121", style=dotted];
+56 -> 57  [color=black];
+57 -> 58  [color=black];
+58 -> 59  [color=black];
+59 -> 60  [color=black];
+60 -> 61  [color=black];
+61 -> 62  [color=black];
+62 -> 63  [color=black];
+62 -> 64  [color=black];
+63 -> 65  [color=black];
+64 -> 66  [color=black];
+65 -> 67  [color=black];
+66 -> 70:c0  [color=black];
+67 -> 68  [color=black];
+68 -> 72:c0  [color=black];
+70 -> 71  [color=black];
+71:c0 -> 74  [color=black];
+71:c1 -> 47  [color=black];
+71 -> 77  [color=darkred, label="193 - 193", style=dotted];
+72 -> 73  [color=black];
+73:c0 -> 79  [color=black];
+73:c1 -> 81  [color=black];
+74 -> 75  [color=black];
+74 -> 77:c0  [color=black];
+75 -> 85:c0  [color=black];
+77 -> 78  [color=black];
+78:c1 -> 83  [color=black];
+78:c0 -> 74  [color=black];
+78 -> 85  [color=darkred, label="807 - 807", style=dotted];
+83 -> 84  [color=black];
+84 -> 17  [color=black];
+85 -> 86  [color=black];
+86:c0 -> 87  [color=black];
+86:c1 -> 17  [color=black];
+86 -> 105  [color=darkred, label="120 - 120", style=dotted];
+87 -> 88  [color=black];
+88 -> 89  [color=black];
+89 -> 90  [color=black];
+90 -> 91  [color=black];
+91 -> 92  [color=black];
+92 -> 93  [color=black];
+93 -> 94  [color=black];
+94 -> 95  [color=black];
+95 -> 96  [color=black];
+96 -> 97  [color=black];
+97 -> 98  [color=black];
+98 -> 99  [color=black];
+98 -> 100  [color=black];
+99 -> 101  [color=black];
+101 -> 102  [color=black];
+102 -> 103  [color=black];
+103 -> 105:c0  [color=black];
+105 -> 106  [color=black];
+106:c0 -> 107  [color=black];
+106:c1 -> 54  [color=black];
+}
