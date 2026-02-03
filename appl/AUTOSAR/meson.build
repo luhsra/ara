@@ -523,11 +523,19 @@ foreach app: autosar_targets
     autosar_generated_targets_posix += app
   endif
 
+  # another settings file 
+  name = app['full_name']
+  conf_data = configuration_data()
+  conf_data.set('name', name)
+  config_loc = files('../../settings/autosar_sse_custom.json.in')
+  ara_settings = configure_file(input : config_loc, output : f'autosar_sse_custom-@name@.json',
+              configuration : conf_data)
 
   if arm_enabled and not (app.has_key('synthesis_disabled') and 'pi4' in app['synthesis_disabled'])
     ara_opt_settings = {
       'opt': autosar_generator_arm_opt,
-      'noopt': autosar_generator_arm_noopt
+      'noopt': autosar_generator_arm_noopt,
+      'cust': ara_settings
     }
     if app.has_key('timing')
       ara_timing_settings = ['--timing', app['sys_timings']]
@@ -535,7 +543,7 @@ foreach app: autosar_targets
       ara_timing_settings = []
     endif
 
-    opt_targets = ['noopt']
+    opt_targets = ['noopt', 'cust']
     if app.has_key('opt') and app['opt']
       opt_targets += ['opt']
     endif
