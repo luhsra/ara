@@ -13,3 +13,6 @@ option('enable_generator_tests', type: 'boolean', value: false, yield: true,
 
 option('execute_ara', type: 'boolean', value: false, yield: true,
   description: 'Build targets which executes ARA')
+
+# do not change this, controled by root meson_options.txt
+option('include_xen', type: 'boolean', value: true, yield: true, description: 'If ara/appl/Xen apps should be included, needed for HyperSSE and ara-xen-eval.')

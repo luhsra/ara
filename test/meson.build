@@ -336,6 +336,9 @@ if get_option('enable_step_tests')
 
 
   # Call all testcases in this folder
-  subdir('xen-eval')
+  if get_option('include_xen')
+    subdir('xen-eval')
+  endif
+
 endif
 

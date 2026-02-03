@@ -13,4 +13,6 @@ endif
 subdir('Xen/bare_metal')
 
 # Xen must be loaded after AUTOSAR, since its guest include Autosar targets
-subdir('Xen')
+if get_option('include_xen')
+  subdir('Xen')
+endif
