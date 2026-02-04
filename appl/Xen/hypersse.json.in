@@ -14,7 +14,7 @@
 	},
 	"LLVMMap" : {
 		"log_level": "error",
-		"dump": true
+		"dump": false
 	},
 	"SVFAnalyses": {
 		"log_level": "warning",
