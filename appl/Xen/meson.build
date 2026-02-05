@@ -138,26 +138,18 @@ xen_testcases = [
     {'name': 'braking0', 'do_timings': 'true', 'guests':
         'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_Autosar_A_a1.pi4.ll;../subprojects/ara/appl/Xen/braking/Autosar-A/a.json;'
         + 'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_Autosar_B_b1.pi4.ll;../subprojects/ara/appl/Xen/braking/Autosar-B/b.json'
-        # + 'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-B.ll;'
-        # 'BareMetal;subprojects/ara/appl/Xen/bare_metal/___min_bm_BareMetal_A_main.pi4.ll;None'      
     },
     {'name': 'braking1', 'do_timings': 'true', 'guests':
         'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_Autosar_A_a1.pi4.ll;../subprojects/ara/appl/Xen/braking/Autosar-A/a.json;'
         + 'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_Autosar_B_b2.pi4.ll;../subprojects/ara/appl/Xen/braking/Autosar-B/b.json'
-        # + 'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-B.ll;'
-        # 'BareMetal;subprojects/ara/appl/Xen/bare_metal/___min_bm_BareMetal_A_main.pi4.ll;None'      
     },
     {'name': 'braking2', 'do_timings': 'true', 'guests':
         'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_Autosar_A_a2.pi4.ll;../subprojects/ara/appl/Xen/braking/Autosar-A/a.json;'
         + 'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_Autosar_B_b2.pi4.ll;../subprojects/ara/appl/Xen/braking/Autosar-B/b.json'
-        # + 'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-B.ll;'
-        # 'BareMetal;subprojects/ara/appl/Xen/bare_metal/___min_bm_BareMetal_A_main.pi4.ll;None'      
     },
     {'name': 'braking3', 'do_timings': 'true', 'guests':
         'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_Autosar_A_a3.pi4.ll;../subprojects/ara/appl/Xen/braking/Autosar-A/a.json;'
         + 'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_Autosar_B_b2.pi4.ll;../subprojects/ara/appl/Xen/braking/Autosar-B/b.json'
-        # + 'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-B.ll;'
-        # 'BareMetal;subprojects/ara/appl/Xen/bare_metal/___min_bm_BareMetal_A_main.pi4.ll;None'      
     },
     {'name': 'braking4', 'do_timings': 'true', 'guests':
         'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_Autosar_A_a3.pi4.ll;../subprojects/ara/appl/Xen/braking/Autosar-A/a.json;'
