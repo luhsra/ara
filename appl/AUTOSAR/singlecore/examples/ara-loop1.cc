@@ -17,21 +17,26 @@ int main(void) {
 }
 TASK(B) {
 	kout << "B" << endl;
+	ara_timing_info(1, 1);
 	TerminateTask();
 }
 TASK(C) {
 	kout << "C" << endl;
+	ara_timing_info(1, 1);
 	TerminateTask();
 }
 
 TASK(A) {
 	kout << "A" << endl;
+	ara_timing_info(100, 100);
 
 	for (int i = 0; i < 10; i++) {
-		// this condition is analyzed, only possible cases are counted
+		// this condition is analyzed, only possible conditions are considered
 		if (i > 5) {
+			ara_timing_info(5, 5);
 			ActivateTask(B);
 		} else {
+			ara_timing_info(5, 5);
 			ActivateTask(C);
 		}
 	}

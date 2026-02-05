@@ -3,13 +3,13 @@ label="MultiSSE.autosar_singlecore_examples_ara_loop2.mstg.dot";
 1 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">CPU 0</TD></TR></TABLE>>, shape=plaintext, tooltip=1];
 subgraph cluster_19 {
 label="M19 (CPU 0)";
-2 [color=green, fontsize=14, label=<State 2<br/><font point-size='12'>instance: A<br/>type: computation<br/>abb: ABB8</font>>, style=bold, tooltip=2];
-3 [color=green, fontsize=14, label=<State 3<br/><font point-size='12'>instance: A<br/>type: computation<br/>abb: ABB9</font>>, style=bold, tooltip=3];
-4 [color=green, fontsize=14, label=<State 4<br/><font point-size='12'>instance: A<br/>type: computation<br/>abb: ABB11</font>>, style=bold, tooltip=4];
-5 [color=blue, fontsize=14, label=<State 5<br/><font point-size='12'>instance: A<br/>type: syscall<br/>abb: ABB20<br/>sys: AUTOSAR_ActivateTask</font>>, shape=box, tooltip=5];
-6 [color=blue, fontsize=14, label=<State 6<br/><font point-size='12'>instance: A<br/>type: syscall<br/>abb: ABB22<br/>sys: AUTOSAR_ActivateTask</font>>, shape=box, tooltip=6];
-7 [color=green, fontsize=14, label=<State 7<br/><font point-size='12'>instance: B<br/>type: computation<br/>abb: ABB5</font>>, style=bold, tooltip=7];
-8 [color=green, fontsize=14, label=<State 8<br/><font point-size='12'>instance: C<br/>type: computation<br/>abb: ABB2</font>>, style=bold, tooltip=8];
+2 [color=green, fontsize=14, label=<State 2<br/><font point-size='12'>instance: A<br/>type: computation<br/>abb: ABB8<br/>bcet/wcet: 100/100</font>>, style=bold, tooltip=2];
+3 [color=green, fontsize=14, label=<State 3<br/><font point-size='12'>instance: A<br/>type: computation<br/>abb: ABB9<br/>bcet/wcet: 5/5</font>>, style=bold, tooltip=3];
+4 [color=green, fontsize=14, label=<State 4<br/><font point-size='12'>instance: A<br/>type: computation<br/>abb: ABB11<br/>bcet/wcet: 5/5</font>>, style=bold, tooltip=4];
+5 [color=blue, fontsize=14, label=<State 5<br/><font point-size='12'>instance: A<br/>type: syscall<br/>abb: ABB21<br/>sys: AUTOSAR_ActivateTask</font>>, shape=box, tooltip=5];
+6 [color=blue, fontsize=14, label=<State 6<br/><font point-size='12'>instance: A<br/>type: syscall<br/>abb: ABB20<br/>sys: AUTOSAR_ActivateTask</font>>, shape=box, tooltip=6];
+7 [color=green, fontsize=14, label=<State 7<br/><font point-size='12'>instance: B<br/>type: computation<br/>abb: ABB5<br/>bcet/wcet: 1/1</font>>, style=bold, tooltip=7];
+8 [color=green, fontsize=14, label=<State 8<br/><font point-size='12'>instance: C<br/>type: computation<br/>abb: ABB1<br/>bcet/wcet: 1/1</font>>, style=bold, tooltip=8];
 9 [color=blue, fontsize=14, label=<State 9<br/><font point-size='12'>instance: B<br/>type: syscall<br/>abb: ABB7<br/>sys: AUTOSAR_TerminateTask</font>>, shape=box, tooltip=9];
 10 [color=blue, fontsize=14, label=<State 10<br/><font point-size='12'>instance: C<br/>type: syscall<br/>abb: ABB3<br/>sys: AUTOSAR_TerminateTask</font>>, shape=box, tooltip=10];
 11 [color=green, fontsize=14, label=<State 11<br/><font point-size='12'>instance: A<br/>type: computation<br/>abb: ABB10</font>>, style=bold, tooltip=11];
@@ -17,8 +17,8 @@ label="M19 (CPU 0)";
 13 [color=green, fontsize=14, label=<State 13<br/><font point-size='12'>instance: A<br/>type: computation<br/>abb: ABB13</font>>, style=bold, tooltip=13];
 14 [color=green, fontsize=14, label=<State 15<br/><font point-size='12'>instance: A<br/>type: computation<br/>abb: ABB14</font>>, style=bold, tooltip=14];
 15 [color=green, fontsize=14, label=<State 16<br/><font point-size='12'>instance: A<br/>type: computation<br/>abb: ABB16</font>>, style=bold, tooltip=15];
-16 [color=blue, fontsize=14, label=<State 17<br/><font point-size='12'>instance: A<br/>type: syscall<br/>abb: ABB19<br/>sys: AUTOSAR_ChainTask</font>>, shape=box, tooltip=16];
-17 [color=blue, fontsize=14, label=<State 18<br/><font point-size='12'>instance: A<br/>type: syscall<br/>abb: ABB21<br/>sys: AUTOSAR_TerminateTask</font>>, shape=box, tooltip=17];
+16 [color=blue, fontsize=14, label=<State 17<br/><font point-size='12'>instance: A<br/>type: syscall<br/>abb: ABB22<br/>sys: AUTOSAR_ChainTask</font>>, shape=box, tooltip=16];
+17 [color=blue, fontsize=14, label=<State 18<br/><font point-size='12'>instance: A<br/>type: syscall<br/>abb: ABB19<br/>sys: AUTOSAR_TerminateTask</font>>, shape=box, tooltip=17];
 18 [color=violet, fontsize=14, label=<State 20<br/><font point-size='12'>instance: Idle<br/>type: idle<br/>abb: None</font>>, style=bold, tooltip=18];
 }
 

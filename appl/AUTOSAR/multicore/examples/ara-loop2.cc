@@ -31,7 +31,10 @@ TASK(A) {
 	kout << "A" << endl;
 	ara_timing_info(100, 100);
 
-	// this condition is not analyzed, analysis assumes both can be taken
+	// for a local variable and an impossible condition it finds the only path 
+	// int i = 0;
+
+	// for a global variable and an impossible condition, analysis assumes both branches
 	if (i > 5) {
 		ara_timing_info(5, 5);
 		ActivateTask(B);

@@ -31,7 +31,7 @@ TASK(A) {
 	ara_timing_info(100, 100);
 
 	for (int i = 0; i < 10; i++) {
-		// this condition is analyzed, only possible cases are counted
+		// this condition is analyzed, only possible conditions are considered
 		if (i > 5) {
 			ara_timing_info(5, 5);
 			ActivateTask(B);
