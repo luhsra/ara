@@ -2,12 +2,10 @@
 #include "bare_metal/os.h"
 #include "xen/events.h"
 
-extern int printf (const char *__restrict __format, ...);
-void ara_timing_info(int a, int b);
-
 extern "C" void callback(void* priv) {
 	ara_timing_info(25, 35);
 	printf("Received callback!\n");
+    BareMetal_Idle();
 }	
 
 int main(int argc, char *argv[])
@@ -33,4 +31,5 @@ int main(int argc, char *argv[])
 
 	ara_timing_info(15, 20);
     printf("Binder is done, handler was forked.\n");
+    BareMetal_Idle();
 }

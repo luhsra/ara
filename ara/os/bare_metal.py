@@ -95,9 +95,14 @@ class BareMetal(OSBase):
     def get_cpu_local_contexts(context: dict, cpu_id: int, instances: InstanceGraph) -> dict:
         """Get all contexts that affect cpu_id."""
 
-        # local_contexts = []
-        # return dict(local_contexts)
-        return context
+        logger.debug(f"LocalContext: id={cpu_id} instances={instances}")
+        logger.debug("Printing context:\n")
+        local_contexts = []
+        for inst, ctx in context.items():
+            logger.debug(f"{inst}  ---  {ctx}")
+            if getattr(inst, "cpu_id", None) == cpu_id:
+                local_contexts.append((inst, ctx))
+        return dict(local_contexts)
 
     @staticmethod
     def get_global_contexts(contexts, instances):
@@ -235,12 +240,12 @@ class BareMetal(OSBase):
         try:
             entry_abb = state.cfg.get_entry_abb(state.cfg.get_function_by_name(cb))
             c = Callback(cpu_id=cpu_id, name=cb, abb=entry_abb, prev_abb=None)
-            state.context[cb] = c
+            state.context[c] = cb
         except AssertionError:
             logger.error(f"Did not find an entry_abb for {cb}, probaly need to add it to Xen: meson.build.")
             return None
 
-        return cb
+        return c
 
     @staticmethod
     def trigger_cross_os_event(state: OSState, cpu_id: int, event: CrossOSEvent) -> OSState:
@@ -248,17 +253,15 @@ class BareMetal(OSBase):
         
         # change active ABB on CPU, set to compution from idle
 
-        assert isinstance(event, str), "BareMetal uses strings"
-        callback: Callback = state.context[event]
-        assert callback, "No callback found!"
-
+        assert isinstance(event, Callback), f"{event} is no Callback"
+        
         for c in state.cpus:
             if c.id == cpu_id:
                 cpu: CPU = c
         assert cpu, "No CPU found!"
 
-        callback.prev_abb = int(cpu.abb)
-        cpu.abb = callback.abb
+        event.prev_abb = int(cpu.abb)
+        cpu.abb = event.abb
         cpu.exec_state = ExecState.computation
         
         # hack return function into CFG
