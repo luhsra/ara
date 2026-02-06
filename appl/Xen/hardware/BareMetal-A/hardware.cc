@@ -1,5 +1,6 @@
 #include <stdint.h>
-#include "events.h"
+#include "bare_metal/os.h"
+#include "xen/events.h"
 
 extern int printf (const char *__restrict __format, ...);
 void ara_timing_info(int a, int b);
@@ -28,7 +29,7 @@ int main(int argc, char *argv[])
 	channel_t REMOTE_CHANNEL = 42;
 
 	ara_timing_info(5, 10);
-    XEN_wrap_evtchn_bind_interdomain(REMOTE_DOMAIN, REMOTE_CHANNEL, (void *) callback);
+    wrap_evtchn_bind_interdomain(REMOTE_DOMAIN, REMOTE_CHANNEL, (void *) callback);
 
 	ara_timing_info(15, 20);
     printf("Binder is done, handler was forked.\n");

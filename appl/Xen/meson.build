@@ -83,6 +83,10 @@ xen_testcases = [
       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-5.ll;' +
       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-6.ll;'
   },
+  {'name': 'hc-bm-recv', 'do_timings': 'true', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_bm_recv_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-bm-recv/Autosar-A/a.json;' +
+      'BareMetal;subprojects/ara/appl/Xen/bare_metal/___hc_bm_recv_BareMetal_B_b.pi4.ll;callback;'
+  },
 
 
   # --------------------------- COMPLEX ----------------------------------
@@ -127,7 +131,8 @@ xen_testcases = [
 
   # --------------------------- BareMetal ----------------------------------
   {'name': 'min-bm', 'do_timings': 'true', 'guests': 
-      'BareMetal;subprojects/ara/appl/Xen/bare_metal/___min_bm_BareMetal_A_main.pi4.ll;None'      
+      'BareMetal;subprojects/ara/appl/Xen/bare_metal/___min_bm_BareMetal_A_main.pi4.ll;None;' 
+      + 'BareMetal;subprojects/ara/appl/Xen/bare_metal/___min_bm_BareMetal_B_other.pi4.ll;None;' 
   },
   {'name': 'hardware', 'do_timings': 'true', 'guests':
       'BareMetal;subprojects/ara/appl/Xen/bare_metal/___hardware_BareMetal_A_hardware.pi4.ll;callback;'  +

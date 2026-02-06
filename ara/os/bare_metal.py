@@ -232,9 +232,13 @@ class BareMetal(OSBase):
         #     return s[3:-2]
             
         # cb = trim_llvm(cb)
-        entry_abb = state.cfg.get_entry_abb(state.cfg.get_function_by_name(cb))
-        c = Callback(cpu_id=cpu_id, name=cb, abb=entry_abb, prev_abb=None)
-        state.context[cb] = c
+        try:
+            entry_abb = state.cfg.get_entry_abb(state.cfg.get_function_by_name(cb))
+            c = Callback(cpu_id=cpu_id, name=cb, abb=entry_abb, prev_abb=None)
+            state.context[cb] = c
+        except AssertionError:
+            logger.error(f"Did not find an entry_abb for {cb}, probaly need to add it to Xen: meson.build.")
+            return None
 
         return cb
 
@@ -276,3 +280,20 @@ class BareMetal(OSBase):
 
         return state
     
+
+    @syscall(
+        categories={SyscallCategory.comm},
+        signature=tuple(), custom_control_flow=False)
+    def BareMetal_Idle(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
+        """Annotion syscall that shows the end of a analysis relevant control.
+         Without it the analysis might skip relevant code areas without syscalls,
+         like main()."""
+
+        exit_abb = int(state.cfg.get_exit_abb(state.cfg.get_function_by_name(ARA_ENTRY_POINT)))
+        cpu: CPU = state.cpus.one()
+
+        # manually set to cpu to idle at last ABB
+        cpu.abb = exit_abb
+        cpu.exec_state = ExecState.idle
+
+        return state

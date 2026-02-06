@@ -3,6 +3,7 @@ baremetal_targets = []
 baremetal_apps = [
   {'path': '../min-bm/BareMetal-A', 'name': 'main'},
   {'path': '../min-bm/BareMetal-B', 'name': 'other'},
+  {'path': '../hc-bm-recv/BareMetal-B', 'name': 'b'},
   {'path': '../hardware/BareMetal-A', 'name': 'hardware'},
 #   {'path': 'BareMetal-A', 'name': 'main.c', 'timing': 'BB'},
 ]
