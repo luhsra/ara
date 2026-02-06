@@ -186,6 +186,7 @@ class XEN(OSBase):
             # Schedule each state, works because sc_states contains linked/shallow copy of state
             for sc_state in sc_states:
                 idx = sc_state.cpus.one().id
+                # need to pass all cpus here, even if state only includes one. do not know why
                 XEN.system_types[idx].schedule(state=sc_state, cpus=cpus)        
     
 
@@ -331,7 +332,7 @@ class XEN(OSBase):
             if channel_id == evtchn.channel:
                 sender_channel = evtchn
                 break
-        if not sender_channel:
+        if not 'sender_channel' in locals():
             logger.warning(f"Wrap_evtchn_send do not has an evtchn for channel: {channel_id}")
             return state
 
