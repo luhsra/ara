@@ -1,0 +1,31 @@
+{
+  "cpus": [
+    {
+      "id": 0,
+        "tasks": {
+          "SETUP": {
+            "activation": 1,
+            "autostart": true,
+            "priority": 10,
+            "schedule": true
+            },
+          "HMI_UPDTE": {
+            "activation": 5,
+            "autostart": false,
+            "priority": 5,
+            "schedule": true
+            },
+          "DRIVER_INPUT": {
+            "activation": 5,
+            "autostart": false,
+            "priority": 11,
+            "schedule": true
+            }
+      },
+      "resources": {},
+      "events": {},
+      "counters": {},
+      "alarms": {}
+    }
+  ]
+}

@@ -159,8 +159,16 @@ xen_testcases = [
     {'name': 'braking4', 'do_timings': 'true', 'guests':
         'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_Autosar_A_a3.pi4.ll;../subprojects/ara/appl/Xen/braking/Autosar-A/a.json;'
         + 'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_Autosar_B_b3.pi4.ll;../subprojects/ara/appl/Xen/braking/Autosar-B/b.json'
-        # + 'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-B.ll;'
-        # 'BareMetal;subprojects/ara/appl/Xen/bare_metal/___min_bm_BareMetal_A_main.pi4.ll;None'      
+    },
+    {'name': 'braking5', 'do_timings': 'true', 'guests':
+        'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_Autosar_A_a3.pi4.ll;../subprojects/ara/appl/Xen/braking/Autosar-A/a.json;'
+        + 'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_Autosar_B_b4.pi4.ll;../subprojects/ara/appl/Xen/braking/Autosar-B/b.json;'
+        + 'BareMetal;subprojects/ara/appl/Xen/bare_metal/___braking_BareMetal_C_braking.pi4.ll;hmi_update;'       
+    },
+    {'name': 'braking55', 'do_timings': 'true', 'guests':
+        'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_Autosar_A_a3.pi4.ll;../subprojects/ara/appl/Xen/braking/Autosar-A/a.json;'
+        + 'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_Autosar_B_b4.pi4.ll;../subprojects/ara/appl/Xen/braking/Autosar-B/b.json;'
+        + 'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_BareMetal_C_c.pi4.ll;../subprojects/ara/appl/Xen/braking/BareMetal-C/c.json;'
     },
     {'name': 'hc-autosar-polled', 'do_timings': 'true', 'guests': 
         'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_polled_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-polled/Autosar-A/a.json;' +

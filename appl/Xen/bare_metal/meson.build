@@ -5,7 +5,7 @@ baremetal_apps = [
   {'path': '../min-bm/BareMetal-B', 'name': 'other'},
   {'path': '../hc-bm-recv/BareMetal-B', 'name': 'b'},
   {'path': '../hardware/BareMetal-A', 'name': 'hardware'},
-#   {'path': 'BareMetal-A', 'name': 'main.c', 'timing': 'BB'},
+  {'path': '../braking/BareMetal-C', 'name': 'braking'},
 ]
 
 foreach app : baremetal_apps
