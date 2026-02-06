@@ -20,12 +20,22 @@
 extern "C" {
 #endif
 
+
 	// Function that is triggered on the event. An OS-specific implementation might add a instead add an interrupt
 	typedef void * evtchn_cb_t;
 
 	// This wrapper uses different id than the ports from Xen, to allow multiple connections/channels between two guests.
 	// A real OS implementation would need to map this new ports towards the ports it receives from the hypercalls
 	typedef int channel_t;
+	typedef enum {PENDING_EVNT, NO_EVNT} EventChannelState_t;
+	typedef enum {NO_BRANCH, IS_BRANCH} EventChannelIsBranch_t;
+
+	// makes Zephyr compilter happy
+	void XEN_wrap_evtchn_alloc_unbound(domid_t remote_dom, channel_t channel, evtchn_cb_t cb);
+	void XEN_wrap_evtchn_bind_interdomain(domid_t remote_dom, channel_t channel, evtchn_cb_t cb);
+	void XEN_wrap_evtchn_send(channel_t channel);
+	EventChannelState_t XEN_wrap_evtchn_poll(channel_t channel, EventChannelIsBranch_t is_branch);
+
 
 	void XEN_wrap_evtchn_alloc_unbound(domid_t remote_dom, channel_t channel, evtchn_cb_t cb) {
 		/**
@@ -96,10 +106,6 @@ extern "C" {
 		*/
 	}
 
-
-	typedef enum {PENDING_EVNT, NO_EVNT} EventChannelState_t;
-	typedef enum {NO_BRANCH, IS_BRANCH} EventChannelIsBranch_t;
-
 	EventChannelState_t XEN_wrap_evtchn_poll(channel_t channel, EventChannelIsBranch_t is_branch) {
 		/**
 		 * Poll if the sender send its event while the channel was masked by the receiver.
@@ -107,6 +113,10 @@ extern "C" {
 		 * @param option_t is_branch: help to indeicated that a branch occures after the poll
 		 * @return a real syscall would return its status code here, here only the result of the poll is returned
 		 */
+
+		// dummy implementation
+		EventChannelState_t e = NO_EVNT;
+		return e;
 	}
 
 #ifdef __cplusplus
