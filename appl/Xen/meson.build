@@ -62,6 +62,11 @@ xen_testcases = [
       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-1.ll;' +
       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-2.ll;'
   },
+  # 2x zephyr notify using hypercall z -> z, multiple sends after each other
+  {'name': 'hc-zephyr2', 'do_timings': 'true', 'guests': 
+      'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-7.ll;' +
+      'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-8.ll;'
+  },
   # notify using hypercall a <- z
   {'name': 'hc-1', 'do_timings': 'true', 'guests': 
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_1_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-1/Autosar-A/a.json;' +
