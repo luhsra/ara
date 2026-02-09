@@ -211,7 +211,7 @@ def sstg_to_dot(sstg, label="SSTG", reduced=False, OS=AUTOSAR):
 
     for state_vert in sstg.vertices():
         attrs = _sstg_state_as_dot(
-            sstg, state_vert, OS
+            sstg, state_vert, OS=OS
         )
         dot_state = pydot.Node(str(state_vert), **attrs)
         dot_graph.add_node(dot_state)
@@ -453,7 +453,10 @@ def mstg_to_dot(mstg: MSTGraph, label: str = "MSTG", OS: OSBase = AUTOSAR, with_
             dot_graph.add_subgraph(dot_m)
 
             for state in m2s.vertex(metastate).out_neighbors():
-                attrs = _sstg_state_as_dot(sstg=mstg, state_vert=state, with_times=with_times, OS=OS)
+                if OS == XEN:
+                    attrs = _sstg_state_as_dot(sstg=mstg, state_vert=state, with_times=with_times, OS=XEN.system_types[cpu_id])
+                else:
+                    attrs = _sstg_state_as_dot(sstg=mstg, state_vert=state, with_times=with_times, OS=OS)
                 dot_state = pydot.Node(_to_str(state), **attrs)
                 dot_m.add_node(dot_state)
 

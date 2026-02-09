@@ -91,6 +91,9 @@ class ZephyrKernel(ZephyrInstance):
     # Always none, but required
     symbol: object = None
 
+    # used by HyperSSE for different domains, in SSE/MultiSSE the kernel is global and this does not matter
+    cpu_id: int = 0
+
     wanted_attrs = ["heap_size"]
     dot_appearance = {
         "shape": "box",
@@ -107,7 +110,10 @@ class ZephyrKernel(ZephyrInstance):
     def __str__(self):
         """Prettyprint selected content."""
         # \33 escape sequenze, 1 for bold, 36 for color, m for end of sequenze
-        return f"\33[1;36mZephyrKernel\033[0m: heap_size={self.heap_size}, symbol={self.symbol}, queue={self.queue}"
+        if XEN.system_count:
+            return f"\33[1;36mZephyrKernel\033[0m: cpu_id={self.cpu_id} heap_size={self.heap_size}, symbol={self.symbol}, queue={self.queue}"
+        else:
+            return f"\33[1;36mZephyrKernel\033[0m: heap_size={self.heap_size}, symbol={self.symbol}, queue={self.queue}"
 
 @dataclass
 class ZephyrIRQ(IRQ):
@@ -472,10 +478,18 @@ class Zephyr(OSBase):
         # HyperSSE needs multicore contexts, some ZephyrInstance are Zephyr wide global, so they are always needed!
         # TODO this breaks IRQ CPU, because they are not found
         local_contexts = []
+        # logger.error(f"CPU_ID: {cpu_id}\n")
+        # for inst, ctx in context.items():
+        #     logger.info(f"{inst}  ---  {ctx}")
         for inst, ctx in context.items():
             if getattr(inst, "cpu_id", None) == cpu_id or isinstance(inst, ZephyrKernel):
                 local_contexts.append((inst, ctx))
             # TODO find targets of IRQ if they belong to this local context
+
+        # logger.error("\n")
+        # for inst, ctx in local_contexts:
+        #     logger.info(f"{inst}  ---  {ctx}")
+        # logger.error("\n")
         return dict(local_contexts)
 
     @staticmethod
@@ -928,6 +942,7 @@ class Zephyr(OSBase):
 
         # Zephyr.debug_print_threads(state)
 
+        # logger.error(f"{state}")
         kernel = Zephyr.get_kernel_context(state)
 
         if len(kernel.ready_q) <= 0:
@@ -963,7 +978,7 @@ class Zephyr(OSBase):
 
             # TODO: temporary disabled for HyperSSE
             if cpu.id != 0:
-                logger.warning("HyperSSE disabled check for only 1 cpu, this should crash!")
+                logger.warning("HyperSSE disabled check for only 1 cpu, this might crash!")
             # assert cpu.id == 0 # only support one cpu
 
             # # if the idle thread is active (new_vertex = idle_thread) -> activate next timeout in queue
