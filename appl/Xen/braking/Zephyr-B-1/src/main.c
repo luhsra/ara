@@ -1,6 +1,6 @@
 #include <zephyr/kernel.h>
 #include <stdio.h>
-#include "../../ara/libs/xen/events.h"
+#include "xen/events.h"
 
 #define STACKSIZE (1 << 10)
 #define MAX_WORK (1 << 2)

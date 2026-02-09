@@ -115,7 +115,7 @@ extern "C" {
 		 */
 
 		// dummy implementation
-		EventChannelState_t e = NO_EVNT;
+		EventChannelState_t e;
 		return e;
 	}
 

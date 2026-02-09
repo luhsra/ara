@@ -1,6 +1,6 @@
 #include <zephyr/kernel.h>
 #include <stdio.h>
-#include "../../../events.h"
+#include "../../../../../libs/xen/events.h"
 
 #define STACKSIZE (1 << 10)
 #define MAX_WORK (1 << 2)
@@ -27,7 +27,7 @@ void sender(void* a, void* b, void* c) {
 
 	XEN_wrap_evtchn_send(channel);
 
-	ara_timing_info(20, 30);
+	ara_timing_info(40, 40);
     printk("A3");
 
 }
