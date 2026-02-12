@@ -12,7 +12,7 @@ from .step import Step
 from pydoc import locate
 from ara.os.zephyr import Queue, QueueType, ZephyrInstance, Thread, ZephyrKernel, Zephyr, ZephyrOptions, Timer, ISR, ZephyrIRQ
 from ara.os.os_base import ControlInstance
-from .option import Bool, Option, String
+from .option import Bool, Option, String, Integer
 from ara.util import KConfigFile, get_logger
 from ara.os.interrupts import fake_interrupt_function
 
@@ -25,6 +25,11 @@ class ZephyrStaticPost(Step):
                          help="Path to the app's KConfig file.",
                          ty=String())
 
+    cpu_id = Option(name="cpu_id",
+                         help="Path to the app's KConfig file.",
+                         ty=Integer(),
+                         default_value=0)
+    
     enable_missing_interaction_count = Option(
         name="enable_missing_interaction_count",
         help="Use this option in conjunction with InstanceGraphStats step to gather data about missing interactions",
@@ -184,7 +189,7 @@ class ZephyrStaticPost(Step):
             ZephyrStaticPost.create_static_instance(self._graph.instances, "Thread", main_thread, "__main", True)
 
         # Create a unique node for the Zephyr kernel.
-        kernel = ZephyrKernel(int(Zephyr.config['CONFIG_HEAP_MEM_POOL_SIZE']))
+        kernel = ZephyrKernel(heap_size=int(Zephyr.config['CONFIG_HEAP_MEM_POOL_SIZE']), cpu_id=self.cpu_id.get())
         Zephyr.kernel = ZephyrStaticPost.create_static_instance(self._graph.instances, "Zephyr", kernel, "__kernel", False)
 
         ZephyrOptions.enable_missing_interaction_count = self.enable_missing_interaction_count.get()

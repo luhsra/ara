@@ -88,11 +88,11 @@ class ZephyrInstance(AutoDotInstance):
 class ZephyrKernel(ZephyrInstance):
     # Size of the system heap. Zero if not present
     heap_size: int
+    # used by HyperSSE for different domains, in SSE/MultiSSE the kernel is global and this does not matter
+    cpu_id: int
     # Always none, but required
     symbol: object = None
 
-    # used by HyperSSE for different domains, in SSE/MultiSSE the kernel is global and this does not matter
-    cpu_id: int = 0
 
     wanted_attrs = ["heap_size"]
     dot_appearance = {
