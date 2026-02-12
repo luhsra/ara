@@ -13,8 +13,10 @@ typedef uint32_t AreaIdType;
 typedef const uint32_t* AddressType;
 typedef uint32_t* ReadValueType;
 domid_t autosar_dom = 0;
+domid_t agl_dom = 2;
 channel_t channel_req = 42;
 channel_t channel_emrg = 43;
+channel_t channel_hmi = 44;
 void* data;
 
 void manip(void* data, void* some) {
@@ -38,7 +40,7 @@ void read_sensors(void * data) {
 // TASKS
 void calc(void* a, void* b, void* c) {
 
-	ara_timing_info(1100, 1100);
+	ara_timing_info(1200, 1200);
 	read_sensors(data);
 
 	// Send ACK here
@@ -46,6 +48,7 @@ void calc(void* a, void* b, void* c) {
 	XEN_wrap_evtchn_send(channel_req);
 	// Update Linux
 	ara_timing_info(12, 12);
+	XEN_wrap_evtchn_send(channel_hmi);
 
 	ara_timing_info(13, 13);
 	return;
@@ -64,6 +67,7 @@ void setup(void* a, void* b, void* c) {
 	// create the event channel to Zephyr
 	XEN_wrap_evtchn_alloc_unbound(autosar_dom, channel_req, calc);
 	XEN_wrap_evtchn_alloc_unbound(autosar_dom, channel_emrg, emergency);
+	XEN_wrap_evtchn_alloc_unbound(agl_dom, channel_hmi, NULL);
 
 	ara_timing_info(2, 2);
 	return;
@@ -78,4 +82,4 @@ K_THREAD_DEFINE(thread_event_calc, STACKSIZE, calc, NULL, NULL, NULL,
 		PRIORITY, 0, -1);
 
 K_THREAD_DEFINE(thread_event_emergency, STACKSIZE, emergency, NULL, NULL, NULL,
-		PRIORITY-1, 0, -1);
+		PRIORITY-3, 0, -1);
