@@ -246,6 +246,7 @@ class ThreadStateAdapter(enum.IntFlag):
             ThreadStateAdapter._THREAD_ABORTING: TaskStatus.terminated,
             ThreadStateAdapter._THREAD_SUSPENDING: TaskStatus.suspended,
             ThreadStateAdapter._THREAD_QUEUED: TaskStatus.ready,
+            ThreadStateAdapter._THREAD_QUEUED | ThreadStateAdapter._THREAD_SUSPENDED: TaskStatus.ready,
 
             # blocked: if not in ready queue ... not as simple as a map... for example waiting for a kernel object / e.g. sem
         }

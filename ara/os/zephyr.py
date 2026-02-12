@@ -1122,7 +1122,7 @@ class Zephyr(OSBase):
         ic.zi.irm.stop(["arch_swap"])
         ic.zi.irm.skip(["memset"])
         # ic.zi.irm.set_print_llvmir(True)
-        ic.run_function_with_arch_swap("z_thread_abort", [thread.ptr], ['PTR'], True)
+        ic.run_function_with_arch_swap("z_impl_k_thread_suspend", [thread.ptr], ['PTR'], True)
         # ic.zi.run_function("z_unpend_all", [join_queue.ptr], ['PTR'])
         # ic.zi.run_function("unpend_thread_no_timeout", [join_queue.ptr], ['PTR'])
         # ic.zi.run_function("update_cache", [0], ['APInt32'])
@@ -1213,12 +1213,34 @@ class Zephyr(OSBase):
         states = get_single_core_states(state, XEN)
         state = states[cpu_id].copy()
 
+
+        # state.context[event] = ThreadContext(
+        #     status=TaskStatus.ready,
+        #     abb=None, # don't schedule on idle thread
+        #     call_path=CallPath(),
+        #     dyn_prio=[obj.priority],
+        #     preempt=(obj.priority & 0x00FF) | ((0 << 8) & 0xFF00)
+        # )
+
+        
         # similar to k_thread_start
         if Zephyr.enable_sse:
+            start_abb = state.cfg.get_entry_abb(state.cfg.get_function_by_name(event.entry_name))
+            state.context[event].abb = start_abb
+
             ic = za.InterpreterContext(Zephyr.irx, state, cpu_id)
             thread = ic.thread_sym_2_ptr(event)
-            ic.zi.irm.skip(["memcpy", "memset"])
-            ic.run_function_with_arch_swap("z_impl_k_thread_start", [thread.ptr], ['PTR'])
+            # ic.zi.queue_thread(thread)
+            ic.zi.z_mark_thread_as_started(thread)
+            ic.zi.ready_thread(thread)
+            # ic.zi.irm.skip(["memcpy", "memset"])
+            # ic.run_function_with_arch_swap("z_impl_k_thread_start", [thread.ptr], ['PTR'])
+
+            ic.zi.irm.stop(["arch_swap"])
+            ic.zi.irm.skip(["memset"])
+            # ic.zi.irm.set_print_llvmir(True)
+            ic.run_function_with_arch_swap("z_impl_k_thread_resume", [thread.ptr], ['PTR'], True)
+            ic.update()
 
         # TODO do not have a real zephyr interrupt here, can not connect in instance graph
         # but does work without it
@@ -1231,6 +1253,7 @@ class Zephyr(OSBase):
             # mantain order of states
             state_list.insert(s, states[s])
 
+        # merged =  XEN.merge_states(state_list, tmp=False)
         merged =  XEN.merge_states(state_list)
         return merged
 

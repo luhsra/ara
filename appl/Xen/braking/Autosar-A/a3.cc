@@ -131,6 +131,7 @@ TASK(LOOP) {
 	}
 
 	ara_timing_info(7, 7);
+	TerminateTask();
 }
 
 TASK(OTHER) {

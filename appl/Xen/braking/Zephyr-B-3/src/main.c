@@ -1,10 +1,10 @@
 #include <zephyr/kernel.h>
 #include <stdio.h>
-#include "../../ara/libs/xen/events.h"
+#include "events.h"
 
 #define STACKSIZE (1 << 10)
 #define MAX_WORK (1 << 2)
-#define PRIORITY 1
+#define PRIORITY 5
 
 void ara_timing_info(int a, int b);
 
@@ -78,4 +78,4 @@ K_THREAD_DEFINE(thread_event_calc, STACKSIZE, calc, NULL, NULL, NULL,
 		PRIORITY, 0, -1);
 
 K_THREAD_DEFINE(thread_event_emergency, STACKSIZE, emergency, NULL, NULL, NULL,
-		PRIORITY, 0, -1);
+		PRIORITY-1, 0, -1);
