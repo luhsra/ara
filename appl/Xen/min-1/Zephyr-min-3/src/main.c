@@ -1,5 +1,5 @@
 #include <zephyr/kernel.h>
-#include <stdio.h>
+#include "events.h" // from ara/libs/xen
 
 #define STACKSIZE (1 << 10)
 #define MAX_WORK (1 << 2)

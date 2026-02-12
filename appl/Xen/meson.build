@@ -213,11 +213,16 @@ foreach app: baremetal_targets
     bareMetal_ll_targets += app['ll_pi4']
 endforeach
 
+# need this variable, even if subproject is loaded later
+# its a bit ilegal!
+zephyr = subproject('ara-zephyr-apps')
+xen_zephry_kernel_targets = zephyr.get_variable('xen_zephry_kernel_targets')
+
 # To rebuild while debuging
 rebuild_lls = custom_target('xen-ara-autosar', 
             command: find_program('true'),
             output: 'xen-ara-autosar',
-            depends: [autosar_ll_targets, bareMetal_ll_targets])
+            depends: [autosar_ll_targets, bareMetal_ll_targets, xen_zephry_kernel_targets])
 
 # must call: meson compile sse-native_sim-xen_static_msgq -v
 # Create ninja target, run with: ninja subprojects/ara/appl/Xen/hypercall
