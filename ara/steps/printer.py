@@ -105,11 +105,17 @@ def _sstg_state_as_dot(sstg, state_vert, with_times: bool = True, OS: OSBase = A
         if kernel_obj in obj.context:
             kernel = obj.context[kernel_obj]
 
+    more_tupels = []
+
     if cpu.control_instance:
         instance = obj.instances.vp.label[obj.instances.vertex(cpu.control_instance)]
         #is_exit = cfg.vp.is_exit[cpu.abb]
         thread = obj.cur_control_inst(cpu.id)
 
+        # this field is onyl relevant for AUTOSAR or to identify Idle States (because they dont have ABBs)
+        if OS== AUTOSAR or (OS == XEN and XEN.system_types[cpu.id] == AUTOSAR) or instance == "Idle":
+            more_tupels.append(("instance", instance))
+        
         if OS == Zephyr and hasattr(thread, 'name'):
             thread_list = [(v, obj) for v, obj in obj.instances.get(ZephyrThread)]
             thread_names = list(map(lambda x: x[1].name, thread_list))
@@ -120,12 +126,13 @@ def _sstg_state_as_dot(sstg, state_vert, with_times: bool = True, OS: OSBase = A
                 thread_idx = thread_names.index(thread.name)
                 v = thread_list[thread_idx][0]
                 idstr = f"{str(v)}"
-            thread_info.append(("thread", with_color(thread.name, thread_idx, -1, thread_count) + " " + idstr))
+            # thread_info.append(("thread", with_color(thread.name, thread_idx, -1, thread_count)))
+            more_tupels.append(("thread", thread.name))
 
             if thread in obj.context and not isinstance(thread, ZephyrIRQ):
                 context = obj.context[thread]
-                thread_info.append(("preempt", context.preempt))
-                thread_info.append(("thread_state", bin(context.thread_state)))
+                # thread_info.append(("preempt", context.preempt))
+                # thread_info.append(("thread_state", bin(context.thread_state)))
                 vertices = [str(obj.instances.vertex_index[v]) for v in context.join_queue]
                 timeouts = [str(obj.instances.vertex_index[to.v]) for to in kernel.timeout_list]
                 if vertices:
@@ -135,45 +142,45 @@ def _sstg_state_as_dot(sstg, state_vert, with_times: bool = True, OS: OSBase = A
 
     else:
         # for BareMetal
-        if OS == XEN and XEN.system_types[cpu.id] == BareMetal:
+        if OS== BareMetal or (OS == XEN and XEN.system_types[cpu.id] == BareMetal):
             instance = "BareMetal"
         else:
             instance = "Idle"
-
-    more_tupels = []
+            # this field is onyl relevant for AUTOSAR or to identify Idle States (because they dont have ABBs)
+            more_tupels.append(("instance", instance))
 
     if cpu.abb:
         syscall = cfg.get_syscall_name(cpu.abb)
-        if syscall != "":
-            more_tupels.append(('sys', f"{syscall}"))
+        # if syscall != "":
+            # more_tupels.append(('sys', f"{syscall}"))
 
         if OS == XEN:
             abb = f"{cfg.name.removeprefix('CFG-')}/{cfg.vp.name[cpu.abb]}"
         else:
             abb = f"{cfg.vp.name[cpu.abb]}"
+        more_tupels.append(("abb", abb))
         if with_times and cfg.vp.bcet[cpu.abb] != 0 and cfg.vp.wcet[cpu.abb] != 0:
             more_tupels.append(("bcet/wcet", f"{cfg.vp.bcet[cpu.abb]}/{cfg.vp.wcet[cpu.abb]}"))
     else:
-        abb = "None"
-
+        syscall = None
     # Debug testing
     # x = obj.context_get_instances(EventChannel)
     # if len(x) > 0:
     #     ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
     #     more_tupels.append(("D:", ansi_escape.sub('', str(x[0]))))
-
+    
     graph_attrs = "<br/>".join(
         [   
             # FIXME removed <i> </i> html tags because of issue in typst rendering
             f"{k}: {html.escape(str(v))}"
             for k, v in [
                 # ("irq_on", cpu.irq_on),
-                ("instance", instance),
+                # ("instance", instance),
                 # ("call_path", cpu.call_path),
                 # FIXME less verbose output
-                ("type" , ExecState(cpu.exec_state).name),
+                # ("type" , ExecState(cpu.exec_state).name),
                 # FIXME less verbose output
-                ("abb", abb),
+                # ("abb", abb),
                 # ("kernel", str(kernel)),
             ] + more_tupels
         ] + [
@@ -183,6 +190,8 @@ def _sstg_state_as_dot(sstg, state_vert, with_times: bool = True, OS: OSBase = A
             ] + thread_info
         ]
     )
+    if syscall:
+        graph_attrs += "<br/>" + syscall
     graph_attrs = f"<font point-size='{size}'>{graph_attrs}</font>"
     attrs["label"] = f"<{label}<br/>{graph_attrs}>"
     tooltip = str(state_vert)
@@ -195,12 +204,12 @@ def _sstg_state_as_dot(sstg, state_vert, with_times: bool = True, OS: OSBase = A
     attrs["tooltip"] = tooltip
 
     if cpu.exec_state & ExecState.with_time:
-        attrs["style"] = "bold"
+        attrs["style"] = "solid"
         attrs["color"] = "green"
         if cpu.exec_state == ExecState.idle:
             attrs["color"] = "violet"
     elif cpu.exec_state & ExecState.syscall:
-        attrs["color"] = "blue"
+        attrs["color"] = "cornflowerblue"
         attrs["shape"] = "box"
 
     return attrs
@@ -442,14 +451,25 @@ def mstg_to_dot(mstg: MSTGraph, label: str = "MSTG", OS: OSBase = AUTOSAR, with_
             #     dot_m = pydot.Cluster(_to_str(metastate), penwidth=3, color="grey",
             #                         label=f"M{int(metastate)} (dom {cpu_id}, {XEN.system_types[cpu_id].get_name()})")
             #     dot_graph.add_subgraph(dot_m)
-            label = f"M{int(metastate)} ({domain_type} {cpu_id})"
+            label =  f"M{int(metastate)} ({domain_type} {cpu_id})"
+            attrs = {} 
             if OS == XEN:
                 # filter IRQ CPUs
                 if cpu_id in XEN.irq_ids:
                     label = f"M{int(metastate)}: {domain_type}-{cpu_id}-IRQ(dom-{XEN.irq_ids[cpu_id]})"
                 else:
                     label = f"M{int(metastate)}: {domain_type}-{cpu_id}-{XEN.system_types[cpu_id].get_name()}"
-            dot_m = pydot.Cluster(_to_str(metastate),label=label)
+                xen_system_colors = {
+                    # "AUTOSAR": "#B85450",
+                    # "Zephyr": "#6C8EBF",
+                    # "BareMetal": "#82B366"
+                    "AUTOSAR": "#F8CECC",
+                    "Zephyr": "#DAE8FC",
+                    "BareMetal": "#D5E8D4"
+                }
+                attrs = {"bgcolor": xen_system_colors[XEN.system_types[cpu_id].get_name()] , "style": "bold"}
+
+            dot_m = pydot.Cluster(_to_str(metastate),label=label, **attrs)
             dot_graph.add_subgraph(dot_m)
 
             for state in m2s.vertex(metastate).out_neighbors():
@@ -687,6 +707,10 @@ class Printer(Step):
                             help="Used to create a multi OS hypersse hstg, or a multicore multisse mstg.",
                             ty=Choice("CPU", "Dom"),
                             default_value="CPU")
+    label = Option(name="label",
+                            help="If the label/name-of-the-graph is written at the bottom of the dot-graph.",
+                            ty=Bool(),
+                            default_value=True)
 
 
     def _print_init(self) -> str:
@@ -929,10 +953,13 @@ class Printer(Step):
 
     def print_mstg(self):
         OS = self._graph.os
-        name = self._print_init()
         add_legend = self.add_legend.get()
         domain_type = self.domain_type.get()
         with_times = self.with_times.get()
+        if self.label.get():
+            name = self._print_init()
+        else:
+            name = ""
         dot_graph = mstg_to_dot(mstg=self._graph.mstg, label=name, OS=OS, add_legend=add_legend, with_times=with_times, domain_type=domain_type)
         self._write_dot(dot_graph)
 
