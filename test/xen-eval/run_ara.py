@@ -11,7 +11,7 @@ def main():
 
     # sys.argv[0] is name of script
     full_name = sys.argv[1]
-    target = "subprojects/ara/appl/Xen/" + full_name
+    target = "subprojects/ara/appl/Xen/testsuite-" + full_name
     ninja_ara = ["ninja", target, "-v"]
     
     # execute ninja cmd
@@ -21,8 +21,9 @@ def main():
         print(f"Errors:\n{stderr_log}\n")
         print(f"StdOut:\n{stdout_log}\n")
 
-    if "ERROR" in stdout_log or "Error" in stdout_log \
-        or "Aborted" in stdout_log or "Traceback" in stdout_log:
+    if "ERROR" in stdout_log or "Error" in stdout_log or "Aborted" in stdout_log \
+        or "Traceback" in stdout_log or "MSTGStats" not in stdout_log\
+        or stderr_log:
         sys.exit(1)
     # Test ok
     sys.exit(0)

@@ -270,6 +270,11 @@ class MultiSSE(StatsStep):
                 ty=Bool(),
                 default_value=False)
 
+    reduced_dump = Option(name="reduced_dump",
+                help="If the sps.dot and reduced.dot should be dumped",
+                ty=Bool(),
+                default_value=True)
+    
     log_single_core_transitions = Option(
         name="log_single_core_transitions",
         help="Log SSE transitions (logging in cfg_traversal.py)",
@@ -1563,7 +1568,8 @@ class MultiSSE(StatsStep):
             fn = self.file_name.get()
             if fn:
                 if self._graph.os == XEN:
-                    dot = f'{self.dump_prefix.get().split("/")[0]}/HyperSSE.{fn}.hstg.dot'
+                    # dot = f'{self.dump_prefix.get().split("/")[0]}/HyperSSE.{fn}.hstg.dot'
+                    dot = f'{self.dump_prefix.get().split("/")[0]}/MCAnalyzer.{fn}.hstg.dot'
                 else:
                     dot = f'{self.dump_prefix.get().split(".")[0]}.{fn}.mstg.dot'
             else:
@@ -1580,19 +1586,20 @@ class MultiSSE(StatsStep):
                 "reduced" : True,
                 "domain_type" : "Dom" if self._graph.os == XEN else "CPU"
             })
-            # self._step_manager.chain_step({
-            #     "name": "Printer",
-            #     "dot": ".".join(dot.split(".")[:-1]) + ".reduced.dot",
-            #     "graph_name": ".".join(dot.split("/")[1].split(".")[:-1]) + ".reduced.dot",
-            #     "subgraph": "reduced_mstg",
-            #     "reduced" : True,
-            #     "domain_type" : "Dom" if self._graph.os == XEN else "CPU"
-            # })
-            # self._step_manager.chain_step({
-            #     "name": "Printer",
-            #     "dot": ".".join(dot.split(".")[:-1]) + ".sps.dot",
-            #     "graph_name":".".join(dot.split("/")[1].split(".")[:-1]) + ".sps.dot",
-            #     "subgraph": "sp_mstg",
-            #     "reduced" : True,
-            #     "domain_type" : "Dom" if self._graph.os == XEN else "CPU"
-            # })
+            if self.reduced_dump.get():
+                self._step_manager.chain_step({
+                    "name": "Printer",
+                    "dot": ".".join(dot.split(".")[:-1]) + ".reduced.dot",
+                    "graph_name": ".".join(dot.split("/")[1].split(".")[:-1]) + ".reduced.dot",
+                    "subgraph": "reduced_mstg",
+                    "reduced" : True,
+                    "domain_type" : "Dom" if self._graph.os == XEN else "CPU"
+                })
+                self._step_manager.chain_step({
+                    "name": "Printer",
+                    "dot": ".".join(dot.split(".")[:-1]) + ".sps.dot",
+                    "graph_name":".".join(dot.split("/")[1].split(".")[:-1]) + ".sps.dot",
+                    "subgraph": "sp_mstg",
+                    "reduced" : True,
+                    "domain_type" : "Dom" if self._graph.os == XEN else "CPU"
+                })

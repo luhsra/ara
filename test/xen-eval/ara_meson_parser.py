@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2025 Mareike Burg
+# SPDX-FileCopyrightText: 2026 Mareike Burg
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -30,7 +30,7 @@ class Testcase:
         return f'{self.__class__.__name__}({attributes})'
 
 
-def main():
+def parse():
     """Parses the output of meson into a csv.
     python3 ara_meson_parser.py ../../../../build/meson-logs/testlog.txt res-ara.csv
     """
@@ -116,4 +116,4 @@ def main():
     print(f"Done, wrote {len(cases)} lines.")
 
 if __name__ == "__main__":
-    main()
+    parse()

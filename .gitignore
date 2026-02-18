@@ -5,3 +5,4 @@ __pycache__
 .idea/
 .meson-subproject-wrap-hash.txt
 test/xen-eval/HyperSSE*
+test/xen-eval/MCAnalyzer*

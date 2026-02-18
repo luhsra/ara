@@ -242,6 +242,15 @@ foreach case: xen_testcases
   settings = configure_file(input : files(f'hypersse.json.in'), output : f'hypersse-@name@.json',
               configuration : conf_data)
 
+  # This has no own meson target, but gets called in ara/test/Xen with run_ara.py
+  testsuite_conf_data = configuration_data()
+  testsuite_conf_data.set('name', case['name'])
+  testsuite_conf_data.set('do_timings', case['do_timings'])
+  testsuite_conf_data.set('guests', case['guests'])
+  testsuite_conf_data.set('do_stats', 'true')
+  testsuite_settings = configure_file(input : files(f'hypersse-testsuite.json.in'), output : f'hypersse-testsuite-@name@.json',
+              configuration : testsuite_conf_data)
+
   # optinally add va_corrections here, file should be in the folder of this meson folder
   # also add ", '--va-corrections', corrections" to custom_target(command: ...)
   # corrections = files('va_corrections.json')
@@ -250,6 +259,11 @@ foreach case: xen_testcases
                 '--step-settings', settings],
             output: name,
             depends : rebuild_lls,
-
+  )
+  custom_target('testsuite-xen-ara-' + case['name'], 
+            command: [py3_inst, ara_py, 'ignored', '--os', 'XEN', '--log-level', 'warn',
+                '--step-settings', testsuite_settings],
+            output: 'testsuite-'+name,
+            depends : rebuild_lls,
   )
 endforeach
