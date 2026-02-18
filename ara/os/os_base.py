@@ -246,7 +246,11 @@ class CPU:
     def __hash__(self):
         ci = self.control_instance and int(self.control_instance)
         abb = self.abb and int(self.abb)
-        return hash((self.irq_on, ci, abb, self.call_path, self.exec_state))
+        if self.cfg:
+            cfg_name = self.cfg.name
+        else:
+            cfg_name = ""
+        return hash((self.irq_on, ci, abb, cfg_name, self.call_path, self.exec_state))
 
     def __str__(self):
         s = f"CPU: Id={self.id} irq_on={self.irq_on} control_instance={self.control_instance} "
