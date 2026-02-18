@@ -143,6 +143,9 @@ class HyperSSE(Step):
                     if guests[2] != "None":
                         extra["BareMetal"] = {"entry_point": guests[2]}
                         extra["steps"].insert(extra["steps"].index('Syscall') + 1, "BareMetal")
+                    else:
+                        extra["BareMetal"] = {"entry_point": ""}
+
                         
                     # Remove first 3 elements
                     guests = guests[3:] 

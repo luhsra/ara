@@ -822,6 +822,7 @@ class Zephyr(OSBase):
         for cpu in cpus:
             idle_thread_vertex = Zephyr.idle_threads[cpu.id]
             obj = state.instances.vp.obj[idle_thread_vertex]
+            # if isinstance(obj, Thread):
             state.context[obj] = ThreadContext(
                 status=TaskStatus.ready,
                 abb=None, # don't schedule on idle thread
@@ -829,6 +830,16 @@ class Zephyr(OSBase):
                 dyn_prio=[obj.priority],
                 preempt=(obj.priority & 0x00FF) | ((0 << 8) & 0xFF00)
             )
+            # this case is for a bug with hypersse, where the wrong vertex is found
+            # else:
+            #     priority = 0
+            #     state.context[obj] = ThreadContext(
+            #         status=TaskStatus.ready,
+            #         abb=None, # don't schedule on idle thread
+            #         call_path=CallPath(),
+            #         dyn_prio=[0],
+            #         preempt=(0 & 0x00FF) | ((0 << 8) & 0xFF00)
+            #     )
 
         # task_to_shed = running_tasks
         # for cpu in cpus:

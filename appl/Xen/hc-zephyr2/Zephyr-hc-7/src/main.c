@@ -15,30 +15,29 @@ void ara_timing_info(int a, int b);
 domid_t remote_dom = 1;
 channel_t channel = 42;
 
-void sender(void* a, void* b, void* c) {
+void event(void* a, void* b, void* c) {
 
-	ara_timing_info(40, 50);
-    printk("A");
-
-	XEN_wrap_evtchn_alloc_unbound(remote_dom, channel, NULL);
-
-	ara_timing_info(40, 50);
-    printk("A2");
-
-	// first
-	XEN_wrap_evtchn_send(channel);
-	ara_timing_info(40, 40);
-
-	// second
-	XEN_wrap_evtchn_send(channel);
-	ara_timing_info(40, 40);
-
-	// third
-	XEN_wrap_evtchn_send(channel);
-	ara_timing_info(40, 40);
-    printk("A3");
+  	ara_timing_info(55, 65);
+    printk("Event");
 
 }
 
-K_THREAD_DEFINE(thread_a, STACKSIZE, sender, NULL, NULL, NULL,
-		PRIORITY, 0, 0);
+void a(void* a, void* b, void* c) {
+
+  	ara_timing_info(15, 25);
+    printk("A");
+
+	XEN_wrap_evtchn_bind_interdomain(remote_dom, channel, event);
+
+  	ara_timing_info(35, 45);
+    printk("A2");
+
+}
+
+K_THREAD_DEFINE(thread_a, STACKSIZE, a, NULL, NULL, NULL,
+		PRIORITY+1, 0, 0);
+
+// to receive hypercalls, another IR-handling Thread is needed
+// it points to the same func, as the cb in XEN_wrap_evtchn_bind_interdomain
+K_THREAD_DEFINE(thread_event, STACKSIZE, event, NULL, NULL, NULL,
+		PRIORITY, 0, -1);

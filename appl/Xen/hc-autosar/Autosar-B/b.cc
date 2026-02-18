@@ -14,7 +14,7 @@ int main(void) {
 
 TASK(IR) {
 
-  	ara_timing_info(10, 20);
+  	ara_timing_info(55, 65);
 	kout << "IR"<< endl;
 
 	TerminateTask();
@@ -23,12 +23,12 @@ TASK(IR) {
 
 TASK(B) {
 
-  	ara_timing_info(20, 30);
+  	ara_timing_info(15, 25);
 	kout << "B"<< endl;
 
 	wrap_evtchn_bind_interdomain(remote_dom, channel, reinterpret_cast<void*>(AUTOSAR_TASK_FUNC_IR));
 
-  	ara_timing_info(20, 30);
+  	ara_timing_info(35, 45);
 	kout << "B2"<< endl;
 	
 	TerminateTask();

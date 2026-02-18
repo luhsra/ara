@@ -242,7 +242,7 @@ class BareMetal(OSBase):
             c = Callback(cpu_id=cpu_id, name=cb, abb=entry_abb, prev_abb=None)
             state.context[c] = cb
         except AssertionError:
-            logger.warning(f"CrossOSEvent: \"{cb}\ has no entry_abb, if it should have one add it to Xen: meson.build.")
+            logger.warning(f"CrossOSEvent: \"{cb}\" has no entry_abb, if it should have one add it to Xen: meson.build.")
             return None
 
         return c

@@ -17,25 +17,25 @@ channel_t channel = 42;
 
 void event(void* a, void* b, void* c) {
 
-  	ara_timing_info(10, 20);
+  	ara_timing_info(55, 65);
     printk("Event");
 
 }
 
-void recv(void* a, void* b, void* c) {
+void b(void* a, void* b, void* c) {
 
-  	ara_timing_info(20, 30);
+  	ara_timing_info(15, 25);
     printk("B");
 
 	XEN_wrap_evtchn_bind_interdomain(remote_dom, channel, event);
 
-  	ara_timing_info(20, 30);
+  	ara_timing_info(35, 45);
     printk("B2");
 
 }
 
 // lowest priority is schedueled first
-K_THREAD_DEFINE(thread_a, STACKSIZE, recv, NULL, NULL, NULL,
+K_THREAD_DEFINE(thread_b, STACKSIZE, b, NULL, NULL, NULL,
 		PRIORITY+1, 0, 0);
 
 // to receive hypercalls, another IR-handling Thread is needed

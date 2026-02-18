@@ -6,7 +6,7 @@ bgcolor="#DAE8FC";
 label="M6: Dom-0-Zephyr";
 style=bold;
 2 [color=green, fontsize=14, label=<State 4<br/><font point-size='12'>thread: thread_a<br/>abb: ABB1<br/>bcet/wcet: 1/2</font>>, style=solid, tooltip=2];
-3 [color=cornflowerblue, fontsize=14, label=<State 6<br/><font point-size='12'>thread: thread_a<br/>abb: ABB3<br/>k_yield</font>>, shape=box, tooltip=3];
+3 [color=cornflowerblue, fontsize=14, label=<State 6<br/><font point-size='12'>thread: thread_a<br/>abb: ABB3<br/>Zephyr_kyield</font>>, shape=box, tooltip=3];
 4 [color=green, fontsize=14, label=<State 8<br/><font point-size='12'>thread: thread_a<br/>abb: ABB2<br/>bcet/wcet: 5/6</font>>, style=solid, tooltip=4];
 5 [color=violet, fontsize=14, label=<State 9<br/><font point-size='12'>instance: Idle</font>>, style=solid, tooltip=5];
 }
@@ -18,7 +18,7 @@ style=bold;
 7 [color=green, fontsize=14, label=<State 5<br/><font point-size='12'>abb: ABB0</font>>, style=solid, tooltip=7];
 8 [fontsize=14, label=<State 10<br/><font point-size='12'>abb: ABB2</font>>, tooltip=8];
 9 [color=green, fontsize=14, label=<State 11<br/><font point-size='12'>abb: ABB3<br/>bcet/wcet: 3/4</font>>, style=solid, tooltip=9];
-10 [color=cornflowerblue, fontsize=14, label=<State 12<br/><font point-size='12'>abb: ABB7<br/>BareMetal_Dummy</font>>, shape=box, tooltip=10];
+10 [color=cornflowerblue, fontsize=14, label=<State 12<br/><font point-size='12'>abb: ABB7<br/>Baremetal_Dummy</font>>, shape=box, tooltip=10];
 11 [color=green, fontsize=14, label=<State 13<br/><font point-size='12'>abb: ABB4<br/>bcet/wcet: 7/8</font>>, style=solid, tooltip=11];
 12 [color=cornflowerblue, fontsize=14, label=<State 14<br/><font point-size='12'>abb: ABB6<br/>Baremetal_Idle</font>>, shape=box, tooltip=12];
 13 [color=violet, fontsize=14, label=<State 15<br/><font point-size='12'>abb: ABB1</font>>, style=solid, tooltip=13];

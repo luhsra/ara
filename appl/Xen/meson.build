@@ -39,6 +39,98 @@ xen_testcases = [
       'BareMetal;subprojects/ara/appl/BareMetal/___Xen_min_ba_BareMetal_A_a.pi4.ll;None;' +
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_min_ba_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/min-ba/Autosar-B/b.json'
   },
+
+  # --------------------------- hypercalls  ----------------------------------
+  # 2x autosar notify using hypercall a -> a
+  {'name': 'hc-autosar', 'do_timings': 'true', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar/Autosar-B/b.json'
+  },
+  # 2x zephyr notify using hypercall z -> z
+  {'name': 'hc-zephyr', 'do_timings': 'true', 'guests': 
+      'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-1.ll;' +
+      'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-2.ll;'
+  },
+  # 2x bareMetal notify using hypercall b -> b
+  {'name': 'hc-baremetal', 'do_timings': 'true', 'guests': 
+      'BareMetal;subprojects/ara/appl/BareMetal/___Xen_hc_baremetal_BareMetal_A_a.pi4.ll;None;' +
+      'BareMetal;subprojects/ara/appl/BareMetal/___Xen_hc_baremetal_BareMetal_B_b.pi4.ll;event;'
+  },
+  # 2x autosar notify using hypercall a <- a
+  {'name': 'hc-autosar2', 'do_timings': 'true', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar2_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar2/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar2_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar2/Autosar-B/b.json'
+  },
+  # 2x zephyr notify using hypercall z <- z
+#   {'name': 'hc-zephyr2', 'do_timings': 'true', 'guests': 
+#       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-7.ll;' +
+#       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-8.ll;'
+#   },
+  # 2x bareMetal notify using hypercall b <- b
+  {'name': 'hc-baremetal2', 'do_timings': 'true', 'guests': 
+      'BareMetal;subprojects/ara/appl/BareMetal/___Xen_hc_baremetal2_BareMetal_A_a.pi4.ll;event;' +
+      'BareMetal;subprojects/ara/appl/BareMetal/___Xen_hc_baremetal2_BareMetal_B_b.pi4.ll;None;'
+  },
+  # A -> Z
+  {'name': 'hc-a-z1', 'do_timings': 'true', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_a_z1_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-a-z1/Autosar-A/a.json;' +
+      'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-3.ll;'
+  },
+  # Z -> B
+  {'name': 'hc-z-b1', 'do_timings': 'true', 'guests': 
+      'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-4.ll;' +
+      'BareMetal;subprojects/ara/appl/BareMetal/___Xen_hc_z_b1_BareMetal_B_b.pi4.ll;event;'
+  },
+  # B -> A
+  {'name': 'hc-b-a1', 'do_timings': 'true', 'guests': 
+      'BareMetal;subprojects/ara/appl/BareMetal/___Xen_hc_b_a1_BareMetal_A_a.pi4.ll;None;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_b_a1_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hc-b-a1/Autosar-B/b.json'
+  },
+  # A <- Z
+  {'name': 'hc-a-z2', 'do_timings': 'true', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_a_z2_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-a-z2/Autosar-A/a.json;' +
+      'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-5.ll;'
+  },
+  # Z <- B
+#   {'name': 'hc-z-b2', 'do_timings': 'true', 'guests': 
+#       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-6.ll;' +
+#       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-5.ll;'
+#   },
+  # B <- A
+  {'name': 'hc-b-a2', 'do_timings': 'true', 'guests': 
+      'BareMetal;subprojects/ara/appl/BareMetal/___Xen_hc_b_a2_BareMetal_A_a.pi4.ll;event;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_b_a2_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hc-b-a2/Autosar-B/b.json'
+  },
+
+
+  # 2x autosar notify using hypercall a -> a notiming
+  {'name': 'hc-autosar-notiming', 'do_timings': 'false', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_notiming_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-notiming/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_notiming_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-notiming/Autosar-B/b.json'
+  },
+  # 2x zephyr notify using hypercall z -> z without iit
+  {'name': 'hc-zephyr-notiming', 'do_timings': 'false', 'guests': 
+      'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-9.ll;' +
+      'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-10.ll;'
+  },
+  # 2x bareMetal notify using hypercall b -> b without iit
+  {'name': 'hc-baremetal-notiming', 'do_timings': 'false', 'guests': 
+      'BareMetal;subprojects/ara/appl/BareMetal/___Xen_hc_baremetal_notiming_BareMetal_A_a.pi4.ll;None;' +
+      'BareMetal;subprojects/ara/appl/BareMetal/___Xen_hc_baremetal_notiming_BareMetal_B_b.pi4.ll;event;'
+  },
+
+
+#   # 2x autosar notify using hypercall a -> b without IIT
+#   {'name': 'hc-autosar-noiit', 'do_timings': 'false', 'guests': 
+#       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_noiit_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-noiit/Autosar-A/a.json;' +
+#       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_noiit_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-noiit/Autosar-B/b.json'
+#   },
+#   # 2x zephyr notify using hypercall a -> b without IIT
+#   # TODO: HSTG does not look correct, SP are right, but wrong follow up states
+#   {'name': 'hc-zephyr-noiit', 'do_timings': 'false', 'guests': 
+#       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-5.ll;' +
+#       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-6.ll;'
+#   },
 #   # load many singlecore autosar guests into HyperSSE
 #   {'name': 'many', 'do_timings': 'false', 'guests':
 #       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_many_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/many/Autosar-A/a.json;' +
@@ -57,53 +149,12 @@ xen_testcases = [
 #       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_alarm_2_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/alarm-2/Autosar-A/a.json;' +
 #       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_alarm_2_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/alarm-2/Autosar-B/b.json'
 #   },
+
 #   # Single Zephyr guest, bug in SSE does not continue after one sleep
 #   # TODO: thread does not wake up from first sleep
+#   # (not relevant for HyperSSE)
 #   {'name': 'zephyr-sleep', 'do_timings': 'true', 'guests': 
 #       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-sleep.ll;'
-#   },
-
-
-#   # --------------------------- hypercalls  ----------------------------------
-#   # 2x autosar notify using hypercall a -> a
-#   {'name': 'hc-autosar', 'do_timings': 'true', 'guests': 
-#       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar/Autosar-A/a.json;' +
-#       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar/Autosar-B/b.json'
-#   },
-#   # 2x zephyr notify using hypercall z -> z
-#   {'name': 'hc-zephyr', 'do_timings': 'true', 'guests': 
-#       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-1.ll;' +
-#       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-2.ll;'
-#   },
-#   # 2x zephyr notify using hypercall z -> z, multiple sends after each other
-#   {'name': 'hc-zephyr2', 'do_timings': 'true', 'guests': 
-#       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-7.ll;' +
-#       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-8.ll;'
-#   },
-#   # notify using hypercall a <- z
-#   {'name': 'hc-1', 'do_timings': 'true', 'guests': 
-#       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_1_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-1/Autosar-A/a.json;' +
-#       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-3.ll;'
-#   },
-#   # notify using hypercall z <- a 
-#   {'name': 'hc-2', 'do_timings': 'true', 'guests': 
-#       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-4.ll;' +
-#       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_2_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hc-2/Autosar-B/b.json'
-#   },
-#   # 2x autosar notify using hypercall a -> b without IIT
-#   {'name': 'hc-autosar-noiit', 'do_timings': 'false', 'guests': 
-#       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_noiit_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-noiit/Autosar-A/a.json;' +
-#       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_noiit_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-noiit/Autosar-B/b.json'
-#   },
-#   # 2x zephyr notify using hypercall a -> b without IIT
-#   # TODO: HSTG does not look correct, SP are right, but wrong follow up states
-#   {'name': 'hc-zephyr-noiit', 'do_timings': 'false', 'guests': 
-#       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-5.ll;' +
-#       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-6.ll;'
-#   },
-#   {'name': 'hc-bm-recv', 'do_timings': 'true', 'guests': 
-#       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_bm_recv_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-bm-recv/Autosar-A/a.json;' +
-#       'BareMetal;subprojects/ara/appl/BareMetal/___Xen_hc_bm_recv_BareMetal_B_b.pi4.ll;callback;'
 #   },
 
 

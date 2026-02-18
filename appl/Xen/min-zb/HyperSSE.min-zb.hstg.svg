@@ -72,7 +72,7 @@
 <text text-anchor="start" x="62" y="-529.04" font-family="Times,serif" font-size="14.00">State 6</text>
 <text text-anchor="start" x="43" y="-516.64" font-family="Times,serif" font-size="12.00">thread: thread_a</text>
 <text text-anchor="start" x="53.5" y="-504.64" font-family="Times,serif" font-size="12.00">abb: ABB3</text>
-<text text-anchor="start" x="63" y="-492.64" font-family="Times,serif" font-size="12.00">k_yield</text>
+<text text-anchor="start" x="46" y="-492.64" font-family="Times,serif" font-size="12.00">Zephyr_kyield</text>
 </a>
 </g>
 </g>
@@ -153,10 +153,10 @@
 <g id="node9" class="node">
 <title>10</title>
 <g id="a_node9"><a xlink:title="10">
-<polygon fill="none" stroke="cornflowerblue" points="284.5,-330.18 173.5,-330.18 173.5,-284.18 284.5,-284.18 284.5,-330.18"/>
+<polygon fill="none" stroke="cornflowerblue" points="284,-330.18 174,-330.18 174,-284.18 284,-284.18 284,-330.18"/>
 <text text-anchor="start" x="206.5" y="-315.98" font-family="Times,serif" font-size="14.00">State 12</text>
 <text text-anchor="start" x="201.5" y="-303.58" font-family="Times,serif" font-size="12.00">abb: ABB7</text>
-<text text-anchor="start" x="181.5" y="-291.58" font-family="Times,serif" font-size="12.00">BareMetal_Dummy</text>
+<text text-anchor="start" x="182" y="-291.58" font-family="Times,serif" font-size="12.00">Baremetal_Dummy</text>
 </a>
 </g>
 </g>

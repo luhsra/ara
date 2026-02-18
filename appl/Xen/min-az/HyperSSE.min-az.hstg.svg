@@ -144,7 +144,7 @@
 <text text-anchor="start" x="218.5" y="-355.91" font-family="Times,serif" font-size="14.00">State 10</text>
 <text text-anchor="start" x="202.5" y="-343.51" font-family="Times,serif" font-size="12.00">thread: thread_b</text>
 <text text-anchor="start" x="213.5" y="-331.51" font-family="Times,serif" font-size="12.00">abb: ABB3</text>
-<text text-anchor="start" x="223" y="-319.51" font-family="Times,serif" font-size="12.00">k_yield</text>
+<text text-anchor="start" x="206" y="-319.51" font-family="Times,serif" font-size="12.00">Zephyr_kyield</text>
 </a>
 </g>
 </g>

@@ -174,6 +174,7 @@ def _sstg_state_as_dot(sstg, state_vert, with_times: bool = True, OS: OSBase = A
 
     syscall_map = {
         "k_sleep": "Zephyr_ksleep",
+        "k_yield": "Zephyr_kyield",
         "AUTOSAR_TerminateTask": "Autosar_TerminateTask",
         "XEN_wrap_evtchn_bind_interdomain": "Xen_evtchnBind",
         "XEN_wrap_evtchn_alloc_unbound": "Xen_evtchnAlloc",
@@ -182,6 +183,7 @@ def _sstg_state_as_dot(sstg, state_vert, with_times: bool = True, OS: OSBase = A
         "AUTOSAR_ReadPeripheral": "Autosar_ReadPeripheral",
         "AUTOSAR_ChainTask": "Autosar_ChainTask",
         "BareMetal_Idle": "Baremetal_Idle",
+        "BareMetal_Dummy": "Baremetal_Dummy",
     }
     if syscall:
         if syscall_map.get(syscall):

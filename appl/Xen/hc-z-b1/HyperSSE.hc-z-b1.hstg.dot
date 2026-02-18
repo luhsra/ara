@@ -1,0 +1,63 @@
+digraph G {
+label="";
+1 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=1];
+subgraph cluster_6 {
+bgcolor="#DAE8FC";
+label="M6: Dom-0-Zephyr";
+style=bold;
+2 [color=green, fontsize=14, label=<State 4<br/><font point-size='12'>thread: thread_a<br/>abb: ABB1<br/>bcet/wcet: 10/20</font>>, style=solid, tooltip=2];
+3 [color=cornflowerblue, fontsize=14, label=<State 6<br/><font point-size='12'>thread: thread_a<br/>abb: ABB5<br/>Xen_evtchnAlloc</font>>, shape=box, tooltip=3];
+4 [color=green, fontsize=14, label=<State 7<br/><font point-size='12'>thread: thread_a<br/>abb: ABB2<br/>bcet/wcet: 100/110</font>>, style=solid, tooltip=4];
+5 [color=cornflowerblue, fontsize=14, label=<State 8<br/><font point-size='12'>thread: thread_a<br/>abb: ABB4<br/>Xen_evtchnSend</font>>, shape=box, tooltip=5];
+}
+
+subgraph cluster_14 {
+bgcolor="#D5E8D4";
+label="M14: Dom-1-BareMetal";
+style=bold;
+7 [color=green, fontsize=14, label=<State 5<br/><font point-size='12'>abb: ABB0</font>>, style=solid, tooltip=7];
+8 [fontsize=14, label=<State 10<br/><font point-size='12'>abb: ABB2</font>>, tooltip=8];
+9 [color=green, fontsize=14, label=<State 11<br/><font point-size='12'>abb: ABB5<br/>bcet/wcet: 15/25</font>>, style=solid, tooltip=9];
+10 [color=cornflowerblue, fontsize=14, label=<State 12<br/><font point-size='12'>abb: ABB7<br/>Xen_evtchnBind</font>>, shape=box, tooltip=10];
+11 [color=green, fontsize=14, label=<State 13<br/><font point-size='12'>abb: ABB3<br/>bcet/wcet: 35/45</font>>, style=solid, tooltip=11];
+12 [color=cornflowerblue, fontsize=14, label=<State 14<br/><font point-size='12'>abb: ABB6<br/>Baremetal_Idle</font>>, shape=box, tooltip=12];
+13 [color=violet, fontsize=14, label=<State 15<br/><font point-size='12'>abb: ABB1</font>>, style=solid, tooltip=13];
+20 [color=green, fontsize=14, label=<State 21<br/><font point-size='12'>abb: ABB10<br/>bcet/wcet: 55/65</font>>, style=solid, tooltip=20];
+21 [color=cornflowerblue, fontsize=14, label=<State 23<br/><font point-size='12'>abb: ABB12<br/>Baremetal_Idle</font>>, shape=box, tooltip=21];
+}
+
+subgraph cluster_19 {
+bgcolor="#DAE8FC";
+label="M19: Dom-0-Zephyr";
+style=bold;
+17 [color=green, fontsize=14, label=<State 20<br/><font point-size='12'>thread: thread_a<br/>abb: ABB3<br/>bcet/wcet: 30/40</font>>, style=solid, tooltip=17];
+18 [color=violet, fontsize=14, label=<State 22<br/><font point-size='12'>instance: Idle</font>>, style=solid, tooltip=18];
+}
+
+subgraph cluster_Metasync15 {
+label="";
+15 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=15];
+16 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=16];
+}
+
+1:c0 -> 2  [color=black];
+1:c1 -> 7  [color=black];
+1 -> 15  [color=darkred, label="110 - 130", style=dotted];
+2 -> 3  [color=black];
+3 -> 4  [color=black];
+4 -> 5  [color=black];
+5 -> 15:c0  [color=black];
+7 -> 8  [color=black];
+8 -> 9  [color=black];
+9 -> 10  [color=black];
+10 -> 11  [color=black];
+11 -> 12  [color=black];
+12 -> 13  [color=black];
+13 -> 15:c1  [color=black];
+15 -> 16  [color=black];
+16:c0 -> 17  [color=black];
+16:c1 -> 20  [color=black];
+17 -> 18  [color=black];
+20 -> 21  [color=black];
+21 -> 13  [color=black];
+}

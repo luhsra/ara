@@ -120,10 +120,10 @@ class HyperSSE(Experiment):
             if os.path.exists(file_path) and os.path.exists(hstg_name):
                 
                 if filecmp.cmp(file_path, hstg_name):
-                    print(f"\t{name:<20} Same \U0001F44D")
+                    print(f"\t{name:<22} Same \U0001F44D")
                     compare.append("correct")
                 else:
-                    print(f"\t{name:<20} Differs \u274c")
+                    print(f"\t{name:<22} Differs \u274c")
                     compare.append("differs")
 
                     diff_cmd = ["diff", file_path, hstg_name]
@@ -131,7 +131,7 @@ class HyperSSE(Experiment):
                     for l in diff.stdout.rstrip().splitlines():
                         print(f"\t\t\t\t:{l}")
             else:
-                print(f"\t{name:<20} has no verified solution")
+                print(f"\t{name:<22} has no verified solution")
                 compare.append("no-target")
                 
         logger.info("---------------------------------------------------------")
