@@ -407,6 +407,7 @@ class XEN(OSBase):
             logger.warning("Hypercall is ignored!")
             return state
 
+        # Creates SynPoint, afterwards need set_next_abb(..) before returning
         # Raise CrossCoreAction to get receiver and return here again
         XEN.get_remote_id(state, receiver_channel.target_domain)
         # Convert state in hyersse state
