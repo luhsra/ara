@@ -116,14 +116,20 @@ class HyperSSE(Experiment):
         compare = []
         for name in names:
             file_path = cwd + "/../../../appl/Xen/" + name + "/" + f"HyperSSE." + name + ".hstg.dot"
-            if os.path.exists(file_path) and os.path.exists(f"{thing}.{name}.hstg.dot"):
+            hstg_name = f"{thing}.{name}.hstg.dot"
+            if os.path.exists(file_path) and os.path.exists(hstg_name):
                 
-                if filecmp.cmp(file_path, f"{thing}.{name}.hstg.dot"):
+                if filecmp.cmp(file_path, hstg_name):
                     print(f"\t{name:<20} Same \U0001F44D")
                     compare.append("correct")
                 else:
                     print(f"\t{name:<20} Differs \u274c")
                     compare.append("differs")
+
+                    diff_cmd = ["diff", file_path, hstg_name]
+                    diff = subprocess.run(diff_cmd, cwd=cwd, capture_output=True, encoding="UTF-8")
+                    for l in diff.stdout.rstrip().splitlines():
+                        print(f"\t\t\t\t:{l}")
             else:
                 print(f"\t{name:<20} has no verified solution")
                 compare.append("no-target")

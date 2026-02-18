@@ -8,6 +8,7 @@
 #ifndef __XEN_EVENTS_H__
 #define __XEN_EVENTS_H__
 
+#include <stdint.h>
 #include "event_channel.h"
 
 /*

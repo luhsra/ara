@@ -180,7 +180,8 @@ def _sstg_state_as_dot(sstg, state_vert, with_times: bool = True, OS: OSBase = A
         "XEN_wrap_evtchn_send": "Xen_evtchnSend",
         "XEN_wrap_evtchn_poll": "Xen_evtchnPoll",
         "AUTOSAR_ReadPeripheral": "Autosar_ReadPeripheral",
-        "AUTOSAR_ChainTask": "Autosar_ChainTask"
+        "AUTOSAR_ChainTask": "Autosar_ChainTask",
+        "BareMetal_Idle": "Baremetal_Idle",
     }
     if syscall:
         if syscall_map.get(syscall):
