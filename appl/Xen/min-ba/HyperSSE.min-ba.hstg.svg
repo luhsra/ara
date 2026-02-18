@@ -135,10 +135,10 @@
 <g id="node7" class="node">
 <title>7</title>
 <g id="a_node7"><a xlink:title="7">
-<polygon fill="none" stroke="cornflowerblue" points="131,-146.08 41,-146.08 41,-100.08 131,-100.08 131,-146.08"/>
+<polygon fill="none" stroke="cornflowerblue" points="130.5,-146.08 41.5,-146.08 41.5,-100.08 130.5,-100.08 130.5,-146.08"/>
 <text text-anchor="start" x="63.5" y="-131.88" font-family="Times,serif" font-size="14.00">State 10</text>
 <text text-anchor="start" x="58.5" y="-119.48" font-family="Times,serif" font-size="12.00">abb: ABB6</text>
-<text text-anchor="start" x="49" y="-107.48" font-family="Times,serif" font-size="12.00">BareMetal_Idle</text>
+<text text-anchor="start" x="49.5" y="-107.48" font-family="Times,serif" font-size="12.00">Baremetal_Idle</text>
 </a>
 </g>
 </g>

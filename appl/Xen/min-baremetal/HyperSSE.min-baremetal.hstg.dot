@@ -8,7 +8,7 @@ style=bold;
 2 [color=green, fontsize=14, label=<State 4<br/><font point-size='12'>abb: ABB0</font>>, style=solid, tooltip=2];
 3 [fontsize=14, label=<State 6<br/><font point-size='12'>abb: ABB2</font>>, tooltip=3];
 4 [color=green, fontsize=14, label=<State 7<br/><font point-size='12'>abb: ABB3<br/>bcet/wcet: 1/2</font>>, style=solid, tooltip=4];
-5 [color=cornflowerblue, fontsize=14, label=<State 8<br/><font point-size='12'>abb: ABB5<br/>BareMetal_Idle</font>>, shape=box, tooltip=5];
+5 [color=cornflowerblue, fontsize=14, label=<State 8<br/><font point-size='12'>abb: ABB5<br/>Baremetal_Idle</font>>, shape=box, tooltip=5];
 6 [color=violet, fontsize=14, label=<State 9<br/><font point-size='12'>abb: ABB1</font>>, style=solid, tooltip=6];
 }
 
@@ -19,7 +19,7 @@ style=bold;
 8 [color=green, fontsize=14, label=<State 5<br/><font point-size='12'>abb: ABB0</font>>, style=solid, tooltip=8];
 9 [fontsize=14, label=<State 10<br/><font point-size='12'>abb: ABB2</font>>, tooltip=9];
 10 [color=green, fontsize=14, label=<State 11<br/><font point-size='12'>abb: ABB3<br/>bcet/wcet: 3/4</font>>, style=solid, tooltip=10];
-11 [color=cornflowerblue, fontsize=14, label=<State 12<br/><font point-size='12'>abb: ABB5<br/>BareMetal_Idle</font>>, shape=box, tooltip=11];
+11 [color=cornflowerblue, fontsize=14, label=<State 12<br/><font point-size='12'>abb: ABB5<br/>Baremetal_Idle</font>>, shape=box, tooltip=11];
 12 [color=violet, fontsize=14, label=<State 13<br/><font point-size='12'>abb: ABB1</font>>, style=solid, tooltip=12];
 }
 

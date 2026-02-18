@@ -20,7 +20,7 @@ style=bold;
 9 [color=green, fontsize=14, label=<State 11<br/><font point-size='12'>abb: ABB3<br/>bcet/wcet: 3/4</font>>, style=solid, tooltip=9];
 10 [color=cornflowerblue, fontsize=14, label=<State 12<br/><font point-size='12'>abb: ABB7<br/>BareMetal_Dummy</font>>, shape=box, tooltip=10];
 11 [color=green, fontsize=14, label=<State 13<br/><font point-size='12'>abb: ABB4<br/>bcet/wcet: 7/8</font>>, style=solid, tooltip=11];
-12 [color=cornflowerblue, fontsize=14, label=<State 14<br/><font point-size='12'>abb: ABB6<br/>BareMetal_Idle</font>>, shape=box, tooltip=12];
+12 [color=cornflowerblue, fontsize=14, label=<State 14<br/><font point-size='12'>abb: ABB6<br/>Baremetal_Idle</font>>, shape=box, tooltip=12];
 13 [color=violet, fontsize=14, label=<State 15<br/><font point-size='12'>abb: ABB1</font>>, style=solid, tooltip=13];
 }
 
