@@ -21,17 +21,18 @@ logger = logging.getLogger(__name__)
 parrot_dir = "/../../../../../"
 res_file = 'res-ara.csv'
 
-# thing = "HyperSSE"
-thing = "MCAnalyzer"
+thing = "HyperSSE"
+# thing = "MCAnalyzer"
 
 # relative to parrots location, e.g. the two folders should be in the same folder
 paper_repo = "../ecrts-hypersse/fig"
 
-# class HyperSSE(Experiment):
-class MCAnalyzer(Experiment):
+class HyperSSE(Experiment):
+# class MCAnalyzer(Experiment):
     inputs = {"log": String("INFO"),
               "cpus": Integer(multiprocessing.cpu_count() - 4),
               "rebuild": Bool(False),
+              "git_hash": String("0")
         }
     outputs = {"result-csv": File("res-ara.csv")}
 
@@ -40,15 +41,18 @@ class MCAnalyzer(Experiment):
         rebuild = self.inputs.rebuild.value
         logger.setLevel(getattr(logging, self.inputs.log.value.upper(), logging.INFO))
         logger.warning(f"Starting thesis.py with log: {logging.getLevelName(logger.level)}, "
-                       f"cpus: {cpus}, rebuild: {rebuild}")
+                       f"cpus: {cpus}, rebuild: {rebuild}, git_hash: {{ {self.inputs.git_hash} }}")
 
         cwd = os.getcwd()
 
         if rebuild:
-            logger.info("Cleaning build dir")
-            cmd = ["rm", "-dr", "build/subprojects/ara-zephyr-apps/appl", "build/subprojects/ara/appl"]
-            build_path = cwd + parrot_dir
-            subprocess.run(cmd, cwd=build_path, check=True)
+            # could also delete ara/appl here, but would need to keep generated json files
+            folder = cwd + parrot_dir + "build/subprojects/ara-zephyr-apps/appl"
+            if os.path.isdir(folder):
+                logger.warning("Cleaning build dir")
+                cmd = ["rm", "-dr", folder]
+                build_path = cwd + parrot_dir
+                subprocess.run(cmd, cwd=build_path, check=True)
 
         logger.info(f"Building ll-files for Autosar, Zephyr, BareMetal. This might take a moment.")
         ninja_cmd = ["ninja", "subprojects/ara/appl/Xen/xen-ara-autosar", "-j" , f"{cpus}"]
@@ -107,27 +111,25 @@ class MCAnalyzer(Experiment):
             logger.warning(f"Created folder: {thing + "-" + str(num)}")
         else:
             logger.warning("Folder not found, skipped copy!")
-        exit(0)
 
-
-
-        print("------------ Compare to Sample ------------")
+        logger.info("------------ Comparing to last graph in repo ------------")
         compare = []
         for name in names:
-            file_path = cwd + "/../../../appl/Xen/" + name + "/" + "HyperSSE." + name + ".hstg.dot"
-            if os.path.exists(file_path) and os.path.exists(f"HyperSSE.{name}.hstg.dot"):
+            file_path = cwd + "/../../../appl/Xen/" + name + "/" + f"HyperSSE." + name + ".hstg.dot"
+            if os.path.exists(file_path) and os.path.exists(f"{thing}.{name}.hstg.dot"):
                 
-                if filecmp.cmp(file_path, f"HyperSSE.{name}.hstg.dot"):
-                    print(f"{name:<20} Matched \U0001F44D")
+                if filecmp.cmp(file_path, f"{thing}.{name}.hstg.dot"):
+                    print(f"\t{name:<20} Same \U0001F44D")
                     compare.append("correct")
                 else:
-                    print(f"{name:<20} Differs \u274c")
+                    print(f"\t{name:<20} Differs \u274c")
                     compare.append("differs")
             else:
-                print(f"{name:<20} has no verified solution")
+                print(f"\t{name:<20} has no verified solution")
                 compare.append("no-target")
                 
-        print("------------------------------------------")
+        logger.info("---------------------------------------------------------")
+        return
 
         # Read csv, insert verification, write
         with open(res_file, 'r') as file:
@@ -153,13 +155,17 @@ if __name__ == "__main__":
     logging.addLevelName(logging.DEBUG, "\033[1;32m%s\033[1;0m" % logging.getLevelName(logging.DEBUG))
     logging.addLevelName(logging.INFO, "\033[1;34m%s\033[1;0m" % logging.getLevelName(logging.INFO))
 
-    #    git -C parrot rev-parse HEAD
-    #    git -C parrot/subproject/ara rev-parse HEAD
-    #    git -C parrot/subproject/ara-zephyr-apps rev-parse HEAD
+    # check state of all relevant ara repos 
+    git_cmd = ["git", "rev-parse", "--short", "HEAD"]
+    parrot = subprocess.run(git_cmd, cwd=os.getcwd() + parrot_dir + "parrot", capture_output=True, encoding="UTF-8")
+    ara = subprocess.run(git_cmd, cwd=os.getcwd() + parrot_dir + "parrot/subprojects/ara", check=True, capture_output=True, encoding="UTF-8")
+    ara_zephyr_apps = subprocess.run(git_cmd, cwd=os.getcwd() + parrot_dir + "parrot/subprojects/ara-zephyr-apps", check=True, capture_output=True, encoding="UTF-8")
+    git_hash = "parrot:" + parrot.stdout.rstrip() + " ara:" + ara.stdout.rstrip() + " ara-zephyr-apps:" + ara_zephyr_apps.stdout.rstrip()
 
-    # experiment = HyperSSE()
-    experiment = MCAnalyzer()
-    dirname = experiment(sys.argv[1:])
+    experiment = HyperSSE()
+    # experiment = MCAnalyzer()
+
+    dirname = experiment(["--git_hash", git_hash] + sys.argv[1:])
     # dirname = experiment(["--change_hash", str(datetime.datetime.now())])
 
-    print(dirname)
+    print(f"Wrote to: {dirname}")

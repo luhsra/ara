@@ -11,6 +11,7 @@
 
 """Container for Printer."""
 import re
+import logging
 from ara.graph import (ABBType, CFType, CFG, CFGView, MSTGraph, MSTType, StateType,
                        single_check, vertex_types)
 from ara.os.os_base import ExecState, IRQCPU, IRQ, OSBase
@@ -90,6 +91,8 @@ from ara.os.zephyr import Zephyr
 from ara.os.autosar import AUTOSAR
 
 def _sstg_state_as_dot(sstg, state_vert, with_times: bool = True, OS: OSBase = AUTOSAR):
+
+    log = logging.getLogger("Printer")
     attrs = {"fontsize": 14}
     size = 12
 
@@ -168,6 +171,22 @@ def _sstg_state_as_dot(sstg, state_vert, with_times: bool = True, OS: OSBase = A
     # if len(x) > 0:
     #     ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
     #     more_tupels.append(("D:", ansi_escape.sub('', str(x[0]))))
+
+    syscall_map = {
+        "k_sleep": "Zephyr_ksleep",
+        "AUTOSAR_TerminateTask": "Autosar_TerminateTask",
+        "XEN_wrap_evtchn_bind_interdomain": "Xen_evtchnBind",
+        "XEN_wrap_evtchn_alloc_unbound": "Xen_evtchnAlloc",
+        "XEN_wrap_evtchn_send": "Xen_evtchnSend",
+        "XEN_wrap_evtchn_poll": "Xen_evtchnPoll",
+        "AUTOSAR_ReadPeripheral": "Autosar_ReadPeripheral",
+        "AUTOSAR_ChainTask": "Autosar_ChainTask"
+    }
+    if syscall:
+        if syscall_map.get(syscall):
+            syscall = syscall_map.get(syscall)
+        else:
+            log.warning(f"No syscall name for: {syscall}.")
     
     graph_attrs = "<br/>".join(
         [   

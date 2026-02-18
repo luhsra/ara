@@ -1568,8 +1568,8 @@ class MultiSSE(StatsStep):
             fn = self.file_name.get()
             if fn:
                 if self._graph.os == XEN:
-                    # dot = f'{self.dump_prefix.get().split("/")[0]}/HyperSSE.{fn}.hstg.dot'
-                    dot = f'{self.dump_prefix.get().split("/")[0]}/MCAnalyzer.{fn}.hstg.dot'
+                    dot = f'{self.dump_prefix.get().split("/")[0]}/HyperSSE.{fn}.hstg.dot'
+                    # dot = f'{self.dump_prefix.get().split("/")[0]}/MCAnalyzer.{fn}.hstg.dot'
                 else:
                     dot = f'{self.dump_prefix.get().split(".")[0]}.{fn}.mstg.dot'
             else:
