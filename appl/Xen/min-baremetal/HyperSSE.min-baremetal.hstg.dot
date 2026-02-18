@@ -1,0 +1,36 @@
+digraph G {
+label="";
+1 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=1];
+subgraph cluster_7 {
+bgcolor="#D5E8D4";
+label="M7: Dom-0-BareMetal";
+style=bold;
+2 [color=green, fontsize=14, label=<State 4<br/><font point-size='12'>abb: ABB0</font>>, style=solid, tooltip=2];
+3 [fontsize=14, label=<State 6<br/><font point-size='12'>abb: ABB2</font>>, tooltip=3];
+4 [color=green, fontsize=14, label=<State 7<br/><font point-size='12'>abb: ABB3<br/>bcet/wcet: 1/2</font>>, style=solid, tooltip=4];
+5 [color=cornflowerblue, fontsize=14, label=<State 8<br/><font point-size='12'>abb: ABB5<br/>BareMetal_Idle</font>>, shape=box, tooltip=5];
+6 [color=violet, fontsize=14, label=<State 9<br/><font point-size='12'>abb: ABB1</font>>, style=solid, tooltip=6];
+}
+
+subgraph cluster_13 {
+bgcolor="#D5E8D4";
+label="M13: Dom-1-BareMetal";
+style=bold;
+8 [color=green, fontsize=14, label=<State 5<br/><font point-size='12'>abb: ABB0</font>>, style=solid, tooltip=8];
+9 [fontsize=14, label=<State 10<br/><font point-size='12'>abb: ABB2</font>>, tooltip=9];
+10 [color=green, fontsize=14, label=<State 11<br/><font point-size='12'>abb: ABB3<br/>bcet/wcet: 3/4</font>>, style=solid, tooltip=10];
+11 [color=cornflowerblue, fontsize=14, label=<State 12<br/><font point-size='12'>abb: ABB5<br/>BareMetal_Idle</font>>, shape=box, tooltip=11];
+12 [color=violet, fontsize=14, label=<State 13<br/><font point-size='12'>abb: ABB1</font>>, style=solid, tooltip=12];
+}
+
+1:c0 -> 2  [color=black];
+1:c1 -> 8  [color=black];
+2 -> 3  [color=black];
+3 -> 4  [color=black];
+4 -> 5  [color=black];
+5 -> 6  [color=black];
+8 -> 9  [color=black];
+9 -> 10  [color=black];
+10 -> 11  [color=black];
+11 -> 12  [color=black];
+}

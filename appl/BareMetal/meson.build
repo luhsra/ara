@@ -1,11 +1,13 @@
 # list of applications
 baremetal_targets = []
 baremetal_apps = [
-  {'path': '../min-bm/BareMetal-A', 'name': 'main'},
-  {'path': '../min-bm/BareMetal-B', 'name': 'other'},
-  {'path': '../hc-bm-recv/BareMetal-B', 'name': 'b'},
-  {'path': '../hardware/BareMetal-A', 'name': 'hardware'},
-  {'path': '../braking/BareMetal-C', 'name': 'braking'},
+  {'path': '../Xen/min-baremetal/BareMetal-A', 'name': 'a'},
+  {'path': '../Xen/min-baremetal/BareMetal-B', 'name': 'b'},
+  {'path': '../Xen/min-zb/BareMetal-B', 'name': 'b'},
+  {'path': '../Xen/min-ba/BareMetal-A', 'name': 'a'},
+  {'path': '../Xen/hc-bm-recv/BareMetal-B', 'name': 'b'},
+  {'path': '../Xen/hardware/BareMetal-A', 'name': 'hardware'},
+  {'path': '../Xen/braking/BareMetal-C', 'name': 'braking'},
 ]
 
 foreach app : baremetal_apps

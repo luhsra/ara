@@ -5,16 +5,16 @@
 #define MAX_WORK (1 << 2)
 #define PRIORITY 1
 
+extern void ara_timing_info(int a, int b);
+
 /*
  * Minimal Zephyr App
  */
 
-void do_2(void* a, void* b, void* c) {
-    int done = 0;
-    printk("Hello");
-    k_timeout_t t = Z_TIMEOUT_TICKS(1000);
-    k_sleep(t);
+void b(void* a, void* b, void* c) {
+    ara_timing_info(3,4);
+    printk("Hello World - B");
 }
 
-K_THREAD_DEFINE(thread_a, STACKSIZE, do_2, NULL, NULL, NULL,
+K_THREAD_DEFINE(thread_b, STACKSIZE, b, NULL, NULL, NULL,
 		PRIORITY, 0, 0);

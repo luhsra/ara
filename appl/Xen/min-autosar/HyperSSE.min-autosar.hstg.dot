@@ -1,18 +1,22 @@
 digraph G {
-label="HyperSSE.min-autosar.hstg.dot";
+label="";
 1 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=1];
 subgraph cluster_5 {
+bgcolor="#F8CECC";
 label="M5: Dom-0-AUTOSAR";
-2 [color=green, fontsize=14, label=<State 4<br/><font point-size='12'>instance: A<br/>type: computation<br/>abb: dom-0/ABB0</font>>, style=bold, tooltip=2];
-3 [color=blue, fontsize=14, label=<State 6<br/><font point-size='12'>instance: A<br/>type: syscall<br/>abb: dom-0/ABB2<br/>sys: AUTOSAR_TerminateTask</font>>, shape=box, tooltip=3];
-4 [color=violet, fontsize=14, label=<State 7<br/><font point-size='12'>instance: Idle<br/>type: idle<br/>abb: None</font>>, style=bold, tooltip=4];
+style=bold;
+2 [color=green, fontsize=14, label=<State 4<br/><font point-size='12'>instance: A<br/>abb: ABB1<br/>bcet/wcet: 1/2</font>>, style=solid, tooltip=2];
+3 [color=cornflowerblue, fontsize=14, label=<State 6<br/><font point-size='12'>instance: A<br/>abb: ABB3<br/>Autosar_TerminateTask</font>>, shape=box, tooltip=3];
+4 [color=violet, fontsize=14, label=<State 7<br/><font point-size='12'>instance: Idle</font>>, style=solid, tooltip=4];
 }
 
 subgraph cluster_9 {
+bgcolor="#F8CECC";
 label="M9: Dom-1-AUTOSAR";
-8 [color=violet, fontsize=14, label=<State 9<br/><font point-size='12'>instance: Idle<br/>type: idle<br/>abb: None</font>>, style=bold, tooltip=8];
-6 [color=green, fontsize=14, label=<State 5<br/><font point-size='12'>instance: B<br/>type: computation<br/>abb: dom-1/ABB0</font>>, style=bold, tooltip=6];
-7 [color=blue, fontsize=14, label=<State 8<br/><font point-size='12'>instance: B<br/>type: syscall<br/>abb: dom-1/ABB2<br/>sys: AUTOSAR_TerminateTask</font>>, shape=box, tooltip=7];
+style=bold;
+8 [color=violet, fontsize=14, label=<State 9<br/><font point-size='12'>instance: Idle</font>>, style=solid, tooltip=8];
+6 [color=green, fontsize=14, label=<State 5<br/><font point-size='12'>instance: B<br/>abb: ABB1<br/>bcet/wcet: 3/4</font>>, style=solid, tooltip=6];
+7 [color=cornflowerblue, fontsize=14, label=<State 8<br/><font point-size='12'>instance: B<br/>abb: ABB3<br/>Autosar_TerminateTask</font>>, shape=box, tooltip=7];
 }
 
 1:c0 -> 2  [color=black];

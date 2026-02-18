@@ -10,7 +10,7 @@ if arm_enabled or posix_enabled or riscv_enabled
 endif
 
 # Bare Metal OS for Xen
-subdir('Xen/bare_metal')
+subdir('BareMetal')
 
 # Xen must be loaded after AUTOSAR, since its guest include Autosar targets
 if get_option('include_xen')

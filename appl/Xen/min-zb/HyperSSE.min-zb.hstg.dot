@@ -1,0 +1,38 @@
+digraph G {
+label="";
+1 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=1];
+subgraph cluster_6 {
+bgcolor="#DAE8FC";
+label="M6: Dom-0-Zephyr";
+style=bold;
+2 [color=green, fontsize=14, label=<State 4<br/><font point-size='12'>thread: thread_a<br/>abb: ABB1<br/>bcet/wcet: 1/2</font>>, style=solid, tooltip=2];
+3 [color=cornflowerblue, fontsize=14, label=<State 6<br/><font point-size='12'>thread: thread_a<br/>abb: ABB3<br/>k_yield</font>>, shape=box, tooltip=3];
+4 [color=green, fontsize=14, label=<State 8<br/><font point-size='12'>thread: thread_a<br/>abb: ABB2<br/>bcet/wcet: 5/6</font>>, style=solid, tooltip=4];
+5 [color=violet, fontsize=14, label=<State 9<br/><font point-size='12'>instance: Idle</font>>, style=solid, tooltip=5];
+}
+
+subgraph cluster_14 {
+bgcolor="#D5E8D4";
+label="M14: Dom-1-BareMetal";
+style=bold;
+7 [color=green, fontsize=14, label=<State 5<br/><font point-size='12'>abb: ABB0</font>>, style=solid, tooltip=7];
+8 [fontsize=14, label=<State 10<br/><font point-size='12'>abb: ABB2</font>>, tooltip=8];
+9 [color=green, fontsize=14, label=<State 11<br/><font point-size='12'>abb: ABB3<br/>bcet/wcet: 3/4</font>>, style=solid, tooltip=9];
+10 [color=cornflowerblue, fontsize=14, label=<State 12<br/><font point-size='12'>abb: ABB7<br/>BareMetal_Dummy</font>>, shape=box, tooltip=10];
+11 [color=green, fontsize=14, label=<State 13<br/><font point-size='12'>abb: ABB4<br/>bcet/wcet: 7/8</font>>, style=solid, tooltip=11];
+12 [color=cornflowerblue, fontsize=14, label=<State 14<br/><font point-size='12'>abb: ABB6<br/>BareMetal_Idle</font>>, shape=box, tooltip=12];
+13 [color=violet, fontsize=14, label=<State 15<br/><font point-size='12'>abb: ABB1</font>>, style=solid, tooltip=13];
+}
+
+1:c0 -> 2  [color=black];
+1:c1 -> 7  [color=black];
+2 -> 3  [color=black];
+3 -> 4  [color=black];
+4 -> 5  [color=black];
+7 -> 8  [color=black];
+8 -> 9  [color=black];
+9 -> 10  [color=black];
+10 -> 11  [color=black];
+11 -> 12  [color=black];
+12 -> 13  [color=black];
+}
