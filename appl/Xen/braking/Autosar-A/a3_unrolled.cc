@@ -5,7 +5,6 @@ extern "C" void ara_timing_info(int a, int b);
 
 DeclareTask(SETUP);
 DeclareTask(LOOP);
-DeclareTask(OTHER);
 DeclareTask(EMERGENCY);
 
 int main(void) {
@@ -56,8 +55,11 @@ TASK(SETUP) {
 TASK(LOOP) {
 
 	// Round 1
-	// Check if Zephyr send data
 	ara_timing_info(2, 3);
+	wrap_evtchn_send(channel_req);
+
+	// Check if Zephyr send data
+	ara_timing_info(20, 21);
 	e = wrap_evtchn_poll(channel_req, IS_BRANCH);
 
 	// this branch we know in analysis
@@ -68,7 +70,7 @@ TASK(LOOP) {
 		ara_timing_info(10, 11);
 	}
 
-	ara_timing_info(20, 21);
+	ara_timing_info(13, 15);
 	read_sensors(data);
 
 	// this branch can not be predicted by ara
@@ -76,15 +78,14 @@ TASK(LOOP) {
 		ara_timing_info(10, 12);
 		ActivateTask(EMERGENCY);
 	}
+
 
 	// Round 2
 	ara_timing_info(2, 3);
 	wrap_evtchn_send(channel_req);
 
-	ara_timing_info(50, 50);
-
-	ara_timing_info(2, 3);
 	// Check if Zephyr send data
+	ara_timing_info(20, 21);
 	e = wrap_evtchn_poll(channel_req, IS_BRANCH);
 
 	// this branch we know in analysis
@@ -95,7 +96,7 @@ TASK(LOOP) {
 		ara_timing_info(10, 11);
 	}
 
-	ara_timing_info(20, 21);
+	ara_timing_info(13, 15);
 	read_sensors(data);
 
 	// this branch can not be predicted by ara
@@ -103,43 +104,37 @@ TASK(LOOP) {
 		ara_timing_info(10, 12);
 		ActivateTask(EMERGENCY);
 	}
+
 
 	// Round 3
-	ara_timing_info(2, 3);
-	wrap_evtchn_send(channel_req);
+	// ara_timing_info(2, 3);
+	// wrap_evtchn_send(channel_req);
 
+	// // Check if Zephyr send data
+	// ara_timing_info(20, 21);
+	// e = wrap_evtchn_poll(channel_req, IS_BRANCH);
 
-	ara_timing_info(50, 50);
+	// // this branch we know in analysis
+	// if (e == PENDING_EVNT) {
+	// 	ara_timing_info(10, 11);
+	// 	read_sensors(data);
+	// } else {
+	// 	ara_timing_info(10, 11);
+	// }
 
-	ara_timing_info(2, 3);
-	// Check if Zephyr send data
-	e = wrap_evtchn_poll(channel_req, IS_BRANCH);
+	// ara_timing_info(13, 14);
+	// read_sensors(data);
 
-	// this branch we know in analysis
-	if (e == PENDING_EVNT) {
-		ara_timing_info(10, 11);
-		read_sensors(data);
-	} else {
-		ara_timing_info(10, 11);
-	}
-
-	ara_timing_info(20, 21);
-	read_sensors(data);
-
-	// this branch can not be predicted by ara
-	if (*(int *) data > 0) {
-		ara_timing_info(10, 12);
-		ActivateTask(EMERGENCY);
-	}
+	// // this branch can not be predicted by ara
+	// if (*(int *) data > 0) {
+	// 	ara_timing_info(10, 12);
+	// 	ActivateTask(EMERGENCY);
+	// }
 
 	ara_timing_info(1, 2);
 	TerminateTask();
 }
 
-TASK(OTHER) {
-	ara_timing_info(100, 100);
-	TerminateTask();
-}
 TASK(EMERGENCY) {
 	ara_timing_info(5, 10);
 	wrap_evtchn_send(channel_emrg);

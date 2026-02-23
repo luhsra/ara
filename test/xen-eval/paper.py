@@ -90,7 +90,7 @@ class MCAnalyzer(Experiment):
                 logger.debug(f"Creating svg: {thing}.{name}.hstg.dot > {thing}.{name}.hstg.svg")
                 shutil.copy(dumps + "/" + hstg, cwd + "/" + hstg)
                 svg_cmd = f"dot -Tsvg {thing}.{name}.hstg.dot > {thing}.{name}.hstg.svg"
-                subprocess.run(svg_cmd, shell=True, cwd=cwd, check=True)
+                subprocess.run(svg_cmd, shell=True, cwd=cwd)
 
                 # option to also create pngs
                 # png_cmd = f"dot -Tpng {thing}.{name}.hstg.dot > {thing}.{name}.hstg.png"

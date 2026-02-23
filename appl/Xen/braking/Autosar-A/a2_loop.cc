@@ -5,7 +5,6 @@ extern "C" void ara_timing_info(int a, int b);
 
 DeclareTask(SETUP);
 DeclareTask(LOOP);
-DeclareTask(OTHER);
 DeclareTask(EMERGENCY);
 
 int main(void) {
@@ -56,7 +55,10 @@ TASK(SETUP) {
 TASK(LOOP) {
 
 	ara_timing_info(2, 3);
+	wrap_evtchn_send(channel_req);
+
 	// Check if Zephyr send data
+	ara_timing_info(20, 21);
 	e = wrap_evtchn_poll(channel_req, IS_BRANCH);
 
 	// this branch we know in analysis
@@ -67,7 +69,7 @@ TASK(LOOP) {
 		ara_timing_info(10, 11);
 	}
 
-	ara_timing_info(20, 21);
+	ara_timing_info(13, 15);
 	read_sensors(data);
 
 	// this branch can not be predicted by ara
@@ -75,16 +77,6 @@ TASK(LOOP) {
 		ara_timing_info(10, 12);
 		ActivateTask(EMERGENCY);
 	}
-
-	ara_timing_info(2, 3);
-	wrap_evtchn_send(channel_req);
-
-	ara_timing_info(2, 3);
-	ChainTask(OTHER);
-}
-
-TASK(OTHER) {
-	ara_timing_info(50, 50);
 
 	ChainTask(LOOP);
 }

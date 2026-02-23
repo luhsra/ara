@@ -41,7 +41,7 @@ void read_sensors(void * data) {
 
 // TASKS
 TASK(CALC) {
-	ara_timing_info(10, 20);
+	ara_timing_info(8, 11);
 	read_sensors(data);
 
 	// Send ACK here
@@ -56,7 +56,7 @@ TASK(CALC) {
 }
 
 TASK(EMERGENCY) {
-	ara_timing_info(100, 1000);
+  	ara_timing_info(10, 100);
 
 	while (true){}
 	

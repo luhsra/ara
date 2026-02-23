@@ -15,12 +15,6 @@
             "priority": 5,
             "schedule": true
             },
-          "OTHER": {
-            "activation": 5,
-            "autostart": false,
-            "priority": 2,
-            "schedule": true
-            },
           "EMERGENCY": {
             "activation": 5,
             "autostart": false,
