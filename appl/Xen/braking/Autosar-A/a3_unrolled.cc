@@ -42,12 +42,13 @@ void read_sensors(void * data) {
 // times are annotate in TASKs
 TASK(SETUP) {
 
-	ara_timing_info(1, 1);
+	ara_timing_info(2, 3);
 	// create the event channel to Zephyr
 	wrap_evtchn_alloc_unbound(zephyr_dom, channel_req, nullptr);
+	ara_timing_info(2, 3);
 	wrap_evtchn_alloc_unbound(zephyr_dom, channel_emrg, nullptr);
 
-	ara_timing_info(2, 2);
+	ara_timing_info(10, 12);
 	ChainTask(LOOP);
 }
 
@@ -55,97 +56,94 @@ TASK(SETUP) {
 TASK(LOOP) {
 
 	// Round 1
-	ara_timing_info(3, 3);
 	// Check if Zephyr send data
+	ara_timing_info(2, 3);
 	e = wrap_evtchn_poll(channel_req, IS_BRANCH);
 
 	// this branch we know in analysis
 	if (e == PENDING_EVNT) {
-		ara_timing_info(4, 4);
+		ara_timing_info(10, 11);
 		read_sensors(data);
 	} else {
-		ara_timing_info(4, 4);
+		ara_timing_info(10, 11);
 	}
 
-	ara_timing_info(6, 6);
+	ara_timing_info(20, 21);
 	read_sensors(data);
 
 	// this branch can not be predicted by ara
 	if (*(int *) data > 0) {
-		ara_timing_info(10, 10);
+		ara_timing_info(10, 12);
 		ActivateTask(EMERGENCY);
 	}
 
-	ara_timing_info(7, 7);
-	wrap_evtchn_send(channel_req);
-
-	
 	// Round 2
-	ara_timing_info(1000, 1000);
+	ara_timing_info(2, 3);
+	wrap_evtchn_send(channel_req);
 
+	ara_timing_info(50, 50);
+
+	ara_timing_info(2, 3);
 	// Check if Zephyr send data
 	e = wrap_evtchn_poll(channel_req, IS_BRANCH);
 
 	// this branch we know in analysis
 	if (e == PENDING_EVNT) {
-		ara_timing_info(4, 4);
+		ara_timing_info(10, 11);
 		read_sensors(data);
 	} else {
-		ara_timing_info(5, 5);
+		ara_timing_info(10, 11);
 	}
 
-	ara_timing_info(6, 6);
+	ara_timing_info(20, 21);
 	read_sensors(data);
 
 	// this branch can not be predicted by ara
 	if (*(int *) data > 0) {
-		ara_timing_info(10, 10);
+		ara_timing_info(10, 12);
 		ActivateTask(EMERGENCY);
 	}
-
-	ara_timing_info(7, 7);
-	wrap_evtchn_send(channel_req);
-
 
 	// Round 3
-	ara_timing_info(1000, 1000);
-	
+	ara_timing_info(2, 3);
+	wrap_evtchn_send(channel_req);
+
+
+	ara_timing_info(50, 50);
+
+	ara_timing_info(2, 3);
 	// Check if Zephyr send data
 	e = wrap_evtchn_poll(channel_req, IS_BRANCH);
 
 	// this branch we know in analysis
 	if (e == PENDING_EVNT) {
-		ara_timing_info(4, 4);
+		ara_timing_info(10, 11);
 		read_sensors(data);
 	} else {
-		ara_timing_info(5, 5);
+		ara_timing_info(10, 11);
 	}
 
-	ara_timing_info(6, 6);
+	ara_timing_info(20, 21);
 	read_sensors(data);
 
 	// this branch can not be predicted by ara
 	if (*(int *) data > 0) {
-		ara_timing_info(10, 10);
+		ara_timing_info(10, 12);
 		ActivateTask(EMERGENCY);
 	}
 
-	ara_timing_info(7, 7);
+	ara_timing_info(1, 2);
 	TerminateTask();
 }
 
 TASK(OTHER) {
-	ara_timing_info(1000, 1000);
-
-	// Variant: disable ChainTask to simulate one hyperperiod or a continues analysis
-	// ChainTask(LOOP);
+	ara_timing_info(100, 100);
+	TerminateTask();
 }
-
-
 TASK(EMERGENCY) {
-	ara_timing_info(100, 100);
+	ara_timing_info(5, 10);
 	wrap_evtchn_send(channel_emrg);
-	ara_timing_info(100, 100);
+	ara_timing_info(100, 1000);
 	// ChainTask(EMERGENCY);
 	// TerminateTask();
 }

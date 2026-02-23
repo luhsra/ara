@@ -41,22 +41,22 @@ void read_sensors(void * data) {
 
 // TASKS
 TASK(CALC) {
-	ara_timing_info(11, 11);
+	ara_timing_info(10, 20);
 	read_sensors(data);
 
 	// Send ACK here
-	ara_timing_info(12, 12);
+	ara_timing_info(2, 3);
 	wrap_evtchn_send(channel_req);
 	// Update Linux
-	ara_timing_info(12, 12);
+	ara_timing_info(2, 3);
 	wrap_evtchn_send(channel_hmi);
 
-	ara_timing_info(13, 13);
+	ara_timing_info(1, 2);
 	TerminateTask();
 }
 
 TASK(EMERGENCY) {
-	ara_timing_info(100, 100);
+	ara_timing_info(100, 1000);
 
 	while (true){}
 	
@@ -66,12 +66,14 @@ TASK(EMERGENCY) {
 
 TASK(SETUP) {
 
-	ara_timing_info(1, 1);
+	ara_timing_info(2, 3);
 	// create the event channel to Zephyr
 	wrap_evtchn_alloc_unbound(autosar_dom, channel_req, reinterpret_cast<void*>(AUTOSAR_TASK_FUNC_CALC));
+	ara_timing_info(2, 3);
 	wrap_evtchn_alloc_unbound(autosar_dom, channel_emrg, reinterpret_cast<void*>(AUTOSAR_TASK_FUNC_EMERGENCY));
+	ara_timing_info(2, 3);
 	wrap_evtchn_alloc_unbound(agl_dom, channel_hmi, nullptr);
 
-	ara_timing_info(2, 2);
+	ara_timing_info(1, 2);
 	TerminateTask();
 }

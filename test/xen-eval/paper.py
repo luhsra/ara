@@ -21,14 +21,14 @@ logger = logging.getLogger(__name__)
 parrot_dir = "/../../../../../"
 res_file = 'res-ara.csv'
 
-thing = "HyperSSE"
-# thing = "MCAnalyzer"
+# thing = "HyperSSE"
+thing = "MCAnalyzer"
 
 # relative to parrots location, e.g. the two folders should be in the same folder
 paper_repo = "../ecrts-hypersse/fig"
 
-class HyperSSE(Experiment):
-# class MCAnalyzer(Experiment):
+# class HyperSSE(Experiment):
+class MCAnalyzer(Experiment):
     inputs = {"log": String("INFO"),
               "cpus": Integer(multiprocessing.cpu_count() - 4),
               "rebuild": Bool(False),
@@ -100,7 +100,10 @@ class HyperSSE(Experiment):
         logger.info(f"------------ Comparing {len(names)} graphs to last graph in repo ------------")
         compare = []
         for name in names:
-            file_path = cwd + "/../../../appl/Xen/" + name + "/" + f"HyperSSE." + name + ".hstg.dot"
+            if "braking" in name:
+                file_path = cwd + "/../../../appl/Xen/" + "braking" + "/" + f"HyperSSE." + name + ".hstg.dot"
+            else:
+                file_path = cwd + "/../../../appl/Xen/" + name + "/" + f"HyperSSE." + name + ".hstg.dot"
             hstg_name = f"{thing}.{name}.hstg.dot"
             if os.path.exists(file_path) and os.path.exists(hstg_name):
                 
@@ -172,8 +175,8 @@ if __name__ == "__main__":
     ara_zephyr_apps = subprocess.run(git_cmd, cwd=os.getcwd() + parrot_dir + "parrot/subprojects/ara-zephyr-apps", check=True, capture_output=True, encoding="UTF-8")
     git_hash = "parrot:" + parrot.stdout.rstrip() + " ara:" + ara.stdout.rstrip() + " ara-zephyr-apps:" + ara_zephyr_apps.stdout.rstrip()
 
-    experiment = HyperSSE()
-    # experiment = MCAnalyzer()
+    # experiment = HyperSSE()
+    experiment = MCAnalyzer()
 
     dirname = experiment(["--git_hash", git_hash] + sys.argv[1:])
     # dirname = experiment(["--change_hash", str(datetime.datetime.now())])

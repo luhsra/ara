@@ -40,37 +40,38 @@ void read_sensors(void * data) {
 // TASKS
 void calc(void* a, void* b, void* c) {
 
-	ara_timing_info(11, 11);
+	ara_timing_info(10, 20);
 	read_sensors(data);
 
 	// Send ACK here
-	ara_timing_info(12, 12);
+	ara_timing_info(2, 3);
 	XEN_wrap_evtchn_send(channel_req);
 	// Update Linux
-	ara_timing_info(12, 12);
+	ara_timing_info(2, 3);
 	XEN_wrap_evtchn_send(channel_hmi);
 
-	ara_timing_info(13, 13);
+	ara_timing_info(1, 2);
 	return;
 }
 
 void emergency(void* a, void* b, void* c) {
 
-  	ara_timing_info(100, 100);
+  	ara_timing_info(100, 1000);
 
 	while (true){}
-	
 }
 
 void setup(void* a, void* b, void* c) {
 
-	ara_timing_info(1, 1);
+	ara_timing_info(2, 3);
 	// create the event channel to Zephyr
 	XEN_wrap_evtchn_alloc_unbound(autosar_dom, channel_req, calc);
+	ara_timing_info(2, 3);
 	XEN_wrap_evtchn_alloc_unbound(autosar_dom, channel_emrg, emergency);
+	ara_timing_info(2, 3);
 	XEN_wrap_evtchn_alloc_unbound(agl_dom, channel_hmi, NULL);
 
-	ara_timing_info(2, 2);
+	ara_timing_info(1, 2);
 	return;
 
 }
