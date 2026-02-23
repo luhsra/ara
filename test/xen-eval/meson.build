@@ -16,13 +16,15 @@
 
 foreach app : xen_testcases
     # 1. Compile and run ara
-    test('ara-xen-eval-' + app['name'],
-        py3_inst,
-        args: [files('run_ara.py'), app['name']],
-        env: [python_path],
-        depends: [ara_py, rebuild_lls],
-        suite: 'ara-xen-eval',
-        timeout: 100 
-    )
+    if not app['name'].contains('EXTRA')
+        test('ara-xen-eval-' + app['name'],
+            py3_inst,
+            args: [files('run_ara.py'), app['name']],
+            env: [python_path],
+            depends: [ara_py, rebuild_lls],
+            suite: 'ara-xen-eval',
+            timeout: 100 
+        )
+    endif
 
 endforeach

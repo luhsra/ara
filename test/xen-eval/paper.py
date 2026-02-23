@@ -68,6 +68,7 @@ class HyperSSE(Experiment):
         parse_cmd = ["python3", "../ara_meson_parser.py", "../../../../../build/meson-logs/testlog.txt", "res-ara.csv"]
         subprocess.run(parse_cmd, cwd=cwd, check=True)
 
+
         logger.info("Importing dot files from dump. Creating svgs.")
         names = []
         with open(res_file, newline='') as csvfile:
@@ -95,22 +96,6 @@ class HyperSSE(Experiment):
                 # png_cmd = f"dot -Tpng {thing}.{name}.hstg.dot > {thing}.{name}.hstg.png"
                 # subprocess.run(png_cmd, shell=True, cwd=cwd, check=True)
 
-        path = cwd + parrot_dir + paper_repo
-        logger.info(f"Copy svgs to paper-repo: \"{paper_repo}\"")
-        if os.path.isdir(path):
-            versions = os.listdir(path)
-            logger.debug(f"Folder contains: {versions}")
-            num = 0
-            for v in versions:
-                if v.startswith(thing) and "-" in v:
-                    num = max(num, int(v.split("-")[1]) + 1)
-            logger.debug(f"Next version is: {num}")
-            target = path + "/" + thing + "-" + str(num)
-            logger.debug(f"Copying: {cwd} -> {target}")
-            shutil.copytree(cwd, target)
-            logger.info(f"Creating folder: {thing + "-" + str(num)}")
-        else:
-            logger.warning("Folder not found, skipped copy!")
 
         logger.info(f"------------ Comparing {len(names)} graphs to last graph in repo ------------")
         compare = []
@@ -135,7 +120,7 @@ class HyperSSE(Experiment):
                 compare.append("no-target")
                 
         logger.info("---------------------------------------------------------")
-        logger.warning(f"Wrote to: {thing + "-" + str(num)}")
+
 
         # Read csv, insert verification, write
         with open(res_file, 'r') as file:
@@ -149,6 +134,24 @@ class HyperSSE(Experiment):
         with open(res_file, 'w', newline='') as file:
             writer = csv.writer(file)
             writer.writerows(data)
+
+
+        path = cwd + parrot_dir + paper_repo
+        logger.info(f"Copy svgs to paper-repo: \"{paper_repo}\"")
+        if os.path.isdir(path):
+            versions = os.listdir(path)
+            logger.debug(f"Folder contains: {versions}")
+            num = 0
+            for v in versions:
+                if v.startswith(thing) and "-" in v:
+                    num = max(num, int(v.split("-")[1]) + 1)
+            logger.debug(f"Next version is: {num}")
+            target = path + "/" + thing + "-" + str(num)
+            logger.debug(f"Copying: {cwd} -> {target}")
+            shutil.copytree(cwd, target)
+            logger.info(f"Creating folder: {thing + "-" + str(num)}")
+        else:
+            logger.warning("Folder not found, skipped copy!")
 
         return
         

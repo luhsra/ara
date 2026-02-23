@@ -176,13 +176,15 @@ def _sstg_state_as_dot(sstg, state_vert, with_times: bool = True, OS: OSBase = A
     syscall_map = {
         "k_sleep": "Zephyr_ksleep",
         "k_yield": "Zephyr_kyield",
+        # TODO this changes all graphs
+        # "AUTOSAR_ActivateTask": "Autosar_ActivateTask",
         "AUTOSAR_TerminateTask": "Autosar_TerminateTask",
+        "AUTOSAR_ReadPeripheral": "Autosar_ReadPeripheral",
+        "AUTOSAR_ChainTask": "Autosar_ChainTask",
         "XEN_wrap_evtchn_bind_interdomain": "Xen_evtchnBind",
         "XEN_wrap_evtchn_alloc_unbound": "Xen_evtchnAlloc",
         "XEN_wrap_evtchn_send": "Xen_evtchnSend",
         "XEN_wrap_evtchn_poll": "Xen_evtchnPoll",
-        "AUTOSAR_ReadPeripheral": "Autosar_ReadPeripheral",
-        "AUTOSAR_ChainTask": "Autosar_ChainTask",
         "BareMetal_Idle": "Baremetal_Idle",
         "BareMetal_Dummy": "Baremetal_Dummy",
     }

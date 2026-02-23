@@ -39,8 +39,6 @@ TASK(SETUP) {
 	ara_timing_info(5, 5);
     XEN_wrap_evtchn_bind_interdomain(REMOTE_DOMAIN, REMOTE_CHANNEL, reinterpret_cast<void*>(AUTOSAR_TASK_FUNC_HMI_UPDTE));
 
-	// ara_timing_info(6, 6);
-    // printf("Binder is done, handler was forked.\n");
     // display();
 	ara_timing_info(3, 3);
 	TerminateTask();

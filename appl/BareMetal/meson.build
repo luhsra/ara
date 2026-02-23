@@ -16,7 +16,7 @@ baremetal_apps = [
   {'path': '../Xen/hc-baremetal-notiming/BareMetal-A', 'name': 'a'},
   {'path': '../Xen/hc-baremetal-notiming/BareMetal-B', 'name': 'b'},
   {'path': '../Xen/hardware/BareMetal-A', 'name': 'hardware'},
-  {'path': '../Xen/braking/BareMetal-C', 'name': 'braking'},
+  {'path': '../Xen/braking/BareMetal-C', 'name': 'c_baremetal'},
 ]
 
 foreach app : baremetal_apps

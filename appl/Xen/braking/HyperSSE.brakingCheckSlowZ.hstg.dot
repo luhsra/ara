@@ -1,0 +1,322 @@
+digraph G {
+label="";
+1 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD><TD PORT="c2">Dom 2</TD></TR></TABLE>>, shape=plaintext, tooltip=1];
+subgraph cluster_10 {
+bgcolor="#F8CECC";
+label="M10: Dom-0-AUTOSAR";
+style=bold;
+2 [color=green, fontsize=14, label=<State 5<br/><font point-size='12'>instance: SETUP<br/>abb: ABB36<br/>bcet/wcet: 1/1</font>>, style=solid, tooltip=2];
+3 [color=cornflowerblue, fontsize=14, label=<State 8<br/><font point-size='12'>instance: SETUP<br/>abb: ABB38<br/>Xen_evtchnAlloc</font>>, shape=box, tooltip=3];
+4 [color=green, fontsize=14, label=<State 9<br/><font point-size='12'>instance: SETUP<br/>abb: ABB33</font>>, style=solid, tooltip=4];
+5 [color=cornflowerblue, fontsize=14, label=<State 10<br/><font point-size='12'>instance: SETUP<br/>abb: ABB39<br/>Xen_evtchnAlloc</font>>, shape=box, tooltip=5];
+6 [color=green, fontsize=14, label=<State 11<br/><font point-size='12'>instance: SETUP<br/>abb: ABB34<br/>bcet/wcet: 2/2</font>>, style=solid, tooltip=6];
+7 [color=cornflowerblue, fontsize=14, label=<State 12<br/><font point-size='12'>instance: SETUP<br/>abb: ABB37<br/>Autosar_ChainTask</font>>, shape=box, tooltip=7];
+8 [color=green, fontsize=14, label=<State 13<br/><font point-size='12'>instance: LOOP<br/>abb: ABB9<br/>bcet/wcet: 3/3</font>>, style=solid, tooltip=8];
+9 [color=cornflowerblue, fontsize=14, label=<State 14<br/><font point-size='12'>instance: LOOP<br/>abb: ABB24<br/>Xen_evtchnPoll</font>>, shape=box, tooltip=9];
+48 [color=green, fontsize=14, label=<State 65<br/><font point-size='12'>instance: LOOP<br/>abb: ABB19<br/>bcet/wcet: 8/8</font>>, style=solid, tooltip=48];
+49 [color=cornflowerblue, fontsize=14, label=<State 67<br/><font point-size='12'>instance: LOOP<br/>abb: ABB23<br/>Autosar_ChainTask</font>>, shape=box, tooltip=49];
+50 [color=green, fontsize=14, label=<State 68<br/><font point-size='12'>instance: OTHER<br/>abb: ABB5<br/>bcet/wcet: 1000/1000</font>>, style=solid, tooltip=50];
+51 [color=cornflowerblue, fontsize=14, label=<State 69<br/><font point-size='12'>instance: OTHER<br/>abb: ABB7<br/>Autosar_ChainTask</font>>, shape=box, tooltip=51];
+}
+
+subgraph cluster_19 {
+bgcolor="#DAE8FC";
+label="M19: Dom-1-Zephyr";
+style=bold;
+11 [color=green, fontsize=14, label=<State 6<br/><font point-size='12'>thread: thread_a<br/>abb: ABB9<br/>bcet/wcet: 1/1</font>>, style=solid, tooltip=11];
+12 [color=cornflowerblue, fontsize=14, label=<State 16<br/><font point-size='12'>thread: thread_a<br/>abb: ABB14<br/>Xen_evtchnAlloc</font>>, shape=box, tooltip=12];
+13 [color=green, fontsize=14, label=<State 17<br/><font point-size='12'>thread: thread_a<br/>abb: ABB10</font>>, style=solid, tooltip=13];
+14 [color=cornflowerblue, fontsize=14, label=<State 18<br/><font point-size='12'>thread: thread_a<br/>abb: ABB15<br/>Xen_evtchnAlloc</font>>, shape=box, tooltip=14];
+15 [color=green, fontsize=14, label=<State 19<br/><font point-size='12'>thread: thread_a<br/>abb: ABB11</font>>, style=solid, tooltip=15];
+16 [color=cornflowerblue, fontsize=14, label=<State 20<br/><font point-size='12'>thread: thread_a<br/>abb: ABB13<br/>Xen_evtchnAlloc</font>>, shape=box, tooltip=16];
+17 [color=green, fontsize=14, label=<State 21<br/><font point-size='12'>thread: thread_a<br/>abb: ABB12<br/>bcet/wcet: 2/2</font>>, style=solid, tooltip=17];
+18 [color=violet, fontsize=14, label=<State 22<br/><font point-size='12'>instance: Idle</font>>, style=solid, tooltip=18];
+}
+
+subgraph cluster_27 {
+bgcolor="#D5E8D4";
+label="M27: Dom-2-BareMetal";
+style=bold;
+20 [color=green, fontsize=14, label=<State 7<br/><font point-size='12'>abb: ABB0</font>>, style=solid, tooltip=20];
+21 [fontsize=14, label=<State 23<br/><font point-size='12'>abb: ABB2</font>>, tooltip=21];
+22 [color=green, fontsize=14, label=<State 24<br/><font point-size='12'>abb: ABB3<br/>bcet/wcet: 5/5</font>>, style=solid, tooltip=22];
+23 [color=cornflowerblue, fontsize=14, label=<State 25<br/><font point-size='12'>abb: ABB6<br/>Xen_evtchnBind</font>>, shape=box, tooltip=23];
+24 [color=green, fontsize=14, label=<State 26<br/><font point-size='12'>abb: ABB4<br/>bcet/wcet: 3/3</font>>, style=solid, tooltip=24];
+25 [color=cornflowerblue, fontsize=14, label=<State 27<br/><font point-size='12'>abb: ABB7<br/>Baremetal_Idle</font>>, shape=box, tooltip=25];
+26 [color=violet, fontsize=14, label=<State 28<br/><font point-size='12'>abb: ABB1</font>>, style=solid, tooltip=26];
+80 [color=green, fontsize=14, label=<State 119<br/><font point-size='12'>abb: ABB10<br/>bcet/wcet: 5/5</font>>, style=solid, tooltip=80];
+81 [color=cornflowerblue, fontsize=14, label=<State 121<br/><font point-size='12'>abb: ABB12<br/>Baremetal_Idle</font>>, shape=box, tooltip=81];
+}
+
+subgraph cluster_43 {
+bgcolor="#F8CECC";
+label="M43: Dom-0-AUTOSAR";
+style=bold;
+32 [fontsize=14, label=<State 36<br/><font point-size='12'>instance: LOOP<br/>abb: ABB26</font>>, tooltip=32];
+33 [color=green, fontsize=14, label=<State 37<br/><font point-size='12'>instance: LOOP<br/>abb: ABB29</font>>, style=solid, tooltip=33];
+34 [color=cornflowerblue, fontsize=14, label=<State 38<br/><font point-size='12'>instance: LOOP<br/>abb: ABB30<br/>Autosar_ReadPeripheral</font>>, shape=box, tooltip=34];
+35 [color=green, fontsize=14, label=<State 39<br/><font point-size='12'>instance: LOOP<br/>abb: ABB28</font>>, style=solid, tooltip=35];
+36 [color=green, fontsize=14, label=<State 40<br/><font point-size='12'>instance: LOOP<br/>abb: ABB15</font>>, style=solid, tooltip=36];
+37 [color=green, fontsize=14, label=<State 41<br/><font point-size='12'>instance: LOOP<br/>abb: ABB16<br/>bcet/wcet: 10/10</font>>, style=solid, tooltip=37];
+38 [color=green, fontsize=14, label=<State 42<br/><font point-size='12'>instance: LOOP<br/>abb: ABB18<br/>bcet/wcet: 7/7</font>>, style=solid, tooltip=38];
+39 [color=cornflowerblue, fontsize=14, label=<State 43<br/><font point-size='12'>instance: LOOP<br/>abb: ABB21<br/>AUTOSAR_ActivateTask</font>>, shape=box, tooltip=39];
+40 [color=cornflowerblue, fontsize=14, label=<State 44<br/><font point-size='12'>instance: LOOP<br/>abb: ABB22<br/>Xen_evtchnSend</font>>, shape=box, tooltip=40];
+41 [color=green, fontsize=14, label=<State 45<br/><font point-size='12'>instance: EMERGENCY<br/>abb: ABB1<br/>bcet/wcet: 100/100</font>>, style=solid, tooltip=41];
+42 [color=cornflowerblue, fontsize=14, label=<State 47<br/><font point-size='12'>instance: EMERGENCY<br/>abb: ABB3<br/>Xen_evtchnSend</font>>, shape=box, tooltip=42];
+30 [color=green, fontsize=14, label=<State 33<br/><font point-size='12'>instance: LOOP<br/>abb: ABB13<br/>bcet/wcet: 4/4</font>>, style=solid, tooltip=30];
+31 [color=green, fontsize=14, label=<State 35<br/><font point-size='12'>instance: LOOP<br/>abb: ABB14<br/>bcet/wcet: 6/6</font>>, style=solid, tooltip=31];
+84 [color=green, fontsize=14, label=<State 127<br/><font point-size='12'>instance: LOOP<br/>abb: ABB11<br/>bcet/wcet: 4/4</font>>, style=solid, tooltip=84];
+85 [fontsize=14, label=<State 129<br/><font point-size='12'>instance: LOOP<br/>abb: ABB25</font>>, tooltip=85];
+86 [color=green, fontsize=14, label=<State 130<br/><font point-size='12'>instance: LOOP<br/>abb: ABB29</font>>, style=solid, tooltip=86];
+87 [color=cornflowerblue, fontsize=14, label=<State 131<br/><font point-size='12'>instance: LOOP<br/>abb: ABB30<br/>Autosar_ReadPeripheral</font>>, shape=box, tooltip=87];
+88 [color=green, fontsize=14, label=<State 132<br/><font point-size='12'>instance: LOOP<br/>abb: ABB28</font>>, style=solid, tooltip=88];
+89 [color=green, fontsize=14, label=<State 133<br/><font point-size='12'>instance: LOOP<br/>abb: ABB12</font>>, style=solid, tooltip=89];
+}
+
+subgraph cluster_54 {
+bgcolor="#DAE8FC";
+label="M54: Dom-1-Zephyr";
+style=bold;
+52 [color=green, fontsize=14, label=<State 66<br/><font point-size='12'>thread: thread_event_calc<br/>abb: ABB3<br/>bcet/wcet: 1212/1212</font>>, style=solid, tooltip=52];
+53 [color=cornflowerblue, fontsize=14, label=<State 71<br/><font point-size='12'>thread: thread_event_calc<br/>abb: ABB7<br/>Xen_evtchnSend</font>>, shape=box, tooltip=53];
+66 [color=green, fontsize=14, label=<State 100<br/><font point-size='12'>thread: thread_event_calc<br/>abb: ABB3<br/>bcet/wcet: 1212/1212</font>>, style=solid, tooltip=66];
+}
+
+subgraph cluster_58 {
+bgcolor="#F8CECC";
+label="M58: Dom-0-AUTOSAR";
+style=bold;
+57 [color=green, fontsize=14, label=<State 77<br/><font point-size='12'>instance: EMERGENCY<br/>abb: ABB2<br/>bcet/wcet: 100/100</font>>, style=solid, tooltip=57];
+}
+
+subgraph cluster_61 {
+bgcolor="#DAE8FC";
+label="M61: Dom-1-Zephyr";
+style=bold;
+59 [color=green, fontsize=14, label=<State 78<br/><font point-size='12'>thread: thread_event_emergency<br/>abb: ABB1<br/>bcet/wcet: 100/100</font>>, style=solid, tooltip=59];
+60 [color=green, fontsize=14, label=<State 79<br/><font point-size='12'>thread: thread_event_emergency<br/>abb: ABB2</font>>, style=solid, tooltip=60];
+}
+
+subgraph cluster_71 {
+bgcolor="#DAE8FC";
+label="M71: Dom-1-Zephyr";
+style=bold;
+69 [color=green, fontsize=14, label=<State 107<br/><font point-size='12'>thread: thread_event_emergency<br/>abb: ABB1<br/>bcet/wcet: 100/100</font>>, style=solid, tooltip=69];
+70 [color=green, fontsize=14, label=<State 108<br/><font point-size='12'>thread: thread_event_emergency<br/>abb: ABB2</font>>, style=solid, tooltip=70];
+}
+
+subgraph cluster_74 {
+bgcolor="#DAE8FC";
+label="M74: Dom-1-Zephyr";
+style=bold;
+72 [color=green, fontsize=14, label=<State 110<br/><font point-size='12'>thread: thread_event_calc<br/>abb: ABB4<br/>bcet/wcet: 12/12</font>>, style=solid, tooltip=72];
+73 [color=cornflowerblue, fontsize=14, label=<State 112<br/><font point-size='12'>thread: thread_event_calc<br/>abb: ABB6<br/>Xen_evtchnSend</font>>, shape=box, tooltip=73];
+}
+
+subgraph cluster_79 {
+bgcolor="#DAE8FC";
+label="M79: Dom-1-Zephyr";
+style=bold;
+77 [color=green, fontsize=14, label=<State 118<br/><font point-size='12'>thread: thread_event_calc<br/>abb: ABB5<br/>bcet/wcet: 13/13</font>>, style=solid, tooltip=77];
+78 [color=violet, fontsize=14, label=<State 120<br/><font point-size='12'>instance: Idle</font>>, style=solid, tooltip=78];
+}
+
+subgraph cluster_96 {
+bgcolor="#DAE8FC";
+label="M96: Dom-1-Zephyr";
+style=bold;
+94 [color=green, fontsize=14, label=<State 154<br/><font point-size='12'>thread: thread_event_emergency<br/>abb: ABB1<br/>bcet/wcet: 100/100</font>>, style=solid, tooltip=94];
+95 [color=green, fontsize=14, label=<State 155<br/><font point-size='12'>thread: thread_event_emergency<br/>abb: ABB2</font>>, style=solid, tooltip=95];
+}
+
+subgraph cluster_Metasync28 {
+label="";
+28 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=28];
+29 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=29];
+}
+
+subgraph cluster_Metasync44 {
+label="";
+44 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=44];
+45 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=45];
+}
+
+subgraph cluster_Metasync46 {
+label="";
+46 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=46];
+47 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=47];
+}
+
+subgraph cluster_Metasync55 {
+label="";
+55 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=55];
+56 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=56];
+}
+
+subgraph cluster_Metasync62 {
+label="";
+62 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=62];
+63 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=63];
+}
+
+subgraph cluster_Metasync64 {
+label="";
+64 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=64];
+65 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=65];
+}
+
+subgraph cluster_Metasync67 {
+label="";
+67 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=67];
+68 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=68];
+}
+
+subgraph cluster_Metasync75 {
+label="";
+75 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c1">Dom 1</TD><TD PORT="c2">Dom 2</TD></TR></TABLE>>, shape=plaintext, tooltip=75];
+76 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c1">Dom 1</TD><TD PORT="c2">Dom 2</TD></TR></TABLE>>, shape=plaintext, tooltip=76];
+}
+
+subgraph cluster_Metasync82 {
+label="";
+82 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=82];
+83 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=83];
+}
+
+subgraph cluster_Metasync90 {
+label="";
+90 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=90];
+91 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=91];
+}
+
+subgraph cluster_Metasync92 {
+label="";
+92 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=92];
+93 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=93];
+}
+
+1:c0 -> 2  [color=black];
+1:c1 -> 11  [color=black];
+1:c2 -> 20  [color=black];
+1 -> 28  [color=darkred, label="6 - 6", style=dotted];
+2 -> 3  [color=black];
+3 -> 4  [color=black];
+4 -> 5  [color=black];
+5 -> 6  [color=black];
+6 -> 7  [color=black];
+7 -> 8  [color=black];
+8 -> 9  [color=black];
+9 -> 28:c0  [color=black];
+9 -> 55:c0  [color=black];
+9 -> 82:c0  [color=black];
+11 -> 12  [color=black];
+12 -> 13  [color=black];
+13 -> 14  [color=black];
+14 -> 15  [color=black];
+15 -> 16  [color=black];
+16 -> 17  [color=black];
+17 -> 18  [color=black];
+18 -> 28:c1  [color=black];
+18 -> 44:c1  [color=black];
+18 -> 46:c1  [color=black];
+20 -> 21  [color=black];
+21 -> 22  [color=black];
+22 -> 23  [color=black];
+23 -> 24  [color=black];
+24 -> 25  [color=black];
+25 -> 26  [color=black];
+26 -> 75:c2  [color=black];
+28 -> 29  [color=black];
+29:c0 -> 30  [color=black];
+29:c1 -> 18  [color=black];
+29 -> 44  [color=darkred, label="17 - 17", style=dotted];
+29 -> 46  [color=darkred, label="120 - 120", style=dotted];
+30 -> 31  [color=black];
+31 -> 32  [color=black];
+32 -> 33  [color=black];
+33 -> 34  [color=black];
+34 -> 35  [color=black];
+35 -> 36  [color=black];
+36 -> 37  [color=black];
+36 -> 38  [color=black];
+37 -> 39  [color=black];
+38 -> 40  [color=black];
+39 -> 41  [color=black];
+40 -> 44:c0  [color=black];
+40 -> 62:c0  [color=black];
+40 -> 90:c0  [color=black];
+41 -> 42  [color=black];
+42 -> 46:c0  [color=black];
+42 -> 64:c0  [color=black];
+42 -> 92:c0  [color=black];
+44 -> 45  [color=black];
+45:c0 -> 48  [color=black];
+45:c1 -> 52  [color=black];
+45 -> 55  [color=darkred, label="1003 - 1011", style=dotted];
+46 -> 47  [color=black];
+47:c0 -> 57  [color=black];
+47:c1 -> 59  [color=black];
+48 -> 49  [color=black];
+49 -> 50  [color=black];
+50 -> 51  [color=black];
+50 -> 67:c0  [color=black];
+51 -> 8  [color=black];
+52 -> 53  [color=black];
+52 -> 55:c1  [color=black];
+52 -> 62:c1  [color=black];
+52 -> 64:c1  [color=black];
+53 -> 67:c1  [color=black];
+55 -> 56  [color=black];
+56:c0 -> 30  [color=black];
+56:c1 -> 52  [color=black];
+56 -> 62  [color=darkred, label="13 - 17", style=dotted];
+56 -> 64  [color=darkred, label="116 - 120", style=dotted];
+59 -> 60  [color=black];
+60 -> 60  [color=black];
+62 -> 63  [color=black];
+63:c0 -> 48  [color=black];
+63:c1 -> 66  [color=black];
+63 -> 67  [color=darkred, label="184 - 196", style=dotted];
+64 -> 65  [color=black];
+65:c0 -> 57  [color=black];
+65:c1 -> 69  [color=black];
+66 -> 53  [color=black];
+67 -> 68  [color=black];
+68:c1 -> 72  [color=black];
+68:c0 -> 50  [color=black];
+68 -> 75  [color=darkred, label="12 - 12", style=dotted];
+69 -> 70  [color=black];
+70 -> 70  [color=black];
+72 -> 73  [color=black];
+73 -> 75:c1  [color=black];
+75 -> 76  [color=black];
+76:c1 -> 77  [color=black];
+76:c2 -> 80  [color=black];
+76 -> 82  [color=darkred, label="795 - 815", style=dotted];
+77 -> 78  [color=black];
+78 -> 82:c1  [color=black];
+78 -> 90:c1  [color=black];
+78 -> 92:c1  [color=black];
+80 -> 81  [color=black];
+81 -> 26  [color=black];
+82 -> 83  [color=black];
+83:c0 -> 84  [color=black];
+83:c1 -> 78  [color=black];
+83 -> 90  [color=darkred, label="13 - 17", style=dotted];
+83 -> 92  [color=darkred, label="116 - 120", style=dotted];
+84 -> 85  [color=black];
+85 -> 86  [color=black];
+86 -> 87  [color=black];
+87 -> 88  [color=black];
+88 -> 89  [color=black];
+89 -> 31  [color=black];
+90 -> 91  [color=black];
+91:c0 -> 48  [color=black];
+91:c1 -> 52  [color=black];
+91 -> 55  [color=darkred, label="0 - 0", style=dotted];
+92 -> 93  [color=black];
+93:c0 -> 57  [color=black];
+93:c1 -> 94  [color=black];
+94 -> 95  [color=black];
+95 -> 95  [color=black];
+}

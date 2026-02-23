@@ -253,15 +253,11 @@ autosar_apps += [
 
 
   # --------------------------- ECRTS26-Paper ----------------------------------
-  {'core': '../Xen',  'path': 'braking' / 'Autosar-A', 'name': 'a1', 'oil'  : 'a.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'braking' / 'Autosar-A', 'name': 'a2', 'oil'  : 'a.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'braking' / 'Autosar-A', 'name': 'a3', 'oil'  : 'a.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'braking' / 'Autosar-A', 'name': 'a4', 'oil'  : 'a.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'braking' / 'Autosar-B', 'name': 'b1', 'oil'  : 'b.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'braking' / 'Autosar-B', 'name': 'b2', 'oil'  : 'b.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'braking' / 'Autosar-B', 'name': 'b3', 'oil'  : 'b.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'braking' / 'Autosar-B', 'name': 'b4', 'oil'  : 'b.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'braking' / 'BareMetal-C', 'name': 'c', 'oil'  : 'c.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'braking' / 'Autosar-A', 'name': 'a1_loop_no_predict', 'oil'  : 'a.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'braking' / 'Autosar-A', 'name': 'a2_loop', 'oil'  : 'a.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'braking' / 'Autosar-A', 'name': 'a3_unrolled', 'oil'  : 'a.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'braking' / 'Autosar-B', 'name': 'b1_ack_hmi', 'oil'  : 'b.json', 'timing': 'BB'},
+  {'core': '../Xen',  'path': 'braking' / 'BareMetal-C', 'name': 'c_autosar', 'oil'  : 'c.json', 'timing': 'BB'},
   {'core': '../Xen',  'path': 'hc-autosar-polled' / 'Autosar-A', 'name': 'a', 'oil'  : 'a.json'},
   {'core': '../Xen',  'path': 'hc-autosar-polled' / 'Autosar-B', 'name': 'b', 'oil'  : 'b.json'},
   {'core': '../Xen',  'path': 'hc-autosar-polled-2' / 'Autosar-A', 'name': 'a', 'oil'  : 'a.json'},

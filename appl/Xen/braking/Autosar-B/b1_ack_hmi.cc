@@ -57,6 +57,9 @@ TASK(CALC) {
 
 TASK(EMERGENCY) {
 	ara_timing_info(100, 100);
+
+	while (true){}
+	
 	// ChainTask(EMERGENCY);
 	// TerminateTask();
 }

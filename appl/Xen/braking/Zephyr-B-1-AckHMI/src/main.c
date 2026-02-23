@@ -40,7 +40,7 @@ void read_sensors(void * data) {
 // TASKS
 void calc(void* a, void* b, void* c) {
 
-	ara_timing_info(1200, 1200);
+	ara_timing_info(11, 11);
 	read_sensors(data);
 
 	// Send ACK here
@@ -58,7 +58,8 @@ void emergency(void* a, void* b, void* c) {
 
   	ara_timing_info(100, 100);
 
-	return;
+	while (true){}
+	
 }
 
 void setup(void* a, void* b, void* c) {
