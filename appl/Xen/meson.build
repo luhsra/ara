@@ -62,10 +62,10 @@ xen_testcases = [
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar2_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar2/Autosar-B/b.json'
   },
   # 2x zephyr notify using hypercall z <- z
-#   {'name': 'hc-zephyr2', 'do_timings': 'true', 'guests': 
-#       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-7.ll;' +
-#       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-8.ll;'
-#   },
+  {'name': 'hc-zephyr2', 'do_timings': 'true', 'guests': 
+      'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-7.ll;' +
+      'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-8.ll;'
+  },
   # 2x bareMetal notify using hypercall b <- b
   {'name': 'hc-baremetal2', 'do_timings': 'true', 'guests': 
       'BareMetal;subprojects/ara/appl/BareMetal/___Xen_hc_baremetal2_BareMetal_A_a.pi4.ll;event;' +
@@ -92,10 +92,10 @@ xen_testcases = [
       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-5.ll;'
   },
   # Z <- B
-#   {'name': 'hc-z-b2', 'do_timings': 'true', 'guests': 
-#       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-6.ll;' +
-#       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-5.ll;'
-#   },
+  {'name': 'hc-z-b2', 'do_timings': 'true', 'guests': 
+      'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-6.ll;' +
+      'BareMetal;subprojects/ara/appl/BareMetal/___Xen_hc_z_b2_BareMetal_B_b.pi4.ll;None;'
+  },
   # B <- A
   {'name': 'hc-b-a2', 'do_timings': 'true', 'guests': 
       'BareMetal;subprojects/ara/appl/BareMetal/___Xen_hc_b_a2_BareMetal_A_a.pi4.ll;event;' +
@@ -254,14 +254,14 @@ xen_testcases = [
 #         + 'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-B-4.ll;'
 #         + 'BareMetal;subprojects/ara/appl/BareMetal/___Xen_braking_BareMetal_C_braking.pi4.ll;hmi_update;'       
 #     },
-#     {'name': 'hc-autosar-polled', 'do_timings': 'true', 'guests': 
-#         'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_polled_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-polled/Autosar-A/a.json;' +
-#         'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_polled_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-polled/Autosar-B/b.json'
-#     },
-#     {'name': 'hc-autosar-polled-2', 'do_timings': 'true', 'guests': 
-#         'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_polled_2_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-polled-2/Autosar-A/a.json;' +
-#         'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_polled_2_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-polled-2/Autosar-B/b.json'
-#     },
+    # {'name': 'hc-autosar-polled', 'do_timings': 'true', 'guests': 
+    #     'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_polled_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-polled/Autosar-A/a.json;' +
+    #     'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_polled_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-polled/Autosar-B/b.json'
+    # },
+    # {'name': 'hc-autosar-polled-2', 'do_timings': 'true', 'guests': 
+    #     'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_polled_2_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-polled-2/Autosar-A/a.json;' +
+    #     'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_polled_2_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-polled-2/Autosar-B/b.json'
+    # },
 ]
 
 # Compile Autosar ll files

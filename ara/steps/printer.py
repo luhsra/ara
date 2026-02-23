@@ -103,10 +103,11 @@ def _sstg_state_as_dot(sstg, state_vert, with_times: bool = True, OS: OSBase = A
     thread_info = []
 
     kernel = None
-    if OS == Zephyr:
-        kernel_obj = obj.instances.vp.obj[Zephyr.kernel]
-        if kernel_obj in obj.context:
-            kernel = obj.context[kernel_obj]
+    # because kernel is no longer globa, would need instance graph here!
+    # if OS == Zephyr:
+        # kernel_obj = obj.instances.vp.obj[Zephyr.kernel]
+        # if kernel_obj in obj.context:
+        #     kernel = obj.context[kernel_obj]
 
     more_tupels = []
 
@@ -137,11 +138,11 @@ def _sstg_state_as_dot(sstg, state_vert, with_times: bool = True, OS: OSBase = A
                 # thread_info.append(("preempt", context.preempt))
                 # thread_info.append(("thread_state", bin(context.thread_state)))
                 vertices = [str(obj.instances.vertex_index[v]) for v in context.join_queue]
-                timeouts = [str(obj.instances.vertex_index[to.v]) for to in kernel.timeout_list]
+                # timeouts = [str(obj.instances.vertex_index[to.v]) for to in kernel.timeout_list]
                 if vertices:
                     thread_info.append(("join_queue", ", ".join(vertices)))
-                if timeouts:
-                    thread_info.append(("timeout_list", ", ".join(timeouts)))
+                # if timeouts:
+                #     thread_info.append(("timeout_list", ", ".join(timeouts)))
 
     else:
         # for BareMetal
@@ -233,6 +234,10 @@ def _sstg_state_as_dot(sstg, state_vert, with_times: bool = True, OS: OSBase = A
     elif cpu.exec_state & ExecState.syscall:
         attrs["color"] = "cornflowerblue"
         attrs["shape"] = "box"
+
+    # try different shape for hypercall?
+    # if syscall and "Xen" in syscall:
+    #     attrs["shape"] = "parallelogram"
 
     return attrs
 

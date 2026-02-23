@@ -849,7 +849,9 @@ class MultiSSE(StatsStep):
         # for path in root_paths:
         #     self._log.debug([int(x) for x in path])
         #     self._log.debug([(int(x), set(self._mstg.sync_point_map[x])) for x in path])
-        assert len(root_paths) < 20000, "Too much"
+        
+        # increasing this limit might allow a run to finish, but is very unlikely, because of the exponential growth
+        assert len(root_paths) < 100000, "Too much"
         for path in root_paths:
             # self._log.debug([int(x) for x in path])
             self._log.debug("Find pairing candidates for node %d (time: %s) "

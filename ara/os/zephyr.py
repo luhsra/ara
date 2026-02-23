@@ -440,11 +440,13 @@ class Zephyr(OSBase):
     EdgeType = ZephyrEdgeType
 
     """The kernel node"""
-    kernel = None
+    # removed from class, use Zephyr.get_kernel(state) and Zephyr.get_kernel_context(state) instead
+    # kernel = None
 
     """A dict<str, int> that stores the number of times an identifier was requested."""
     id_count = {}
 
+    # TODO: move into state or instance graph, similar to kernel
     """Current LLVM-IR File (hacky way)"""
     llvm_ir_file = ""
     llvm_ir_kernel_file = None
@@ -456,7 +458,8 @@ class Zephyr(OSBase):
     enable_sse = False
 
     """ idle threads map: cpu_id -> vertex of thread """
-    idle_threads = {}
+    # removed from class, use get_idleThreadVertex(instances, cpu_id) instead
+    # idle_threads = {}
 
     """ whether IRQs shall be triggered only once and then disabled automatically """
     analyze_irqs_once = False
@@ -481,10 +484,23 @@ class Zephyr(OSBase):
         # logger.error(f"CPU_ID: {cpu_id}\n")
         # for inst, ctx in context.items():
         #     logger.info(f"{inst}  ---  {ctx}")
+
+        # track if context contains an irq that points to current cpu_id, also see move_context
+        is_irq = False
+
         for inst, ctx in context.items():
-            if getattr(inst, "cpu_id", None) == cpu_id or isinstance(inst, ZephyrKernel):
+            if getattr(inst, "cpu_id", None) == cpu_id:
                 local_contexts.append((inst, ctx))
+
+                if isinstance(inst, ZephyrIRQ): #and cpu_id == ZephyrIRQ.isr_handler.cpu_id:
+                    is_irq = True
+                    irq_cpu = inst.isr_handler.cpu_id
             # TODO find targets of IRQ if they belong to this local context
+        if is_irq:
+            for inst, ctx in context.items():
+                if getattr(inst, "cpu_id", None) == irq_cpu:
+                    local_contexts.append((inst, ctx))
+
 
         # logger.error("\n")
         # for inst, ctx in local_contexts:
@@ -661,7 +677,7 @@ class Zephyr(OSBase):
     @staticmethod
     def add_kernel_comm(state: OSState, cpu_id: int, call: str):
         """Adds an interaction (edge) with the given callname to the ZephyrKernel instance"""
-        connect_from_here(state, cpu_id, Zephyr.kernel, call, ty=ZephyrEdgeType.interaction)
+        connect_from_here(state, cpu_id, Zephyr.get_kernel(state), call, ty=ZephyrEdgeType.interaction)
 
     @staticmethod
     def get_thread_ccs(state) -> Iterator[ThreadContext]:
@@ -687,13 +703,34 @@ class Zephyr(OSBase):
                 ts = za.ThreadStateAdapter(ctx.thread_state).name
                 print(index, obj.name, obj.entry_name, status_name, thread, ctx.thread_state, ts)
 
+    # @staticmethod
+    # def get_idleThread(instances, cpu_id) -> Thread:
+    #     idle = [(v, obj) for v, obj in instances.get(Thread) if obj.cpu_id == cpu_id and obj.entry_name == "idle" and obj.artificial == True]
+    #     assert(len(idle) == 1)
+    #     return idle[0][1]
+    
     @staticmethod
-    def get_kernel_context(state) -> za.ZephyrKernelContext:
-        return state.context[state.instances.vp.obj[Zephyr.kernel]]
+    def get_idleThreadVertex(instances: InstanceGraph, cpu_id: int) -> Thread:
+        """Find the vertex of the idlethread of the cpu in the instance graph."""
+        idle = [(v, obj) for v, obj in instances.get(Thread) if obj.cpu_id == cpu_id and obj.entry_name == "idle" and obj.artificial == True]
+        assert(len(idle) == 1)
+        return idle[0][0]
+    
+    @staticmethod
+    def get_kernel_context(state: OSState) -> za.ZephyrKernelContext:
+        """First find the Kernelobject, then return its context."""
+        return state.context[Zephyr.get_kernel(state)]
+    
+    @staticmethod
+    def get_kernel(state: OSState) -> ZephyrKernel:
+        """Returns the ZephyrKernel-Object from the instance graph which is part of state."""
+        kernel = [(v, obj) for v, obj in state.instances.get(ZephyrKernel)]
+        assert(len(kernel) == 1, "state has no unique ZephyrKernel!")
+        return kernel[0][1]
 
     @staticmethod
-    def set_kernel_context(state, kernel):
-        state.context[state.instances.vp.obj[Zephyr.kernel]] = kernel
+    def set_kernel_context(state, kernelKontext):
+        state.context[Zephyr.get_kernel(state)] = kernelKontext
 
     @staticmethod
     def get_timeout_llvm_type():
@@ -820,7 +857,7 @@ class Zephyr(OSBase):
             ctx.call_path = CallPath()
 
         for cpu in cpus:
-            idle_thread_vertex = Zephyr.idle_threads[cpu.id]
+            idle_thread_vertex = Zephyr.get_idleThreadVertex(instances=instances, cpu_id=cpu.id)
             obj = state.instances.vp.obj[idle_thread_vertex]
             # if isinstance(obj, Thread):
             state.context[obj] = ThreadContext(
@@ -1038,13 +1075,21 @@ class Zephyr(OSBase):
             if old_vertex:
                 old_ctx = state.context[old_task]
                 #if old_ctx.status in [TaskStatus.running, TaskStatus.blocked, TaskStatus.terminated]:
+                # TODO try to compress similar Idle states. Root issue is how Zephyr treats never started vs completed tasks.
+                # if "event" in old_task.name and cpu.abb == state.cfg.get_exit_abb(state.cfg.get_function_by_name(old_task.entry_name)):
+                #     pass
+                #     start_abb = state.cfg.get_entry_abb(state.cfg.get_function_by_name(old_task.entry_name))
+                #     old_ctx.abb = start_abb
+                #     old_ctx.status = TaskStatus.blocked
+                # else:
+                #     old_ctx.abb = state.cfg.vertex(cpu.abb)
                 old_ctx.abb = state.cfg.vertex(cpu.abb)
                 old_ctx.call_path = cpu.call_path
                 if old_ctx.status == TaskStatus.running:
                     old_ctx.status = TaskStatus.ready
 
 
-            if new_vertex != Zephyr.idle_threads[cpu.id]:
+            if new_vertex != Zephyr.get_idleThreadVertex(instances=state.instances, cpu_id=cpu.id):
                 cpu.abb = state.cfg.vertex(new_ctx.abb)
                 cpu.call_path = new_ctx.call_path
                 new_ctx.status = TaskStatus.running
@@ -1152,7 +1197,7 @@ class Zephyr(OSBase):
         #     for x in changes:
         #         print(f"{x.path_str():30s}: {x.obj1} => {x.obj2}")
 
-        if True or kernel.cache != Zephyr.idle_threads[cpu_id]: # return the idle state?
+        if True or kernel.cache != Zephyr.get_idleThreadVertex(state.instances, cpu_id): # return the idle state?
             cur = state.cpus[cpu_id].control_instance
 
             add_self_edge(state, cpu_id, "k_thread_abort", ty=ZephyrEdgeType.interaction)
@@ -1172,21 +1217,28 @@ class Zephyr(OSBase):
         logger.info(f"Moved context to CPU {target_cpu_id} for HyperSSE.")
         new_context = {}
         for k,v in context.items():
-            if isinstance(k, CPUBounded):
+            # Zephyr's inital state is Singlecore, but contains IRQs from other domains
+            if isinstance(k, ZephyrIRQ):
+                # TODO this ensures that IRQs are processed, but is not guaranteed to work
+                #  it should be reworked. Issue is that Zephyr's singlecore inital_state already
+                #  contains the IRQs, but is not considered a multicore state by the Hypersse.
+                #  It should work like Autosar. Also see get_cpu_local_contexts().
+                k.cpu_id += 32 + target_cpu_id * 8
+                k.isr_handler.cpu_id = target_cpu_id
+                new_context[k] = v
+
+            elif isinstance(k, CPUBounded):
+                k.cpu_id = target_cpu_id
+                new_context[k] = v
+                
+            elif isinstance(k, ZephyrKernel):
                 k.cpu_id = target_cpu_id
                 new_context[k] = v
             else:
                 # ZephyrKernel is global, can not be moved?
                 # Same for MSGQ?
                 new_context[k] = v
-
-        # TODO running on another cpu currently needs to move the idle thread
-        # for k,v in Zephyr.idle_threads.items():
-        #     print(type(k))
-        #     print(type(v))
-        # This does not work, because the idle_thread is not found later
-        Zephyr.idle_threads[target_cpu_id] = Zephyr.idle_threads[0]
-            
+                
         return new_context
     
     def move_irqhandler(irq: IRQ, inst: InstanceGraph, target_cpu_id: int) -> None:

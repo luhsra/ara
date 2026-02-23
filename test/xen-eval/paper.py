@@ -108,11 +108,11 @@ class HyperSSE(Experiment):
             target = path + "/" + thing + "-" + str(num)
             logger.debug(f"Copying: {cwd} -> {target}")
             shutil.copytree(cwd, target)
-            logger.warning(f"Created folder: {thing + "-" + str(num)}")
+            logger.info(f"Creating folder: {thing + "-" + str(num)}")
         else:
             logger.warning("Folder not found, skipped copy!")
 
-        logger.info("------------ Comparing to last graph in repo ------------")
+        logger.info(f"------------ Comparing {len(names)} graphs to last graph in repo ------------")
         compare = []
         for name in names:
             file_path = cwd + "/../../../appl/Xen/" + name + "/" + f"HyperSSE." + name + ".hstg.dot"
@@ -135,7 +135,7 @@ class HyperSSE(Experiment):
                 compare.append("no-target")
                 
         logger.info("---------------------------------------------------------")
-        return
+        logger.warning(f"Wrote to: {thing + "-" + str(num)}")
 
         # Read csv, insert verification, write
         with open(res_file, 'r') as file:
@@ -150,6 +150,7 @@ class HyperSSE(Experiment):
             writer = csv.writer(file)
             writer.writerows(data)
 
+        return
         
 if __name__ == "__main__":
     import sys

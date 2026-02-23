@@ -592,7 +592,7 @@ class InterpreterContext:
         _kernel = zi._kernel
         timeout_list = zi.timeout_list
 
-        self.add_kobj(_kernel, _kernel, Zephyr.kernel)
+        self.add_kobj(_kernel, _kernel, Zephyr.get_kernel(state))
         self.add_kobj(timeout_list, kernel.timeout_list, None)
 
         # # remove main thread from ready queue
@@ -627,7 +627,9 @@ class InterpreterContext:
         # proxy.get(idle_thread)
         # proxy.get(idle_thread_base)
         # proxy.get(idle_qnode_dlist)
-        v = InterpreterContext.Zephyr.idle_threads[cpu_id]
+        
+        # true_cpu_id Zephyr assumes to run as cpu_id 0, but with HyperSSE other ids exist
+        v = InterpreterContext.Zephyr.get_idleThreadVertex(state.instances, true_cpu_id)
         obj = state.instances.vp.obj[v]
         idle_thread = zi.z_idle_threads[cpu_id]
         # idle_thread = threads_kernel_vertex_map[v]

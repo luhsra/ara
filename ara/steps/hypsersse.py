@@ -101,7 +101,7 @@ class HyperSSE(Step):
                     program["input_file"] = guests[1]
 
                     trimmed = guests[1].removesuffix(".ll")
-                    extra["ZephyrStaticPost"] = {"kconfigfile": trimmed + ".config", "cpu_id": HyperSSE.runid}
+                    extra["ZephyrStaticPost"] = {"kconfigfile": trimmed + ".config"}
                     extra["LoadKernelLL"] = {"kernel_ll": trimmed + "-kernel.ll"}
                     extra["RemoveSysfuncBody"] = {"drop_llvm_suffix": True, "disable": False}
                     extra["ZephyrStatic"] = {"log_level": "debug"}

@@ -25,11 +25,6 @@ class ZephyrStaticPost(Step):
                          help="Path to the app's KConfig file.",
                          ty=String())
 
-    cpu_id = Option(name="cpu_id",
-                         help="Path to the app's KConfig file.",
-                         ty=Integer(),
-                         default_value=0)
-    
     enable_missing_interaction_count = Option(
         name="enable_missing_interaction_count",
         help="Use this option in conjunction with InstanceGraphStats step to gather data about missing interactions",
@@ -188,9 +183,9 @@ class ZephyrStaticPost(Step):
             )
             ZephyrStaticPost.create_static_instance(self._graph.instances, "Thread", main_thread, "__main", True)
 
-        # Create a unique node for the Zephyr kernel.
-        kernel = ZephyrKernel(heap_size=int(Zephyr.config['CONFIG_HEAP_MEM_POOL_SIZE']), cpu_id=self.cpu_id.get())
-        Zephyr.kernel = ZephyrStaticPost.create_static_instance(self._graph.instances, "Zephyr", kernel, "__kernel", False)
+        # Create a unique node for the Zephyr kernel and place it in the instance-graph.
+        kernel = ZephyrKernel(heap_size=int(Zephyr.config['CONFIG_HEAP_MEM_POOL_SIZE']), cpu_id=0)
+        ZephyrStaticPost.create_static_instance(self._graph.instances, "Zephyr", kernel, "__kernel", False)
 
         ZephyrOptions.enable_missing_interaction_count = self.enable_missing_interaction_count.get()
         if ZephyrOptions.enable_missing_interaction_count:
@@ -218,7 +213,8 @@ class ZephyrStaticPost(Step):
                 name=f"idle {cpu_id:02d}",
                 start_in_init=False
             )
-            Zephyr.idle_threads[cpu_id] = ZephyrStaticPost.create_static_instance(self._graph.instances, "Thread", idle_thread, idle_thread.name, True)
+            # Create a node for the Idle-Thread and place it in the instance-graph.
+            ZephyrStaticPost.create_static_instance(self._graph.instances, "Thread", idle_thread, idle_thread.name, True)
 
 
         isr_sys_clock_announce = ISR(

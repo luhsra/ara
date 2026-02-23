@@ -213,7 +213,7 @@ class BareMetal(OSBase):
             if isinstance(k, CPUBounded):
                 k.cpu_id = target_cpu_id
                 new_context[k] = v
-            if isinstance(k, str):
+            elif isinstance(k, str):
                 new_context[k] = v
             else:
                 logger.error(f"move_context: Unkown context of type: {type(k)}")

@@ -756,19 +756,22 @@ class AUTOSAR(OSBase):
         for k,v in context.items():
             # logger.info(f"Found context: {k} : {v}")
             if isinstance(k, Task):
-                k.name = k.name + f"d{target_cpu_id}"
+                # similary named task should work with cpu_id and should not need this postfix
+                #  it also causes issues with zephyr, since it's model requires multiple move_contexts
+                #  where each adds another _dX
+                # k.name = k.name #+ f"d{target_cpu_id}"
                 k.cpu_id = target_cpu_id
                 new_context[k] = v
             elif isinstance(k, Alarm):
-                k.name = k.name + f"d{target_cpu_id}"
+                # k.name = k.name + f"d{target_cpu_id}"
                 k.cpu_id = target_cpu_id
                 new_context[k] = v
             elif isinstance(k, AUTOSARInstance):
-                k.name = k.name.replace("_0", f"_{target_cpu_id}")
+                # k.name = k.name.replace("_0", f"_{target_cpu_id}")
                 k.cpu_id = target_cpu_id
                 new_context[k] = v
             elif isinstance(k, IRQ):
-                k.name = k.name + f"d{target_cpu_id}"
+                # k.name = k.name + f"d{target_cpu_id}"
                 k.cpu_id = target_cpu_id
                 new_context[k] = v
             elif isinstance(k, CPUBounded):
@@ -795,8 +798,8 @@ class AUTOSAR(OSBase):
         if cb.startswith("AUTOSAR_TASK_FUNC_"):
             cb = cb.removeprefix("AUTOSAR_TASK_FUNC_")
 
-        # Add Autosar specifc postfix
-        cb += "d" + str(cpu_id)
+        # If added, check for autosar specifc postfix here
+        # cb += "d" + str(cpu_id)
         
         for k, _ in state.context.items():
             if isinstance(k, CrossOSEvent):
