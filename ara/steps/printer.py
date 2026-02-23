@@ -238,9 +238,9 @@ def _sstg_state_as_dot(sstg, state_vert, with_times: bool = True, OS: OSBase = A
         attrs["shape"] = "box"
 
     # try different shape for hypercall?
-    # if syscall and "Xen" in syscall:
+    if syscall and "Xen" in syscall:
         # attrs["shape"] = "parallelogram"
-        # attrs["penwidth"] = "3"
+        attrs["penwidth"] = "3"
 
     return attrs
 

@@ -116,8 +116,12 @@ class MCAnalyzer(Experiment):
 
                     diff_cmd = ["diff", file_path, hstg_name]
                     diff = subprocess.run(diff_cmd, cwd=cwd, capture_output=True, encoding="UTF-8")
-                    for l in diff.stdout.rstrip().splitlines():
-                        print(f"\t\t\t\t:{l}")
+                    if len(diff.stdout.rstrip().splitlines()) < 5:
+                        for l in diff.stdout.rstrip().splitlines():
+                            print(f"\t\t\t\t:{l}")
+                    else:
+                        print(f"\t\t\t\tVery different")
+
             else:
                 print(f"\t{name:<22} has no verified solution")
                 compare.append("no-target")

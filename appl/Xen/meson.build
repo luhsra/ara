@@ -119,27 +119,15 @@ xen_testcases = [
       'BareMetal;subprojects/ara/appl/BareMetal/___Xen_hc_baremetal_notiming_BareMetal_B_b.pi4.ll;event;'
   },
 
-
-#   # 2x autosar notify using hypercall a -> b without IIT
-#   {'name': 'hc-autosar-noiit', 'do_timings': 'false', 'guests': 
-#       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_noiit_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-noiit/Autosar-A/a.json;' +
-#       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_noiit_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-noiit/Autosar-B/b.json'
-#   },
-#   # 2x zephyr notify using hypercall a -> b without IIT
-#   # TODO: HSTG does not look correct, SP are right, but wrong follow up states
-#   {'name': 'hc-zephyr-noiit', 'do_timings': 'false', 'guests': 
-#       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-5.ll;' +
-#       'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-hc-6.ll;'
-#   },
-#   # load many singlecore autosar guests into HyperSSE
-#   {'name': 'many', 'do_timings': 'false', 'guests':
-#       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_many_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/many/Autosar-A/a.json;' +
-#       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_many_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/many/Autosar-B/b.json;' +
-#       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_many_Autosar_C_c.pi4.ll;../subprojects/ara/appl/Xen/many/Autosar-C/c.json;' +
-#       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_many_Autosar_D_d.pi4.ll;../subprojects/ara/appl/Xen/many/Autosar-D/d.json;' +
-#       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_many_Autosar_E_e.pi4.ll;../subprojects/ara/appl/Xen/many/Autosar-E/e.json;' +
-#       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_many_Autosar_F_f.pi4.ll;../subprojects/ara/appl/Xen/many/Autosar-F/f.json'
-#   },
+  # load many singlecore autosar guests into HyperSSE
+  {'name': 'many', 'do_timings': 'false', 'guests':
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_many_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/many/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_many_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/many/Autosar-B/b.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_many_Autosar_C_c.pi4.ll;../subprojects/ara/appl/Xen/many/Autosar-C/c.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_many_Autosar_D_d.pi4.ll;../subprojects/ara/appl/Xen/many/Autosar-D/d.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_many_Autosar_E_e.pi4.ll;../subprojects/ara/appl/Xen/many/Autosar-E/e.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_many_Autosar_F_f.pi4.ll;../subprojects/ara/appl/Xen/many/Autosar-F/f.json'
+  },
 #   # Autosar alarm, virtual IRQ gets modeled as addiontal domain
 #   {'name': 'alarm', 'do_timings': 'true', 'guests': 
 #       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_alarm_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/alarm/Autosar-A/a.json;'
@@ -158,12 +146,12 @@ xen_testcases = [
 #   },
 
 
-#   # --------------------------- COMPLEX ----------------------------------
-#   # 2x autosar, shows Hypercalls back and forth
-#   {'name': 'pingpong', 'do_timings': 'true', 'guests': 
-#       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_pingpong_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/pingpong/Autosar-A/a.json;' +
-#       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_pingpong_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/pingpong/Autosar-B/b.json'
-#   },
+  # --------------------------- COMPLEX ----------------------------------
+  # 2x autosar, shows Hypercalls back and forth
+  {'name': 'pingpong', 'do_timings': 'true', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_pingpong_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/pingpong/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_pingpong_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/pingpong/Autosar-B/b.json'
+  },
 #   # Send Receive Autosar example
 #   {'name': 'sendrecv-a', 'do_timings': 'true', 'guests': 
 #       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_sendrecv_a_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/sendrecv-a/Autosar-A/a.json;' +
@@ -260,14 +248,14 @@ xen_testcases = [
         + 'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-B-1-AckHMI.ll;'
         + 'BareMetal;subprojects/ara/appl/BareMetal/___Xen_braking_BareMetal_C_c_baremetal.pi4.ll;hmi_update;' 
     },
-    # {'name': 'hc-autosar-polled', 'do_timings': 'true', 'guests': 
-    #     'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_polled_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-polled/Autosar-A/a.json;' +
-    #     'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_polled_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-polled/Autosar-B/b.json'
-    # },
-    # {'name': 'hc-autosar-polled-2', 'do_timings': 'true', 'guests': 
-    #     'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_polled_2_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-polled-2/Autosar-A/a.json;' +
-    #     'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_polled_2_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-polled-2/Autosar-B/b.json'
-    # },
+    {'name': 'hc-autosar-polled', 'do_timings': 'true', 'guests': 
+        'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_polled_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-polled/Autosar-A/a.json;' +
+        'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_polled_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-polled/Autosar-B/b.json'
+    },
+    {'name': 'hc-autosar-polled-2', 'do_timings': 'true', 'guests': 
+        'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_polled_2_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-polled-2/Autosar-A/a.json;' +
+        'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_polled_2_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-polled-2/Autosar-B/b.json'
+    },
 ]
 
 # Compile Autosar ll files
