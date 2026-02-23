@@ -89,7 +89,7 @@ class MCAnalyzer(Experiment):
             if name in names:
                 logger.debug(f"Creating svg: {thing}.{name}.hstg.dot > {thing}.{name}.hstg.svg")
                 shutil.copy(dumps + "/" + hstg, cwd + "/" + hstg)
-                svg_cmd = f"dot -Tsvg {thing}.{name}.hstg.dot > {thing}.{name}.hstg.svg"
+                svg_cmd = f"dot -Gfontname=sans -Efontname=sans -Nfontname=sans -Tsvg {thing}.{name}.hstg.dot > {thing}.{name}.hstg.svg"
                 subprocess.run(svg_cmd, shell=True, cwd=cwd)
 
                 # option to also create pngs

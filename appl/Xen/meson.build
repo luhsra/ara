@@ -152,22 +152,22 @@ xen_testcases = [
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_pingpong_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/pingpong/Autosar-A/a.json;' +
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_pingpong_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/pingpong/Autosar-B/b.json'
   },
-#   # Send Receive Autosar example
-#   {'name': 'sendrecv-a', 'do_timings': 'true', 'guests': 
-#       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_sendrecv_a_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/sendrecv-a/Autosar-A/a.json;' +
-#       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_sendrecv_a_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/sendrecv-a/Autosar-B/b.json'
-#   },
-#   # Send Receive Autosar example
-#   {'name': 'sendrecv-b', 'do_timings': 'true', 'guests': 
-#       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_sendrecv_b_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/sendrecv-b/Autosar-A/a.json;' +
-#       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_sendrecv_b_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/sendrecv-b/Autosar-B/b.json'
-#   },
+  # Send Receive Autosar example
+  {'name': 'sendrecv-a', 'do_timings': 'true', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_sendrecv_a_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/sendrecv-a/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_sendrecv_a_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/sendrecv-a/Autosar-B/b.json'
+  },
+  # Send Receive Autosar example
+  {'name': 'sendrecv-b', 'do_timings': 'true', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_sendrecv_b_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/sendrecv-b/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_sendrecv_b_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/sendrecv-b/Autosar-B/b.json'
+  },
 #   # 3 systems, A sends via 2 different channels to B, while C also sends to B
-#   {'name': 'channels', 'do_timings': 'true', 'guests': 
-#       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_channels_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/channels/Autosar-A/a.json;' +
-#       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_channels_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/channels/Autosar-B/b.json;' +
-#       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_channels_Autosar_C_c.pi4.ll;../subprojects/ara/appl/Xen/channels/Autosar-C/c.json'
-#   },
+  {'name': 'channels', 'do_timings': 'true', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_channels_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/channels/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_channels_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/channels/Autosar-B/b.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_channels_Autosar_C_c.pi4.ll;../subprojects/ara/appl/Xen/channels/Autosar-C/c.json'
+  },
 #   # port of autosar/multicore/andreas/ipi/b
 #   {'name': 'ipi', 'do_timings': 'true', 'guests': 
 #       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_ipi_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/ipi/Autosar-A/a.json;' +
@@ -230,11 +230,11 @@ xen_testcases = [
         + 'BareMetal;subprojects/ara/appl/BareMetal/___Xen_braking_BareMetal_C_c_baremetal.pi4.ll;hmi_update;' 
     },
     # ONLY AUTOSAR: unrolled loop with prediction case, graph is hard to read, but every iteration is checked
-    {'name': 'brakingAutosarUnrolled', 'do_timings': 'true', 'guests':
-        'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_Autosar_A_a3_unrolled.pi4.ll;../subprojects/ara/appl/Xen/braking/Autosar-A/a.json;'
-        + 'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_Autosar_B_b1_ack_hmi.pi4.ll;../subprojects/ara/appl/Xen/braking/Autosar-B/b.json;'
-        + 'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_BareMetal_C_c_autosar.pi4.ll;../subprojects/ara/appl/Xen/braking/BareMetal-C/c.json;'
-    },
+    # {'name': 'brakingAutosarUnrolled', 'do_timings': 'true', 'guests':
+        # 'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_Autosar_A_a3_unrolled.pi4.ll;../subprojects/ara/appl/Xen/braking/Autosar-A/a.json;'
+        # + 'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_Autosar_B_b1_ack_hmi.pi4.ll;../subprojects/ara/appl/Xen/braking/Autosar-B/b.json;'
+        # + 'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_BareMetal_C_c_autosar.pi4.ll;../subprojects/ara/appl/Xen/braking/BareMetal-C/c.json;'
+    # },
 
   # --------------------------- EXTRA (no included in TestSuite ara-xen-eval ----------------------------------
     # NO TIMES: unrolled loop with prediction case, graph is hard to read, but every iteration is checked
