@@ -56,10 +56,10 @@ TASK(LOOP) {
 
 	ara_timing_info(2, 3);
 	wrap_evtchn_send(channel_req);
-	
+
 	// Check if Zephyr send data
 	ara_timing_info(20, 21);
-	e = wrap_evtchn_poll(channel_req, IS_BRANCH);
+	e = wrap_evtchn_poll(channel_req, NO_BRANCH);
 
 	// this branch we know in analysis
 	if (e == PENDING_EVNT) {
