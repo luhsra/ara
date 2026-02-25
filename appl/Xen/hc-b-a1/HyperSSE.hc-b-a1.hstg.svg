@@ -128,7 +128,7 @@
 <g id="node5" class="node">
 <title>5</title>
 <g id="a_node5"><a xlink:title="5">
-<polygon fill="none" stroke="cornflowerblue" points="246.5,-704.29 145.5,-704.29 145.5,-658.29 246.5,-658.29 246.5,-704.29"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="246.5,-704.29 145.5,-704.29 145.5,-658.29 246.5,-658.29 246.5,-704.29"/>
 <text text-anchor="start" x="177" y="-690.09" font-family="Times,serif" font-size="14.00">State 8</text>
 <text text-anchor="start" x="168.5" y="-677.69" font-family="Times,serif" font-size="12.00">abb: ABB9</text>
 <text text-anchor="start" x="153.5" y="-665.69" font-family="Times,serif" font-size="12.00">Xen_evtchnAlloc</text>
@@ -162,7 +162,7 @@
 <g id="node7" class="node">
 <title>7</title>
 <g id="a_node7"><a xlink:title="7">
-<polygon fill="none" stroke="cornflowerblue" points="233,-500.18 135,-500.18 135,-454.18 233,-454.18 233,-500.18"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="233,-500.18 135,-500.18 135,-454.18 233,-454.18 233,-500.18"/>
 <text text-anchor="start" x="161.5" y="-485.98" font-family="Times,serif" font-size="14.00">State 10</text>
 <text text-anchor="start" x="156.5" y="-473.58" font-family="Times,serif" font-size="12.00">abb: ABB8</text>
 <text text-anchor="start" x="143" y="-461.58" font-family="Times,serif" font-size="12.00">Xen_evtchnSend</text>
@@ -185,7 +185,7 @@
 <g id="node9" class="node">
 <title>10</title>
 <g id="a_node9"><a xlink:title="10">
-<polygon fill="none" stroke="cornflowerblue" points="414,-834.83 316,-834.83 316,-776.83 414,-776.83 414,-834.83"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="414,-834.83 316,-834.83 316,-776.83 414,-776.83 414,-834.83"/>
 <text text-anchor="start" x="342.5" y="-820.63" font-family="Times,serif" font-size="14.00">State 12</text>
 <text text-anchor="start" x="338.5" y="-808.23" font-family="Times,serif" font-size="12.00">instance: B</text>
 <text text-anchor="start" x="337.5" y="-796.23" font-family="Times,serif" font-size="12.00">abb: ABB9</text>

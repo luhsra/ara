@@ -136,7 +136,7 @@
 <g id="node3" class="node">
 <title>3</title>
 <g id="a_node3"><a xlink:title="3">
-<polygon fill="none" stroke="cornflowerblue" points="369.5,-756.3 268.5,-756.3 268.5,-698.3 369.5,-698.3 369.5,-756.3"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="369.5,-756.3 268.5,-756.3 268.5,-698.3 369.5,-698.3 369.5,-756.3"/>
 <text text-anchor="start" x="300" y="-742.1" font-family="Times,serif" font-size="14.00">State 6</text>
 <text text-anchor="start" x="292.5" y="-729.7" font-family="Times,serif" font-size="12.00">instance: A</text>
 <text text-anchor="start" x="291.5" y="-717.7" font-family="Times,serif" font-size="12.00">abb: ABB4</text>
@@ -171,7 +171,7 @@
 <g id="node5" class="node">
 <title>5</title>
 <g id="a_node5"><a xlink:title="5">
-<polygon fill="none" stroke="cornflowerblue" points="366,-554.72 268,-554.72 268,-496.72 366,-496.72 366,-554.72"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="366,-554.72 268,-554.72 268,-496.72 366,-496.72 366,-554.72"/>
 <text text-anchor="start" x="298" y="-540.52" font-family="Times,serif" font-size="14.00">State 8</text>
 <text text-anchor="start" x="290.5" y="-528.12" font-family="Times,serif" font-size="12.00">instance: A</text>
 <text text-anchor="start" x="289.5" y="-516.12" font-family="Times,serif" font-size="12.00">abb: ABB5</text>
@@ -207,7 +207,7 @@
 <g id="node7" class="node">
 <title>8</title>
 <g id="a_node7"><a xlink:title="8">
-<polygon fill="none" stroke="cornflowerblue" points="634,-457.19 536,-457.19 536,-399.19 634,-399.19 634,-457.19"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="634,-457.19 536,-457.19 536,-399.19 634,-399.19 634,-457.19"/>
 <text text-anchor="start" x="562.5" y="-442.99" font-family="Times,serif" font-size="14.00">State 10</text>
 <text text-anchor="start" x="558.5" y="-430.59" font-family="Times,serif" font-size="12.00">instance: B</text>
 <text text-anchor="start" x="557.5" y="-418.59" font-family="Times,serif" font-size="12.00">abb: ABB8</text>

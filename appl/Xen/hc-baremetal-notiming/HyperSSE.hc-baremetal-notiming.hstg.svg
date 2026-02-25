@@ -187,7 +187,7 @@
 <g id="node5" class="node">
 <title>5</title>
 <g id="a_node5"><a xlink:title="5">
-<polygon fill="none" stroke="cornflowerblue" points="497.5,-739.5 396.5,-739.5 396.5,-693.5 497.5,-693.5 497.5,-739.5"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="497.5,-739.5 396.5,-739.5 396.5,-693.5 497.5,-693.5 497.5,-739.5"/>
 <text text-anchor="start" x="428" y="-725.3" font-family="Times,serif" font-size="14.00">State 8</text>
 <text text-anchor="start" x="419.5" y="-712.9" font-family="Times,serif" font-size="12.00">abb: ABB9</text>
 <text text-anchor="start" x="404.5" y="-700.9" font-family="Times,serif" font-size="12.00">Xen_evtchnAlloc</text>
@@ -220,7 +220,7 @@
 <g id="node7" class="node">
 <title>7</title>
 <g id="a_node7"><a xlink:title="7">
-<polygon fill="none" stroke="cornflowerblue" points="494,-569.37 396,-569.37 396,-523.37 494,-523.37 494,-569.37"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="494,-569.37 396,-569.37 396,-523.37 494,-523.37 494,-569.37"/>
 <text text-anchor="start" x="422.5" y="-555.17" font-family="Times,serif" font-size="14.00">State 10</text>
 <text text-anchor="start" x="417.5" y="-542.77" font-family="Times,serif" font-size="12.00">abb: ABB8</text>
 <text text-anchor="start" x="404" y="-530.77" font-family="Times,serif" font-size="12.00">Xen_evtchnSend</text>
@@ -299,7 +299,7 @@
 <g id="node11" class="node">
 <title>12</title>
 <g id="a_node11"><a xlink:title="12">
-<polygon fill="none" stroke="cornflowerblue" points="761,-318.17 663,-318.17 663,-272.17 761,-272.17 761,-318.17"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="761,-318.17 663,-318.17 663,-272.17 761,-272.17 761,-318.17"/>
 <text text-anchor="start" x="689.5" y="-303.97" font-family="Times,serif" font-size="14.00">State 14</text>
 <text text-anchor="start" x="684.5" y="-291.57" font-family="Times,serif" font-size="12.00">abb: ABB7</text>
 <text text-anchor="start" x="671" y="-279.57" font-family="Times,serif" font-size="12.00">Xen_evtchnBind</text>

@@ -2,85 +2,79 @@ digraph G {
 label="";
 1 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=1];
 subgraph cluster_6 {
-bgcolor="#F8CECC";
 label="M6: Dom-0-AUTOSAR";
+bgcolor="#F8CECC";
 style=bold;
-2 [color=green, fontsize=14, label=<State 4<br/><font point-size='12'>instance: A<br/>abb: ABB5<br/>bcet/wcet: 40/50</font>>, style=solid, tooltip=2];
-3 [color=cornflowerblue, fontsize=14, label=<State 6<br/><font point-size='12'>instance: A<br/>abb: ABB11<br/>Xen_evtchnAlloc</font>>, shape=box, tooltip=3];
-4 [color=green, fontsize=14, label=<State 7<br/><font point-size='12'>instance: A<br/>abb: ABB6<br/>bcet/wcet: 40/50</font>>, style=solid, tooltip=4];
-5 [color=cornflowerblue, fontsize=14, label=<State 8<br/><font point-size='12'>instance: A<br/>abb: ABB9<br/>Xen_evtchnSend</font>>, shape=box, tooltip=5];
+2 [fontsize=14, label=<State 4<br/><font point-size='12'>instance: A<br/>abb: ABB5<br/>bcet/wcet: 40/50</font>>, tooltip=2, style=solid, color=green];
+3 [fontsize=14, label=<State 6<br/><font point-size='12'>instance: A<br/>abb: ABB11<br/>Xen_evtchnAlloc</font>>, tooltip=3, color=cornflowerblue, shape=box, penwidth=3];
+4 [fontsize=14, label=<State 7<br/><font point-size='12'>instance: A<br/>abb: ABB6<br/>bcet/wcet: 40/50</font>>, tooltip=4, style=solid, color=green];
+5 [fontsize=14, label=<State 8<br/><font point-size='12'>instance: A<br/>abb: ABB9<br/>Xen_evtchnSend</font>>, tooltip=5, color=cornflowerblue, shape=box, penwidth=3];
 }
-
 subgraph cluster_12 {
-bgcolor="#F8CECC";
 label="M12: Dom-1-AUTOSAR";
+bgcolor="#F8CECC";
 style=bold;
-7 [color=green, fontsize=14, label=<State 5<br/><font point-size='12'>instance: B<br/>abb: ABB8<br/>bcet/wcet: 20/30</font>>, style=solid, tooltip=7];
-8 [color=cornflowerblue, fontsize=14, label=<State 10<br/><font point-size='12'>instance: B<br/>abb: ABB11<br/>Xen_evtchnBind</font>>, shape=box, tooltip=8];
-9 [color=green, fontsize=14, label=<State 11<br/><font point-size='12'>instance: B<br/>abb: ABB9<br/>bcet/wcet: 20/30</font>>, style=solid, tooltip=9];
-10 [color=cornflowerblue, fontsize=14, label=<State 12<br/><font point-size='12'>instance: B<br/>abb: ABB12<br/>Autosar_TerminateTask</font>>, shape=box, tooltip=10];
-11 [color=violet, fontsize=14, label=<State 13<br/><font point-size='12'>instance: Idle</font>>, style=solid, tooltip=11];
-24 [color=green, fontsize=14, label=<State 28<br/><font point-size='12'>instance: IR<br/>abb: ABB3<br/>bcet/wcet: 5/10</font>>, style=solid, tooltip=24];
-25 [color=cornflowerblue, fontsize=14, label=<State 30<br/><font point-size='12'>instance: IR<br/>abb: ABB4<br/>Autosar_TerminateTask</font>>, shape=box, tooltip=25];
+7 [fontsize=14, label=<State 5<br/><font point-size='12'>instance: B<br/>abb: ABB8<br/>bcet/wcet: 20/30</font>>, tooltip=7, style=solid, color=green];
+8 [fontsize=14, label=<State 10<br/><font point-size='12'>instance: B<br/>abb: ABB11<br/>Xen_evtchnBind</font>>, tooltip=8, color=cornflowerblue, shape=box, penwidth=3];
+9 [fontsize=14, label=<State 11<br/><font point-size='12'>instance: B<br/>abb: ABB9<br/>bcet/wcet: 20/30</font>>, tooltip=9, style=solid, color=green];
+10 [fontsize=14, label=<State 12<br/><font point-size='12'>instance: B<br/>abb: ABB12<br/>Autosar_TerminateTask</font>>, tooltip=10, color=cornflowerblue, shape=box];
+11 [fontsize=14, label=<State 13<br/><font point-size='12'>instance: Idle</font>>, tooltip=11, style=solid, color=violet];
+24 [fontsize=14, label=<State 28<br/><font point-size='12'>instance: IR<br/>abb: ABB3<br/>bcet/wcet: 5/10</font>>, tooltip=24, style=solid, color=green];
+25 [fontsize=14, label=<State 30<br/><font point-size='12'>instance: IR<br/>abb: ABB4<br/>Autosar_TerminateTask</font>>, tooltip=25, color=cornflowerblue, shape=box];
 }
-
 subgraph cluster_18 {
-bgcolor="#F8CECC";
 label="M18: Dom-0-AUTOSAR";
-style=bold;
-16 [color=cornflowerblue, fontsize=14, label=<State 20<br/><font point-size='12'>instance: A<br/>abb: ABB10<br/>Autosar_TerminateTask</font>>, shape=box, tooltip=16];
-17 [color=violet, fontsize=14, label=<State 21<br/><font point-size='12'>instance: Idle</font>>, style=solid, tooltip=17];
-15 [color=green, fontsize=14, label=<State 18<br/><font point-size='12'>instance: A<br/>abb: ABB7<br/>bcet/wcet: 5/10</font>>, style=solid, tooltip=15];
-26 [color=green, fontsize=14, label=<State 29<br/><font point-size='12'>instance: IR<br/>abb: ABB1<br/>bcet/wcet: 3/4</font>>, style=solid, tooltip=26];
-27 [color=cornflowerblue, fontsize=14, label=<State 32<br/><font point-size='12'>instance: IR<br/>abb: ABB3<br/>Autosar_TerminateTask</font>>, shape=box, tooltip=27];
-}
-
-subgraph cluster_21 {
 bgcolor="#F8CECC";
-label="M21: Dom-1-AUTOSAR";
 style=bold;
-19 [color=green, fontsize=14, label=<State 19<br/><font point-size='12'>instance: IR<br/>abb: ABB2<br/>bcet/wcet: 20/30</font>>, style=solid, tooltip=19];
-20 [color=cornflowerblue, fontsize=14, label=<State 22<br/><font point-size='12'>instance: IR<br/>abb: ABB5<br/>Xen_evtchnSend</font>>, shape=box, tooltip=20];
+16 [fontsize=14, label=<State 20<br/><font point-size='12'>instance: A<br/>abb: ABB10<br/>Autosar_TerminateTask</font>>, tooltip=16, color=cornflowerblue, shape=box];
+17 [fontsize=14, label=<State 21<br/><font point-size='12'>instance: Idle</font>>, tooltip=17, style=solid, color=violet];
+15 [fontsize=14, label=<State 18<br/><font point-size='12'>instance: A<br/>abb: ABB7<br/>bcet/wcet: 5/10</font>>, tooltip=15, style=solid, color=green];
+26 [fontsize=14, label=<State 29<br/><font point-size='12'>instance: IR<br/>abb: ABB1<br/>bcet/wcet: 3/4</font>>, tooltip=26, style=solid, color=green];
+27 [fontsize=14, label=<State 32<br/><font point-size='12'>instance: IR<br/>abb: ABB3<br/>Autosar_TerminateTask</font>>, tooltip=27, color=cornflowerblue, shape=box];
 }
-
+subgraph cluster_21 {
+label="M21: Dom-1-AUTOSAR";
+bgcolor="#F8CECC";
+style=bold;
+19 [fontsize=14, label=<State 19<br/><font point-size='12'>instance: IR<br/>abb: ABB2<br/>bcet/wcet: 20/30</font>>, tooltip=19, style=solid, color=green];
+20 [fontsize=14, label=<State 22<br/><font point-size='12'>instance: IR<br/>abb: ABB5<br/>Xen_evtchnSend</font>>, tooltip=20, color=cornflowerblue, shape=box, penwidth=3];
+}
 subgraph cluster_Metasync13 {
 label="";
 13 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=13];
 14 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=14];
 }
-
 subgraph cluster_Metasync22 {
 label="";
 22 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=22];
 23 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=23];
 }
-
-1:c0 -> 2  [color=black];
-1:c1 -> 7  [color=black];
-1 -> 13  [color=darkred, label="80 - 100", style=dotted];
-2 -> 3  [color=black];
-3 -> 4  [color=black];
-4 -> 5  [color=black];
-5 -> 13:c0  [color=black];
-7 -> 8  [color=black];
-8 -> 9  [color=black];
-9 -> 10  [color=black];
-10 -> 11  [color=black];
-11 -> 13:c1  [color=black];
-13 -> 14  [color=black];
-14:c0 -> 15  [color=black];
-14:c1 -> 19  [color=black];
-14 -> 22  [color=darkred, label="20 - 30", style=dotted];
-15 -> 16  [color=black];
-16 -> 17  [color=black];
-17 -> 22:c0  [color=black];
-19 -> 20  [color=black];
-20 -> 22:c1  [color=black];
-22 -> 23  [color=black];
-23:c1 -> 24  [color=black];
-23:c0 -> 26  [color=black];
-24 -> 25  [color=black];
-25 -> 11  [color=black];
-26 -> 27  [color=black];
-27 -> 17  [color=black];
+1:c0 -> 2 [color=black];
+1:c1 -> 7 [color=black];
+1 -> 13 [color=darkred, style=dotted, label="80 - 100"];
+2 -> 3 [color=black];
+3 -> 4 [color=black];
+4 -> 5 [color=black];
+5 -> 13:c0 [color=black];
+7 -> 8 [color=black];
+8 -> 9 [color=black];
+9 -> 10 [color=black];
+10 -> 11 [color=black];
+11 -> 13:c1 [color=black];
+13 -> 14 [color=black];
+14:c0 -> 15 [color=black];
+14:c1 -> 19 [color=black];
+14 -> 22 [color=darkred, style=dotted, label="20 - 30"];
+15 -> 16 [color=black];
+16 -> 17 [color=black];
+17 -> 22:c0 [color=black];
+19 -> 20 [color=black];
+20 -> 22:c1 [color=black];
+22 -> 23 [color=black];
+23:c1 -> 24 [color=black];
+23:c0 -> 26 [color=black];
+24 -> 25 [color=black];
+25 -> 11 [color=black];
+26 -> 27 [color=black];
+27 -> 17 [color=black];
 }

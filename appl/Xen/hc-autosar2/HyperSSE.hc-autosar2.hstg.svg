@@ -97,7 +97,7 @@
 <g id="node3" class="node">
 <title>3</title>
 <g id="a_node3"><a xlink:title="3">
-<polygon fill="none" stroke="cornflowerblue" points="361,-780.22 263,-780.22 263,-722.22 361,-722.22 361,-780.22"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="361,-780.22 263,-780.22 263,-722.22 361,-722.22 361,-780.22"/>
 <text text-anchor="start" x="293" y="-766.02" font-family="Times,serif" font-size="14.00">State 6</text>
 <text text-anchor="start" x="285.5" y="-753.62" font-family="Times,serif" font-size="12.00">instance: A</text>
 <text text-anchor="start" x="284.5" y="-741.62" font-family="Times,serif" font-size="12.00">abb: ABB9</text>
@@ -209,7 +209,7 @@
 <g id="node10" class="node">
 <title>9</title>
 <g id="a_node10"><a xlink:title="9">
-<polygon fill="none" stroke="cornflowerblue" points="556.5,-780.22 455.5,-780.22 455.5,-722.22 556.5,-722.22 556.5,-780.22"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="556.5,-780.22 455.5,-780.22 455.5,-722.22 556.5,-722.22 556.5,-780.22"/>
 <text text-anchor="start" x="483.5" y="-766.02" font-family="Times,serif" font-size="14.00">State 10</text>
 <text text-anchor="start" x="479.5" y="-753.62" font-family="Times,serif" font-size="12.00">instance: B</text>
 <text text-anchor="start" x="478.5" y="-741.62" font-family="Times,serif" font-size="12.00">abb: ABB7</text>
@@ -245,7 +245,7 @@
 <g id="node12" class="node">
 <title>11</title>
 <g id="a_node12"><a xlink:title="11">
-<polygon fill="none" stroke="cornflowerblue" points="557,-552.19 459,-552.19 459,-494.19 557,-494.19 557,-552.19"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="557,-552.19 459,-552.19 459,-494.19 557,-494.19 557,-552.19"/>
 <text text-anchor="start" x="485.5" y="-537.99" font-family="Times,serif" font-size="14.00">State 12</text>
 <text text-anchor="start" x="481.5" y="-525.59" font-family="Times,serif" font-size="12.00">instance: B</text>
 <text text-anchor="start" x="480.5" y="-513.59" font-family="Times,serif" font-size="12.00">abb: ABB5</text>

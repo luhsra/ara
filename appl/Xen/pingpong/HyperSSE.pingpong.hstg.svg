@@ -106,7 +106,7 @@
 <g id="node3" class="node">
 <title>3</title>
 <g id="a_node3"><a xlink:title="3">
-<polygon fill="none" stroke="cornflowerblue" points="287.5,-871.16 186.5,-871.16 186.5,-813.16 287.5,-813.16 287.5,-871.16"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="287.5,-871.16 186.5,-871.16 186.5,-813.16 287.5,-813.16 287.5,-871.16"/>
 <text text-anchor="start" x="218" y="-856.96" font-family="Times,serif" font-size="14.00">State 6</text>
 <text text-anchor="start" x="210.5" y="-844.56" font-family="Times,serif" font-size="12.00">instance: A</text>
 <text text-anchor="start" x="206.5" y="-832.56" font-family="Times,serif" font-size="12.00">abb: ABB11</text>
@@ -142,7 +142,7 @@
 <g id="node5" class="node">
 <title>5</title>
 <g id="a_node5"><a xlink:title="5">
-<polygon fill="none" stroke="cornflowerblue" points="286,-643.13 188,-643.13 188,-585.13 286,-585.13 286,-643.13"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="286,-643.13 188,-643.13 188,-585.13 286,-585.13 286,-643.13"/>
 <text text-anchor="start" x="218" y="-628.93" font-family="Times,serif" font-size="14.00">State 8</text>
 <text text-anchor="start" x="210.5" y="-616.53" font-family="Times,serif" font-size="12.00">instance: A</text>
 <text text-anchor="start" x="209.5" y="-604.53" font-family="Times,serif" font-size="12.00">abb: ABB9</text>
@@ -166,7 +166,7 @@
 <g id="node7" class="node">
 <title>8</title>
 <g id="a_node7"><a xlink:title="8">
-<polygon fill="none" stroke="cornflowerblue" points="766,-871.16 668,-871.16 668,-813.16 766,-813.16 766,-871.16"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="766,-871.16 668,-871.16 668,-813.16 766,-813.16 766,-871.16"/>
 <text text-anchor="start" x="694.5" y="-856.96" font-family="Times,serif" font-size="14.00">State 10</text>
 <text text-anchor="start" x="690.5" y="-844.56" font-family="Times,serif" font-size="12.00">instance: B</text>
 <text text-anchor="start" x="686.5" y="-832.56" font-family="Times,serif" font-size="12.00">abb: ABB11</text>
@@ -389,7 +389,7 @@
 <g id="node19" class="node">
 <title>20</title>
 <g id="a_node19"><a xlink:title="20">
-<polygon fill="none" stroke="cornflowerblue" points="467,-408.11 369,-408.11 369,-350.11 467,-350.11 467,-408.11"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="467,-408.11 369,-408.11 369,-350.11 467,-350.11 467,-408.11"/>
 <text text-anchor="start" x="395.5" y="-393.91" font-family="Times,serif" font-size="14.00">State 22</text>
 <text text-anchor="start" x="389.5" y="-381.51" font-family="Times,serif" font-size="12.00">instance: IR</text>
 <text text-anchor="start" x="390.5" y="-369.51" font-family="Times,serif" font-size="12.00">abb: ABB5</text>

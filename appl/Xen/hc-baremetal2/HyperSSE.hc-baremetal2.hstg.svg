@@ -126,7 +126,7 @@
 <g id="node5" class="node">
 <title>5</title>
 <g id="a_node5"><a xlink:title="5">
-<polygon fill="none" stroke="cornflowerblue" points="361,-696.27 263,-696.27 263,-650.27 361,-650.27 361,-696.27"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="361,-696.27 263,-696.27 263,-650.27 361,-650.27 361,-696.27"/>
 <text text-anchor="start" x="293" y="-682.07" font-family="Times,serif" font-size="14.00">State 8</text>
 <text text-anchor="start" x="284.5" y="-669.67" font-family="Times,serif" font-size="12.00">abb: ABB7</text>
 <text text-anchor="start" x="271" y="-657.67" font-family="Times,serif" font-size="12.00">Xen_evtchnBind</text>
@@ -266,7 +266,7 @@
 <g id="node14" class="node">
 <title>13</title>
 <g id="a_node14"><a xlink:title="13">
-<polygon fill="none" stroke="cornflowerblue" points="556.5,-696.27 455.5,-696.27 455.5,-650.27 556.5,-650.27 556.5,-696.27"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="556.5,-696.27 455.5,-696.27 455.5,-650.27 556.5,-650.27 556.5,-696.27"/>
 <text text-anchor="start" x="483.5" y="-682.07" font-family="Times,serif" font-size="14.00">State 14</text>
 <text text-anchor="start" x="478.5" y="-669.67" font-family="Times,serif" font-size="12.00">abb: ABB9</text>
 <text text-anchor="start" x="463.5" y="-657.67" font-family="Times,serif" font-size="12.00">Xen_evtchnAlloc</text>
@@ -300,7 +300,7 @@
 <g id="node16" class="node">
 <title>15</title>
 <g id="a_node16"><a xlink:title="15">
-<polygon fill="none" stroke="cornflowerblue" points="557,-511.22 459,-511.22 459,-465.22 557,-465.22 557,-511.22"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="557,-511.22 459,-511.22 459,-465.22 557,-465.22 557,-511.22"/>
 <text text-anchor="start" x="485.5" y="-497.02" font-family="Times,serif" font-size="14.00">State 16</text>
 <text text-anchor="start" x="480.5" y="-484.62" font-family="Times,serif" font-size="12.00">abb: ABB8</text>
 <text text-anchor="start" x="467" y="-472.62" font-family="Times,serif" font-size="12.00">Xen_evtchnSend</text>

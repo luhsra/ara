@@ -14,6 +14,15 @@
     # Parse testlog into csv, plot [and save to png]
         # python3 ara_meson_parser.py ../../../../build/meson-logs/testlog.txt res-ara.csv
 
+r = run_command(py3_inst, '-c', 'import pydot as pd; print(pd.__version__)', check: true)
+if r.returncode() != 0
+  error('Pydot not found.')
+elif r.stdout().version_compare('== 4.0.1')
+  message('Pydot version good.')
+else
+  error('Pydot version too old, newer versions might work if they dont change their output syntax again!\nYou can still run ARA, but the graph verification might fail.')
+endif
+
 foreach app : xen_testcases
     # 1. Compile and run ara
     if not app['name'].contains('EXTRA')

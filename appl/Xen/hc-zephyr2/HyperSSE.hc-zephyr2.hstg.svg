@@ -102,7 +102,7 @@
 <g id="node3" class="node">
 <title>3</title>
 <g id="a_node3"><a xlink:title="3">
-<polygon fill="none" stroke="cornflowerblue" points="382,-673.13 284,-673.13 284,-615.13 382,-615.13 382,-673.13"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="382,-673.13 284,-673.13 284,-615.13 382,-615.13 382,-673.13"/>
 <text text-anchor="start" x="314" y="-658.93" font-family="Times,serif" font-size="14.00">State 6</text>
 <text text-anchor="start" x="295" y="-646.53" font-family="Times,serif" font-size="12.00">thread: thread_a</text>
 <text text-anchor="start" x="305.5" y="-634.53" font-family="Times,serif" font-size="12.00">abb: ABB4</text>
@@ -160,7 +160,7 @@
 <g id="node6" class="node">
 <title>8</title>
 <g id="a_node6"><a xlink:title="8">
-<polygon fill="none" stroke="cornflowerblue" points="548.5,-673.13 447.5,-673.13 447.5,-615.13 548.5,-615.13 548.5,-673.13"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="548.5,-673.13 447.5,-673.13 447.5,-615.13 548.5,-615.13 548.5,-673.13"/>
 <text text-anchor="start" x="479" y="-658.93" font-family="Times,serif" font-size="14.00">State 9</text>
 <text text-anchor="start" x="459.5" y="-646.53" font-family="Times,serif" font-size="12.00">thread: thread_b</text>
 <text text-anchor="start" x="470.5" y="-634.53" font-family="Times,serif" font-size="12.00">abb: ABB5</text>
@@ -190,7 +190,7 @@
 <g id="node8" class="node">
 <title>10</title>
 <g id="a_node8"><a xlink:title="10">
-<polygon fill="none" stroke="cornflowerblue" points="535,-445.11 437,-445.11 437,-387.11 535,-387.11 535,-445.11"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="535,-445.11 437,-445.11 437,-387.11 535,-387.11 535,-445.11"/>
 <text text-anchor="start" x="463.5" y="-430.91" font-family="Times,serif" font-size="14.00">State 11</text>
 <text text-anchor="start" x="447.5" y="-418.51" font-family="Times,serif" font-size="12.00">thread: thread_b</text>
 <text text-anchor="start" x="458.5" y="-406.51" font-family="Times,serif" font-size="12.00">abb: ABB4</text>

@@ -2,75 +2,69 @@ digraph G {
 label="";
 1 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD><TD PORT="c2">Dom 2</TD><TD PORT="c3">Dom 3</TD><TD PORT="c4">Dom 4</TD><TD PORT="c5">Dom 5</TD></TR></TABLE>>, shape=plaintext, tooltip=1];
 subgraph cluster_5 {
-bgcolor="#F8CECC";
 label="M5: Dom-0-AUTOSAR";
+bgcolor="#F8CECC";
 style=bold;
-2 [color=green, fontsize=14, label=<State 8<br/><font point-size='12'>instance: A<br/>abb: ABB0</font>>, style=solid, tooltip=2];
-3 [color=cornflowerblue, fontsize=14, label=<State 14<br/><font point-size='12'>instance: A<br/>abb: ABB2<br/>Autosar_TerminateTask</font>>, shape=box, tooltip=3];
-4 [color=violet, fontsize=14, label=<State 15<br/><font point-size='12'>instance: Idle</font>>, style=solid, tooltip=4];
+2 [fontsize=14, label=<State 8<br/><font point-size='12'>instance: A<br/>abb: ABB0</font>>, tooltip=2, style=solid, color=green];
+3 [fontsize=14, label=<State 14<br/><font point-size='12'>instance: A<br/>abb: ABB2<br/>Autosar_TerminateTask</font>>, tooltip=3, color=cornflowerblue, shape=box];
+4 [fontsize=14, label=<State 15<br/><font point-size='12'>instance: Idle</font>>, tooltip=4, style=solid, color=violet];
 }
-
 subgraph cluster_9 {
-bgcolor="#F8CECC";
 label="M9: Dom-1-AUTOSAR";
+bgcolor="#F8CECC";
 style=bold;
-8 [color=violet, fontsize=14, label=<State 17<br/><font point-size='12'>instance: Idle</font>>, style=solid, tooltip=8];
-6 [color=green, fontsize=14, label=<State 9<br/><font point-size='12'>instance: B<br/>abb: ABB0</font>>, style=solid, tooltip=6];
-7 [color=cornflowerblue, fontsize=14, label=<State 16<br/><font point-size='12'>instance: B<br/>abb: ABB2<br/>Autosar_TerminateTask</font>>, shape=box, tooltip=7];
+8 [fontsize=14, label=<State 17<br/><font point-size='12'>instance: Idle</font>>, tooltip=8, style=solid, color=violet];
+6 [fontsize=14, label=<State 9<br/><font point-size='12'>instance: B<br/>abb: ABB0</font>>, tooltip=6, style=solid, color=green];
+7 [fontsize=14, label=<State 16<br/><font point-size='12'>instance: B<br/>abb: ABB2<br/>Autosar_TerminateTask</font>>, tooltip=7, color=cornflowerblue, shape=box];
 }
-
 subgraph cluster_13 {
-bgcolor="#F8CECC";
 label="M13: Dom-2-AUTOSAR";
+bgcolor="#F8CECC";
 style=bold;
-10 [color=green, fontsize=14, label=<State 10<br/><font point-size='12'>instance: C<br/>abb: ABB0</font>>, style=solid, tooltip=10];
-11 [color=cornflowerblue, fontsize=14, label=<State 18<br/><font point-size='12'>instance: C<br/>abb: ABB2<br/>Autosar_TerminateTask</font>>, shape=box, tooltip=11];
-12 [color=violet, fontsize=14, label=<State 19<br/><font point-size='12'>instance: Idle</font>>, style=solid, tooltip=12];
+10 [fontsize=14, label=<State 10<br/><font point-size='12'>instance: C<br/>abb: ABB0</font>>, tooltip=10, style=solid, color=green];
+11 [fontsize=14, label=<State 18<br/><font point-size='12'>instance: C<br/>abb: ABB2<br/>Autosar_TerminateTask</font>>, tooltip=11, color=cornflowerblue, shape=box];
+12 [fontsize=14, label=<State 19<br/><font point-size='12'>instance: Idle</font>>, tooltip=12, style=solid, color=violet];
 }
-
 subgraph cluster_17 {
-bgcolor="#F8CECC";
 label="M17: Dom-3-AUTOSAR";
+bgcolor="#F8CECC";
 style=bold;
-16 [color=violet, fontsize=14, label=<State 21<br/><font point-size='12'>instance: Idle</font>>, style=solid, tooltip=16];
-14 [color=green, fontsize=14, label=<State 11<br/><font point-size='12'>instance: D<br/>abb: ABB0</font>>, style=solid, tooltip=14];
-15 [color=cornflowerblue, fontsize=14, label=<State 20<br/><font point-size='12'>instance: D<br/>abb: ABB2<br/>Autosar_TerminateTask</font>>, shape=box, tooltip=15];
+16 [fontsize=14, label=<State 21<br/><font point-size='12'>instance: Idle</font>>, tooltip=16, style=solid, color=violet];
+14 [fontsize=14, label=<State 11<br/><font point-size='12'>instance: D<br/>abb: ABB0</font>>, tooltip=14, style=solid, color=green];
+15 [fontsize=14, label=<State 20<br/><font point-size='12'>instance: D<br/>abb: ABB2<br/>Autosar_TerminateTask</font>>, tooltip=15, color=cornflowerblue, shape=box];
 }
-
 subgraph cluster_21 {
-bgcolor="#F8CECC";
 label="M21: Dom-4-AUTOSAR";
-style=bold;
-18 [color=green, fontsize=14, label=<State 12<br/><font point-size='12'>instance: E<br/>abb: ABB0</font>>, style=solid, tooltip=18];
-19 [color=cornflowerblue, fontsize=14, label=<State 22<br/><font point-size='12'>instance: E<br/>abb: ABB2<br/>Autosar_TerminateTask</font>>, shape=box, tooltip=19];
-20 [color=violet, fontsize=14, label=<State 23<br/><font point-size='12'>instance: Idle</font>>, style=solid, tooltip=20];
-}
-
-subgraph cluster_25 {
 bgcolor="#F8CECC";
-label="M25: Dom-5-AUTOSAR";
 style=bold;
-24 [color=violet, fontsize=14, label=<State 25<br/><font point-size='12'>instance: Idle</font>>, style=solid, tooltip=24];
-22 [color=green, fontsize=14, label=<State 13<br/><font point-size='12'>instance: F<br/>abb: ABB0</font>>, style=solid, tooltip=22];
-23 [color=cornflowerblue, fontsize=14, label=<State 24<br/><font point-size='12'>instance: F<br/>abb: ABB2<br/>Autosar_TerminateTask</font>>, shape=box, tooltip=23];
+18 [fontsize=14, label=<State 12<br/><font point-size='12'>instance: E<br/>abb: ABB0</font>>, tooltip=18, style=solid, color=green];
+19 [fontsize=14, label=<State 22<br/><font point-size='12'>instance: E<br/>abb: ABB2<br/>Autosar_TerminateTask</font>>, tooltip=19, color=cornflowerblue, shape=box];
+20 [fontsize=14, label=<State 23<br/><font point-size='12'>instance: Idle</font>>, tooltip=20, style=solid, color=violet];
 }
-
-1:c0 -> 2  [color=black];
-1:c1 -> 6  [color=black];
-1:c2 -> 10  [color=black];
-1:c3 -> 14  [color=black];
-1:c4 -> 18  [color=black];
-1:c5 -> 22  [color=black];
-2 -> 3  [color=black];
-3 -> 4  [color=black];
-6 -> 7  [color=black];
-7 -> 8  [color=black];
-10 -> 11  [color=black];
-11 -> 12  [color=black];
-14 -> 15  [color=black];
-15 -> 16  [color=black];
-18 -> 19  [color=black];
-19 -> 20  [color=black];
-22 -> 23  [color=black];
-23 -> 24  [color=black];
+subgraph cluster_25 {
+label="M25: Dom-5-AUTOSAR";
+bgcolor="#F8CECC";
+style=bold;
+24 [fontsize=14, label=<State 25<br/><font point-size='12'>instance: Idle</font>>, tooltip=24, style=solid, color=violet];
+22 [fontsize=14, label=<State 13<br/><font point-size='12'>instance: F<br/>abb: ABB0</font>>, tooltip=22, style=solid, color=green];
+23 [fontsize=14, label=<State 24<br/><font point-size='12'>instance: F<br/>abb: ABB2<br/>Autosar_TerminateTask</font>>, tooltip=23, color=cornflowerblue, shape=box];
+}
+1:c0 -> 2 [color=black];
+1:c1 -> 6 [color=black];
+1:c2 -> 10 [color=black];
+1:c3 -> 14 [color=black];
+1:c4 -> 18 [color=black];
+1:c5 -> 22 [color=black];
+2 -> 3 [color=black];
+3 -> 4 [color=black];
+6 -> 7 [color=black];
+7 -> 8 [color=black];
+10 -> 11 [color=black];
+11 -> 12 [color=black];
+14 -> 15 [color=black];
+15 -> 16 [color=black];
+18 -> 19 [color=black];
+19 -> 20 [color=black];
+22 -> 23 [color=black];
+23 -> 24 [color=black];
 }

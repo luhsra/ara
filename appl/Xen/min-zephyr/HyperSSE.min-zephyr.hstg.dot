@@ -2,23 +2,21 @@ digraph G {
 label="";
 1 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=1];
 subgraph cluster_4 {
-bgcolor="#DAE8FC";
 label="M4: Dom-0-Zephyr";
-style=bold;
-2 [color=green, fontsize=14, label=<State 4<br/><font point-size='12'>thread: thread_a<br/>abb: ABB1<br/>bcet/wcet: 1/2</font>>, style=solid, tooltip=2];
-3 [color=violet, fontsize=14, label=<State 6<br/><font point-size='12'>instance: Idle</font>>, style=solid, tooltip=3];
-}
-
-subgraph cluster_7 {
 bgcolor="#DAE8FC";
-label="M7: Dom-1-Zephyr";
 style=bold;
-5 [color=green, fontsize=14, label=<State 5<br/><font point-size='12'>thread: thread_b<br/>abb: ABB1<br/>bcet/wcet: 3/4</font>>, style=solid, tooltip=5];
-6 [color=violet, fontsize=14, label=<State 7<br/><font point-size='12'>instance: Idle</font>>, style=solid, tooltip=6];
+2 [fontsize=14, label=<State 4<br/><font point-size='12'>thread: thread_a<br/>abb: ABB1<br/>bcet/wcet: 1/2</font>>, tooltip=2, style=solid, color=green];
+3 [fontsize=14, label=<State 6<br/><font point-size='12'>instance: Idle</font>>, tooltip=3, style=solid, color=violet];
 }
-
-1:c0 -> 2  [color=black];
-1:c1 -> 5  [color=black];
-2 -> 3  [color=black];
-5 -> 6  [color=black];
+subgraph cluster_7 {
+label="M7: Dom-1-Zephyr";
+bgcolor="#DAE8FC";
+style=bold;
+5 [fontsize=14, label=<State 5<br/><font point-size='12'>thread: thread_b<br/>abb: ABB1<br/>bcet/wcet: 3/4</font>>, tooltip=5, style=solid, color=green];
+6 [fontsize=14, label=<State 7<br/><font point-size='12'>instance: Idle</font>>, tooltip=6, style=solid, color=violet];
+}
+1:c0 -> 2 [color=black];
+1:c1 -> 5 [color=black];
+2 -> 3 [color=black];
+5 -> 6 [color=black];
 }

@@ -2,39 +2,37 @@ digraph G {
 label="";
 1 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=1];
 subgraph cluster_9 {
-bgcolor="#D5E8D4";
 label="M9: Dom-0-BareMetal";
+bgcolor="#D5E8D4";
 style=bold;
-2 [color=green, fontsize=14, label=<State 4<br/><font point-size='12'>abb: ABB0</font>>, style=solid, tooltip=2];
+2 [fontsize=14, label=<State 4<br/><font point-size='12'>abb: ABB0</font>>, tooltip=2, style=solid, color=green];
 3 [fontsize=14, label=<State 6<br/><font point-size='12'>abb: ABB2</font>>, tooltip=3];
-4 [color=green, fontsize=14, label=<State 7<br/><font point-size='12'>abb: ABB3<br/>bcet/wcet: 1/2</font>>, style=solid, tooltip=4];
-5 [color=cornflowerblue, fontsize=14, label=<State 8<br/><font point-size='12'>abb: ABB7<br/>Baremetal_Dummy</font>>, shape=box, tooltip=5];
-6 [color=green, fontsize=14, label=<State 9<br/><font point-size='12'>abb: ABB4<br/>bcet/wcet: 5/6</font>>, style=solid, tooltip=6];
-7 [color=cornflowerblue, fontsize=14, label=<State 10<br/><font point-size='12'>abb: ABB6<br/>Baremetal_Idle</font>>, shape=box, tooltip=7];
-8 [color=violet, fontsize=14, label=<State 11<br/><font point-size='12'>abb: ABB1</font>>, style=solid, tooltip=8];
+4 [fontsize=14, label=<State 7<br/><font point-size='12'>abb: ABB3<br/>bcet/wcet: 1/2</font>>, tooltip=4, style=solid, color=green];
+5 [fontsize=14, label=<State 8<br/><font point-size='12'>abb: ABB7<br/>Baremetal_Dummy</font>>, tooltip=5, color=cornflowerblue, shape=box];
+6 [fontsize=14, label=<State 9<br/><font point-size='12'>abb: ABB4<br/>bcet/wcet: 5/6</font>>, tooltip=6, style=solid, color=green];
+7 [fontsize=14, label=<State 10<br/><font point-size='12'>abb: ABB6<br/>Baremetal_Idle</font>>, tooltip=7, color=cornflowerblue, shape=box];
+8 [fontsize=14, label=<State 11<br/><font point-size='12'>abb: ABB1</font>>, tooltip=8, style=solid, color=violet];
 }
-
 subgraph cluster_15 {
-bgcolor="#F8CECC";
 label="M15: Dom-1-AUTOSAR";
+bgcolor="#F8CECC";
 style=bold;
-10 [color=green, fontsize=14, label=<State 5<br/><font point-size='12'>instance: B<br/>abb: ABB1<br/>bcet/wcet: 3/4</font>>, style=solid, tooltip=10];
-11 [color=cornflowerblue, fontsize=14, label=<State 12<br/><font point-size='12'>instance: B<br/>abb: ABB5<br/>Autosar_ReadPeripheral</font>>, shape=box, tooltip=11];
-12 [color=green, fontsize=14, label=<State 13<br/><font point-size='12'>instance: B<br/>abb: ABB2<br/>bcet/wcet: 7/8</font>>, style=solid, tooltip=12];
-13 [color=cornflowerblue, fontsize=14, label=<State 14<br/><font point-size='12'>instance: B<br/>abb: ABB4<br/>Autosar_TerminateTask</font>>, shape=box, tooltip=13];
-14 [color=violet, fontsize=14, label=<State 15<br/><font point-size='12'>instance: Idle</font>>, style=solid, tooltip=14];
+10 [fontsize=14, label=<State 5<br/><font point-size='12'>instance: B<br/>abb: ABB1<br/>bcet/wcet: 3/4</font>>, tooltip=10, style=solid, color=green];
+11 [fontsize=14, label=<State 12<br/><font point-size='12'>instance: B<br/>abb: ABB5<br/>Autosar_ReadPeripheral</font>>, tooltip=11, color=cornflowerblue, shape=box];
+12 [fontsize=14, label=<State 13<br/><font point-size='12'>instance: B<br/>abb: ABB2<br/>bcet/wcet: 7/8</font>>, tooltip=12, style=solid, color=green];
+13 [fontsize=14, label=<State 14<br/><font point-size='12'>instance: B<br/>abb: ABB4<br/>Autosar_TerminateTask</font>>, tooltip=13, color=cornflowerblue, shape=box];
+14 [fontsize=14, label=<State 15<br/><font point-size='12'>instance: Idle</font>>, tooltip=14, style=solid, color=violet];
 }
-
-1:c0 -> 2  [color=black];
-1:c1 -> 10  [color=black];
-2 -> 3  [color=black];
-3 -> 4  [color=black];
-4 -> 5  [color=black];
-5 -> 6  [color=black];
-6 -> 7  [color=black];
-7 -> 8  [color=black];
-10 -> 11  [color=black];
-11 -> 12  [color=black];
-12 -> 13  [color=black];
-13 -> 14  [color=black];
+1:c0 -> 2 [color=black];
+1:c1 -> 10 [color=black];
+2 -> 3 [color=black];
+3 -> 4 [color=black];
+4 -> 5 [color=black];
+5 -> 6 [color=black];
+6 -> 7 [color=black];
+7 -> 8 [color=black];
+10 -> 11 [color=black];
+11 -> 12 [color=black];
+12 -> 13 [color=black];
+13 -> 14 [color=black];
 }

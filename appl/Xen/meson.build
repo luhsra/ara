@@ -39,6 +39,15 @@ xen_testcases = [
       'BareMetal;subprojects/ara/appl/BareMetal/___Xen_min_ba_BareMetal_A_a.pi4.ll;None;' +
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_min_ba_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/min-ba/Autosar-B/b.json'
   },
+  # load many singlecore autosar guests into HyperSSE
+  {'name': 'many', 'do_timings': 'false', 'guests':
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_many_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/many/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_many_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/many/Autosar-B/b.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_many_Autosar_C_c.pi4.ll;../subprojects/ara/appl/Xen/many/Autosar-C/c.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_many_Autosar_D_d.pi4.ll;../subprojects/ara/appl/Xen/many/Autosar-D/d.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_many_Autosar_E_e.pi4.ll;../subprojects/ara/appl/Xen/many/Autosar-E/e.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_many_Autosar_F_f.pi4.ll;../subprojects/ara/appl/Xen/many/Autosar-F/f.json'
+  },
 
   # --------------------------- hypercalls  ----------------------------------
   # 2x autosar notify using hypercall a -> a
@@ -101,8 +110,6 @@ xen_testcases = [
       'BareMetal;subprojects/ara/appl/BareMetal/___Xen_hc_b_a2_BareMetal_A_a.pi4.ll;event;' +
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_b_a2_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hc-b-a2/Autosar-B/b.json'
   },
-
-
   # 2x autosar notify using hypercall a -> a notiming
   {'name': 'hc-autosar-notiming', 'do_timings': 'false', 'guests': 
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_notiming_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-notiming/Autosar-A/a.json;' +
@@ -118,15 +125,14 @@ xen_testcases = [
       'BareMetal;subprojects/ara/appl/BareMetal/___Xen_hc_baremetal_notiming_BareMetal_A_a.pi4.ll;None;' +
       'BareMetal;subprojects/ara/appl/BareMetal/___Xen_hc_baremetal_notiming_BareMetal_B_b.pi4.ll;event;'
   },
-
-  # load many singlecore autosar guests into HyperSSE
-  {'name': 'many', 'do_timings': 'false', 'guests':
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_many_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/many/Autosar-A/a.json;' +
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_many_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/many/Autosar-B/b.json;' +
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_many_Autosar_C_c.pi4.ll;../subprojects/ara/appl/Xen/many/Autosar-C/c.json;' +
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_many_Autosar_D_d.pi4.ll;../subprojects/ara/appl/Xen/many/Autosar-D/d.json;' +
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_many_Autosar_E_e.pi4.ll;../subprojects/ara/appl/Xen/many/Autosar-E/e.json;' +
-      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_many_Autosar_F_f.pi4.ll;../subprojects/ara/appl/Xen/many/Autosar-F/f.json'
+  # A -> A, but masked + polled. No 
+  {'name': 'hc-autosar-polled', 'do_timings': 'true', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_polled_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-polled/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_polled_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-polled/Autosar-B/b.json'
+  },
+  {'name': 'hc-autosar-polled-2', 'do_timings': 'true', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_polled_2_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-polled-2/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_polled_2_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-polled-2/Autosar-B/b.json'
   },
 #   # Autosar alarm, virtual IRQ gets modeled as addiontal domain
 #   {'name': 'alarm', 'do_timings': 'true', 'guests': 
@@ -193,6 +199,9 @@ xen_testcases = [
 #   },
   
   # --------------------------- Paper ----------------------------------
+  # This list of tests belong to our paper for the ECRTS-26, see our ecrts-hypersse repository.
+  #  Most imporant are brakingUnrolled and brakingUnrolledSlowZ, which show how the example meets or fails its timing requirements.
+  #  For Visualizing the graphs, breakingCheck is best suited; breakingNoCheck shows the available branches depending on the timing, but does not select which one occurs when.
     # loop no prediction case, graph is fully correct, but does not check if calc was in time
     {'name': 'brakingNoCheck', 'do_timings': 'true', 'guests':
         'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_Autosar_A_a1_loop_no_predict.pi4.ll;../subprojects/ara/appl/Xen/braking/Autosar-A/a.json;'
@@ -229,32 +238,28 @@ xen_testcases = [
         + 'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-B-2-SlowAckHMI.ll;'
         + 'BareMetal;subprojects/ara/appl/BareMetal/___Xen_braking_BareMetal_C_c_baremetal.pi4.ll;hmi_update;' 
     },
-    # ONLY AUTOSAR: unrolled loop with prediction case, graph is hard to read, but every iteration is checked
-    # {'name': 'brakingAutosarUnrolled', 'do_timings': 'true', 'guests':
-        # 'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_Autosar_A_a3_unrolled.pi4.ll;../subprojects/ara/appl/Xen/braking/Autosar-A/a.json;'
-        # + 'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_Autosar_B_b1_ack_hmi.pi4.ll;../subprojects/ara/appl/Xen/braking/Autosar-B/b.json;'
-        # + 'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_BareMetal_C_c_autosar.pi4.ll;../subprojects/ara/appl/Xen/braking/BareMetal-C/c.json;'
-    # },
-
-  # --------------------------- EXTRA (no included in TestSuite ara-xen-eval ----------------------------------
-    # NO TIMES: unrolled loop with prediction case, graph is hard to read, but every iteration is checked
-    {'name': 'brakingEXTRANoTimesCheck', 'do_timings': 'false', 'guests':
-        'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_Autosar_A_a2_loop.pi4.ll;../subprojects/ara/appl/Xen/braking/Autosar-A/a.json;'
-        + 'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-B-1-AckHMI.ll;'
-        + 'BareMetal;subprojects/ara/appl/BareMetal/___Xen_braking_BareMetal_C_c_baremetal.pi4.ll;hmi_update;' 
+    # ONLY AUTOSAR, like brakingUnrolled: unrolled loop with prediction case, graph is hard to read, but every iteration is checked
+    {'name': 'brakingAutosarUnrolled', 'do_timings': 'true', 'guests':
+        'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_Autosar_A_a3_unrolled.pi4.ll;../subprojects/ara/appl/Xen/braking/Autosar-A/a.json;'
+        + 'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_Autosar_B_b1_ack_hmi.pi4.ll;../subprojects/ara/appl/Xen/braking/Autosar-B/b.json;'
+        + 'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_BareMetal_C_c_autosar.pi4.ll;../subprojects/ara/appl/Xen/braking/BareMetal-C/c.json;'
     },
-    {'name': 'brakingEXTRANoTimesUnrolled', 'do_timings': 'false', 'guests':
+    # NO TIMES:brakingUnrolled: unrolled loop with prediction case, graph is hard to read, but every iteration is checked
+    #  should take ~42s: Number of vertices: 983, Number of edges: 6261, Number of SPs: 719, Number of LAbSSs: 201
+    #  but does not have a verifed soluation, because the graph is not readable.
+    {'name': 'brakingNoTimesUnrolled', 'do_timings': 'false', 'guests':
         'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_Autosar_A_a3_unrolled.pi4.ll;../subprojects/ara/appl/Xen/braking/Autosar-A/a.json;'
         + 'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-B-1-AckHMI.ll;'
         + 'BareMetal;subprojects/ara/appl/BareMetal/___Xen_braking_BareMetal_C_c_baremetal.pi4.ll;hmi_update;' 
     },
-    {'name': 'hc-autosar-polled', 'do_timings': 'true', 'guests': 
-        'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_polled_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-polled/Autosar-A/a.json;' +
-        'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_polled_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-polled/Autosar-B/b.json'
-    },
-    {'name': 'hc-autosar-polled-2', 'do_timings': 'true', 'guests': 
-        'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_polled_2_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-polled-2/Autosar-A/a.json;' +
-        'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_polled_2_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-polled-2/Autosar-B/b.json'
+
+  # --------------------------- EXTRA (not included in TestSuite ara-xen-eval ----------------------------------
+    # this test takes very long and might never finish. This is probaly because the analysis creates a large cross-produkt of states, and because there is a loop it the app 
+    #  it tries every state could also point to itself in a later loop iteration.
+    {'name': 'brakingEXTRANoTimesCheck', 'do_timings': 'false', 'guests':
+        'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_Autosar_A_a2_loop.pi4.ll;../subprojects/ara/appl/Xen/braking/Autosar-A/a.json;'
+        + 'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-B-1-AckHMI.ll;'
+        + 'BareMetal;subprojects/ara/appl/BareMetal/___Xen_braking_BareMetal_C_c_baremetal.pi4.ll;hmi_update;' 
     },
 ]
 

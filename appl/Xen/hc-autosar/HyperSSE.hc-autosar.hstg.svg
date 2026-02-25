@@ -97,7 +97,7 @@
 <g id="node3" class="node">
 <title>3</title>
 <g id="a_node3"><a xlink:title="3">
-<polygon fill="none" stroke="cornflowerblue" points="246.5,-780.22 145.5,-780.22 145.5,-722.22 246.5,-722.22 246.5,-780.22"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="246.5,-780.22 145.5,-780.22 145.5,-722.22 246.5,-722.22 246.5,-780.22"/>
 <text text-anchor="start" x="177" y="-766.02" font-family="Times,serif" font-size="14.00">State 6</text>
 <text text-anchor="start" x="169.5" y="-753.62" font-family="Times,serif" font-size="12.00">instance: A</text>
 <text text-anchor="start" x="168.5" y="-741.62" font-family="Times,serif" font-size="12.00">abb: ABB5</text>
@@ -133,7 +133,7 @@
 <g id="node5" class="node">
 <title>5</title>
 <g id="a_node5"><a xlink:title="5">
-<polygon fill="none" stroke="cornflowerblue" points="233,-552.19 135,-552.19 135,-494.19 233,-494.19 233,-552.19"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="233,-552.19 135,-552.19 135,-494.19 233,-494.19 233,-552.19"/>
 <text text-anchor="start" x="165" y="-537.99" font-family="Times,serif" font-size="14.00">State 8</text>
 <text text-anchor="start" x="157.5" y="-525.59" font-family="Times,serif" font-size="12.00">instance: A</text>
 <text text-anchor="start" x="156.5" y="-513.59" font-family="Times,serif" font-size="12.00">abb: ABB6</text>
@@ -157,7 +157,7 @@
 <g id="node7" class="node">
 <title>8</title>
 <g id="a_node7"><a xlink:title="8">
-<polygon fill="none" stroke="cornflowerblue" points="560,-780.22 462,-780.22 462,-722.22 560,-722.22 560,-780.22"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="560,-780.22 462,-780.22 462,-722.22 560,-722.22 560,-780.22"/>
 <text text-anchor="start" x="488.5" y="-766.02" font-family="Times,serif" font-size="14.00">State 10</text>
 <text text-anchor="start" x="484.5" y="-753.62" font-family="Times,serif" font-size="12.00">instance: B</text>
 <text text-anchor="start" x="483.5" y="-741.62" font-family="Times,serif" font-size="12.00">abb: ABB9</text>

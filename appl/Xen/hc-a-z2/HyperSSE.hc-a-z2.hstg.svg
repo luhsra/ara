@@ -97,7 +97,7 @@
 <g id="node3" class="node">
 <title>3</title>
 <g id="a_node3"><a xlink:title="3">
-<polygon fill="none" stroke="cornflowerblue" points="361,-685.22 263,-685.22 263,-627.22 361,-627.22 361,-685.22"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="361,-685.22 263,-685.22 263,-627.22 361,-627.22 361,-685.22"/>
 <text text-anchor="start" x="293" y="-671.02" font-family="Times,serif" font-size="14.00">State 6</text>
 <text text-anchor="start" x="285.5" y="-658.62" font-family="Times,serif" font-size="12.00">instance: A</text>
 <text text-anchor="start" x="284.5" y="-646.62" font-family="Times,serif" font-size="12.00">abb: ABB9</text>
@@ -209,7 +209,7 @@
 <g id="node10" class="node">
 <title>9</title>
 <g id="a_node10"><a xlink:title="9">
-<polygon fill="none" stroke="cornflowerblue" points="556.5,-685.22 455.5,-685.22 455.5,-627.22 556.5,-627.22 556.5,-685.22"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="556.5,-685.22 455.5,-685.22 455.5,-627.22 556.5,-627.22 556.5,-685.22"/>
 <text text-anchor="start" x="483.5" y="-671.02" font-family="Times,serif" font-size="14.00">State 10</text>
 <text text-anchor="start" x="467.5" y="-658.62" font-family="Times,serif" font-size="12.00">thread: thread_b</text>
 <text text-anchor="start" x="478.5" y="-646.62" font-family="Times,serif" font-size="12.00">abb: ABB5</text>
@@ -245,7 +245,7 @@
 <g id="node12" class="node">
 <title>11</title>
 <g id="a_node12"><a xlink:title="11">
-<polygon fill="none" stroke="cornflowerblue" points="557,-457.19 459,-457.19 459,-399.19 557,-399.19 557,-457.19"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="557,-457.19 459,-457.19 459,-399.19 557,-399.19 557,-457.19"/>
 <text text-anchor="start" x="485.5" y="-442.99" font-family="Times,serif" font-size="14.00">State 12</text>
 <text text-anchor="start" x="469.5" y="-430.59" font-family="Times,serif" font-size="12.00">thread: thread_b</text>
 <text text-anchor="start" x="480.5" y="-418.59" font-family="Times,serif" font-size="12.00">abb: ABB4</text>

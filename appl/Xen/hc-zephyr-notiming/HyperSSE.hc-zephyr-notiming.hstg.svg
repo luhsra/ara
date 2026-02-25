@@ -141,7 +141,7 @@
 <g id="node3" class="node">
 <title>3</title>
 <g id="a_node3"><a xlink:title="3">
-<polygon fill="none" stroke="cornflowerblue" points="287.5,-930.44 186.5,-930.44 186.5,-872.44 287.5,-872.44 287.5,-930.44"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="287.5,-930.44 186.5,-930.44 186.5,-872.44 287.5,-872.44 287.5,-930.44"/>
 <text text-anchor="start" x="218" y="-916.24" font-family="Times,serif" font-size="14.00">State 6</text>
 <text text-anchor="start" x="199" y="-903.84" font-family="Times,serif" font-size="12.00">thread: thread_a</text>
 <text text-anchor="start" x="209.5" y="-891.84" font-family="Times,serif" font-size="12.00">abb: ABB5</text>
@@ -176,7 +176,7 @@
 <g id="node5" class="node">
 <title>5</title>
 <g id="a_node5"><a xlink:title="5">
-<polygon fill="none" stroke="cornflowerblue" points="294,-728.85 196,-728.85 196,-670.85 294,-670.85 294,-728.85"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="294,-728.85 196,-728.85 196,-670.85 294,-670.85 294,-728.85"/>
 <text text-anchor="start" x="226" y="-714.65" font-family="Times,serif" font-size="14.00">State 8</text>
 <text text-anchor="start" x="207" y="-702.25" font-family="Times,serif" font-size="12.00">thread: thread_a</text>
 <text text-anchor="start" x="217.5" y="-690.25" font-family="Times,serif" font-size="12.00">abb: ABB4</text>
@@ -212,7 +212,7 @@
 <g id="node6" class="node">
 <title>8</title>
 <g id="a_node6"><a xlink:title="8">
-<polygon fill="none" stroke="cornflowerblue" points="131,-631.33 33,-631.33 33,-573.33 131,-573.33 131,-631.33"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="131,-631.33 33,-631.33 33,-573.33 131,-573.33 131,-631.33"/>
 <text text-anchor="start" x="59.5" y="-617.13" font-family="Times,serif" font-size="14.00">State 10</text>
 <text text-anchor="start" x="43.5" y="-604.73" font-family="Times,serif" font-size="12.00">thread: thread_b</text>
 <text text-anchor="start" x="54.5" y="-592.73" font-family="Times,serif" font-size="12.00">abb: ABB4</text>

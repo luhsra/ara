@@ -2,27 +2,25 @@ digraph G {
 label="";
 1 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=1];
 subgraph cluster_5 {
-bgcolor="#F8CECC";
 label="M5: Dom-0-AUTOSAR";
-style=bold;
-2 [color=green, fontsize=14, label=<State 4<br/><font point-size='12'>instance: A<br/>abb: ABB1<br/>bcet/wcet: 1/2</font>>, style=solid, tooltip=2];
-3 [color=cornflowerblue, fontsize=14, label=<State 6<br/><font point-size='12'>instance: A<br/>abb: ABB3<br/>Autosar_TerminateTask</font>>, shape=box, tooltip=3];
-4 [color=violet, fontsize=14, label=<State 7<br/><font point-size='12'>instance: Idle</font>>, style=solid, tooltip=4];
-}
-
-subgraph cluster_9 {
 bgcolor="#F8CECC";
-label="M9: Dom-1-AUTOSAR";
 style=bold;
-8 [color=violet, fontsize=14, label=<State 9<br/><font point-size='12'>instance: Idle</font>>, style=solid, tooltip=8];
-6 [color=green, fontsize=14, label=<State 5<br/><font point-size='12'>instance: B<br/>abb: ABB1<br/>bcet/wcet: 3/4</font>>, style=solid, tooltip=6];
-7 [color=cornflowerblue, fontsize=14, label=<State 8<br/><font point-size='12'>instance: B<br/>abb: ABB3<br/>Autosar_TerminateTask</font>>, shape=box, tooltip=7];
+2 [fontsize=14, label=<State 4<br/><font point-size='12'>instance: A<br/>abb: ABB1<br/>bcet/wcet: 1/2</font>>, tooltip=2, style=solid, color=green];
+3 [fontsize=14, label=<State 6<br/><font point-size='12'>instance: A<br/>abb: ABB3<br/>Autosar_TerminateTask</font>>, tooltip=3, color=cornflowerblue, shape=box];
+4 [fontsize=14, label=<State 7<br/><font point-size='12'>instance: Idle</font>>, tooltip=4, style=solid, color=violet];
 }
-
-1:c0 -> 2  [color=black];
-1:c1 -> 6  [color=black];
-2 -> 3  [color=black];
-3 -> 4  [color=black];
-6 -> 7  [color=black];
-7 -> 8  [color=black];
+subgraph cluster_9 {
+label="M9: Dom-1-AUTOSAR";
+bgcolor="#F8CECC";
+style=bold;
+8 [fontsize=14, label=<State 9<br/><font point-size='12'>instance: Idle</font>>, tooltip=8, style=solid, color=violet];
+6 [fontsize=14, label=<State 5<br/><font point-size='12'>instance: B<br/>abb: ABB1<br/>bcet/wcet: 3/4</font>>, tooltip=6, style=solid, color=green];
+7 [fontsize=14, label=<State 8<br/><font point-size='12'>instance: B<br/>abb: ABB3<br/>Autosar_TerminateTask</font>>, tooltip=7, color=cornflowerblue, shape=box];
+}
+1:c0 -> 2 [color=black];
+1:c1 -> 6 [color=black];
+2 -> 3 [color=black];
+3 -> 4 [color=black];
+6 -> 7 [color=black];
+7 -> 8 [color=black];
 }

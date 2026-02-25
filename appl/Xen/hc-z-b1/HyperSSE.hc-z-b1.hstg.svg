@@ -95,7 +95,7 @@
 <g id="node3" class="node">
 <title>3</title>
 <g id="a_node3"><a xlink:title="3">
-<polygon fill="none" stroke="cornflowerblue" points="259.5,-712.19 158.5,-712.19 158.5,-654.19 259.5,-654.19 259.5,-712.19"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="259.5,-712.19 158.5,-712.19 158.5,-654.19 259.5,-654.19 259.5,-712.19"/>
 <text text-anchor="start" x="190" y="-697.99" font-family="Times,serif" font-size="14.00">State 6</text>
 <text text-anchor="start" x="171" y="-685.59" font-family="Times,serif" font-size="12.00">thread: thread_a</text>
 <text text-anchor="start" x="181.5" y="-673.59" font-family="Times,serif" font-size="12.00">abb: ABB5</text>
@@ -131,7 +131,7 @@
 <g id="node5" class="node">
 <title>5</title>
 <g id="a_node5"><a xlink:title="5">
-<polygon fill="none" stroke="cornflowerblue" points="246,-484.16 148,-484.16 148,-426.16 246,-426.16 246,-484.16"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="246,-484.16 148,-484.16 148,-426.16 246,-426.16 246,-484.16"/>
 <text text-anchor="start" x="178" y="-469.96" font-family="Times,serif" font-size="14.00">State 8</text>
 <text text-anchor="start" x="159" y="-457.56" font-family="Times,serif" font-size="12.00">thread: thread_a</text>
 <text text-anchor="start" x="169.5" y="-445.56" font-family="Times,serif" font-size="12.00">abb: ABB4</text>
@@ -188,7 +188,7 @@
 <g id="node9" class="node">
 <title>10</title>
 <g id="a_node9"><a xlink:title="10">
-<polygon fill="none" stroke="cornflowerblue" points="550,-478.16 452,-478.16 452,-432.16 550,-432.16 550,-478.16"/>
+<polygon fill="none" stroke="cornflowerblue" stroke-width="3" points="550,-478.16 452,-478.16 452,-432.16 550,-432.16 550,-478.16"/>
 <text text-anchor="start" x="478.5" y="-463.96" font-family="Times,serif" font-size="14.00">State 12</text>
 <text text-anchor="start" x="473.5" y="-451.56" font-family="Times,serif" font-size="12.00">abb: ABB7</text>
 <text text-anchor="start" x="460" y="-439.56" font-family="Times,serif" font-size="12.00">Xen_evtchnBind</text>
