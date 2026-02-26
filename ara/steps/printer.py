@@ -493,7 +493,7 @@ def mstg_to_dot(mstg: MSTGraph, label: str = "MSTG", OS: OSBase = AUTOSAR, with_
             if only_min_attrs:
                 label = f"{cpu_id}"
             else:
-                label =  f"M{int(metastate)} ({domain_type} {cpu_id})"
+                label =  f"M{int(metastate)}: {domain_type}-{cpu_id}"
             attrs = {} 
             if OS == XEN:
                 # filter IRQ CPUs

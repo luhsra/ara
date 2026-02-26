@@ -24,8 +24,8 @@ res_file = 'res-ara.csv'
 # relative to parrots location, e.g. the two folders should be in the same folder
 paper_repo = "../ecrts-hypersse/fig"
 
-class HyperSSE(Experiment):
-# class MCAnalyzer(Experiment):
+# class HyperSSE(Experiment):
+class MCAnalyzer(Experiment):
 
     inputs = {"log": String("INFO"),
               "cpus": Integer(multiprocessing.cpu_count() - 4),
