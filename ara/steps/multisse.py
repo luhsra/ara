@@ -269,6 +269,11 @@ class MultiSSE(StatsStep):
                 help="Add a legend to the mstg.",
                 ty=Bool(),
                 default_value=False)
+    
+    anonymous = Option(name="anonymous",
+                help="Replace filenames from MultiSSE/HyperSSE to MCAnalyzer.",
+                ty=Bool(),
+                default_value=False)
 
     reduced_dump = Option(name="reduced_dump",
                 help="If the sps.dot and reduced.dot should be dumped",
@@ -1570,8 +1575,10 @@ class MultiSSE(StatsStep):
             fn = self.file_name.get()
             if fn:
                 if self._graph.os == XEN:
-                    # dot = f'{self.dump_prefix.get().split("/")[0]}/HyperSSE.{fn}.hstg.dot'
-                    dot = f'{self.dump_prefix.get().split("/")[0]}/MCAnalyzer.{fn}.hstg.dot'
+                    if self.anonymous.get():
+                        dot = f'{self.dump_prefix.get().split("/")[0]}/MCAnalyzer.{fn}.hstg.dot'
+                    else:
+                        dot = f'{self.dump_prefix.get().split("/")[0]}/HyperSSE.{fn}.hstg.dot'
                 else:
                     dot = f'{self.dump_prefix.get().split(".")[0]}.{fn}.mstg.dot'
             else:

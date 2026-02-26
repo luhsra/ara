@@ -13,24 +13,24 @@
       "resources": {},
       "events": {},
       "counters": {
-          "C1": {
-            "maxallowedvalue": 20000,
-            "ticksperbase": 1,
-            "mincycle": 1
-          }
-        },
-        "alarms": {
-          "A1": {
-            "counter": "C1",
-            "action": {
-              "action": "activatetask",
-              "task": "A"
-            },
-            "autostart": true,
-            "cycletime": 1000,
-            "alarmtime": 1000
-          }
+        "C1": {
+          "maxallowedvalue": 200,
+          "ticksperbase": 1,
+          "mincycle": 1
         }
+      },
+      "alarms": {
+        "A1": {
+          "counter": "C1",
+          "action": {
+            "action": "activatetask",
+            "task": "A"
+          },
+          "autostart": true,
+          "cycletime": 10,
+          "alarmtime": 5
+        }
+      }
     }
   ]
 }

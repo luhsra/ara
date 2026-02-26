@@ -12,7 +12,7 @@ int main() {
 
 TASK(A) {
 	kout << "Hello World"<< endl;
-	ara_timing_info(50, 50);
+	ara_timing_info(3,5);
 
 	TerminateTask();
 }

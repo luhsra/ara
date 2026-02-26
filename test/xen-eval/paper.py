@@ -21,14 +21,12 @@ logger = logging.getLogger(__name__)
 parrot_dir = "/../../../../../"
 res_file = 'res-ara.csv'
 
-# thing = "HyperSSE"
-thing = "MCAnalyzer"
-
 # relative to parrots location, e.g. the two folders should be in the same folder
 paper_repo = "../ecrts-hypersse/fig"
 
-# class HyperSSE(Experiment):
-class MCAnalyzer(Experiment):
+class HyperSSE(Experiment):
+# class MCAnalyzer(Experiment):
+
     inputs = {"log": String("INFO"),
               "cpus": Integer(multiprocessing.cpu_count() - 4),
               "rebuild": Bool(False),
@@ -37,10 +35,13 @@ class MCAnalyzer(Experiment):
     outputs = {"result-csv": File("res-ara.csv")}
 
     def run(self):
+
+        thing = self.title
+
         cpus = self.inputs.cpus.value
         rebuild = self.inputs.rebuild.value
         logger.setLevel(getattr(logging, self.inputs.log.value.upper(), logging.INFO))
-        logger.warning(f"Starting thesis.py with log: {logging.getLevelName(logger.level)}, "
+        logger.warning(f"Starting thesis.py for \"{thing}\" with log: {logging.getLevelName(logger.level)}, "
                        f"cpus: {cpus}, rebuild: {rebuild}, git_hash: {{ {self.inputs.git_hash} }}")
 
         cwd = os.getcwd()

@@ -22,7 +22,8 @@
 	},
 	"Printer": {
 		"log_level": "warning",
-		"label": false
+		"label": false,
+		"only_min_attrs": false
 	},
 	"SysCall": {
 		"log_level": "debug"
@@ -54,7 +55,8 @@
 		"dump": true,
 		"log_level": "warning",
 		"per_round_dump": false,
-		"reduced_dump": false
+		"reduced_dump": false,
+		"anonymous": true
 	},
 
 	"HyperSSE": {

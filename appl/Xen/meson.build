@@ -135,9 +135,9 @@ xen_testcases = [
       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_hc_autosar_polled_2_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/hc-autosar-polled-2/Autosar-B/b.json'
   },
 #   # Autosar alarm, virtual IRQ gets modeled as addiontal domain
-#   {'name': 'alarm', 'do_timings': 'true', 'guests': 
-#       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_alarm_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/alarm/Autosar-A/a.json;'
-#   },
+  {'name': 'alarm', 'do_timings': 'true', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_alarm_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/alarm/Autosar-A/a.json;'
+  },
 #   # Autosar alarm on 2nd domain, with additonal hypercalls
 #   {'name': 'alarm-2', 'do_timings': 'true', 'guests': 
 #       'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_alarm_2_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/alarm-2/Autosar-A/a.json;' +

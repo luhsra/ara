@@ -90,7 +90,7 @@ def with_color(value, color, min=0.0, max=1.0):
 from ara.os.zephyr import Zephyr
 from ara.os.autosar import AUTOSAR
 
-def _sstg_state_as_dot(sstg, state_vert, with_times: bool = True, OS: OSBase = AUTOSAR):
+def _sstg_state_as_dot(sstg, state_vert, with_times: bool = True, OS: OSBase = AUTOSAR, only_min_attrs: bool = False):
 
     log = logging.getLogger("Printer")
     attrs = {"fontsize": 14}
@@ -241,7 +241,16 @@ def _sstg_state_as_dot(sstg, state_vert, with_times: bool = True, OS: OSBase = A
     if syscall and "Xen" in syscall:
         # attrs["shape"] = "parallelogram"
         attrs["penwidth"] = "3"
-
+    min_attrs = {}
+    if "color" in attrs:
+        min_attrs["color"] = attrs["color"]
+    if "shape" in attrs:
+        min_attrs["shape"] = attrs["shape"]
+    min_attrs["fontsize"] = 20
+    l = attrs["label"]
+    min_attrs["label"] = l[l.find("State"):l.find("<", l.find("State"))].removeprefix("State ")
+    if only_min_attrs:
+        attrs = min_attrs
     return attrs
 
 
@@ -433,7 +442,7 @@ def reduced_mstg_to_dot(mstg: MSTGraph, cfg: CFG | list[CFG], label: str = "MSTG
 
 # this can be called as Printer-Step via run and step settings, or directly
 def mstg_to_dot(mstg: MSTGraph, label: str = "MSTG", OS: OSBase = AUTOSAR, with_times: bool = True, 
-                add_legend: bool = False, domain_type: str = "CPU"):
+                add_legend: bool = False, domain_type: str = "CPU", only_min_attrs: bool = False):
     def _to_str(v):
         return str(int(v))
 
@@ -481,14 +490,17 @@ def mstg_to_dot(mstg: MSTGraph, label: str = "MSTG", OS: OSBase = AUTOSAR, with_
             #     dot_m = pydot.Cluster(_to_str(metastate), penwidth=3, color="grey",
             #                         label=f"M{int(metastate)} (dom {cpu_id}, {XEN.system_types[cpu_id].get_name()})")
             #     dot_graph.add_subgraph(dot_m)
-            label =  f"M{int(metastate)} ({domain_type} {cpu_id})"
+            if only_min_attrs:
+                label = f"{cpu_id}"
+            else:
+                label =  f"M{int(metastate)} ({domain_type} {cpu_id})"
             attrs = {} 
             if OS == XEN:
                 # filter IRQ CPUs
                 if cpu_id in XEN.irq_ids:
-                    label = f"M{int(metastate)}: {domain_type}-{cpu_id}-IRQ(dom-{XEN.irq_ids[cpu_id]})"
+                    label += f"-IRQ(dom-{XEN.irq_ids[cpu_id]})"
                 else:
-                    label = f"M{int(metastate)}: {domain_type}-{cpu_id}-{XEN.system_types[cpu_id].get_name()}"
+                    label += f"-{XEN.system_types[cpu_id].get_name()}"
                 xen_system_colors = {
                     # "AUTOSAR": "#B85450",
                     # "Zephyr": "#6C8EBF",
@@ -504,9 +516,9 @@ def mstg_to_dot(mstg: MSTGraph, label: str = "MSTG", OS: OSBase = AUTOSAR, with_
 
             for state in m2s.vertex(metastate).out_neighbors():
                 if OS == XEN:
-                    attrs = _sstg_state_as_dot(sstg=mstg, state_vert=state, with_times=with_times, OS=XEN.system_types[cpu_id])
+                    attrs = _sstg_state_as_dot(sstg=mstg, state_vert=state, with_times=with_times, OS=XEN.system_types[cpu_id], only_min_attrs=only_min_attrs)
                 else:
-                    attrs = _sstg_state_as_dot(sstg=mstg, state_vert=state, with_times=with_times, OS=OS)
+                    attrs = _sstg_state_as_dot(sstg=mstg, state_vert=state, with_times=with_times, OS=OS, only_min_attrs=only_min_attrs)
                 dot_state = pydot.Node(_to_str(state), **attrs)
                 dot_m.add_node(dot_state)
 
@@ -741,6 +753,10 @@ class Printer(Step):
                             help="If the label/name-of-the-graph is written at the bottom of the dot-graph.",
                             ty=Bool(),
                             default_value=True)
+    only_min_attrs = Option(name="only_min_attrs",
+                            help="This option hides nearly all information in the {m,h}stgs, usefull for printing/displaying many graphs without details.",
+                            ty=Bool(),
+                            default_value=False)
 
 
     def _print_init(self) -> str:
@@ -986,11 +1002,12 @@ class Printer(Step):
         add_legend = self.add_legend.get()
         domain_type = self.domain_type.get()
         with_times = self.with_times.get()
+        only_min_attrs = self.only_min_attrs.get()
         if self.label.get():
             name = self._print_init()
         else:
             name = ""
-        dot_graph = mstg_to_dot(mstg=self._graph.mstg, label=name, OS=OS, add_legend=add_legend, with_times=with_times, domain_type=domain_type)
+        dot_graph = mstg_to_dot(mstg=self._graph.mstg, label=name, OS=OS, add_legend=add_legend, with_times=with_times, domain_type=domain_type, only_min_attrs=only_min_attrs)
         self._write_dot(dot_graph)
 
     def print_reduced_mstg(self):
