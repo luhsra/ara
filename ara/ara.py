@@ -9,6 +9,7 @@
 # SPDX-FileCopyrightText: 2023 Björn Fiedler <fiedler@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
 # SPDX-FileCopyrightText: 2023 Jan Neugebauer
+# SPDX-FileCopyrightText: 2025 Mareike Burg
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -106,6 +107,8 @@ class Main:
                             default=int(os.environ.get('ARA_THREADS', 0)))
         parser.add_argument('--manual-corrections', metavar="FILE",
                             help="File with manual corrections")
+        parser.add_argument('--no_colors', type=bool, default=False, choices=[True, False],
+                            help="Disable coloured output of logger incase it can not be displayed.")
         if USING_ARA_GUI:
             parser.add_argument('--no_trace_algorithm', action='store_true',
                                 default=False, help=
@@ -130,7 +133,7 @@ class Main:
             self.args.log_level = 'info'
 
         logger = init_logging(level=self.args.log_level, root_name='ara',
-                              werr=self.args.Werr)
+                              werr=self.args.Werr, no_colors=self.args.no_colors)
 
         if self.args.threads > 0:
             graph_tool.openmp_set_num_threads(self.args.threads)

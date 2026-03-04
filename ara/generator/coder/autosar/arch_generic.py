@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Andreas Kässens
+# SPDX-FileCopyrightText: 2025 Mareike Burg
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -134,6 +135,9 @@ class GenericArch(BaseCoder):
         pre_hook = Hook("SystemEnterHook", arguments=args)
         system = Block(arguments=args)
         post_hook = Hook("SystemLeaveHook", arguments=args)
+
+        # Possible reschedule later, call posttakshook here. PreTaskHook is called in dispatch
+        pre_hook.add(Statement("CALL_HOOK(PostTaskHook)"))
 
         pre_hook.add(Statement("*p_result = E_OK"))
         userspace.attributes.append("inlinehint")

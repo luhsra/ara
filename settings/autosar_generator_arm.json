@@ -1,22 +1,30 @@
 {
 	"steps": [
 		"ApplyTimings",
+		"LoadOIL",
 		"IPIAvoidance",
 		"LockElision",
 		"AutosarGeneratorIR",
 		"IRWriter",
 		"Generator",
 		"DumpCFG",
-		"DumpInstances"
+		"DumpInstances",
+		"MSTGStats"
 	],
+	"LLVMMap": {
+		"log_level": "error"
+	},
+	"LoadOIL": {
+		"log_level": "info"
+	},
 	"AutosarGeneratorIR": {
 		"log_level": "error",
 		"rename_syscalls": true
 	},
-	"LoadOil" : {
+	"LoadOil": {
 		"log_level": "warn"
 	},
-	"LLVMMap" : {
+	"LLVMMap": {
 		"log_level": "error"
 	},
 	"RemoveSysfuncBody": {
@@ -37,7 +45,8 @@
 		"arch": "arm",
 		"os": "autosar",
 		"lock_elision": false,
-		"ipi_avoidance": false
+		"ipi_avoidance": false,
+		"log_level": "error"
 	},
 	"LockElision": {
 		"fail_on_deadlock": true
@@ -46,6 +55,9 @@
 		"with_times": true,
 		"log_level": "debug",
 		"per_round_dump": true,
+		"dump": true
+	},
+	"MSTGStats": {
 		"dump": true
 	}
 }

@@ -1,0 +1,35 @@
+{
+	"steps": [
+		"ApplyTimings",
+        "LoadOIL",
+        "DumpCFG", 
+        "DumpCallgraph",
+        "DumpInstances",
+        "MultiSSE"
+	],
+	"AutosarGeneratorIR": {
+		"log_level": "debug",
+		"rename_syscalls": true
+	},
+	"Generator": {
+		"log_level": "debug",
+		"arch": "arm",
+		"os": "autosar",
+		"lock_elision": false,
+		"ipi_avoidance": false
+	},
+	"LockElision": {
+		"fail_on_deadlock": true
+	},
+	"MultiSSE": {
+		"with_times": true,
+		"log_level": "info",
+        "dump" : true,
+        "per_round_dump" : true
+	},
+    "logger": {
+        "ara" : "info",
+        "StepManager" : "info",
+        "AUTOSAR" : "info"
+    }
+}

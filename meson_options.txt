@@ -14,5 +14,7 @@ option('enable_generator_tests', type: 'boolean', value: false, yield: true,
 option('execute_ara', type: 'boolean', value: false, yield: true,
   description: 'Build targets which executes ARA')
 
+option('autosar_benchmark', type: 'boolean', value: false, description: 'Default to false, used automatically by automotive_benchmark to set ara flags')
+
 # do not change this, controled by root meson_options.txt
 option('include_xen', type: 'boolean', value: true, yield: true, description: 'If ara/appl/Xen apps should be included, needed for HyperSSE and ara-xen-eval.')

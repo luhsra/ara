@@ -185,6 +185,26 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'andreas'/ 'pmu',    'name': 'get_spinlock',           'oil': 'system_spinlock.json', 'synthesis_disabled': ['posix', 'riscv']},
   {'core': 'multicore',  'path': 'andreas'/ 'alarmmc','name': 'a',                     'oil': 'system_a.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'alarmmc','name': 'b',                     'oil': 'system_b.json'},
+  {'core': 'singlecore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'spinlock',                  'oil': 'spinlock_system.json'},
+  {'core': 'singlecore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'counter',                   'oil': 'counter_system.json'},
+  {'core': 'singlecore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'min_counter_a',                   'oil': 'min_counter_a_system.json'},
+  {'core': 'singlecore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'min_counter_b',                   'oil': 'min_counter_b_system.json'},
+  {'core': 'singlecore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'min_counter_c',                   'oil': 'min_counter_c_system.json', 'timing': 'BB'},
+  {'core': 'singlecore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'waiting',                   'oil': 'waiting_system.json'},
+  {'core': 'singlecore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'activateTask_res',          'oil': 'activateTask_res_system.json'},
+  {'core': 'singlecore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'newSched',                 'oil': 'newSched_system.json'},
+  {'core': 'singlecore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'virt_counter_local',                   'timing': 'BB','oil': 'virt_counter_local_system.json'},
+  {'core': 'singlecore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'virt_counter_multicore',                   'timing': 'BB','oil': 'virt_counter_multicore_system.json'},
+  {'core': 'singlecore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'hw_counter_multicore',                   'timing': 'BB','oil': 'hw_counter_multicore_system.json'},
+  {'core': 'singlecore',  'path': 'automotive_benchmark'/ 'basic_tests','name': 'w_time_newSched',                 'timing': 'BB', 'oil': 'w_time_newSched_system.json'},
+  {'core': 'singlecore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'tasks',           'timing': 'BB', 'oil': 'tasks.json',    'variants': ['1', '2', '3', '4', '5', '6', '7', '8', '9']},
+  {'core': 'singlecore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'labels',          'timing': 'BB', 'oil': 'tasks.json',    'variants': ['1', '2', '3', '4', '5', '6', '7', '8', '9']},
+  {'core': 'singlecore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'mixed',           'timing': 'BB', 'oil': 'angle.json',    'variants': ['1', '2', '3', '4', '5', '6', '7', '8', '9']},
+  {'core': 'singlecore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'angle',           'timing': 'BB', 'oil': 'angle.json',    'variants': ['1', '2', '3', '4', '5', '6', '7', '8', '9']},
+  {'core': 'singlecore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'angle-ideal',     'timing': 'BB', 'oil': 'angle-ideal.json',    'variants': ['1', '2', '3', '4', '5', '6', '7', '8', '9']},
+  {'core': 'singlecore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'angle-worst',     'timing': 'BB', 'oil': 'angle-worst.json',    'variants': ['1', '2', '3', '4', '5', '6', '7', '8', '9']},
+  {'core': 'singlecore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'angle-notimes',                   'oil': 'angle-notimes.json',    'variants': ['1', '2', '3', '4', '5', '6', '7', '8', '9']},
+  {'core': 'singlecore',  'path': 'automotive_benchmark'/ 'bugfix','name': 'a',                   'oil': 'a.json',    'timing': 'BB'},
 ]
 
 # This set of testcases depend on posix?
@@ -558,7 +578,23 @@ foreach app: autosar_targets
     endif
     foreach opt : opt_targets
       opt_app_name = full_name + '_' + opt
+      app += {'opt': opt}
       if get_option('execute_ara')
+        autosar_benchmark_settings = '../subprojects/ara/settings/autosar_arm_automotive_benchmark.json'
+        ara_cmd = [ py3_inst, ara_py, app['ll_pi4'],
+              '--os', 'AUTOSAR',
+              '--oilfile', app['oil'],
+              '--ir_output', '@OUTPUT0@',
+              '--step-settings', 
+              # if in autosar_benchmark use different settings file
+              get_option('autosar_benchmark') ? autosar_benchmark_settings : ara_opt_settings[opt],
+              '--generator_output', '@OUTPUT1@',
+              ara_timing_settings
+          ]  
+        # if in autosar_benchmark add to cmd
+        # if is_variable('autosar_benchmark')
+        #   ara_cmd += ['--no_colors', 'True']
+        # endif
         out = custom_target(
           opt_app_name + '_mod_pi4',
           input : app['ll_pi4'],
@@ -568,15 +604,7 @@ foreach app: autosar_targets
             opt_app_name +'_autosar.pi4.ld'
           ],
           depfile : opt_app_name + '_mod.pi4.ll.dep',
-          command : [
-            py3_inst, ara_py, app['ll_pi4'],
-            '--os', 'AUTOSAR',
-            '--oilfile', app['oil'],
-            '--ir_output', '@OUTPUT0@',
-            '--step-settings', ara_opt_settings[opt],
-            '--generator_output', '@OUTPUT1@',
-            ara_timing_settings
-          ]
+          command : ara_cmd
         )
       else
         out = disabler()
@@ -625,20 +653,22 @@ foreach app: autosar_targets
                                     '-O', 'binary',
                                     '@INPUT@',
                                     '@OUTPUT@'])
-
+      app += {'pi4_bin': pi4_bin}
       rt = 'tftp_' + opt_app_name + '_pi4'
+      pi4_tftp_cmd = [
+                      py3_inst,
+                      tftp_deploy,
+                      pi4_bin.full_path(),
+                      '--ssh-host', libplatforms_proj.get_variable('tftp_host'),
+                      '--scp', scp.full_path(),
+                      '--ssh', ssh.full_path(),
+                      '--path', '/proj/tftp/research/rpi4/autosar',
+                      '--rpi',
+      ]
+      app += {'pi4_tftp_cmd': pi4_tftp_cmd}
       pi4_bin_pxe = run_target(rt,
                           depends : [pi4_bin],
-                          command : [
-                            py3_inst,
-                            tftp_deploy,
-                            pi4_bin.full_path(),
-                            '--ssh-host', libplatforms_proj.get_variable('tftp_host'),
-                            '--scp', scp.full_path(),
-                            '--ssh', ssh.full_path(),
-                            '--path', '/proj/tftp/research/rpi4/autosar',
-                            '--rpi',
-                          ])
+                          command : pi4_tftp_cmd)
       # summary('Flash @0@ on RPI with TFTP'.format(opt_app_name), 'meson compile ' + rt, bool_yn: true, section: 'MACAW, AUTOSAR synthesis')
 
       autosar_generated_targets_pi4 += app
@@ -729,6 +759,7 @@ foreach app: autosar_targets
                           '--path', '/proj/tftp/research/beaglev',
                           '--beaglev',
                         ])
+      app +={'riscv_bin_tftp' : riscv_bin_tftp }
       # summary('Flash @0@ on BeagleV with TFTP'.format(full_name), 'meson compile ' + rt, bool_yn: true, section: 'MACAW, AUTOSAR synthesis')
 
 

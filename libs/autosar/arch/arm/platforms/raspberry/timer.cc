@@ -64,7 +64,10 @@ namespace arch {
 	uint32_t Timer::cntfrq = 0;
 
 	void Timer::init() {
+		// Creates a timer that triggers every 1ms
 		cntfrq = read_cntfrq() / 1000;
+		// read_cntfrq -> 54000000 returns this, cntfrq -> 54000
+		// kout << "Init Timer" << static_cast<unsigned int>(read_cntfrq()) << "cntfrq" <<  static_cast<unsigned int>(cntfrq) << endl;
 		write_cntv_tval(cntfrq); // clear cntv interrupt and set 1 kHz timer.
 		enable_cntv();
 

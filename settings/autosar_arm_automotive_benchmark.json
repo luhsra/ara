@@ -1,0 +1,44 @@
+{
+	"steps": [
+		"ApplyTimings",
+		"LoadOIL",
+		"IPIAvoidance",
+		"LockElision",
+		"AutosarGeneratorIR",
+		"IRWriter",
+		"Generator",
+		"MSTGStats"
+	],
+	"LLVMMap": {
+		"log_level": "error"
+	},
+	"LoadOIL": {
+		"log_level": "error"
+	},
+	"AutosarGeneratorIR": {
+		"rename_syscalls": true
+	},
+	"SVFAnalyses": {
+		"log_level": "warning",
+		"hide_svf_output": true
+	},
+	"Generator": {
+		"arch": "arm",
+		"os": "autosar",
+		"lock_elision": false,
+		"ipi_avoidance": false,
+		"log_level": "error"
+	},
+	"LockElision": {
+		"fail_on_deadlock": true
+	},
+	"MultiSSE": {
+		"log_level": "error",
+		"with_times": true,
+    	"dump" : true
+	},
+	"MSTGStats": {
+    	"dump" : true,
+        "log_level": "info"
+	}
+}

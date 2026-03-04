@@ -1,0 +1,55 @@
+{
+    "cpus": [
+      {
+        "id": 0,
+        "tasks": {
+          "S0": {
+            "activation": 1,
+            "autostart": true,
+            "priority": 10,
+            "schedule": true
+          }, 
+          "S1": {
+            "activation": 1,
+            "autostart": false,
+            "priority": 9,
+            "schedule": true
+          }, 
+          "H1": {
+            "activation": 1,
+            "autostart": false,
+            "priority": 2,
+            "schedule": true
+          },
+          "H2": {
+            "activation": 1,
+            "autostart": false,
+            "priority": 1,
+            "schedule": true
+          }
+        },
+        "resources": {},
+        "events": {},
+        "counters": {
+          "C1": {
+            "maxallowedvalue": 10000,
+            "ticksperbase": 1,
+            "mincycle": 1
+          }
+        },
+        "alarms": {
+          "A1": {
+            "counter": "C1",
+            "action": {
+              "action": "activatetask",
+              "task": "S1"
+            },
+            "autostart": true,
+            "cycletime": 1,
+            "alarmtime": 3000
+          }
+        }
+      }
+    ]
+  }
+  

@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2023 Andreas Kässens
+# SPDX-FileCopyrightText: 2025 Mareike Burg
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -6,7 +7,6 @@ from ..elements import *
 from ..base import BaseCoder
 #from generator.analysis.Function import Function as GraphFunction
 from .implementations import *
-import logging
 
 from collections import namedtuple
 
@@ -159,6 +159,12 @@ class GenericOS(BaseCoder):
            to be done after the objects are allocated.
 
         """
+        # add INVALID_TASK as TaskType
+        invalid_task_type = DataObject("const TaskType",
+                                "AUTOSAR_TASK_INVALID_TASK",
+                                static_initializer=str(0),
+                                extern_c=True)
+        self.generator.source_file.data_manager.add(invalid_task_type)
         for v, task in self.ara_graph.instances.get(Task):
             # add: const TaskType subtaskname_id = OS_subtask.name_task.id
             iddesc = DataObject("const TaskType",
@@ -247,8 +253,8 @@ class GenericOS(BaseCoder):
                 self.call(hook_function, user_defined, "void",
                           hook_function.arguments_names())
                 if hook == "PostTaskHook":
-                    logging.warning(
-                        "Be aware that PostTaskHooks are not properly implemented"
+                    self._log.warning(
+                        "Be aware that PostTaskHooks are only partialy implemented. They work for counter/alarms and Activate/Terminate Tasks"
                     )
 
             if hook == "FaultDetectedHook":

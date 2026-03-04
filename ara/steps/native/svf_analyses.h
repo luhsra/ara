@@ -36,7 +36,7 @@ namespace ara::step {
 		virtual void init_options() override;
 
 		void apply_translation_map(SVF::PTACallGraph& callgraph);
-		void set_up_llvm_cl() ;
+		void set_up_llvm_cl();
 
 	  public:
 		static std::string get_name() { return "SVFAnalyses"; }

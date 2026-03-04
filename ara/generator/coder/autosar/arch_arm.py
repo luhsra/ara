@@ -32,7 +32,12 @@ class ArmArch(GenericArch):
         # override generic generate_functions
         timing_info = Function("ara_timing_info", "void", ["int", "int"], extern_c=True)
         timing_info.add(Statement("debug_core << \" timing \" << arg0 << \" \" << arg1 << endl"))
-        self.call(timing_info, "wait", "void", ["arg0, arg1"])
+        # here can a manual wait be added to make sure that the block runs at least its wcet.
+        # wait uses a relative time unit, bcet_micro_sec_wait a time in microseconds us.
+        # It is not needed when the timing info is matching the code.
+        # self.call(timing_info, "wait", "void", ["arg0, arg1"])
+
+        # self.call(timing_info, "bcet_micro_sec_wait", "void", ["arg0, arg1"])
         self.generator.source_file.function_manager.add(timing_info)
 
         kickoff = Function("AUTOSAR_kickoff", "void", [], extern_c=True)

@@ -5,6 +5,7 @@
 # SPDX-FileCopyrightText: 2022 Domenik Kuhn
 # SPDX-FileCopyrightText: 2023 Jan Neugebauer
 # SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2025 Mareike Burg
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -142,6 +143,10 @@ if get_option('enable_step_tests')
     )
 
     subdir('native_step_test')
+
+  # Call all testcases in this folder, contains the autosar_benchmark_suite
+  subdir('mareike_benchmark')
+
   endif
 
   test('ir-reader-false-syntax',
@@ -310,6 +315,14 @@ if get_option('enable_step_tests')
 
   if arm_enabled
     foreach app : autosar_generated_targets_pi4
+    
+      if app['path'].contains('automotive_benchmark')
+          continue
+      endif
+      if app['path'].contains('complex')
+          continue
+      endif
+
       test('autosar_generator_pi4_' + app['full_name'],
         py3_inst,
         args: [files('autosar_generator.py'), app['run_cmd_pi4_noopt']],

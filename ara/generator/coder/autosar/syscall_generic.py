@@ -1,10 +1,23 @@
 # SPDX-FileCopyrightText: 2023 Andreas Kässens
+# SPDX-FileCopyrightText: 2025 Mareike Burg
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from ..elements import (DataObjectArray, DataObject, Function, FunctionCall,
-                        Statement, Include, Comment, VariableDefinition,
-                        FunctionDeclaration, CodeTemplate, Block, If, Else)
+from ..elements import (
+    DataObjectArray,
+    DataObject,
+    Function,
+    FunctionCall,
+    Statement,
+    Include,
+    Comment,
+    VariableDefinition,
+    FunctionDeclaration,
+    CodeTemplate,
+    Block,
+    If,
+    Else,
+)
 
 from ..base import BaseCoder
 
@@ -28,12 +41,14 @@ class GenericSystemCalls(BaseCoder):
         "AUTOSAR_ClearEvent": ["StatusType", "EventMaskType"],
         "AUTOSAR_WaitEvent": ["StatusType", "EventMaskType"],
         "AUTOSAR_GetAlarm": ["StatusType", "AlarmType", "TickRefType"],
-        "AUTOSAR_SetRelAlarm":
-        ["StatusType", "AlarmType", "TickType", "TickType"],
+        "AUTOSAR_SetRelAlarm": ["StatusType", "AlarmType", "TickType", "TickType"],
         "AUTOSAR_CancelAlarm": ["StatusType", "AlarmType"],
         "AUTOSAR_GetSpinlock": ["StatusType", "SpinlockType"],
-        "AUTOSAR_TryToGetSpinlock":
-        ["StatusType", "SpinlockType", "TryToGetSpinlockType*"],
+        "AUTOSAR_TryToGetSpinlock": [
+            "StatusType",
+            "SpinlockType",
+            "TryToGetSpinlockType*",
+        ],
         "AUTOSAR_ReleaseSpinlock": ["StatusType", "SpinlockType"],
         "AUTOSAR_AdvanceCounter": ["StatusType", "CounterType"],
     }
@@ -52,17 +67,18 @@ class GenericSystemCalls(BaseCoder):
     def generate_system_code(self):
         # Use the tasklist and scheduler that is given by the kind of OS (encoded, unencoded)
         self.generator.source_file.declarations.append(
-            self.os_rules.task_list(self).expand())
+            self.os_rules.task_list(self).expand()
+        )
 
         self.generator.source_file.include("os/scheduler/scheduler.h")
         self.generator.source_file.include("os/scheduler/task.h")
         self.generator.source_file.declarations.append(
-            self.os_rules.scheduler(self).expand())
+            self.os_rules.scheduler(self).expand()
+        )
 
         self.generator.source_file.include("os/alarm.h")
         self.generator.source_file.include("os/util/redundant.h")
-        self.generator.source_file.declarations.append(
-            self.alarms(self).expand())
+        self.generator.source_file.declarations.append(self.alarms(self).expand())
 
         self._log.debug("generate StartOS")
         # Generate a StartOS function and delegate it to the OS rule set
@@ -74,9 +90,7 @@ class GenericSystemCalls(BaseCoder):
         # Generate the interrupt scheduler
         self._log.debug("generate __OS_ASTSchedule")
 
-        ASTSchedule = Function("__OS_ASTSchedule",
-                               "void", ["int"],
-                               extern_c=True)
+        ASTSchedule = Function("__OS_ASTSchedule", "void", ["int"], extern_c=True)
         self.syscall_rules.ASTSchedule(ASTSchedule)
         self.generator.source_file.function_manager.add(ASTSchedule)
 
@@ -86,8 +100,7 @@ class GenericSystemCalls(BaseCoder):
         for bb in bbs:
             abb = self.ara_graph.cfg.get_abb(bb)
 
-            if abb == None or self.ara_graph.cfg.vp.type[
-                    abb] != ABBType.syscall:
+            if abb == None or self.ara_graph.cfg.vp.type[abb] != ABBType.syscall:
                 continue
 
             syscall_name = self.ara_graph.cfg.get_syscall_name(abb)
@@ -98,14 +111,14 @@ class GenericSystemCalls(BaseCoder):
             bb_name = self.ara_graph.cfg.vp.name[bb]
             abb_name = self.ara_graph.cfg.vp.name[abb]
 
-            self._log.debug("Syscall %s in %s %s", syscall_name, bb_name,
-                            abb_name)
+            self._log.debug("Syscall %s in %s %s", syscall_name, bb_name, abb_name)
 
             userspace = Function(
                 syscall_name + "_" + bb_name,
-                self.AUTOSAR_SYSCALLS[syscall_name][0],  #rettype
-                self.AUTOSAR_SYSCALLS[syscall_name][1:],  #argtypes
-                extern_c=True)
+                self.AUTOSAR_SYSCALLS[syscall_name][0],  # rettype
+                self.AUTOSAR_SYSCALLS[syscall_name][1:],  # argtypes
+                extern_c=True,
+            )
             self.generator.source_file.function_manager.add(userspace)
 
             self.os_rules.systemcall(abb, userspace)
@@ -129,7 +142,7 @@ class GenericSystemCalls(BaseCoder):
         callgraph_fn = self.ara_graph.cfg.vp.call_graph_link[fn]
 
         traversed = False
-        while (not traversed):
+        while not traversed:
             callsites = self.ara_graph.callgraph.get_in_neighbors(callgraph_fn)
 
             if len(callsites) == 0:
@@ -137,14 +150,16 @@ class GenericSystemCalls(BaseCoder):
             elif len(callsites) == 1:
                 callgraph_fn = callsites[0]
             else:
-                self._log.warning("too many callsites for %s, using first one",
-                                  self.ara_graph.cfg.vp.name[fn])
+                self._log.warning(
+                    "too many callsites for %s, using first one",
+                    self.ara_graph.cfg.vp.name[fn],
+                )
                 callgraph_fn = callsites[0]
 
-        for v, inst in chain(self.ara_graph.instances.get(ISR),
-                             self.ara_graph.instances.get(Task)):
-            if self.ara_graph.cfg.vp.call_graph_link[
-                    inst.function] == callgraph_fn:
+        for v, inst in chain(
+            self.ara_graph.instances.get(ISR), self.ara_graph.instances.get(Task)
+        ):
+            if self.ara_graph.cfg.vp.call_graph_link[inst.function] == callgraph_fn:
                 return inst
 
     def get_calling_task_desc(self, abb):
@@ -168,20 +183,22 @@ class GenericSystemCalls(BaseCoder):
             core_id = "OS_CORE_ID_" + str(task.cpu_id)
             ifblock = If("GetCoreID() == " + core_id)
             block.add(ifblock)
-            self.call(ifblock, "Dispatcher::Prepare", "void",
-                      [self.task_desc(task)])
+            self.call(ifblock, "Dispatcher::Prepare", "void", [self.task_desc(task)])
             if task.autostart:
-                self.call(ifblock,
-                          f"scheduler_[{core_id}].SetReadyFromSuspended_impl",
-                          "void", [self.task_desc(task)])
+                self.call(
+                    ifblock,
+                    f"scheduler_[{core_id}].SetReadyFromSuspended_impl",
+                    "void",
+                    [self.task_desc(task)],
+                )
 
         # Call the StartupHook
         self.call(block, "CALL_HOOK", "void", ["StartupHook"])
 
         # Bootstrap: Do the initial syscall
-        dispatch_func = Function("__OS_StartOS_dispatch",
-                                 "void", ["int"],
-                                 extern_c=True)
+        dispatch_func = Function(
+            "__OS_StartOS_dispatch", "void", ["int"], extern_c=True
+        )
         self.generator.source_file.function_manager.add(dispatch_func)
         self.InitialSyscall(dispatch_func)
 
@@ -189,8 +206,12 @@ class GenericSystemCalls(BaseCoder):
         self.call(block, "Machine::unreachable")
 
     def Reschedule(self, kernelspace, from_interrupt):
-        self.call(kernelspace, "scheduler_[AUTOSAR_GetCoreID()].Schedule_impl",
-                  "void", [str(from_interrupt).lower()])
+        self.call(
+            kernelspace,
+            "scheduler_[AUTOSAR_GetCoreID()].Schedule_impl",
+            "void",
+            [str(from_interrupt).lower()],
+        )
 
     def InitialSyscall(self, kernelspace):
         kernelspace.unused_parameter(0)
@@ -203,10 +224,13 @@ class GenericSystemCalls(BaseCoder):
     def TerminateTask(self, syscall, userspace, kernelspace):
         curr_task = userspace.calling_task
         curr_cpu = curr_task.cpu_id
-        self.call(kernelspace,
-                  f"scheduler_[{curr_cpu}].TerminateTask_impl",
-                  "StatusType", [self.task_desc(curr_task)],
-                  name="*p_result")
+        self.call(
+            kernelspace,
+            f"scheduler_[{curr_cpu}].TerminateTask_impl",
+            "StatusType",
+            [self.task_desc(curr_task)],
+            name="*p_result",
+        )
 
     def ActivateTask(self, syscall, userspace, kernelspace):
         if userspace.is_isr:
@@ -222,38 +246,53 @@ class GenericSystemCalls(BaseCoder):
         # static access check
         allowed = self.access_check(task, curr_cpu)
         if not allowed:
-            kernelspace.add(
-                Statement("debug_core << \"Access denied\" << endl"))
+            kernelspace.add(Statement('debug_core << "Access denied" << endl'))
             kernelspace.add(Statement("*result = E_OS_ACCESS"))
             return
-        
+
         # add check if task is already scheduled
-        self.call(kernelspace, f"scheduler_[{target_cpu}].activationLimit",
-                  "StatusType", [self.task_desc(task)],  name="*p_result")
-        
-        ifblock = If(
-            "*p_result == E_OS_LIMIT"
-            
+        self.call(
+            kernelspace,
+            f"scheduler_[{target_cpu}].activationLimit",
+            "StatusType",
+            [self.task_desc(task)],
+            name="*p_result",
         )
+
+        ifblock = If("*p_result == E_OS_LIMIT")
         if not userspace.is_isr:
-            self.call(ifblock, "Dispatcher::ResumeToTask", "void",
-                        [self.generator.syscall_rules.task_desc(curr_task)])
+            self.call(
+                ifblock,
+                "Dispatcher::ResumeToTask",
+                "void",
+                [self.generator.syscall_rules.task_desc(curr_task)],
+            )
         else:
             ifblock.add(Statement("return result"))
 
         kernelspace.add(ifblock)
-        
-        self.call(kernelspace, f"scheduler_[{target_cpu}].SetReady_impl",
-                  "void", [self.task_desc(task)])
+
+        self.call(
+            kernelspace,
+            f"scheduler_[{target_cpu}].SetReady_impl",
+            "void",
+            [self.task_desc(task)],
+        )
 
         if curr_cpu != target_cpu:
-            self.call(kernelspace, "Machine::trigger_interrupt", "void", [
-                str(self.generator.arch_rules.IPI_SIG),
-                str(target_cpu), "true"
-            ])
+            self.call(
+                kernelspace,
+                "Machine::trigger_interrupt",
+                "void",
+                [str(self.generator.arch_rules.IPI_SIG), str(target_cpu), "true"],
+            )
         else:
-            self.call(kernelspace, f"scheduler_[{curr_cpu}].Schedule_impl",
-                      "void", [from_interrupt])
+            self.call(
+                kernelspace,
+                f"scheduler_[{curr_cpu}].Schedule_impl",
+                "void",
+                [from_interrupt],
+            )
 
     def ChainTask(self, syscall, userspace, kernelspace):
         curr_task = userspace.calling_task
@@ -264,8 +303,7 @@ class GenericSystemCalls(BaseCoder):
         # static access check
         allowed = self.access_check(task, curr_cpu)
         if not allowed:
-            kernelspace.add(
-                Statement("debug_core << \"Access denied\" << endl"))
+            kernelspace.add(Statement('debug_core << "Access denied" << endl'))
             kernelspace.add(Statement("*p_result = E_OS_ACCESS"))
             return
 
@@ -278,49 +316,66 @@ class GenericSystemCalls(BaseCoder):
 
         no_error = Else()
 
-        self.call(no_error, f"scheduler_[{task.cpu_id}].SetReady_impl",
-                  "void", [self.task_desc(task)])
+        self.call(
+            no_error,
+            f"scheduler_[{task.cpu_id}].SetReady_impl",
+            "void",
+            [self.task_desc(task)],
+        )
 
         if curr_cpu != target_cpu:
-            self.call(no_error, "Machine::trigger_interrupt", "void", [
-                str(self.generator.arch_rules.IPI_SIG),
-                str(target_cpu), "true"
-            ])
+            self.call(
+                no_error,
+                "Machine::trigger_interrupt",
+                "void",
+                [str(self.generator.arch_rules.IPI_SIG), str(target_cpu), "true"],
+            )
 
-        self.call(no_error,
-                  f"scheduler_[{curr_task.cpu_id}].SetSuspended_impl", "void",
-                  [self.task_desc(curr_task)])
-        self.call(no_error, f"scheduler_[{curr_task.cpu_id}].Schedule_impl",
-                  "void")
-        
+        self.call(
+            no_error,
+            f"scheduler_[{curr_task.cpu_id}].SetSuspended_impl",
+            "void",
+            [self.task_desc(curr_task)],
+        )
+        self.call(no_error, f"scheduler_[{curr_task.cpu_id}].Schedule_impl", "void")
+
         kernelspace.add(no_error)
 
     def GetSpinlock(self, syscall, userspace, kernelspace):
         curr_task = userspace.calling_task
         curr_cpu = curr_task.cpu_id
         spinlock = kernelspace.arguments().spinlock.impl.descriptor.name
-        self.call(kernelspace,
-                  f"scheduler_[{curr_cpu}].GetSpinlock_impl",
-                  "StatusType", [spinlock],
-                  name="*p_result")
+        self.call(
+            kernelspace,
+            f"scheduler_[{curr_cpu}].GetSpinlock_impl",
+            "StatusType",
+            [spinlock],
+            name="*p_result",
+        )
 
     def TryToGetSpinlock(self, syscall, userspace, kernelspace):
         curr_task = userspace.calling_task
         curr_cpu = curr_task.cpu_id
         spinlock = kernelspace.arguments().spinlock.impl.descriptor.name
-        self.call(kernelspace,
-                  f"scheduler_[{curr_cpu}].TryToGetSpinlock_impl",
-                  "StatusType", [spinlock, "(TryToGetSpinlockType*) arg1"],
-                  name="*p_result")
+        self.call(
+            kernelspace,
+            f"scheduler_[{curr_cpu}].TryToGetSpinlock_impl",
+            "StatusType",
+            [spinlock, "(TryToGetSpinlockType*) arg1"],
+            name="*p_result",
+        )
 
     def ReleaseSpinlock(self, syscall, userspace, kernelspace):
         curr_task = userspace.calling_task
         curr_cpu = curr_task.cpu_id
         spinlock = kernelspace.arguments().spinlock.impl.descriptor.name
-        self.call(kernelspace,
-                  f"scheduler_[{curr_cpu}].ReleaseSpinlock_impl",
-                  "StatusType", [spinlock],
-                  name="*p_result")
+        self.call(
+            kernelspace,
+            f"scheduler_[{curr_cpu}].ReleaseSpinlock_impl",
+            "StatusType",
+            [spinlock],
+            name="*p_result",
+        )
 
     def WaitEvent(self, syscall, userspace, kernelspace):
         curr_task = userspace.calling_task
@@ -331,24 +386,31 @@ class GenericSystemCalls(BaseCoder):
             f"scheduler_[{curr_cpu}].WaitEvent_impl",
             "StatusType",
             [self.task_desc(curr_task), str(mask)],
-            name="*p_result")
+            name="*p_result",
+        )
 
     def ClearEvent(self, syscall, userspace, kernelspace):
         curr_task = userspace.calling_task
         curr_cpu = curr_task.cpu_id
         mask = kernelspace.arguments().event_mask
         self.call(
-            kernelspace, f"scheduler_[{curr_cpu}].ClearEvent_impl", "void",
-            [self.task_desc(curr_task), str(mask)])
+            kernelspace,
+            f"scheduler_[{curr_cpu}].ClearEvent_impl",
+            "void",
+            [self.task_desc(curr_task), str(mask)],
+        )
 
     def GetEvent(self, syscall, userspace, kernelspace):
         task = kernelspace.arguments().task_id
         curr_task = userspace.calling_task
         kernelspace.add(Statement("uint32_t* mask = (uint32_t*) arg1"))
-        self.call(kernelspace,
-                  f"scheduler_[{task.cpu_id}].GetEvent_impl",
-                  "EventMaskType", [self.task_desc(task)],
-                  name="*mask")
+        self.call(
+            kernelspace,
+            f"scheduler_[{task.cpu_id}].GetEvent_impl",
+            "EventMaskType",
+            [self.task_desc(task)],
+            name="*mask",
+        )
 
     def SetEvent(self, syscall, userspace, kernelspace):
         if userspace.is_isr:
@@ -363,25 +425,34 @@ class GenericSystemCalls(BaseCoder):
 
         allowed = self.access_check(task, curr_cpu)
         if not allowed:
-            kernelspace.add(
-                Statement("debug_core << \"Access denied\" << endl"))
+            kernelspace.add(Statement('debug_core << "Access denied" << endl'))
             kernelspace.add(Statement("*p_result = E_OS_ACCESS;"))
             return
 
         tid = str(task.impl.task_id)
         mask = str(kernelspace.arguments().event_mask)
 
-        self.call(kernelspace, f"scheduler_[{target_cpu}].tlist.set_events",
-                  "void", [tid, mask])
+        self.call(
+            kernelspace,
+            f"scheduler_[{target_cpu}].tlist.set_events",
+            "void",
+            [tid, mask],
+        )
 
         if curr_cpu != target_cpu:
-            self.call(kernelspace, "Machine::trigger_interrupt", "void", [
-                str(self.generator.arch_rules.IPI_SIG),
-                str(target_cpu), "true"
-            ])
+            self.call(
+                kernelspace,
+                "Machine::trigger_interrupt",
+                "void",
+                [str(self.generator.arch_rules.IPI_SIG), str(target_cpu), "true"],
+            )
         else:
-            self.call(kernelspace, f"scheduler_[{target_cpu}].Schedule_impl",
-                      "void", [from_interrupt])
+            self.call(
+                kernelspace,
+                f"scheduler_[{target_cpu}].Schedule_impl",
+                "void",
+                [from_interrupt],
+            )
 
     def SetRelAlarm(self, syscall, userspace, kernelspace):
         alarm = kernelspace.arguments().alarm
@@ -389,19 +460,26 @@ class GenericSystemCalls(BaseCoder):
         increment = kernelspace.arguments().increment
         curr_task = userspace.calling_task
 
-        self.call(kernelspace, f"{alarm.impl.name}.setRelativeTime", "void",
-                  [f"(TickType) {increment}"])
-        self.call(kernelspace, f"{alarm.impl.name}.setCycleTime", "void",
-                  [f"(TickType) {cycle}"])
+        self.call(
+            kernelspace,
+            f"{alarm.impl.name}.setRelativeTime",
+            "void",
+            [f"(TickType) {increment}"],
+        )
+        self.call(
+            kernelspace,
+            f"{alarm.impl.name}.setCycleTime",
+            "void",
+            [f"(TickType) {cycle}"],
+        )
         self.call(kernelspace, f"{alarm.impl.name}.setArmed", "void", ["true"])
-
 
     def AdvanceCounter(self, syscall, userspace, kernelspace):
         curr_task = userspace.calling_task
         curr_cpu = curr_task.cpu_id
         counter = kernelspace.arguments().counter
 
-        if (not counter.softcounter):
+        if not counter.softcounter:
             # might need to change result to p_result if its not working
             kernelspace.add(Statement("result = E_OS_ID"))
             return
@@ -411,7 +489,8 @@ class GenericSystemCalls(BaseCoder):
         for v, alarm in self.ara_graph.instances.get(Alarm):
             if alarm.impl.counter == counter:
                 check_alarm = self.alarms(self).generate_check_alarm(
-                    alarm, userspace.is_isr, curr_cpu)
+                    alarm, userspace.is_isr, curr_cpu
+                )
                 kernelspace.add(Statement(check_alarm))
 
     def GetAlarm(self, abb, userspace, kernelspace):
@@ -419,16 +498,14 @@ class GenericSystemCalls(BaseCoder):
         curr_task = userspace.calling_task
 
         kernelspace.add(
-            Statement(
-                f"*(TickRefType)arg1 = {alarm.impl.name}.getRemainingTicks()"))
-
+            Statement(f"*(TickRefType)arg1 = {alarm.impl.name}.getRemainingTicks()")
+        )
 
     def CancelAlarm(self, abb, userspace, kernelspace):
         alarm = kernelspace.arguments().alarm
         curr_task = userspace.calling_task
 
-        self.call(kernelspace, f"{alarm.impl.name}.setArmed", "void",
-                  ["false"])
+        self.call(kernelspace, f"{alarm.impl.name}.setArmed", "void", ["false"])
 
     def GetResource(self, abb, userspace, kernelspace):
         curr_task = userspace.calling_task
@@ -439,9 +516,12 @@ class GenericSystemCalls(BaseCoder):
             res.prev_priority = curr_task.priority
             curr_task.priority = res.static_priority
 
-        self.call(kernelspace, f"scheduler_[{curr_cpu}].GetResource_impl",
-                  "void", [self.task_desc(curr_task),
-                           str(curr_task.priority)])
+        self.call(
+            kernelspace,
+            f"scheduler_[{curr_cpu}].GetResource_impl",
+            "void",
+            [self.task_desc(curr_task), str(curr_task.priority)],
+        )
 
     def ReleaseResource(self, abb, userspace, kernelspace):
         curr_task = userspace.calling_task
@@ -452,9 +532,12 @@ class GenericSystemCalls(BaseCoder):
             curr_task.priority = res.prev_priority
             res.prev_priority = None
 
-        self.call(kernelspace, f"scheduler_[{curr_cpu}].ReleaseResource_impl",
-                  "void", [self.task_desc(curr_task),
-                           str(curr_task.priority)])
+        self.call(
+            kernelspace,
+            f"scheduler_[{curr_cpu}].ReleaseResource_impl",
+            "void",
+            [self.task_desc(curr_task), str(curr_task.priority)],
+        )
 
     # Interrupt Handling
     def disable_irq(self, block, abb):
@@ -477,7 +560,6 @@ class GenericSystemCalls(BaseCoder):
 
 
 class AlarmTemplate(CodeTemplate):
-
     def __init__(self, rules, alarm_filter=None):
         CodeTemplate.__init__(self, rules.generator, "os/alarm.h.in")
         self.rules = rules
@@ -489,9 +571,7 @@ class AlarmTemplate(CodeTemplate):
 
         # Check if there are any counters/alarms which have to be implemented
         self.subsystem_enabled = False
-        alarm_list = [
-            alarm for v, alarm in self.ara_graph.instances.get(Alarm)
-        ]
+        alarm_list = [alarm for v, alarm in self.ara_graph.instances.get(Alarm)]
 
         if self.alarm_filter:
             if any(self.alarm_filter(x) for x in alarm_list):
@@ -513,51 +593,58 @@ class AlarmTemplate(CodeTemplate):
             if self.alarm_filter:
                 if all(self.alarm_filter(x) is False for x in counter.alarms):
                     continue
-            ret += self.expand_snippet("increase_counter",
-                                       name=counter.impl.name,
-                                       cpuid=counter.cpu_id)
+            ret += self.expand_snippet(
+                "increase_counter", name=counter.impl.name, cpuid=counter.cpu_id
+            )
         return ret
 
     def generate_check_alarm(self, alarm, is_isr, cpuid=None):
         ret = ""
         callback_name = "AUTOSAR_ALARMCB_%s" % (alarm.name)
-        has_callback = self.ara_graph.cfg.contains_function_by_name(
-            callback_name)
+        has_callback = self.ara_graph.cfg.contains_function_by_name(callback_name)
 
         if cpuid == None:
             # CPUID is needed for Counter::tick()
-            ret += self.expand_snippet("if_alarm_cpuid",
-                                       alarm=alarm.impl.name,
-                                       cpuid=alarm.cpu_id) + "\n"
+            ret += (
+                self.expand_snippet(
+                    "if_alarm_cpuid", alarm=alarm.impl.name, cpuid=alarm.cpu_id
+                )
+                + "\n"
+            )
         else:
             # softcounter syscall dont need to check cpuid
-            ret += self.expand_snippet("if_alarm",
-                                       alarm=alarm.impl.name) + "\n"
+            ret += self.expand_snippet("if_alarm", alarm=alarm.impl.name) + "\n"
 
         # This alarm has an callback
         if has_callback:
             # Add a Declaration
             decl = FunctionDeclaration(callback_name, extern_c=True)
             self.generator.source_file.function_manager.add(decl)
-            ret += self.expand_snippet("alarm_alarmcallback",
-                                       callback=callback_name) + "\n"
+            ret += (
+                self.expand_snippet("alarm_alarmcallback", callback=callback_name)
+                + "\n"
+            )
 
         if alarm.impl.event != None:
-            ret += f"debug_core << \"SetEvent {alarm.impl.task.impl.task_id}\"\n << endl;"
+            ret += f'debug_core << "SetEvent {alarm.impl.task.impl.task_id}"\n << endl;'
             ret += "scheduler_[%d].tlist.set_events(%d, %d);\n" % (
                 alarm.impl.task.cpu_id,
                 alarm.impl.task.impl.task_id,
                 alarm.impl.event.index,
             )
         else:
-            ret += f"debug_core << \"ActivateTask {self.rules.task_desc(alarm.impl.task)}\"\n << endl;"
-            ret += "scheduler_[%d].SetReady_impl(%s);\n" % (
-                alarm.impl.task.cpu_id, self.rules.task_desc(alarm.impl.task))
+            # Possible reschedule later, call posttakshook here. PreTaskHook is called in dispatch
+            ret += "\t\t\tCALL_HOOK(PostTaskHook);\n"
+            ret += f'\t\t\tdebug_core << "ActivateTask {self.rules.task_desc(alarm.impl.task)}" << endl;\n'
+            ret += "\t\t\tscheduler_[%d].SetReady_impl(%s);\n" % (
+                alarm.impl.task.cpu_id,
+                self.rules.task_desc(alarm.impl.task),
+            )
 
         if alarm.cpu_id != alarm.impl.task.cpu_id:
             ret += f"Machine::trigger_interrupt({self.generator.arch_rules.IPI_SIG}, {alarm.impl.task.cpu_id}, 0);\n"
         else:
-            ret += f"scheduler_[{alarm.impl.task.cpu_id}].Schedule_impl(/* from_interrupt */ {str(is_isr).lower()});\n"
+            ret += f"\t\t\tscheduler_[{alarm.impl.task.cpu_id}].Schedule_impl(/* from_interrupt */ {str(is_isr).lower()});\n"
 
         ret += self.expand_snippet("endif_alarm", alarm=alarm.impl.name) + "\n"
 

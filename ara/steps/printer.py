@@ -714,6 +714,9 @@ class Printer(Step):
     #     ABBType.syscall: ("diamond", "green")
     # }
 
+    # fallback dot path, for manuall creating a printer
+    _testing_dot_path = "dumps/testing.dot"
+
     dot = Option(name="dot",
                  help="Path to a dot file, '-' will write to stdout.",
                  ty=String())
@@ -758,11 +761,12 @@ class Printer(Step):
                             ty=Bool(),
                             default_value=False)
 
-
     def _print_init(self) -> str:
         dot = self.dot.get()
         if not dot:
-            self._fail("dot file path must be given.")
+            # fallback case
+            dot = self._testing_dot_path
+            # self._fail("dot file path must be given.")
 
         name = self.graph_name.get()
         # Overwrite name here
@@ -773,7 +777,10 @@ class Printer(Step):
 
     def _write_dot(self, dot: pydot.Dot) -> None:
         dot_path = self.dot.get()
-        assert dot_path
+        if not dot_path:
+            # fallback case
+            dot_path = self._testing_dot_path
+        # assert dot_path
         dot_path = os.path.abspath(dot_path)
         with open_with_dirs(dot_path):
             dot.write(dot_path)

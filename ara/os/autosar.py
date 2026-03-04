@@ -465,9 +465,12 @@ class AUTOSAR(OSBase):
         )
 
     @staticmethod
-    def handle_irq(graph, state, cpu_id, irq):
+    def handle_irq(graph, state: OSState, cpu_id: int, irq):
         # we handle alarms and ISRs
-        instances = state.instances
+        instances: graph_tool.Graph = state.instances
+
+        # instances.vp: graph_tool.VertexPropertyMap
+        # obj ist nur eine Dataclass mit bool und 2 int
         obj = instances.vp.obj[irq.isr_handler]
 
 

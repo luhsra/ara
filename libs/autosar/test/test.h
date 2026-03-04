@@ -71,6 +71,8 @@
 #include <stdint.h>
 
 #define EXPECTED_VALUES_MAX 10
+#define TRACE_LENGTH 2048
+
 typedef unsigned int expected_value_t;
 
 extern "C" {
@@ -90,10 +92,10 @@ extern expected_value_t expected_values[EXPECTED_VALUES_MAX];
 extern _Atomic(bool) interrupts_suspended;
 
 //! buffer for task activation records
-extern _Atomic(char) trace_table[256];
+extern _Atomic(char) trace_table[TRACE_LENGTH];
 
 //! index for trace_table
-extern _Atomic(unsigned char) trace_table_idx;
+extern _Atomic(unsigned) trace_table_idx;
 
 /**
  * @name User supplied functions
@@ -155,13 +157,13 @@ static forceinline void test_ne(expected_value_t real_value, const expected_valu
 
 /* Store and retrieve expected results */
 
-static forceinline void test_expect_store(unsigned char id, expected_value_t value) { expected_values[id] = value; }
+static forceinline void test_expect_store(unsigned id, expected_value_t value) { expected_values[id] = value; }
 
-static forceinline void test_expect_eq(unsigned char id, const expected_value_t expected_value) {
+static forceinline void test_expect_eq(unsigned id, const expected_value_t expected_value) {
 	test_equality(expected_values[id], expected_value, true);
 }
 
-static forceinline void test_expect_ne(unsigned char id, const expected_value_t expected_value) {
+static forceinline void test_expect_ne(unsigned id, const expected_value_t expected_value) {
 	test_equality(expected_values[id], expected_value, false);
 }
 
@@ -271,7 +273,9 @@ static forceinline void test_main(void) {
 	/* debug << "dOSEK halt" << endl; */
 }
 
+
 extern "C" noinline void test_trace(char chr);
+extern "C" noinline unsigned count_trace(char chr);
 
 extern "C" void arch_startup();
 

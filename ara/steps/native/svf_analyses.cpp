@@ -9,14 +9,14 @@
 
 #include "svf_analyses.h"
 
-#include "common/llvm_common.h"
-#include "common/util.h"
-
 #include "Graphs/PTACallGraph.h"
 #include "Graphs/VFGNode.h"
 #include "SVF-FE/SVFIRBuilder.h"
 #include "Util/BasicTypes.h"
 #include "WPA/Andersen.h"
+#include "common/llvm_common.h"
+#include "common/util.h"
+
 #include <sstream>
 
 using namespace SVF;
@@ -169,14 +169,14 @@ namespace ara::step {
 	Step::OptionVec SVFAnalyses::get_local_options() { return {translation_map_template, hide_svf_output_template}; }
 
 	void SVFAnalyses::run() {
-	
-		// use https://llvm.org/docs/CommandLine.html#the-cl-parsecommandlineoptions-function 
+
+		// use https://llvm.org/docs/CommandLine.html#the-cl-parsecommandlineoptions-function
 		set_up_llvm_cl();
 
 		logger.debug() << "Building SVF graphs." << std::endl;
 		SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(graph.get_module());
 		logger.info() << "Processing file: " << graph.get_module().getName().str() << std::endl;
-		
+
 		assert(svfModule != nullptr && "SVF Module is null");
 		svfModule->buildSymbolTableInfo();
 
@@ -211,6 +211,5 @@ namespace ara::step {
 			graph.get_svfg().dump(*dump_prefix.get() + "svfg");
 		}
 		logger.debug() << "Done with Svf" << std::endl;
-
 	}
 } // namespace ara::step
