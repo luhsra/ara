@@ -202,6 +202,22 @@ class HyperSSE(Experiment):
         else:
             logger.info("No paper-repo, data not copied.")
 
+
+        # Use typst to create overview-pdf
+        experiment_folder = cwd.split('/')[-1]
+        output_name =  "eval-grid.pdf"
+        typst_cmd = ["typst", "compile", "../eval-grid.typ", "--input", f"path={experiment_folder}", output_name]
+        try:
+            res = subprocess.run(typst_cmd, cwd=cwd, capture_output=True, encoding="UTF-8")
+            if res.stderr.rstrip():
+                logger.warning(res.stderr.rstrip())
+            else:
+                logger.info(f"Created overview, click to open: \"{cwd}/{output_name}.")
+        except Exception as e:
+            logger.warning("Overview failed, maybe typst is not available:")
+            logger.warning(e)
+            
+        logger.info("Done with paper.py.")
         return
         
 if __name__ == "__main__":
