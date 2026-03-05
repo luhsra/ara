@@ -21,16 +21,34 @@ logger = logging.getLogger(__name__)
 parrot_dir = "/../../../../../"
 res_file = 'res-ara.csv'
 
-# relative to parrots location, e.g. the two folders should be in the same folder
-paper_repo = "../ecrts-hypersse/fig"
+# parrot contains multiple git-repos, each one can influence the test result
+repo_list = [
+    "parrot",
+    "parrot/subprojects/ara",
+    "parrot/subprojects/ara-zephyr-apps"
+]
 
-# class HyperSSE(Experiment):
-class MCAnalyzer(Experiment):
+# relative to parrots location, e.g. the two folders should be in the same folder
+# parent-dir
+# ├── parrot
+#       ├── build
+#       ├── ...
+#       └── subprojects
+# └── ecrts-hypersse
+#       ├── fig
+#       └── ...
+# paper_repo = "../ecrts-hypersse/fig"
+paper_repo = "NONE"
+
+class HyperSSE(Experiment):
+# class MCAnalyzer(Experiment):
 
     inputs = {"log": String("INFO"),
               "cpus": Integer(multiprocessing.cpu_count() - 4),
               "rebuild": Bool(False),
-              "git_hash": String("0")
+              "git_hash": String("0"),
+              "cleangit": Bool(False),
+              "timeout": Integer(3),
         }
     outputs = {"result-csv": File("res-ara.csv")}
 
@@ -40,11 +58,27 @@ class MCAnalyzer(Experiment):
 
         cpus = self.inputs.cpus.value
         rebuild = self.inputs.rebuild.value
+        # limit for how long ara should try to analyse 1 application. Currently all finish in ~50s, 95% in ~5s.
+        # it sets the meson option of ara: "test_timeout", which is used in "ara/test/xen-eval/meson.build"
+        timeout = self.inputs.timeout
+        cleangit = self.inputs.cleangit.value
         logger.setLevel(getattr(logging, self.inputs.log.value.upper(), logging.INFO))
         logger.warning(f"Starting thesis.py for \"{thing}\" with log: {logging.getLevelName(logger.level)}, "
-                       f"cpus: {cpus}, rebuild: {rebuild}, git_hash: {{ {self.inputs.git_hash} }}")
+                       f"cpus: {cpus}, rebuild: {rebuild}, git_hash: {{ {self.inputs.git_hash} }}, test-timeout: {timeout}, clean_git: {cleangit}")
 
         cwd = os.getcwd()
+
+        if cleangit:
+            git_cmd = ["git", "status", "--porcelain"]
+            for repo in repo_list:
+                path = cwd + parrot_dir + "../" + repo
+                res = subprocess.run(git_cmd, cwd=path, check=True, capture_output=True, encoding="UTF-8")
+                if res.stdout.rstrip():
+                    logger.warning(f"Repo: {repo} is dirty, aborting:")
+                    logger.info(res.stdout.rstrip())
+                    exit(1)
+            logger.info(f"All {len(repo_list)} repos have a clean working tree.")
+
 
         if rebuild:
             # could also delete ara/appl here, but would need to keep generated json files
@@ -55,14 +89,21 @@ class MCAnalyzer(Experiment):
                 build_path = cwd + parrot_dir
                 subprocess.run(cmd, cwd=build_path, check=True)
 
+        
+        logger.info(f"Setup test timeout to: \"{timeout}\", might need to wait for meson to reconfigure.")
+        cmd = ["meson", "configure", f"-Dara:test_timeout={timeout}"]
+        build_path = cwd + parrot_dir + "build/"
+        subprocess.run(cmd, cwd=build_path, check=True)
+        # this is needed for meson configure to take effect. And it moves the (long) ouput from meson to debug.
+        ninja_out = subprocess.run("ninja", cwd=build_path, check=True, capture_output=True, encoding="UTF-8")
+        logger.debug(ninja_out.stdout.rstrip())
+
         logger.info(f"Building ll-files for Autosar, Zephyr, BareMetal. This might take a moment.")
         ninja_cmd = ["ninja", "subprojects/ara/appl/Xen/xen-ara-autosar", "-j" , f"{cpus}"]
-        build_path = cwd + parrot_dir + "build/"
         subprocess.run(ninja_cmd, cwd=build_path, check=True)
 
         logger.info("Running meson testsuite.")
         meson_testuite_cmd = ["meson", "test", "--suite", "ara-xen-eval", "-j" , f"{cpus}"]
-        build_path = cwd + parrot_dir + "build/"
         subprocess.run(meson_testuite_cmd, cwd=build_path)
 
         logger.info("Parsing meson testlog into csv.")
@@ -145,8 +186,8 @@ class MCAnalyzer(Experiment):
 
 
         path = cwd + parrot_dir + paper_repo
-        logger.info(f"Copy svgs to paper-repo: \"{paper_repo}\"")
         if os.path.isdir(path):
+            logger.info(f"Copy svgs to paper-repo: \"{paper_repo}\"")
             versions = os.listdir(path)
             logger.debug(f"Folder contains: {versions}")
             num = 0
@@ -159,7 +200,7 @@ class MCAnalyzer(Experiment):
             shutil.copytree(cwd, target)
             logger.info(f"Creating folder: {thing + "-" + str(num)}")
         else:
-            logger.warning("Folder not found, skipped copy!")
+            logger.info("No paper-repo, data not copied.")
 
         return
         
@@ -175,13 +216,13 @@ if __name__ == "__main__":
 
     # check state of all relevant ara repos 
     git_cmd = ["git", "rev-parse", "--short", "HEAD"]
-    parrot = subprocess.run(git_cmd, cwd=os.getcwd() + parrot_dir + "parrot", capture_output=True, encoding="UTF-8")
-    ara = subprocess.run(git_cmd, cwd=os.getcwd() + parrot_dir + "parrot/subprojects/ara", check=True, capture_output=True, encoding="UTF-8")
-    ara_zephyr_apps = subprocess.run(git_cmd, cwd=os.getcwd() + parrot_dir + "parrot/subprojects/ara-zephyr-apps", check=True, capture_output=True, encoding="UTF-8")
-    git_hash = "parrot:" + parrot.stdout.rstrip() + " ara:" + ara.stdout.rstrip() + " ara-zephyr-apps:" + ara_zephyr_apps.stdout.rstrip()
+    git_hash = ""
+    for repo in repo_list:
+        res = subprocess.run(git_cmd, cwd=os.getcwd() + parrot_dir + repo, check=True, capture_output=True, encoding="UTF-8")
+        git_hash += repo.split('/')[-1] + ":" + res.stdout.rstrip() + " "
 
-    # experiment = HyperSSE()
-    experiment = MCAnalyzer()
+    experiment = HyperSSE()
+    # experiment = MCAnalyzer()
 
     dirname = experiment(["--git_hash", git_hash] + sys.argv[1:])
     # dirname = experiment(["--change_hash", str(datetime.datetime.now())])

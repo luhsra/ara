@@ -32,7 +32,8 @@ foreach app : xen_testcases
             env: [python_path],
             depends: [ara_py, rebuild_lls],
             suite: 'ara-xen-eval',
-            timeout: 100 
+            timeout: get_option('test_timeout')
+            # timeout: 100
         )
     endif
 

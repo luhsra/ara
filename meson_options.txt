@@ -18,3 +18,5 @@ option('autosar_benchmark', type: 'boolean', value: false, description: 'Default
 
 # do not change this, controled by root meson_options.txt
 option('include_xen', type: 'boolean', value: true, yield: true, description: 'If ara/appl/Xen apps should be included, needed for HyperSSE and ara-xen-eval.')
+
+option('test_timeout', type: 'integer', value: 100, description: 'Used by (some) testsuites like ara-xen-eval')

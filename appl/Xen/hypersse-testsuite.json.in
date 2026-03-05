@@ -56,7 +56,7 @@
 		"log_level": "warning",
 		"per_round_dump": false,
 		"reduced_dump": false,
-		"anonymous": true
+		"anonymous": false
 	},
 
 	"HyperSSE": {
