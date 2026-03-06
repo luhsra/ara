@@ -21,11 +21,16 @@ if arm_enabled
     '-ffixed-r9', # cpuid
   ]
 
+  is_qemu = '-DQEMU'
+  if get_option('no_qemu')
+    is_qemu = ''
+  endif
+
   # For QEMU: pi4 is cortex-a72, but this makes it work in QEMU
   autosar_pi4_clang_flags += [
     '-mcpu=cortex-a7',
     # for qemu include this flag, for running on pi remove this flag
-    '-DQEMU'
+      is_qemu
     ]
 
   autosar_pi4_ld_flags = [

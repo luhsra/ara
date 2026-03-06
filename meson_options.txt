@@ -20,3 +20,4 @@ option('autosar_benchmark', type: 'boolean', value: false, description: 'Default
 option('include_xen', type: 'boolean', value: true, yield: true, description: 'If ara/appl/Xen apps should be included, needed for HyperSSE and ara-xen-eval.')
 
 option('test_timeout', type: 'integer', value: 100, description: 'Used by (some) testsuites like ara-xen-eval')
+option('no_qemu', type: 'boolean', value: false, description: 'Autosar apps from the generator need this flag depending on if they are run in qemu or on hardware (rpi4).')
