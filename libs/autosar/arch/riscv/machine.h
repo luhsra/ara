@@ -14,6 +14,9 @@
 #include "hardware_threads.h"
 
 
+#include "perf.h"
+
+
 /**
  *  @ingroup arch
  *  @defgroup posix Posix "Hardware" abstraction
@@ -121,8 +124,16 @@ public:
 
 	static noinline void shutdown(void) {
 		// QEMU shutdown
-		(*(volatile uint32_t *) 0x100000) = 0x5555;
+		//(*(volatile uint32_t *) 0x100000) = 0x5555;
 		//htif_poweroff();
+		//asm("j do_reset");
+
+		// BeagleV "Shutdown" (No conventional shutdown feature)
+		kout << "Shutting down..." << endl;
+		while (true) {
+			halt();
+		}
+		
 	}
 
 	static noinline void halt(void) {
@@ -171,12 +182,11 @@ public:
 		
 		ipi_cleared[cpuid] = false;
 		debug_core << "Triggering IPI-Sync on core " << (int) cpuid << endl;
-		*(OTHER_HLS(cpuid)->ipi) = 1;
 
+		*(OTHER_HLS(cpuid)->ipi) = 1;
 		while (!ipi_cleared[cpuid]) {
 			Machine::nop();
 		}
-
 		if (interrupts) { enable_interrupts(); }
 		
 	}

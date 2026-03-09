@@ -229,7 +229,7 @@ struct Scheduler {
 void Scheduler::Reschedule() {
     // update current_task
     tlist.head(current_task, current_prio);
-
+    
     // reset other cores request to reschedule (IPIs)
     ipi_cleared[arch::get_cpuid()] = true;
 

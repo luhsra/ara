@@ -1,5 +1,6 @@
 riscv_autosar_includes = ['-I', meson.current_source_dir()]
 # riscv_autosar_includes += ['-I', meson.current_source_dir() / 'platforms' / 'r5']
+riscv_autosar_includes += ['-I', meson.current_source_dir() / 'platforms' / 'beaglev']
 # Wenn maschinenabhängige Dateien hinzugefügt werden, müssen sie hier eingebunden werden
 
 src_files = [
@@ -13,17 +14,19 @@ src_files = [
   'startup.cc',
   'startup.S',
   'timer.cc',
-  'spinlock.cc'
+  'spinlock.cc',
+  # 'spinlock.cc',
+  'platforms/beaglev/perf.cc'
 ]
 
 obj_targets = []
 
 foreach src : src_files
     obj_target = custom_target(
-        src,
+        src.underscorify(),
         input: src,
-        output: src +'.o',
-        depfile: src +'.dep',
+        output: src.underscorify() +'.o',
+        depfile: src.underscorify() +'.dep',
         command: clang_cpp +
                 riscv_autosar_includes +
                 autosar_includes +

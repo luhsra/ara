@@ -6,6 +6,7 @@
 #include "machine.h"
 #include "os.h"
 #include "output.h"
+#include "boot_cpu.h"
 
 extern "C" int main(void);
 
@@ -22,11 +23,10 @@ namespace arch {
 
 	int get_cpuid() {
 		//return the id of the current core
+		uint32_t hartid;
+		asm volatile("csrr %0, mhartid" : "=r" (hartid) );
 
-		uint32_t x;
-		asm volatile("csrr %0, mhartid" : "=r" (x) );
-	
-		return x;
+		return hartid - BOOT_CORE;		
 	}
 
 	unsigned int get_num_cores() { 
@@ -38,6 +38,9 @@ namespace arch {
 		int synced = ++syncing_cores[sync_point];
 		debug_core << "Syncing[" << sync_point << "] with core: " << get_cpuid() << " : " << synced << "/" << cores << endl;
 		//kout << synced << endl;
+
+		//debug_core << "Cores Ready: " <<  core_is_ready[0] << ", "<< core_is_ready[1] << ", "<< core_is_ready[2] << ", "<< core_is_ready[3] << ", "<< core_is_ready[4] << endl; 
+
 		// wait until all cores have synced
 		while (syncing_cores[sync_point] < cores)
 			;
@@ -79,6 +82,7 @@ namespace arch {
 	}
 
 	StatusType start_hardware_thread(unsigned int hardware_number, void* bottom_of_stack, unsigned int size_of_stack) {
+		//kout << "Start hardware threat" << hardware_number << endl;
 
 		core_is_ready[hardware_number] = true;
 		cores++;

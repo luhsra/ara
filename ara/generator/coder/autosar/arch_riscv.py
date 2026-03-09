@@ -30,7 +30,10 @@ class RiscVArch(GenericArch):
         self.arch_rules.generate_functions()
     
     def generate_functions(self):
-        super().generate_functions()
+        timing_info = Function("ara_timing_info", "void", ["int", "int"], extern_c=True)
+        timing_info.add(Statement("debug_core << \" timing \" << arg0 << \" \" << arg1 << endl"))
+        self.call(timing_info, "wait", "void", ["arg0, arg1"])
+        self.generator.source_file.function_manager.add(timing_info)
 
         kickoff = Function("AUTOSAR_kickoff", "void", [], extern_c=True)
         #kickoff.add(Statement("debug_core << __FUNCTION__ << endl"))
@@ -38,7 +41,7 @@ class RiscVArch(GenericArch):
         self.call(kickoff, "Machine::enable_interrupts")
         self.generator.source_file.function_manager.add(kickoff)
 
-        #self.generator.source_file.include("perf.h")
+        self.generator.source_file.include("perf.h")
 
         if self.PERF_TRACE == TracePerf.IRQ:
             ASTSchedule = self.generator.source_file.function_manager.get("__OS_ASTSchedule")
@@ -182,4 +185,13 @@ class RiscVArch(GenericArch):
 
     def generate_kernelspace(self, userspace, abb, arguments):
         # Use the inline kernelspace variant
-        return self.generate_kernelspace__inline(userspace, abb, arguments)
+        # return self.generate_kernelspace__inline(userspace, abb, arguments)
+    
+        kernelspace = self.generate_kernelspace__inline(
+            userspace, abb, arguments)
+
+        if self.PERF_TRACE == TracePerf.SYSCALL:
+            self.call(kernelspace.pre_hook, "arch::Perf::trace_cycles")
+            self.call(kernelspace.post_hook, "arch::Perf::trace_cycles")
+        
+        return kernelspace
