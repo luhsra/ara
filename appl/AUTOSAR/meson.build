@@ -682,9 +682,13 @@ foreach app: autosar_targets
         'noopt': autosar_generator_riscv
       }
     opt_targets = ['noopt']
-    if app.has_key('opt') and app['opt']
-      opt_targets += ['opt']
-    endif
+    # Todo: fix (opt)-targets
+    # message(app['full_name'])
+    # message(app.has_key('opt'))
+    # message(app['opt'])
+    # if app.has_key('opt') and app['opt']
+    #   opt_targets += ['opt']
+    # endif
 
   	foreach opt: opt_targets
       if opt == 'opt'
