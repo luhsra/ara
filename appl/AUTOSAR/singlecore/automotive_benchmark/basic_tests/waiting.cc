@@ -1,6 +1,6 @@
 #include "os.h"
 #include "test/test.h"
-#include "arch/arm/platforms/raspberry/perf.cc"
+#include "perf.h"
 
 DeclareTask(H1);
 
@@ -10,9 +10,10 @@ TEST_MAKE_OS_MAIN(StartOS(0))
  * Test everything about waiting/perf
  */
 
-const unsigned RUNS = 5;
-static unsigned int s[RUNS] = {0};
-static unsigned int e[RUNS] = {0};
+const unsigned RUNS = 3;
+static uint64_t s[RUNS] = {0};
+static uint64_t e[RUNS] = {0};
+static uint64_t t[RUNS] = {0};
 
 TASK(H1) {
 	// needed for wait functions
@@ -25,16 +26,14 @@ TASK(H1) {
 	// kout << res << endl;
 
 	for (unsigned i = 0; i < RUNS; i++) {
-		
-		// test wait_upto
-		// uint32_t start_cycle = arch::Perf::get_cycles();
 
+		t[i] = *arch::mtime;
 		s[i] = arch::Perf::get_cycles();
 		// test wait
 		micro_sec_wait(1000000);
 
 		// test wait_upto
-		// bool in_time = micro_sec_wait_upto(start_cycle, 1000000);
+		// micro_sec_wait_upto(s[i], 3000000);
 
 		// test cycles
 		// cycles_wait(0xFFFFFFFF);
@@ -45,6 +44,7 @@ TASK(H1) {
 	}
 	for (unsigned i = 0; i < RUNS; i++) {
 		kout << "Run: " << i << " delta[us]: " << (e[i] - s[i]) / WAIT_FREQUENCE << " s: " << s[i] / WAIT_FREQUENCE  << " e: " << e[i] / WAIT_FREQUENCE  << endl;
+		// kout << "t: " << t[i] << endl;
 	}
 
 	kout << "Done!" << endl;

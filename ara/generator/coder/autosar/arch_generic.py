@@ -74,6 +74,7 @@ class GenericArch(BaseCoder):
         """returns a KernelSpace object"""
         raise NotImplementedError()
 
+    # if modifed also modify generate_kernelspace__syscall, used by riscv
     def generate_kernelspace__inline(self, userspace, abb, args):
         """When a systemcall is done from a app (synchroanous syscall), then we
            disable interrupts. In the interrupt handler they are already
@@ -97,6 +98,9 @@ class GenericArch(BaseCoder):
         system = Block(arguments=args)
         post_hook = Hook("SystemLeaveHook", arguments=args)
 
+        # Possible reschedule later, call posttakshook here. PreTaskHook is called in dispatch
+        pre_hook.add(Statement("CALL_HOOK(PostTaskHook)"))
+
         pre_hook.add(Statement("*p_result = E_OK"))
 
         syscall_name = self.ara_graph.cfg.get_syscall_name(abb)[8:]
@@ -116,6 +120,7 @@ class GenericArch(BaseCoder):
 
         return self.KernelSpace(pre_hook, system, post_hook)
 
+    # if modifed also modify generate_kernelspace__inline, used by arm
     def generate_kernelspace__syscall(self, userspace, abb, args):
         """When a systemcall is done from a app (synchronous syscall), then we
            disable interrupts. In the interrupt handler they are already

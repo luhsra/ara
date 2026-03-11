@@ -6,7 +6,10 @@
 #define CLINT_TIMER_OFFSET 0xbff8
 #define MTIMECMP_BASE 0x4000
 
-#define TIMER_FREQ 100000
+// Not sure where this timer comes from, but it should
+//  be 1000 to trigger alarms correctly in automotive benchmark
+// #define TIMER_FREQ 100000
+#define TIMER_FREQ 1000
 
 
 

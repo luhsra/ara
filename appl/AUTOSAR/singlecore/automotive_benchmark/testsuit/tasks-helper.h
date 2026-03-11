@@ -8,44 +8,44 @@
 // current cycle of scheduling
 static unsigned cycle = 0;
 // the time when a running task is done with its calculations, gets changed when tasks is preempt
-static uint32_t calculate_until[TASK_COUNT] = {0};
+static uint64_t calculate_until[TASK_COUNT] = {0};
 // keep track what time it was when the task entered its PostTaskHook
-static uint32_t time_when_stopped[TASK_COUNT] = {0};
+static uint64_t time_when_stopped[TASK_COUNT] = {0};
 
 /**
  ******************** DEBUG VARIABLES ********************
  */
 #ifdef PRINT_CYCLE_TIMING
 	static unsigned int prev = 0;
-	static unsigned int cycle_diff[TOTAL_CYLES] = {0};
+	static unsigned int cycle_diff[TOTAL_CYLES] = {{0}};
 #endif
 #ifdef PRINT_TASK_TIMING
-	static unsigned int cycle_count[TASK_COUNT] = {0};
-	static unsigned int task_time[TASK_COUNT][CYCLES] = {0};
+	static unsigned int cycle_count[TASK_COUNT] = {{0}};
+	static unsigned int task_time[TASK_COUNT][CYCLES] = {{0}};
 #endif
 #ifdef PRINT_HOOK_STATS
 	static unsigned int hookcounter = 0;
 	// how many things get tracked in each hook
 	static const unsigned int HOOK_VALUES = 5;
 	// depening on system load each tasks needs multiple hooks, extend as needed
-	static unsigned int hooks[TASK_COUNT*CYCLES*25][HOOK_VALUES] = {0};
+	static unsigned int hooks[TASK_COUNT*CYCLES*25][HOOK_VALUES] = {{0}};
 	// tracks if any tasks is still running when scheduler starts
 	static bool hook_idle = false;
 	// used to calculate how long one idle window is
-	static uint32_t hook_start_of_idle = 0;
+	static uint64_t hook_start_of_idle = 0;
 #endif
 
 #if defined(PRINT_RUN_STATS) || defined(BENCHMARK)
-	static unsigned start_counter[TASK_COUNT] = {0};
-	static unsigned blocked_counter[TASK_COUNT] = {0};
-	static unsigned finish_counter[TASK_COUNT] = {0};
+	static unsigned start_counter[TASK_COUNT] = {{0}};
+	static unsigned blocked_counter[TASK_COUNT] = {{0}};
+	static unsigned finish_counter[TASK_COUNT] = {{0}};
 #endif
 #if defined(PRINT_MEASURED_LOAD) || defined(BENCHMARK)
 	// tracks if any tasks is still running when scheduler starts
 	static bool idle = false;
 	// used to calculate how long one idle window is
-	static uint32_t start_of_idle = 0;
-	static uint32_t idle_total = 0;
+	static uint64_t start_of_idle = 0;
+	static uint64_t idle_total = 0;
 #endif
 
 

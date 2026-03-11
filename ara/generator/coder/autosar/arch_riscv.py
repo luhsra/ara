@@ -32,7 +32,8 @@ class RiscVArch(GenericArch):
     def generate_functions(self):
         timing_info = Function("ara_timing_info", "void", ["int", "int"], extern_c=True)
         timing_info.add(Statement("debug_core << \" timing \" << arg0 << \" \" << arg1 << endl"))
-        self.call(timing_info, "wait", "void", ["arg0, arg1"])
+        # this should be disabled for automotive benchmark
+        # self.call(timing_info, "wait", "void", ["arg0, arg1"])
         self.generator.source_file.function_manager.add(timing_info)
 
         kickoff = Function("AUTOSAR_kickoff", "void", [], extern_c=True)

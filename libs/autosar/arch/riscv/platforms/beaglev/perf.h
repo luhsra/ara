@@ -3,6 +3,7 @@
 #include "inline.h"
 #include "output.h"
 #include "csr.h"
+#include "timer.h"
 
 #define MAX_TRACES 64
 
@@ -63,15 +64,21 @@
 #define UTLB_MISS                          (1 << 13)
 
 extern "C" void wait(int a, int b);
+extern "C" void micro_sec_wait(uint64_t wait_time);
+extern "C" bool micro_sec_wait_upto(uint64_t start_time, uint64_t wait_time);
+extern "C" void micro_sec_wait_end_time(uint64_t wait_time, uint64_t* end_time);
+
+// board runs (suposedly) MHz
+#define WAIT_FREQUENCE 600
 
 namespace arch {
 	class Perf {
 
-        static int cycles[MAX_TRACES];
-        static int cycles_nr;
+        static uint64_t cycles[MAX_TRACES];
+        static uint64_t cycles_nr;
 
-        static int counter0[MAX_TRACES];
-        static int counter0_nr;
+        static uint64_t counter0[MAX_TRACES];
+        static uint64_t counter0_nr;
 
 
 	  public:
@@ -104,19 +111,25 @@ namespace arch {
 
 		static forceinline void trace_cycles() {
             //debug_core << "Tracing cycles" << endl;
-            unsigned int output = read_csr(CSR_MCYCLE);
+            uint64_t output = read_csr(CSR_MCYCLE);
 			cycles[cycles_nr++] = output;
         }
 
-		static forceinline unsigned int get_cycles() { 
+		static forceinline uint64_t get_cycles() { 
             //debug_core << "Getting cycles" << endl;
-            unsigned int output = read_csr(CSR_MCYCLE);
+            uint64_t output = read_csr(CSR_MCYCLE);
 			return output;
+            // return *arch::mtime;
+        }
+
+        // TODO: propper documentation and tests
+		static forceinline uint64_t get_mtime() {
+            // return *arch::mtime;
         }
 
 		static forceinline void trace_counter0() {
             //debug_core << "Tracing counter0" << endl;
-            unsigned int output = read_csr(CSR_MHPMCOUNTER3);
+            uint64_t output = read_csr(CSR_MHPMCOUNTER3);
 			counter0[counter0_nr++] = output;
         }
 
@@ -138,11 +151,11 @@ namespace arch {
 		static forceinline void print_cycles() {
             //debug_core << "Printing cycles" << endl;
 
-            for (int i = 0; i < cycles_nr; i++) {
+            for (uint64_t i = 0; i < cycles_nr; i++) {
 				// print cycles
 				kout << "val[" << i << "]=" << cycles[i] << endl;
 			}
-			for (int i = 1; i < cycles_nr; i++) {
+			for (uint64_t i = 1; i < cycles_nr; i++) {
 				// print diff
 				kout << "d[" << i - 1 << ">" << i << "]=" << cycles[i] - cycles[i - 1] << endl;
 			}
@@ -151,11 +164,11 @@ namespace arch {
 		static forceinline void print_counter0() {
             //debug_core << "Printing counter0" << endl;
 
-            for (int i = 0; i < counter0_nr; i++) {
+            for (uint64_t i = 0; i < counter0_nr; i++) {
 				// print cycles
 				kout << "val[" << i << "]=" << counter0[i] << endl;
 			}
-			for (int i = 1; i < counter0_nr; i++) {
+			for (uint64_t i = 1; i < counter0_nr; i++) {
 				// print diff
 				kout << "d[" << i - 1 << ">" << i << "]=" << counter0[i] - counter0[i - 1] << endl;
 			}
