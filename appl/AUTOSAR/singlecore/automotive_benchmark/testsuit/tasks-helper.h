@@ -369,20 +369,22 @@ void print_results() {
 		#else
 			kout << endl;
 		#endif
+
+		#ifdef PRINT_SWITCH_STATS
+			kout << "*******************\r\n" << "Timings for task switches:" << endl;
+			kout << "TASK, entry, exit, real_duration, frequency" << endl;
+			kout << "-------------------------------" << endl;
+			for (unsigned i = 0; i < TASK_COUNT*CYCLES*2; i++) {
+				if ( switches[i].duration == 0)
+					break;
+				if ( switches[i].id == 10 || switches[i].entry == 0) // 10 is scheduler, we ignore that. We also ignore "broken" entries. Sometimes we do not recognise an entry?
+					continue;
+				kout << switches[i].id << ", " << switches[i].entry << ", " << switches[i].exit << ", " << switches[i].duration << ", " << switches[i].low_freq << endl;
+			}
+			kout << "*******************\r\n" << endl;
+		#endif
+
 		kout << "Done with Benchmark!" << endl;
-		kout << "*******************\r\n" << endl;
-	#endif
-	#ifdef PRINT_SWITCH_STATS
-		kout << "*******************\r\n" << "Timings for task switches:" << endl;
-		kout << "TASK, entry, exit, real_duration, frequency" << endl;
-		kout << "-------------------------------" << endl;
-		for (unsigned i = 0; i < TASK_COUNT*CYCLES*2; i++) {
-			if ( switches[i].duration == 0)
-				break;
-			if ( switches[i].id == 10 || switches[i].entry == 0) // 10 is scheduler, we ignore that. We also ignore "broken" entries. Sometimes we do not recognise an entry?
-				continue;
-			kout << switches[i].id << ", " << switches[i].entry << ", " << switches[i].exit << ", " << switches[i].duration << ", " << switches[i].low_freq << endl;
-		}
 		kout << "*******************\r\n" << endl;
 	#endif
 

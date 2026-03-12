@@ -94,7 +94,7 @@ foreach app : autosar_generated_targets_riscv
         env: [python_path],
         depends: [ara_py, app['ll_riscv']],
         suite: 'automotive_benchmark_ara_riscv',
-        timeout: 60 # 20 60 600 1000 7000 86400
+        timeout: 300 # 20 60 600 1000 7000 86400
         # full benchmark should take arround 8h = 28000
     )
 
@@ -107,7 +107,7 @@ foreach app : autosar_generated_targets_riscv
         # depends: [ara_py, app['ll_pi4_mod_noopt']],
         is_parallel: false,
         suite: 'automotive_benchmark_beagle',
-        timeout: 50
+        timeout: 90
     )
 endforeach
 

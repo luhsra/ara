@@ -20,7 +20,7 @@ def main():
         stdout_log = process.stdout.read().decode("utf-8")
         stderr_log = process.stderr.read().decode("utf-8")
         if not stdout_log.startswith("ninja: no work to do."):
-            print(f"Not analysed by ARA, first run \"meson test --suite automotive_benchmark_ara\"")
+            print(f"Not analysed by ARA, first run \"automotive_benchmark_ara_riscv\"")
             print(f"Needs:{stderr_log}\n{stdout_log}")
             print("SKIPPED!")
             print("This should never happen with the current configuration.")

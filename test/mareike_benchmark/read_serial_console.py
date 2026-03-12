@@ -5,7 +5,6 @@ import sys
 import serial
 
 PI_SERIAL = sys.argv[1]
-# PI_SERIAL = "/dev/ttyUSB5"
 START_STR = "Starting benchmark:"
 END_STR = "Done with Benchmark!"
 
@@ -14,9 +13,9 @@ for _ in range(5):
     lines = []
     reading = False
     try:
-        print("Trying to read: ")
+        # print("Trying to read: ")
         with serial.Serial(PI_SERIAL, 115200) as ser:
-            while len(lines) < 10:
+            while len(lines) < 25000:
                 l = ser.readline().strip(b"\r\n").decode("UTF-8", "ignore")
                 print(l)
                 if l.startswith(START_STR):
@@ -35,6 +34,6 @@ for _ in range(5):
     else:
         break
 
-print(f"Read {len(lines)} lines from serial:")
-for line in lines:
-    print(line)
+# print(f"Read {len(lines)} lines from serial:")
+# for line in lines:
+#     print(line)
