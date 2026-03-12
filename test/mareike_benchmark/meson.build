@@ -107,7 +107,7 @@ foreach app : autosar_generated_targets_riscv
         # depends: [ara_py, app['ll_pi4_mod_noopt']],
         is_parallel: false,
         suite: 'automotive_benchmark_beagle',
-        timeout: 90
+        timeout: 50
     )
 endforeach
 

@@ -30,7 +30,7 @@ for _ in range(5):
     except serial.SerialException as e:
         print("Serial Error, retrying")
         print(e)
-        time.sleep(5)
+        time.sleep(2)
     # if no exception it worked
     else:
         break

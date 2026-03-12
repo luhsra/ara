@@ -40,8 +40,8 @@ def main():
     subprocess.run("ssh lab-pc00 'python power.py NET2 ON'", shell=True, check=True)
 
     # Read python into remote_serial
-    with open(Path(__file__).parent / "read_serial_console.py") as f:
-        remote_serial = f.read()
+    # with open(Path(__file__).parent / "read_serial_console.py") as f:
+    #     remote_serial = f.read()
     
     # Exectute remotly
     host ="lab-pc67"
@@ -52,7 +52,7 @@ def main():
     result = subprocess.run(["ssh", host, nix_cmd, command], capture_output=True, check=False)
     
     # debug print as addition to meson-logs/testlog.txt
-    print(f"---\n{result.stdout.decode("UTF-8", "ignore")}\n---")
+    # print(f"---\n{result.stdout.decode("UTF-8", "ignore")}\n---")
 
     # Parse results
     suc = False
