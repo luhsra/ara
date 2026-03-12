@@ -48,6 +48,24 @@ static uint64_t time_when_stopped[TASK_COUNT] = {0};
 	static uint64_t idle_total = 0;
 #endif
 
+#ifdef PRINT_SWITCH_STATS
+	#include<limits.h>
+	typedef struct {
+		int id;
+		unsigned int entry;
+		unsigned int exit;
+		unsigned int duration;
+		bool low_freq;
+	} switch_info_t;
+	typedef struct {
+		unsigned shortest;
+		unsigned longest;
+		unsigned average;
+	} task_stats_t;
+	static switch_info_t switches[TASK_COUNT*CYCLES*10] = {-2,0,0,0,false};
+	static task_stats_t task_stats[TASK_COUNT+2] = {INT_MAX,0,0};
+	static unsigned int switch_count = 0;
+#endif
 
 /**
  ******************** ENUMS ********************
@@ -352,6 +370,19 @@ void print_results() {
 			kout << endl;
 		#endif
 		kout << "Done with Benchmark!" << endl;
+		kout << "*******************\r\n" << endl;
+	#endif
+	#ifdef PRINT_SWITCH_STATS
+		kout << "*******************\r\n" << "Timings for task switches:" << endl;
+		kout << "TASK, entry, exit, real_duration, frequency" << endl;
+		kout << "-------------------------------" << endl;
+		for (unsigned i = 0; i < TASK_COUNT*CYCLES*2; i++) {
+			if ( switches[i].duration == 0)
+				break;
+			if ( switches[i].id == 10 || switches[i].entry == 0) // 10 is scheduler, we ignore that. We also ignore "broken" entries. Sometimes we do not recognise an entry?
+				continue;
+			kout << switches[i].id << ", " << switches[i].entry << ", " << switches[i].exit << ", " << switches[i].duration << ", " << switches[i].low_freq << endl;
+		}
 		kout << "*******************\r\n" << endl;
 	#endif
 

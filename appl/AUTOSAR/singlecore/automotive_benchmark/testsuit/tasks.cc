@@ -258,6 +258,27 @@ void PostTaskHook() {
 
 		}
 	}
+	#ifdef PRINT_SWITCH_STATS
+		switches[switch_count].exit = arch::Perf::get_cycles();
+		switches[switch_count].duration = switches[switch_count].exit - switches[switch_count].entry;
+		if (task_stats[switches[switch_count].id].shortest > switches[switch_count].duration){
+		 task_stats[switches[switch_count].id].shortest  = switches[switch_count].duration;
+		}
+		if (task_stats[switches[switch_count].id].longest < switches[switch_count].duration){
+		 task_stats[switches[switch_count].id].longest  = switches[switch_count].duration;
+		}
+		task_stats[switches[switch_count].id].average += switches[switch_count].duration;
+		task_stats[switches[switch_count].id].average /= 2;
+		switch_count++;
+		// FIXME: Es könnte kaputt gehen für dieses ich laufe nach dem alles durch ist?
+	#endif
+}
+
+void PreIdleHook() {
+	#ifdef PRINT_SWITCH_STATS
+		switches[switch_count].id = -1; // 11 is our Idle"Task"
+		switches[switch_count].entry = arch::Perf::get_cycles();
+	#endif
 }
 
 // called on context switch, before entering new task
@@ -290,6 +311,16 @@ void PreTaskHook() {
 			hookcounter++;
 		#endif
 	}
+	#ifdef PRINT_SWITCH_STATS
+		switches[switch_count].id = t_id;
+		switches[switch_count].entry = arch::Perf::get_cycles();
+		//In hindsight, if calc was streched would fit into time until next activation set flag?
+		if (switch_count > 1) {
+		 if ((task_stats[t_id].shortest * 3) < switches[switch_count].entry) {
+			switches[switch_count - 1].low_freq = true;
+		 }
+		}
+	#endif
 }
 
 

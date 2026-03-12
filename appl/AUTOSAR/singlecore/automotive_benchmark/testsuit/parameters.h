@@ -28,6 +28,8 @@
 // #define PRINT_RUN_STATS
 // At end of run print time spent idling
 // #define PRINT_MEASURED_LOAD
+// Print after finish task switches
+#define PRINT_SWITCH_STATS
 
 // prints the result for the automated benchmark
 #define BENCHMARK
