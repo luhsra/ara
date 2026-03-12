@@ -3,8 +3,11 @@
 from .option import Option, String
 from .step import Step
 
-from ara.os.zephyr import Zephyr
-from ara.os.zephyr_interpreter import ZephyrInterpreter
+try:
+    from ara.os.zephyr import Zephyr
+    from ara.os.zephyr_interpreter import ZephyrInterpreter
+except ImportError:
+    print("Zephyr IRX disabled?")
 
 class LoadKernelLL(Step):
     """

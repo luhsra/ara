@@ -40,11 +40,17 @@ from typing import Iterator, List, Annotated
 import attr
 
 from diff import diff
-from proxy import PTR
-import zephyr # irx.zephyr (in future: generated)
 
-import ara.os.zephyr_adapters as za
-from ara.os.zephyr_adapters import ThreadContext
+try:
+    from proxy import PTR
+    import zephyr # irx.zephyr (in future: generated)
+
+    import ara.os.zephyr_adapters as za
+    from ara.os.zephyr_adapters import ThreadContext
+except ImportError:
+    # IRX disabled?
+    print("Zephyr SSE support disabled, is IRX available?")
+
 
 from ara.graph.mix import CFType
 

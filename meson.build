@@ -122,9 +122,14 @@ st_flash = find_program('st-flash', required: false, disabler: true)
 sed = find_program('sed')
 
 # irx
-irx = subproject('irx')
-irx_dir = irx.get_variable('irx_dir')
-irx_mod = irx.get_variable('irx_tgt')
+if get_option('irx')
+    irx = subproject('irx')
+    irx_dir = irx.get_variable('irx_dir')
+    irx_mod = irx.get_variable('irx_tgt')
+else
+    irx_dir = ''
+    irx_mod=disabler()
+endif
 
 
 # all dependencies found, build the actual program
@@ -183,12 +188,16 @@ python_dirs = [source_dir, pyllco_dir, step_dir, graph_data_dir, irx_dir]
 python_path = 'PYTHONPATH=' + ':'.join(python_dirs)
 conv_wrapper_formatted = conv_wrapper.format('"' + '", "'.join(python_dirs) + '"', '')
 
+deps = [step_mod, graph_data_mod]
+if get_option('irx')
+    deps += [irx_mod]
+endif
 ara_py = custom_target('ara-py',
     input: [],
     output: 'ara.py',
     depends: [step_mod, graph_data_mod],
     command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_py_content.format(py3_inst.full_path()+python_opt_arg, conv_wrapper_formatted)],
-    depends: [step_mod, graph_data_mod, irx_mod],
+    depends: deps,
     command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_py_content.format(py3_inst.path()+python_opt_arg, conv_wrapper_formatted)],
     build_by_default: true
 )
