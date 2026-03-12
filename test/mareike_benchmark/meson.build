@@ -43,18 +43,18 @@ foreach app : autosar_generated_targets_pi4
     endif
 
     # 1. Compile and run ara
-    test('ara_' + app['name'] + '_' + app['variant'].to_lower(),
+    test('ara_' + app['name'] + '_' + app['variant'].to_lower() + '_arm',
         py3_inst,
-        args: [files('run_ara.py'), app['full_name']],
+        args: [files('run_ara.py'), app['full_name'], '_noopt_mod.pi4.ll'],
         env: [python_path],
         depends: [ara_py, app['ll_pi4']],
-        suite: 'automotive_benchmark_ara',
+        suite: 'automotive_benchmark_ara_arm',
         timeout: 1000 # 20 60 600 1000 7000 86400
         # full benchmark should take arround 8h = 28000
     )
 
     # 2. Deploy binary and run ara on pi4
-    test('pi_' + app['name'] + '_' + app['variant'].to_lower(),
+    test('pi_' + app['name'] + '_' + app['variant'].to_lower() + '_arm',
         py3_inst,
         args: [files('run_pi.py'), app['full_name']],
         env: [python_path],
@@ -63,6 +63,51 @@ foreach app : autosar_generated_targets_pi4
         is_parallel: false,
         suite: 'automotive_benchmark_pi',
         timeout: 180
+    )
+endforeach
+
+
+foreach app : autosar_generated_targets_riscv
+    # Filter
+    if not app['path'].contains('automotive_benchmark/testsuit')
+        continue
+    endif
+
+    if not app['name'].contains('tasks')
+        continue
+    endif
+
+    # [FLAG] Only extended angle testing
+    # if not (app['name'].contains('angle') or app['name'].contains('tasks'))
+    #     continue
+    # endif
+
+    # [FLAG] Remove extended angle testing
+    if app['name'].contains('angle-')
+        continue
+    endif
+
+    # 1. Compile and run ara
+    test('ara_' + app['name'] + '_' + app['variant'].to_lower() + '_riscv',
+        py3_inst,
+        args: [files('run_ara.py'), app['full_name'], '_mod.riscv.ll'],
+        env: [python_path],
+        depends: [ara_py, app['ll_riscv']],
+        suite: 'automotive_benchmark_ara_riscv',
+        timeout: 60 # 20 60 600 1000 7000 86400
+        # full benchmark should take arround 8h = 28000
+    )
+
+    # 2. Deploy binary and run ara on pi4
+    test('beagle_' + app['name'] + '_' + app['variant'].to_lower() + '_riscv',
+        py3_inst,
+        args: [files('run_beagle.py'), app['full_name']],
+        env: [python_path],
+        depends: [ara_py],
+        # depends: [ara_py, app['ll_pi4_mod_noopt']],
+        is_parallel: false,
+        suite: 'automotive_benchmark_beagle',
+        timeout: 90
     )
 endforeach
 

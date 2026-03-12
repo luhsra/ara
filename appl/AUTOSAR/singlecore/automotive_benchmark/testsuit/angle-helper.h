@@ -12,17 +12,17 @@ constexpr unsigned MAX_RPM = 3000;
 // Formular is 120/(CYLINDERS*RPM)
 
 // in ms -> every 30ms angle sync calculation is needed
-constexpr unsigned LONGEST_ANGLE_SYNC_PERIOD = 1000 * 120 / (CYLINDERS * MIN_RPM);
+constexpr uint64_t LONGEST_ANGLE_SYNC_PERIOD = 1000 * 120 / (CYLINDERS * MIN_RPM);
 // in ms -> every 10ms angle sync calculation is needed
-constexpr unsigned SHORTEST_ANGLE_SYNC_PERIOD = 1000 * 120 / (CYLINDERS * MAX_RPM);
+constexpr uint64_t SHORTEST_ANGLE_SYNC_PERIOD = 1000 * 120 / (CYLINDERS * MAX_RPM);
 // Average angle sync period, used for trig-angle testcase
-constexpr unsigned ANGLE_SYNC_PERIOD = (SHORTEST_ANGLE_SYNC_PERIOD + LONGEST_ANGLE_SYNC_PERIOD) / 2;
+constexpr uint64_t ANGLE_SYNC_PERIOD = (SHORTEST_ANGLE_SYNC_PERIOD + LONGEST_ANGLE_SYNC_PERIOD) / 2;
 
 /**
  ******************** RUN VARIABLES ********************
  */
-static uint32_t angle_calculate_until = 0;
-static uint32_t angle_time_when_stopped = 0;
+static uint64_t angle_calculate_until = 0;
+static uint64_t angle_time_when_stopped = 0;
 
 /**
  ******************** DEBUG VARIABLES ********************
@@ -37,5 +37,5 @@ static uint32_t angle_time_when_stopped = 0;
 
 #ifdef PRINT_TASK_TIMING
     static unsigned int angle_cycle_count = 0;
-    static unsigned int angle_task_time[CYCLES] = {0};
+    static uint64_t angle_task_time[CYCLES] = {0};
 #endif

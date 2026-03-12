@@ -4,7 +4,7 @@
 
 #include "os.h"
 #include "test/test.h"
-#include "arch/arm/platforms/raspberry/perf.cc"
+#include "perf.h"
 #include "parameters.h"
 #include "angle-helper.h"
 #include "tasks-helper.h"
@@ -52,7 +52,7 @@ TASK(SCHED) {
     }
 
 	#if defined(PRINT_CYCLE_TIMING) || defined(PRINT_HOOK_STATS) || defined(PRINT_MEASURED_LOAD) || defined(BENCHMARK)
-		uint32_t t = arch::Perf::get_cycles();
+		uint64_t t = arch::Perf::get_cycles();
 	#endif
 
 	#ifdef PRINT_CYCLE_TIMING
@@ -248,7 +248,7 @@ void PostTaskHook() {
 	// ignore hooks from scheduler
 	if (t_id != task_id::MS_LAST_id) {
 
-		uint32_t t = arch::Perf::get_cycles();
+		uint64_t t = arch::Perf::get_cycles();
 		#ifdef PRINT_HOOK_STATS
 			hooks[hookcounter][0] = hook_type::post;
 			hooks[hookcounter][1] = t_id;
@@ -312,7 +312,7 @@ void PreTaskHook() {
 	// ignore hooks from scheduler
 	if (t_id != task_id::MS_LAST_id) {
 
-		uint32_t t = arch::Perf::get_cycles();
+		uint64_t t = arch::Perf::get_cycles();
 		#ifdef PRINT_HOOK_STATS
 			hooks[hookcounter][0] = hook_type::pre;
 			hooks[hookcounter][1] = t_id;
@@ -349,11 +349,11 @@ TASK(MS1) {
 	ara_timing_info(TOTAL_RUNTIME[id], TOTAL_RUNTIME[id] + 1);
 
 	#ifdef PRINT_TASK_TIMING
-		unsigned int c = arch::Perf::get_cycles();
+		uint64_t c = arch::Perf::get_cycles();
 	#endif
 	
 	// create pointer, so end_times can be modified in hooks
-	uint32_t* end_time = &calculate_until[id];
+	uint64_t* end_time = &calculate_until[id];
 	micro_sec_wait_end_time(TOTAL_RUNTIME[id], end_time);
 	
 	#ifdef PRINT_TASK_TIMING
@@ -372,11 +372,11 @@ TASK(MS2) {
 	ara_timing_info(TOTAL_RUNTIME[id], TOTAL_RUNTIME[id] + 1);
 
 	#ifdef PRINT_TASK_TIMING
-		unsigned int c = arch::Perf::get_cycles();
+		uint64_t c = arch::Perf::get_cycles();
 	#endif
 	
 	// create pointer, so end_times can be modified in hooks
-	uint32_t* end_time = &calculate_until[id];
+	uint64_t* end_time = &calculate_until[id];
 	micro_sec_wait_end_time(TOTAL_RUNTIME[id], end_time);
 	
 	#ifdef PRINT_TASK_TIMING
@@ -395,11 +395,11 @@ TASK(MS5) {
 	ara_timing_info(TOTAL_RUNTIME[id], TOTAL_RUNTIME[id] + 1);
 
 	#ifdef PRINT_TASK_TIMING
-		unsigned int c = arch::Perf::get_cycles();
+		uint64_t c = arch::Perf::get_cycles();
 	#endif
 	
 	// create pointer, so end_times can be modified in hooks
-	uint32_t* end_time = &calculate_until[id];
+	uint64_t* end_time = &calculate_until[id];
 	micro_sec_wait_end_time(TOTAL_RUNTIME[id], end_time);
 	
 	#ifdef PRINT_TASK_TIMING
@@ -418,11 +418,11 @@ TASK(MS10) {
 	ara_timing_info(TOTAL_RUNTIME[id], TOTAL_RUNTIME[id] + 1);
 
 	#ifdef PRINT_TASK_TIMING
-		unsigned int c = arch::Perf::get_cycles();
+		uint64_t c = arch::Perf::get_cycles();
 	#endif
 	
 	// create pointer, so end_times can be modified in hooks
-	uint32_t* end_time = &calculate_until[id];
+	uint64_t* end_time = &calculate_until[id];
 	micro_sec_wait_end_time(TOTAL_RUNTIME[id], end_time);
 	
 	#ifdef PRINT_TASK_TIMING
@@ -441,11 +441,11 @@ TASK(MS20) {
 	ara_timing_info(TOTAL_RUNTIME[id], TOTAL_RUNTIME[id] + 1);
 
 	#ifdef PRINT_TASK_TIMING
-		unsigned int c = arch::Perf::get_cycles();
+		uint64_t c = arch::Perf::get_cycles();
 	#endif
 	
 	// create pointer, so end_times can be modified in hooks
-	uint32_t* end_time = &calculate_until[id];
+	uint64_t* end_time = &calculate_until[id];
 	micro_sec_wait_end_time(TOTAL_RUNTIME[id], end_time);
 	
 	#ifdef PRINT_TASK_TIMING
@@ -464,11 +464,11 @@ TASK(MS50) {
 	ara_timing_info(TOTAL_RUNTIME[id], TOTAL_RUNTIME[id] + 1);
 
 	#ifdef PRINT_TASK_TIMING
-		unsigned int c = arch::Perf::get_cycles();
+		uint64_t c = arch::Perf::get_cycles();
 	#endif
 	
 	// create pointer, so end_times can be modified in hooks
-	uint32_t* end_time = &calculate_until[id];
+	uint64_t* end_time = &calculate_until[id];
 	micro_sec_wait_end_time(TOTAL_RUNTIME[id], end_time);
 	
 	#ifdef PRINT_TASK_TIMING
@@ -487,11 +487,11 @@ TASK(MS100) {
 	ara_timing_info(TOTAL_RUNTIME[id], TOTAL_RUNTIME[id] + 1);
 
 	#ifdef PRINT_TASK_TIMING
-		unsigned int c = arch::Perf::get_cycles();
+		uint64_t c = arch::Perf::get_cycles();
 	#endif
 	
 	// create pointer, so end_times can be modified in hooks
-	uint32_t* end_time = &calculate_until[id];
+	uint64_t* end_time = &calculate_until[id];
 	micro_sec_wait_end_time(TOTAL_RUNTIME[id], end_time);
 	
 	#ifdef PRINT_TASK_TIMING
@@ -510,11 +510,11 @@ TASK(MS200) {
 	ara_timing_info(TOTAL_RUNTIME[id], TOTAL_RUNTIME[id] + 1);
 
 	#ifdef PRINT_TASK_TIMING
-		unsigned int c = arch::Perf::get_cycles();
+		uint64_t c = arch::Perf::get_cycles();
 	#endif
 	
 	// create pointer, so end_times can be modified in hooks
-	uint32_t* end_time = &calculate_until[id];
+	uint64_t* end_time = &calculate_until[id];
 	micro_sec_wait_end_time(TOTAL_RUNTIME[id], end_time);
 	
 	#ifdef PRINT_TASK_TIMING
@@ -533,11 +533,11 @@ TASK(MS1000) {
 	ara_timing_info(TOTAL_RUNTIME[id], TOTAL_RUNTIME[id] + 1);
 
 	#ifdef PRINT_TASK_TIMING
-		unsigned int c = arch::Perf::get_cycles();
+		uint64_t c = arch::Perf::get_cycles();
 	#endif
 	
 	// create pointer, so end_times can be modified in hooks
-	uint32_t* end_time = &calculate_until[id];
+	uint64_t* end_time = &calculate_until[id];
 	micro_sec_wait_end_time(TOTAL_RUNTIME[id], end_time);
 	
 	#ifdef PRINT_TASK_TIMING
@@ -556,11 +556,11 @@ TASK(MSANGLE) {
 	ara_timing_info(TOTAL_RUNTIME[id], TOTAL_RUNTIME[id] + 1);
 
 	#ifdef PRINT_TASK_TIMING
-		unsigned int c = arch::Perf::get_cycles();
+		uint64_t c = arch::Perf::get_cycles();
 	#endif
 	
 	// create pointer, so end_times can be modified in hooks
-	uint32_t* end_time = &angle_calculate_until;
+	uint64_t* end_time = &angle_calculate_until;
 	micro_sec_wait_end_time(TOTAL_RUNTIME[id], end_time);
 	
 	#ifdef PRINT_TASK_TIMING

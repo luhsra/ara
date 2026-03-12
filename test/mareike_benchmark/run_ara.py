@@ -11,7 +11,8 @@ def main():
 
     # sys.argv[0] is name of script
     full_name = sys.argv[1]
-    target = "subprojects/ara/appl/AUTOSAR/" + full_name + "_noopt_mod.pi4.ll"
+    suffix = sys.argv[2]
+    target = "subprojects/ara/appl/AUTOSAR/" + full_name + suffix 
     ninja_ara = ["ninja", target, "-v"]
 
     # if file already exists remove it

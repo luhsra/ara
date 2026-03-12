@@ -14,11 +14,11 @@ class Testcase:
 
     skipped: bool = False
 
-    passed: bool
-    expected_load: float        # in %
-    angle_expected_load: float  # in %
-    load: float                 # in %
-    diff: float                 # in %
+    passed: bool  = False
+    expected_load: float  = 0       # in %
+    angle_expected_load: float   = 0 # in %
+    load: float     = 0              # in %
+    diff: float     = 0              # in %
 
 
 def main():
@@ -44,7 +44,7 @@ def main():
             
             if line.startswith("test:"):
                 t = line.removeprefix("test:").strip()
-                name_prefix = "automotive_benchmark_pi - ara:"
+                name_prefix = "automotive_benchmark_"
                 if name_prefix not in t:
                     print(f"Wrong benchmark data: \"{t}\" does not contain \"{name_prefix}\"")
                     print("Stopping!")

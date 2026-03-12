@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 import time
+import sys
 import serial
 
-PI_SERIAL = "/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A50285BI-if00-port0"
+PI_SERIAL = sys.argv[1]
 # PI_SERIAL = "/dev/ttyUSB5"
 START_STR = "Starting benchmark:"
 END_STR = "Done with Benchmark!"
@@ -13,9 +14,11 @@ for _ in range(5):
     lines = []
     reading = False
     try:
+        print("Trying to read: ")
         with serial.Serial(PI_SERIAL, 115200) as ser:
-            while len(lines) < 5000:
+            while len(lines) < 10:
                 l = ser.readline().strip(b"\r\n").decode("UTF-8", "ignore")
+                print(l)
                 if l.startswith(START_STR):
                     reading = True
                 if reading:

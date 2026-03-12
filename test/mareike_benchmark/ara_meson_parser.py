@@ -43,7 +43,7 @@ def main():
         for line in file:
             if line.startswith("test:"):
                 t = line.removeprefix("test:").strip()
-                name_prefix = "automotive_benchmark_ara - ara:"
+                name_prefix = "automotive_benchmark_ara"
                 if name_prefix not in t:
                     print(f"Wrong benchmark data: \"{t}\" does not contain \"{name_prefix}\"")
                     print("Stopping!")

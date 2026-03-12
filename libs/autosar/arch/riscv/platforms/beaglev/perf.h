@@ -124,7 +124,7 @@ namespace arch {
 
         // TODO: propper documentation and tests
 		static forceinline uint64_t get_mtime() {
-            // return *arch::mtime;
+            return *arch::mtime;
         }
 
 		static forceinline void trace_counter0() {

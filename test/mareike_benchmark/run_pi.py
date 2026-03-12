@@ -42,9 +42,10 @@ def main():
         remote_serial = f.read()
     
     # Exectute remotly
-    host ="lab-pc67"
+    host = "lab-pc67"
+    dev = "/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A50285BI-if00-port0"
     nix_cmd = f"nix-shell -p python313Packages.pyserial --run"
-    command = f"'python read_serial_console.py'"
+    command = f"'python read_serial_console.py {dev}'"
     result = subprocess.run(["ssh", host, nix_cmd, command], capture_output=True, check=False)
     
     # debug print as addition to meson-logs/testlog.txt
