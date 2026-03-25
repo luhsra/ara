@@ -5,9 +5,7 @@
 #define MAX_WORK (1 << 2)
 #define PRIORITY 1
 
-void ara_timing_info(int a, int b) {
-
-}
+extern void ara_timing_info(int a, int b);
 
 /*
  * Minimal Zephyr App

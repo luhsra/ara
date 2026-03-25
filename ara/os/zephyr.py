@@ -480,33 +480,17 @@ class Zephyr(OSBase):
 
     @staticmethod
     def get_cpu_local_contexts(context, cpu_id, instances):
-        # Zephyr model is mostly singlecore, for this the whole context can be returend
-        # for now we are single core only, whole context is in here, also for IRQCPUS that all target CPU 0
-        # return context
-
-        # HyperSSE needs multicore contexts, some ZephyrInstance are Zephyr wide global, so they are always needed!
-        # TODO this breaks IRQ CPU, because they are not found
         local_contexts = []
         # logger.error(f"CPU_ID: {cpu_id}\n")
         # for inst, ctx in context.items():
         #     logger.info(f"{inst}  ---  {ctx}")
 
-        # track if context contains an irq that points to current cpu_id, also see move_context
-        is_irq = False
-
         for inst, ctx in context.items():
             if getattr(inst, "cpu_id", None) == cpu_id:
                 local_contexts.append((inst, ctx))
 
-                if isinstance(inst, ZephyrIRQ): #and cpu_id == ZephyrIRQ.isr_handler.cpu_id:
-                    is_irq = True
-                    irq_cpu = inst.isr_handler.cpu_id
-            # TODO find targets of IRQ if they belong to this local context
-        if is_irq:
-            for inst, ctx in context.items():
-                if getattr(inst, "cpu_id", None) == irq_cpu:
-                    local_contexts.append((inst, ctx))
-
+            if isinstance(inst, ZephyrIRQ) and cpu_id == inst.isr_handler.cpu_id:
+                local_contexts.append((inst, ctx))
 
         # logger.error("\n")
         # for inst, ctx in local_contexts:
@@ -683,7 +667,7 @@ class Zephyr(OSBase):
     @staticmethod
     def add_kernel_comm(state: OSState, cpu_id: int, call: str):
         """Adds an interaction (edge) with the given callname to the ZephyrKernel instance"""
-        connect_from_here(state, cpu_id, Zephyr.get_kernel(state), call, ty=ZephyrEdgeType.interaction)
+        connect_from_here(state, cpu_id, Zephyr.get_kernel_vertex(state), call, ty=ZephyrEdgeType.interaction)
 
     @staticmethod
     def get_thread_ccs(state) -> Iterator[ThreadContext]:
@@ -733,6 +717,13 @@ class Zephyr(OSBase):
         kernel = [(v, obj) for v, obj in state.instances.get(ZephyrKernel)]
         assert(len(kernel) == 1, "state has no unique ZephyrKernel!")
         return kernel[0][1]
+
+    @staticmethod
+    def get_kernel_vertex(state: OSState) -> int:
+        """Returns the ZephyrKernel-Object from the instance graph which is part of state."""
+        kernel = [(v, obj) for v, obj in state.instances.get(ZephyrKernel)]
+        assert len(kernel) == 1, "state has no unique ZephyrKernel!"
+        return kernel[0][0]
 
     @staticmethod
     def set_kernel_context(state, kernelKontext):
