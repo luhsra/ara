@@ -21,4 +21,4 @@ option('include_xen', type: 'boolean', value: true, yield: true, description: 'I
 
 option('test_timeout', type: 'integer', value: 100, description: 'Used by (some) testsuites like ara-xen-eval')
 option('no_qemu', type: 'boolean', value: false, description: 'Autosar apps from the generator need this flag depending on if they are run in qemu or on hardware (rpi4).')
-option('irx', type: 'boolean', value: false, description: 'IRX LLVM Interpreter')
+option('irx', type: 'boolean', value: true, description: 'IRX LLVM Interpreter')
