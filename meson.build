@@ -191,6 +191,7 @@ conv_wrapper_formatted = conv_wrapper.format('"' + '", "'.join(python_dirs) + '"
 deps = [step_mod, graph_data_mod]
 if get_option('irx')
     deps += [irx_mod]
+    deps += irx.get_variable('native_simulator_llvmir')
 endif
 ara_py = custom_target('ara-py',
     input: [],
