@@ -1175,7 +1175,7 @@ class Zephyr(OSBase):
         # old_threads = [copy.copy(x) for x in Zephyr.get_thread_ccs(state)]
 
         # ic.zi.irm.set_print_llvmir(True)
-        ic.zi.irm.stop(["arch_swap"])
+        ic.zi.irm.stop(["arch_swap", "arch_switch", "z_riscv_switch"])
         ic.zi.irm.skip(["memset"])
         # ic.zi.irm.set_print_llvmir(True)
         ic.run_function_with_arch_swap("z_impl_k_thread_suspend", [thread.ptr], ['PTR'], True)
@@ -1299,7 +1299,7 @@ class Zephyr(OSBase):
             # ic.zi.irm.skip(["memcpy", "memset"])
             # ic.run_function_with_arch_swap("z_impl_k_thread_start", [thread.ptr], ['PTR'])
 
-            ic.zi.irm.stop(["arch_swap"])
+            ic.zi.irm.stop(["arch_swap", "arch_switch", "z_riscv_switch"])
             ic.zi.irm.skip(["memset"])
             # ic.zi.irm.set_print_llvmir(True)
             ic.run_function_with_arch_swap("z_impl_k_thread_resume", [thread.ptr], ['PTR'], True)
@@ -1411,11 +1411,11 @@ class Zephyr(OSBase):
                 'APInt64',              # k_timeout_t delay
             ]
 
-            irm.stop(["arch_swap"])
+            irm.stop(["arch_swap", "arch_switch", "z_riscv_switch"])
             irm.skip(['arch_new_thread', 'memset'])
             zi.run_function("z_impl_k_thread_create", irx_args, type_hints)
 
-            if irm.getCurrentCallFunctionName() == "arch_swap":
+            if irm.getCurrentCallFunctionName() in ["arch_swap", "arch_switch", "z_riscv_switch"]:
                 irm.putReturnValue(0, 'APInt32') # emulate that the callee returned 0
 
             zi.finish_function()
@@ -1788,10 +1788,7 @@ class Zephyr(OSBase):
             ic = za.InterpreterContext(Zephyr.irx, state, cpu_id)
             irm = ic.zi.irm
 
-            stop = [
-                "arch_swap",
-                # "elapsed"
-            ]
+            stop = ["arch_swap", "arch_switch", "z_riscv_switch"]
             irm.stop(stop) # z_swap(inlined) CONF: arch_swap or with SMP: arch_switch
 
             # CONFIG_TIMEOUT_64BIT, todo fix k_timeout_t, load into struct, but llvm is i64

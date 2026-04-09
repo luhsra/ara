@@ -371,10 +371,10 @@ class InterpreterContext:
 
     def run_function_with_arch_swap(self, function_name, args, hints, update=True) -> tuple[int, bool]:
         did_swap = False
-        self.zi.irm.stop(["arch_swap"]) # z_swap(inlined) CONF: arch_swap or with SMP: arch_switch
+        self.zi.irm.stop(["arch_swap", "arch_switch", "z_riscv_switch"]) # z_swap(inlined) CONF: arch_swap or with SMP: arch_switch
         self.zi.run_function(function_name, args, hints)
 
-        if self.zi.irm.getCurrentCallFunctionName() == "arch_swap":
+        if self.zi.irm.getCurrentCallFunctionName() in ["arch_swap", "arch_switch", "z_riscv_switch"]:
             did_swap = True
             self.zi.irm.putReturnValue(0, 'APInt32') # emulate that the callee returned 0
 
