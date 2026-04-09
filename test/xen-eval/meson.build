@@ -24,17 +24,33 @@ else
 endif
 
 foreach app : xen_testcases
-    # 1. Compile and run ara
-    if not app['name'].contains('EXTRA')
-        test('ara-xen-eval-' + app['name'],
-            py3_inst,
-            args: [files('run_ara.py'), app['name']],
-            env: [python_path],
-            depends: [ara_py, rebuild_lls],
-            suite: 'ara-xen-eval',
-            timeout: get_option('test_timeout')
-            # timeout: 100
-        )
+    name = app['name']
+    n = 'hypersse_xen'
+    suits = []
+    timeout = 60
+    if 'testsuite' not in app
+        message(f'@name@ is not part of any testsuite.')
+    elif app['testsuite'] == '10s'
+        # suits = [f'@n@_10s', f'@n@_100s', f'@n@_1h', f'@n@']
+        suits = [f'@n@_10s', f'@n@']
+        timeout = 10 
+    elif app['testsuite'] == '100s'
+        # suits = [f'@n@_100s', f'@n@_1h', f'@n@']
+        suits = [f'@n@']
+        timeout = 100 
+    # currently not used
+    # elif app['testsuite'] == '1h'
+    #     suits = [f'@n@_1h', f'@n@']
+    #     timeout = 3600 
+    # elif app['testsuite'] == 'full'
+    #     suits = [f'@n@']
+    #     timeout = 0     # no timeout
     endif
-
+    test('ara-xen-eval-' + name,
+                py3_inst,
+                args: [files('run_ara.py'), name],
+                env: [python_path],
+                depends: [ara_py, rebuild_lls],
+                suite: suits,
+                timeout: timeout)
 endforeach

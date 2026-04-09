@@ -13,7 +13,14 @@ instance_graph_test = files('instance_graph.py')
 instance_graph_stats = files('instance_graph_stats.py')
 test_dir = meson.current_source_dir()
 
-if get_option('enable_step_tests')
+if get_option('build_automotive_benchmark')
+  # Call all testcases in this folder, contains the autosar_benchmark_suite
+  subdir('mareike_benchmark')
+endif
+
+run_test_cstep = files('native_step_test/run_test_step.py')
+
+if get_option('build_step_tests')
   dummy = files('empty.json')
 
   if arm_enabled
@@ -144,8 +151,6 @@ if get_option('enable_step_tests')
 
     subdir('native_step_test')
 
-  # Call all testcases in this folder, contains the autosar_benchmark_suite
-  subdir('mareike_benchmark')
 
   endif
 
@@ -359,11 +364,12 @@ if get_option('enable_step_tests')
     endforeach
   endif
 
-
-  # Call all testcases in this folder
-  if get_option('include_xen')
-    subdir('xen-eval')
-  endif
-
 endif
+
+# Call all testcases in this folder
+if get_option('build_hypersse_xen')
+  message('Including tests for "build_hypersse_xen"')
+  subdir('xen-eval')
+endif
+
 

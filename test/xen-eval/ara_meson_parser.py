@@ -53,11 +53,12 @@ def parse():
             
             if line.startswith("test:"):
                 t = line.removeprefix("test:").strip()
-                if "ara-xen-eval - ara:ara-xen-eval-" not in t:
-                    print(f"Wrong benchmark data: \"{t}\" does not contain \"ara:ara-xen-eval / ara-xen-eval-\"")
+                prefix = "ara:ara-xen-eval-"
+                if prefix not in t:
+                    print(f"Wrong benchmark data: \"{t}\" does not contain \"{prefix}\"")
                     print("Stopping!")
                     exit(1)
-                t = t.removeprefix("ara-xen-eval - ara:ara-xen-eval-")
+                t = t.split("eval-")[1]
                 current.name = t
             elif line.startswith("duration:"):
                 d = line.removeprefix("duration:").strip().removesuffix("s")

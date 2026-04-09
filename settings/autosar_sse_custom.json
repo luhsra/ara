@@ -21,12 +21,5 @@
 	"SVFAnalyses": {
 		"log_level": "warning",
 		"hide_svf_output": true
-	},
-	"MultiSSE": {
-		"with_times": true,
-		"file_name": "@name@",
-		"log_level": "debug",
-		"per_round_dump": false,
-		"dump": true
 	}
 }

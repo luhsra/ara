@@ -107,6 +107,11 @@ svf_opts.append_compile_args('cpp', '-Wno-system-headers')
 svf_opts.append_compile_args('cpp', '-fexceptions')
 svf_opts.add_cmake_defines({'LLVM_DIR': llvm_dep.get_variable(configtool: 'prefix'),
                             'BUILD_SHARED_LIBS': 'on'})
+# Reduce verbosity
+svf_opts.add_cmake_defines({'CMAKE_MESSAGE_LOG_LEVEL': 'ERROR',
+'CMAKE_SUPPRESS_DEVELOPER_WARNINGS': 'ON',  # this is not in cmake doku, but it works
+'CMAKE_INSTALL_MESSAGE': 'NEVER',
+})
 svf_proj = cmake.subproject('svf', options: svf_opts)
 svf_dep = svf_proj.dependency('Svf', include_type: 'system')
 
@@ -123,7 +128,7 @@ st_flash = find_program('st-flash', required: false, disabler: true)
 sed = find_program('sed')
 
 # irx
-if get_option('irx')
+if get_option('enable_irx')
     irx = subproject('irx')
     irx_dir = irx.get_variable('irx_dir')
     irx_mod = irx.get_variable('irx_tgt')
@@ -190,17 +195,15 @@ python_path = 'PYTHONPATH=' + ':'.join(python_dirs)
 conv_wrapper_formatted = conv_wrapper.format('"' + '", "'.join(python_dirs) + '"', '')
 
 deps = [step_mod, graph_data_mod]
-if get_option('irx')
+if get_option('enable_irx')
     deps += [irx_mod]
     deps += irx.get_variable('native_simulator_llvmir')
 endif
 ara_py = custom_target('ara-py',
     input: [],
     output: 'ara.py',
-    depends: [step_mod, graph_data_mod],
-    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_py_content.format(py3_inst.full_path()+python_opt_arg, conv_wrapper_formatted)],
     depends: deps,
-    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_py_content.format(py3_inst.path()+python_opt_arg, conv_wrapper_formatted)],
+    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_py_content.format(py3_inst.full_path()+python_opt_arg, conv_wrapper_formatted)],
     build_by_default: true
 )
 
@@ -242,7 +245,7 @@ subdir('test')
 
 # application tests
 # tests that aren't actually tests, but a way to store ara invocations with a given set of arguments
-if get_option('enable_toplevel_tests')
+if get_option('build_toplevel_tests')
     settings = 'settings'
     app = autosar_singlecore_bcc1_task1_a
     app = autosar_multicore_paper_running

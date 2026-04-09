@@ -4,8 +4,6 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-run_test_cstep = files('run_test_step.py')
-
 test('native-steps',
     py3_inst,
     args: files('native_steps.py'),

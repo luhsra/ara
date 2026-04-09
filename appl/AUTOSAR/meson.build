@@ -5,7 +5,9 @@ llvm_link_cmd = toolchains.get_variable('llvm_link_cmd')
 scp = find_program('scp')
 ssh = find_program('ssh')
 
-autosar_targets = []
+
+# -----------------------------------------------------------------------------------------------
+# Collect autosar_apps 
 autosar_apps = [
   {'core': 'singlecore', 'path': 'bcc1' / 'alarm1',    'name': 'a',                     'oil': 'system.json', 'mtrace': 'a.trace.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'alarm1',    'name': 'b',                     'oil': 'system.json', 'mtrace': 'b.trace.json'},
@@ -27,7 +29,7 @@ autosar_apps = [
   {'core': 'singlecore', 'path': 'bcc1' / 'complex1',  'name': 'd',                     'oil': 'system.json', 'synthesis_disabled': ['posix']},
   {'core': 'singlecore', 'path': 'bcc1' / 'complex2',  'name': 'a',                     'oil': 'system.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'counter1',  'name': 'a',                     'oil': 'system.json'},
-# {'core': 'singlecore', 'path': 'bcc1' / 'depsvc',    'name': 'depsvc',                'oil': 'system.json'},
+ #{'core': 'singlecore', 'path': 'bcc1' / 'depsvc',    'name': 'depsvc',                'oil': 'system.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'hoffmann',  'name': 'a',                     'oil': 'system.json', 'synthesis_disabled': ['posix', 'pi4', 'riscv']},
   {'core': 'singlecore', 'path': 'bcc1' / 'isr2',      'name': 'a',                     'oil': 'system.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'isr2',      'name': 'b',                     'oil': 'system.json'},
@@ -206,95 +208,90 @@ autosar_apps = [
   {'core': 'singlecore',  'path': 'automotive_benchmark'/ 'testsuit','name': 'angle-notimes',                   'oil': 'angle-notimes.json',    'variants': ['1', '2', '3', '4', '5', '6', '7', '8', '9']},
   {'core': 'singlecore',  'path': 'automotive_benchmark'/ 'bugfix','name': 'a',                   'oil': 'a.json',    'timing': 'BB'},
 ]
+autosar_targets = []
 
 # This set of testcases depend on posix?
 if posix_enabled
   subdir('multicore' / 'trampoline')
 endif
 
-# Add Autosar xen guests here
-autosar_apps += [
-  # --------------------------- minimal ----------------------------------
-  {'core': '../Xen',  'path': 'min-autosar'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'min-autosar'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'min-az'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'min-ba'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'many'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'many'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'many'/ 'Autosar-C','name': 'c', 'oil': 'c.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'many'/ 'Autosar-D','name': 'd', 'oil': 'd.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'many'/ 'Autosar-E','name': 'e', 'oil': 'e.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'many'/ 'Autosar-F','name': 'f', 'oil': 'f.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'alarm'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'alarm-2'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'alarm-2'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+if get_option('build_hypersse_xen')
+  # Add Autosar xen guests here
+  autosar_apps += [
+    # --------------------------- minimal ----------------------------------
+    {'core': '../Xen',  'path': 'min-autosar'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'min-autosar'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'min-az'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'min-ba'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'many'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'many'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'many'/ 'Autosar-C','name': 'c', 'oil': 'c.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'many'/ 'Autosar-D','name': 'd', 'oil': 'd.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'many'/ 'Autosar-E','name': 'e', 'oil': 'e.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'many'/ 'Autosar-F','name': 'f', 'oil': 'f.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'alarm'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'alarm-2'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'alarm-2'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
 
-  # --------------------------- hypercalls  ----------------------------------
-  {'core': '../Xen',  'path': 'hc-autosar'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'hc-autosar'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'hc-autosar2'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'hc-autosar2'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'hc-a-z1'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'hc-b-a1'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'hc-a-z2'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'hc-b-a2'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'hc-autosar-notiming'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'hc-autosar-notiming'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+    # --------------------------- hypercalls  ----------------------------------
+    {'core': '../Xen',  'path': 'hc-autosar'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'hc-autosar'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'hc-autosar2'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'hc-autosar2'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'hc-a-z1'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'hc-b-a1'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'hc-a-z2'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'hc-b-a2'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'hc-autosar-notiming'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'hc-autosar-notiming'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
 
-  # --------------------------- COMPLEX ----------------------------------
-  {'core': '../Xen',  'path': 'pingpong'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'pingpong'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'sendrecv-a'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'sendrecv-a'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'sendrecv-b'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'sendrecv-b'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'channels'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'channels'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'channels'/ 'Autosar-C','name': 'c', 'oil': 'c.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'ipi'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'ipi'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'ipi'/ 'Autosar-C','name': 'c', 'oil': 'c.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'ipi'/ 'Autosar-D','name': 'd', 'oil': 'd.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'automotive-1' / 'Autosar-A', 'name': 'tasks', 'oil'  : 'tasks.json'},
-  {'core': '../Xen',  'path': 'automotive-1' / 'Autosar-B', 'name': 'tasks', 'oil'  : 'tasks.json'},
-  {'core': '../Xen',  'path': 'automotive-2' / 'Autosar-A', 'name': 'tasks', 'oil'  : 'tasks.json'},
+    # --------------------------- COMPLEX ----------------------------------
+    {'core': '../Xen',  'path': 'pingpong'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'pingpong'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'sendrecv-a'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'sendrecv-a'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'sendrecv-b'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'sendrecv-b'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'channels'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'channels'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'channels'/ 'Autosar-C','name': 'c', 'oil': 'c.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'ipi'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'ipi'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'ipi'/ 'Autosar-C','name': 'c', 'oil': 'c.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'ipi'/ 'Autosar-D','name': 'd', 'oil': 'd.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'automotive-1' / 'Autosar-A', 'name': 'tasks', 'oil'  : 'tasks.json'},
+    {'core': '../Xen',  'path': 'automotive-1' / 'Autosar-B', 'name': 'tasks', 'oil'  : 'tasks.json'},
+    {'core': '../Xen',  'path': 'automotive-2' / 'Autosar-A', 'name': 'tasks', 'oil'  : 'tasks.json'},
 
-  # --------------------------- Thesis ----------------------------------
-  # for images in MA, not in test suite, manually renamed/modified!
-  # ninja subprojects/ara/appl/AUTOSAR/autosar____Xen_thesis_Autosar_A_cfg_noopt_mod.pi4.ll
-  # dot -Tsvg MultiSSE.alarm-2.mstg.dot  > MultiSSE.alarm-2.mstg.svg
-  {'core': '../Xen',  'path': 'thesis'/ 'Autosar-A','name': 'cfg', 'oil': 'cfg.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'thesis'/ 'Autosar-B','name': 'multicore', 'oil': 'multicore.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'thesis'/ 'Autosar-C','name': 'multi_core', 'oil': 'multi_core.json', 'timing': 'BB'},
-  # ninja subprojects/ara/appl/AUTOSAR/autosar____Xen_thesis_Autosar_D_ipi_noopt_mod.pi4.ll
-  {'core': '../Xen',  'path': 'thesis'/ 'Autosar-D','name': 'ipi', 'oil': 'ipi.json', 'timing': 'BB'},
+    # --------------------------- Thesis ----------------------------------
+    # for images in MA, not in test suite, manually renamed/modified!
+    # ninja subprojects/ara/appl/AUTOSAR/autosar____Xen_thesis_Autosar_A_cfg_noopt_mod.pi4.ll
+    # dot -Tsvg MultiSSE.alarm-2.mstg.dot  > MultiSSE.alarm-2.mstg.svg
+    {'core': '../Xen',  'path': 'thesis'/ 'Autosar-A','name': 'cfg', 'oil': 'cfg.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'thesis'/ 'Autosar-B','name': 'multicore', 'oil': 'multicore.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'thesis'/ 'Autosar-C','name': 'multi_core', 'oil': 'multi_core.json', 'timing': 'BB'},
+    # ninja subprojects/ara/appl/AUTOSAR/autosar____Xen_thesis_Autosar_D_ipi_noopt_mod.pi4.ll
+    {'core': '../Xen',  'path': 'thesis'/ 'Autosar-D','name': 'ipi', 'oil': 'ipi.json', 'timing': 'BB'},
 
-  # min-2, hc-autosar, hc-autosar-noiit, alarm-2, ipi are used from test-suite
+    # min-2, hc-autosar, hc-autosar-noiit, alarm-2, ipi are used from test-suite
 
 
-  # --------------------------- ECRTS26-Paper ----------------------------------
-  {'core': '../Xen',  'path': 'braking' / 'Autosar-A', 'name': 'a1_loop_no_predict', 'oil'  : 'a.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'braking' / 'Autosar-A', 'name': 'a2_loop', 'oil'  : 'a.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'braking' / 'Autosar-A', 'name': 'a3_unrolled', 'oil'  : 'a.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'braking' / 'Autosar-B', 'name': 'b1_ack_hmi', 'oil'  : 'b.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'braking' / 'BareMetal-C', 'name': 'c_autosar', 'oil'  : 'c.json', 'timing': 'BB'},
-  {'core': '../Xen',  'path': 'hc-autosar-polled' / 'Autosar-A', 'name': 'a', 'oil'  : 'a.json'},
-  {'core': '../Xen',  'path': 'hc-autosar-polled' / 'Autosar-B', 'name': 'b', 'oil'  : 'b.json'},
-  {'core': '../Xen',  'path': 'hc-autosar-polled-2' / 'Autosar-A', 'name': 'a', 'oil'  : 'a.json'},
-  {'core': '../Xen',  'path': 'hc-autosar-polled-2' / 'Autosar-B', 'name': 'b', 'oil'  : 'b.json'},
-]
+    # --------------------------- ECRTS26-Paper ----------------------------------
+    {'core': '../Xen',  'path': 'braking' / 'Autosar-A', 'name': 'a1_loop_no_predict', 'oil'  : 'a.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'braking' / 'Autosar-A', 'name': 'a2_loop', 'oil'  : 'a.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'braking' / 'Autosar-A', 'name': 'a3_unrolled', 'oil'  : 'a.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'braking' / 'Autosar-B', 'name': 'b1_ack_hmi', 'oil'  : 'b.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'braking' / 'BareMetal-C', 'name': 'c_autosar', 'oil'  : 'c.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'hc-autosar-polled' / 'Autosar-A', 'name': 'a', 'oil'  : 'a.json'},
+    {'core': '../Xen',  'path': 'hc-autosar-polled' / 'Autosar-B', 'name': 'b', 'oil'  : 'b.json'},
+    {'core': '../Xen',  'path': 'hc-autosar-polled-2' / 'Autosar-A', 'name': 'a', 'oil'  : 'a.json'},
+    {'core': '../Xen',  'path': 'hc-autosar-polled-2' / 'Autosar-B', 'name': 'b', 'oil'  : 'b.json'},
+  ]
+endif
 
-no_timing_settings = custom_target(
-  output: 'no_timing_settings.json',
-  capture: true,
-  command: ['echo', '{"steps": ["LockElision", "IPIAvoidance"], "MultiSSE": {"with_times": false}}'],
-)
-with_timing_settings = custom_target(
-  output: 'with_timing_settings.json',
-  capture: true,
-  command: ['echo', '{"steps": ["ApplyTimings", "LockElision", "IPIAvoidance"], "MultiSSE": {"with_times": true}}'],
-)
 
+# -----------------------------------------------------------------------------------------------
+# Add variants to create autosar_apps_with_variants 
 autosar_apps_with_variants = []
 foreach app : autosar_apps
   # src file
@@ -310,11 +307,11 @@ foreach app : autosar_apps
   endif
 endforeach
 
-# foreach key : autosar_apps_with_variants[0].keys()
-#   message(key + ': ' + autosar_apps_with_variants[0].get(key).to_string())
-# endforeach
-# error('exit')
 
+# -----------------------------------------------------------------------------------------------
+# Add LLVM ll files into autosar_targets 
+
+# LLVM Compilation into LLVM
 foreach app : autosar_apps_with_variants
   sys = app['core'] / app['path'] / app['name']
   full_name = app['full_name']
@@ -390,32 +387,6 @@ foreach app : autosar_apps_with_variants
   endif
     app += {'ll_riscv': app_ll_riscv}
 
-  # trace file for sse testing
-  if not app.has_key('mtrace')
-    sys_test =  disabler()
-  elif app['mtrace'] == 'EXTRACT'
-    sys_test = custom_target(full_name + '.trace.json',
-                             input: sys + '.cc',
-                             output : full_name + '.trace.json',
-                             capture: true,
-                             command : [sed, '-n', '/if TRACE_JSON/,/TRACE_JSON/{/TRACE_JSON/d;p}', '@INPUT@'])
-  else
-    sys_test = files(app['core'] / app['path'] / app['mtrace'])
-  endif
-  app += {'sys_test': sys_test}
-
-  if not app.has_key('ttrace')
-    time_test =  disabler()
-  elif app['ttrace'] == 'EXTRACT'
-    time_test = custom_target(full_name + '.ttrace.json',
-                              input: sys + '.cc',
-                              output : full_name + '.ttrace.json',
-                              capture: true,
-                              command : [sed, '-n', '/if TIMING_JSON/,/TIMING_JSON/{/TIMING_JSON/d;p}', '@INPUT@'])
-  else
-    time_test = files(app['core'] / app['path'] / app['ttrace'])
-  endif
-  app += {'time_test': time_test}
 
   # timings for multisse with lock elision
   if not app.has_key('timing')
@@ -427,75 +398,117 @@ foreach app : autosar_apps_with_variants
   endif
   app += {'sys_timings': sys_timings}
 
-  # lock elision test data
-  if app.has_key('locks')
-    if app['locks'] == 'EXTRACT'
-      locks = custom_target(full_name + '.locks.json',
-                            input: sys + '.cc',
-                            output : full_name + '.locks.json',
-                            capture: true,
-                            command : [sed, '-n', '/if LOCKS_JSON/,/LOCKS_JSON/{/LOCKS_JSON/d;p}', '@INPUT@'])
-    elif app.has_key('locks')
-      locks = files(app['core'] / app['path'] / app['locks'])
+  if get_option('build_step_tests')
+    # trace file for sse testing
+    if not app.has_key('mtrace')
+      sys_test =  disabler()
+    elif app['mtrace'] == 'EXTRACT'
+      sys_test = custom_target(full_name + '.trace.json',
+                              input: sys + '.cc',
+                              output : full_name + '.trace.json',
+                              capture: true,
+                              command : [sed, '-n', '/if TRACE_JSON/,/TRACE_JSON/{/TRACE_JSON/d;p}', '@INPUT@'])
+    else
+      sys_test = files(app['core'] / app['path'] / app['mtrace'])
     endif
-    app += {'locks': locks}
-  endif
+    app += {'sys_test': sys_test}
 
-  foreach extra_key : ['short_delay', 'long_delay']
-    if app.has_key(extra_key)
-      # file for uncommon actions
-      special = files(app['core'] / app['path'] / app[extra_key])
-      app += {extra_key: special}
+    if not app.has_key('ttrace')
+      time_test =  disabler()
+    elif app['ttrace'] == 'EXTRACT'
+      time_test = custom_target(full_name + '.ttrace.json',
+                                input: sys + '.cc',
+                                output : full_name + '.ttrace.json',
+                                capture: true,
+                                command : [sed, '-n', '/if TIMING_JSON/,/TIMING_JSON/{/TIMING_JSON/d;p}', '@INPUT@'])
+    else
+      time_test = files(app['core'] / app['path'] / app['ttrace'])
     endif
-  endforeach
+    app += {'time_test': time_test}
+
+    # lock elision test data
+    if app.has_key('locks')
+      if app['locks'] == 'EXTRACT'
+        locks = custom_target(full_name + '.locks.json',
+                              input: sys + '.cc',
+                              output : full_name + '.locks.json',
+                              capture: true,
+                              command : [sed, '-n', '/if LOCKS_JSON/,/LOCKS_JSON/{/LOCKS_JSON/d;p}', '@INPUT@'])
+      elif app.has_key('locks')
+        locks = files(app['core'] / app['path'] / app['locks'])
+      endif
+      app += {'locks': locks}
+    endif
+
+    foreach extra_key : ['short_delay', 'long_delay']
+      if app.has_key(extra_key)
+        # file for uncommon actions
+        special = files(app['core'] / app['path'] / app[extra_key])
+        app += {extra_key: special}
+      endif
+    endforeach
+  endif
 
   set_variable(full_name, app)
   autosar_targets += [app]
 endforeach
 
+
+# -----------------------------------------------------------------------------------------------
+# ARA Analysis + Synthesis
 autosar_generated_targets_posix = []
 autosar_generated_targets_pi4 = []
 autosar_generated_targets_riscv = []
-
 foreach app: autosar_targets
   full_name = app['full_name']
-  generate_timing_settings = custom_target(
-    output: full_name  + '.generate_timing_settings.json',
-    capture: true,
-    command: ['echo', '{"steps": ["ApplyTimings", "LoadOIL", "DumpCFG"], "ApplyTimings": {"create_timings": "' +  app['full_name'] +'.empty_timing.json"}}'],
-  )
 
+  if get_option('build_step_tests')
+    no_timing_settings = custom_target(
+      output: 'no_timing_settings.json',
+      capture: true,
+      command: ['echo', '{"steps": ["LockElision", "IPIAvoidance"], "MultiSSE": {"with_times": false}}'],
+    )
+    with_timing_settings = custom_target(
+      output: 'with_timing_settings.json',
+      capture: true,
+      command: ['echo', '{"steps": ["ApplyTimings", "LockElision", "IPIAvoidance"], "MultiSSE": {"with_times": true}}'],
+    )
+    generate_timing_settings = custom_target(
+      output: full_name  + '.generate_timing_settings.json',
+      capture: true,
+      command: ['echo', '{"steps": ["ApplyTimings", "LoadOIL", "DumpCFG"], "ApplyTimings": {"create_timings": "' +  app['full_name'] +'.empty_timing.json"}}'],
+    )
 
-  run_target('run_lock_elision_no_timings_' + full_name,
-             command: [py3_inst, ara_py, app['ll'], '--os', 'AUTOSAR', '--oilfile', app['oil'], '-s', 'LockElision', '-s', 'IPIAvoidance'])
-  run_target('run_lock_elision_generate_timings_' + full_name,
-             command: [py3_inst, ara_py, app['ll'], '--os', 'AUTOSAR', '--oilfile', app['oil'], '--step-settings', generate_timing_settings])
-  run_target('run_lock_elision_with_timings_' + full_name,
-             command: [py3_inst, ara_py, app['ll'], '--os', 'AUTOSAR', '--oilfile', app['oil'], '--step-settings', with_timing_settings, '--timings', app['sys_timings'], '--step-data'])
+    run_target('run_lock_elision_no_timings_' + full_name,
+              command: [py3_inst, ara_py, app['ll'], '--os', 'AUTOSAR', '--oilfile', app['oil'], '-s', 'LockElision', '-s', 'IPIAvoidance'])
+    run_target('run_lock_elision_generate_timings_' + full_name,
+              command: [py3_inst, ara_py, app['ll'], '--os', 'AUTOSAR', '--oilfile', app['oil'], '--step-settings', generate_timing_settings])
+    run_target('run_lock_elision_with_timings_' + full_name,
+              command: [py3_inst, ara_py, app['ll'], '--os', 'AUTOSAR', '--oilfile', app['oil'], '--step-settings', with_timing_settings, '--timings', app['sys_timings'], '--step-data'])
 
-  step_data = custom_target(full_name + '.multisse.no_timing.stepdata.json',
-                            input: [ara_py, app['ll'], app['oil']],
-                            output: full_name + '.multisse.no_timing.stepdata.json',
-                            depfile: full_name + '.dep',
-                            command: [py3_inst, ara_py, app['ll'], '--os', 'AUTOSAR',
-                                      '--dependency_file', '@DEPFILE@',
-                                      '--oilfile', app['oil'],
-                                      '-s', 'LockElision', '-s', 'IPIAvoidance',
-                                      '--step-data', '@OUTPUT@'],
-                           )
+    step_data = custom_target(full_name + '.multisse.no_timing.stepdata.json',
+                              input: [ara_py, app['ll'], app['oil']],
+                              output: full_name + '.multisse.no_timing.stepdata.json',
+                              depfile: full_name + '.dep',
+                              command: [py3_inst, ara_py, app['ll'], '--os', 'AUTOSAR',
+                                        '--dependency_file', '@DEPFILE@',
+                                        '--oilfile', app['oil'],
+                                        '-s', 'LockElision', '-s', 'IPIAvoidance',
+                                        '--step-data', '@OUTPUT@'],
+                            )
 
-  step_data = custom_target(full_name + '.multisse.with_timing.stepdata.json',
-                            input: [ara_py, app['ll'], app['oil']],
-                            output: full_name + '.multisse.with_timing.stepdata.json',
-                            depfile: full_name + '.dep',
-                            command: [py3_inst, ara_py, app['ll'], '--os', 'AUTOSAR',
-                                      '--dependency_file', '@DEPFILE@',
-                                      '--oilfile', app['oil'],
-                                      '--step-settings', with_timing_settings,
-                                      '--timings', app['sys_timings'],
-                                      '--step-data', '@OUTPUT@'],
-                           )
-
+    step_data = custom_target(full_name + '.multisse.with_timing.stepdata.json',
+                              input: [ara_py, app['ll'], app['oil']],
+                              output: full_name + '.multisse.with_timing.stepdata.json',
+                              depfile: full_name + '.dep',
+                              command: [py3_inst, ara_py, app['ll'], '--os', 'AUTOSAR',
+                                        '--dependency_file', '@DEPFILE@',
+                                        '--oilfile', app['oil'],
+                                        '--step-settings', with_timing_settings,
+                                        '--timings', app['sys_timings'],
+                                        '--step-data', '@OUTPUT@'],
+                            )
+  endif
 
   if posix_enabled and not (app.has_key('synthesis_disabled') and 'posix' in app['synthesis_disabled'])
     if get_option('execute_ara')
@@ -552,19 +565,11 @@ foreach app: autosar_targets
     autosar_generated_targets_posix += app
   endif
 
-  # another settings file 
-  name = app['full_name']
-  conf_data = configuration_data()
-  conf_data.set('name', name)
-  config_loc = files('../../settings/autosar_sse_custom.json.in')
-  ara_settings = configure_file(input : config_loc, output : f'autosar_sse_custom-@name@.json',
-              configuration : conf_data)
-
   if arm_enabled and not (app.has_key('synthesis_disabled') and 'pi4' in app['synthesis_disabled'])
     ara_opt_settings = {
       'opt': autosar_generator_arm_opt,
       'noopt': autosar_generator_arm_noopt,
-      'cust': ara_settings
+      'cust': autosar_sse_arm_custom_settings
     }
     if app.has_key('timing')
       ara_timing_settings = ['--timing', app['sys_timings']]
@@ -580,17 +585,22 @@ foreach app: autosar_targets
       opt_app_name = full_name + '_' + opt
       app += {'opt': opt}
       if get_option('execute_ara')
-        autosar_benchmark_settings = '../subprojects/ara/settings/autosar_arm_automotive_benchmark.json'
         ara_cmd = [ py3_inst, ara_py, app['ll_pi4'],
               '--os', 'AUTOSAR',
               '--oilfile', app['oil'],
               '--ir_output', '@OUTPUT0@',
-              '--step-settings', 
+              '--step-settings',
+              # TODO: this should be done in a seperate targets
               # if in autosar_benchmark use different settings file
-              get_option('autosar_benchmark') ? autosar_benchmark_settings : ara_opt_settings[opt],
+              get_option('autosar_benchmark') ? autosar_sse_arm_automotive_benchmark : ara_opt_settings[opt],
               '--generator_output', '@OUTPUT1@',
               ara_timing_settings
           ]  
+        if opt == 'cust'
+          name = app['full_name']
+          dynamic_step_settings=f'{"MultiSSE": {"with_times": true, "file_name": "@name@", "log_level": "debug", "per_round_dump": false, "dump": true}'
+          ara_cmd += ['--dynamic-step-settings', dynamic_step_settings]
+        endif
         # if in autosar_benchmark add to cmd
         # if is_variable('autosar_benchmark')
         #   ara_cmd += ['--no_colors', 'True']
@@ -796,5 +806,6 @@ foreach app: autosar_targets
 
 endforeach
 
-
-subdir('multicore/dynamic')
+if get_option('build_step_tests')
+  subdir('multicore/dynamic')
+endif

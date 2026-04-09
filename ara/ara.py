@@ -94,6 +94,9 @@ class Main:
         parser.add_argument('--step-settings', metavar="FILE", action='append',
                             help="settings for individual steps. '-' is STDIN. "
                                  "Later given settings override previous ones.")
+        parser.add_argument('--dynamic-step-settings', type=str,
+                            help="Same as --step-settings, but as String instead of a file."
+                                 "This allows to use 1 json file for many applications.")
         parser.add_argument('--dependency_file',
                             help="file to write make-style dependencies into for "
                                 "build system integration")
@@ -156,7 +159,6 @@ class Main:
         self.extra_settings = {}
 
         if self.args.step_settings:
-            self.extra_settings = {}
             for ssettings in self.args.step_settings:
                 try:
                     if ssettings == '-':
@@ -167,6 +169,11 @@ class Main:
                 except Exception as e:
                     parser.error(f'File for --step-settings is malformed: {e}')
 
+        if self.args.dynamic_step_settings:
+            # in-place update extr_settings
+            self.extra_settings |= (json.loads(self.args.dynamic_step_settings))
+        # print(json.dumps(self.extra_settings, indent=4))
+        
         if self.extra_settings.get("steps", None) and self.args.step:
             parser.error("Provide steps either with '--step' or in '--step-settings'.")
 
