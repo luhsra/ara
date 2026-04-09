@@ -19,8 +19,8 @@ namespace ara::step {
 	}
 
 	void FakeEntryPoint::run() {
-		static int run = 0;
-		/*if (run++) {
+		/*static int run = 0;
+		if (run++) {
 			std::stringstream ss;
 			ss << get_name() << " is only allowed to run once! This is run " << run;
 			fail(ss.str());
