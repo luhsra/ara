@@ -468,7 +468,7 @@ class Zephyr(OSBase):
     # idle_threads = {}
 
     """ whether IRQs shall be triggered only once and then disabled automatically """
-    analyze_irqs_once = False
+    analyze_irqs_once = True
 
     @staticmethod
     def get_special_steps():
@@ -487,6 +487,9 @@ class Zephyr(OSBase):
 
         for inst, ctx in context.items():
             if getattr(inst, "cpu_id", None) == cpu_id:
+                local_contexts.append((inst, ctx))
+            elif getattr(inst, "cpu_id", None) == None:
+                logger.warning(f"Instance {inst} has no cpu_id field for local context of cpu {cpu_id}, may be broken in HyperSSE!")
                 local_contexts.append((inst, ctx))
 
             if isinstance(inst, ZephyrIRQ) and cpu_id == inst.isr_handler.cpu_id:
