@@ -104,6 +104,7 @@ svf_opts.append_compile_args('cpp', '-Wno-unused-function')
 svf_opts.append_compile_args('cpp', '-Wno-maybe-uninitialized')
 svf_opts.append_compile_args('cpp', '-Wno-ignored-qualifiers')
 svf_opts.append_compile_args('cpp', '-Wno-system-headers')
+svf_opts.append_compile_args('cpp', '-fexceptions')
 svf_opts.add_cmake_defines({'LLVM_DIR': llvm_dep.get_variable(configtool: 'prefix'),
                             'BUILD_SHARED_LIBS': 'on'})
 svf_proj = cmake.subproject('svf', options: svf_opts)
