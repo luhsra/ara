@@ -45,6 +45,8 @@ foreach app : xen_testcases
     # elif app['testsuite'] == 'full'
     #     suits = [f'@n@']
     #     timeout = 0     # no timeout
+    elif app['testsuite'] == 'none'
+        continue
     endif
     test('ara-xen-eval-' + name,
                 py3_inst,

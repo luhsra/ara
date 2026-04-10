@@ -304,6 +304,10 @@ if get_option('build_step_tests')
     )
   endforeach
 
+endif
+
+
+if get_option('build_generator_tests')
   # system runtime test for generator
   if posix_enabled
     foreach app : autosar_generated_targets_posix
@@ -320,7 +324,6 @@ if get_option('build_step_tests')
 
   if arm_enabled
     foreach app : autosar_generated_targets_pi4
-    
       if app['path'].contains('automotive_benchmark')
           continue
       endif
@@ -363,8 +366,8 @@ if get_option('build_step_tests')
       )
     endforeach
   endif
-
 endif
+
 
 # Call all testcases in this folder
 if get_option('build_hypersse_xen')

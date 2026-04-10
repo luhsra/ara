@@ -247,7 +247,7 @@ xen_testcases = [
     # NO TIMES:brakingUnrolled: unrolled loop with prediction case, graph is hard to read, but every iteration is checked
     #  should take ~42s: Number of vertices: 983, Number of edges: 6261, Number of SPs: 719, Number of LAbSSs: 201
     #  but does not have a verifed soluation, because the graph is not readable.
-    {'name': 'brakingNoTimesUnrolled', 'do_timings': 'false', 'guests':
+    {'name': 'brakingNoTimesUnrolled', 'do_timings': 'false', 'testsuite': 'none', 'guests':
         'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_Autosar_A_a3_unrolled.pi4.ll;../subprojects/ara/appl/Xen/braking/Autosar-A/a.json;'
         + 'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-B-1-AckHMI.ll;'
         + 'BareMetal;subprojects/ara/appl/BareMetal/___Xen_braking_BareMetal_C_c_baremetal.pi4.ll;hmi_update;' 
@@ -256,7 +256,7 @@ xen_testcases = [
   # --------------------------- EXTRA (not included in TestSuite ara-xen-eval ----------------------------------
     # this test takes very long and might never finish. This is probaly because the analysis creates a large cross-produkt of states, and because there is a loop it the app 
     #  it tries every state could also point to itself in a later loop iteration.
-    {'name': 'brakingEXTRANoTimesCheck', 'do_timings': 'false', 'guests':
+    {'name': 'brakingEXTRANoTimesCheck', 'do_timings': 'false', 'testsuite': 'none', 'guests':
         'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_Autosar_A_a2_loop.pi4.ll;../subprojects/ara/appl/Xen/braking/Autosar-A/a.json;'
         + 'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-B-1-AckHMI.ll;'
         + 'BareMetal;subprojects/ara/appl/BareMetal/___Xen_braking_BareMetal_C_c_baremetal.pi4.ll;hmi_update;' 

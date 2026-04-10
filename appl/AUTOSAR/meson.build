@@ -562,7 +562,13 @@ foreach app: autosar_targets
     app += {'run_cmd_posix': run_cmd}
     run_target('run_' + full_name + '_posix', command: run_cmd)
 
-    autosar_generated_targets_posix += app
+    # generator testsuite, not all applications are eligable for synthesis
+    name=full_name
+    if 'Xen' not in name and 'examples_ara' not in name and 'pmu' not in name and 'automotive_benchmark' not in name and \
+      'multicore_andreas_spinlock' not in name and 'autosar_singlecore_bcc1_alarm1_e' not in name and 'autosar_multicore_andreas_alarmmc_b' not in name and \
+      'autosar_multicore_andreas_ipi2_d' not in name
+      autosar_generated_targets_posix += app
+    endif
   endif
 
   if arm_enabled and not (app.has_key('synthesis_disabled') and 'pi4' in app['synthesis_disabled'])
@@ -681,7 +687,12 @@ foreach app: autosar_targets
                           command : pi4_tftp_cmd)
       # summary('Flash @0@ on RPI with TFTP'.format(opt_app_name), 'meson compile ' + rt, bool_yn: true, section: 'MACAW, AUTOSAR synthesis')
 
-      autosar_generated_targets_pi4 += app
+      # generator testsuite, not all applications are eligable for synthesis
+      if opt == 'noopt' and 'Xen' not in opt_app_name and 'examples_ara' not in opt_app_name and 'pmu' not in opt_app_name and \
+        'multicore_andreas_spinlock' not in opt_app_name and 'autosar_singlecore_bcc1_alarm1_e' not in opt_app_name and 'autosar_multicore_andreas_alarmmc_b' not in opt_app_name and \
+        'autosar_multicore_andreas_ipi2_d' not in opt_app_name
+        autosar_generated_targets_pi4 += app
+      endif
     endforeach
   endif
 
@@ -800,7 +811,13 @@ foreach app: autosar_targets
       app +={'riscv_bin_tftp' : riscv_bin_tftp }
       # summary('Flash @0@ on BeagleV with TFTP'.format(opt_app_name), 'meson compile ' + rt, bool_yn: true, section: 'MACAW, AUTOSAR synthesis')
 
-      autosar_generated_targets_riscv += app
+      # generator testsuite, not all applications are eligable for synthesis
+      # name=opt_app_name
+      # if opt == 'noopt' and 'Xen' not in name and 'examples_ara' not in name and 'pmu' not in name and 'automotive_benchmark' not in name  and \
+      #   'multicore_andreas_spinlock' not in name and 'autosar_singlecore_bcc1_alarm1_e' not in name and 'autosar_multicore_andreas_alarmmc_b' not in name and \
+      #   'autosar_multicore_andreas_ipi2_d' not in name
+      #   autosar_generated_targets_riscv += app
+      # endif
     endforeach
   endif
 

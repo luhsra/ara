@@ -18,7 +18,7 @@ project('ara', 'cpp',
   default_options : ['warning_level=3',
                      'cpp_std=c++17',
                      'buildtype=debugoptimized'],
-  meson_version: '>=1.4.0',
+  meson_version: '>=1.10.0', version: 'SRA\'26'
 )
 
 add_project_arguments('-Werror=return-type', language: ['c', 'cpp'])

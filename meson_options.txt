@@ -22,3 +22,4 @@ option('build_autosar_apps', type: 'boolean', value: false, yield: true,  descri
 option('build_freertos_apps', type: 'boolean', value: false, yield: true,  description: 'do not edit, only modify parrots meson_options.txt')
 option('build_automotive_benchmark', type: 'boolean', value: false, yield: true,  description: 'do not edit, only modify parrots meson_options.txt')
 option('build_posix_apps', type: 'boolean', value: false, yield: true,  description: 'do not edit, only modify parrots meson_options.txt')
+option('build_generator_tests', type: 'boolean', value: false, yield: true,  description: 'do not edit, only modify parrots meson_options.txt')
