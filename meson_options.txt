@@ -10,7 +10,7 @@ option('execute_ara', type: 'boolean', value: false, yield: true,
 option('autosar_benchmark', type: 'boolean', value: false, description: 'Default to false, used automatically by automotive_benchmark to set ara flags')
 
 option('test_timeout', type: 'integer', value: 100, description: 'Used by (some) testsuites like ara-xen-eval')
-option('no_qemu', type: 'boolean', value: false, description: 'Autosar apps from the generator need this flag depending on if they are run in qemu or on hardware (rpi4).')
+option('no_qemu', type: 'boolean', value: false, yield: true, description: 'do not edit, only modify parrots meson_options.txt')
 
 # do not change this, controled by root meson_options.txt
 option('build_hypersse_xen', type: 'boolean', value: false, yield: true, description: 'do not edit, only modify parrots meson_options.txt')

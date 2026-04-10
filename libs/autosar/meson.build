@@ -56,7 +56,6 @@ endif
 # RISC-V
 if riscv_enabled
   autosar_riscv_clang_flags = [
-    libplatform_proj.get_variable('beaglev_clang_flags'),
     '--target=riscv64-unknown-elf', # 64 bit Architektur
     '-march=rv64imac',              # Spezifikation der genauen Architektur
     '-O3',                          # Optimierungsstufe
@@ -65,6 +64,9 @@ if riscv_enabled
     '-Wextra',
     #'-DDEBUG',                     # Debugging
   ]
+  if get_option('no_qemu')
+    autosar_riscv_clang_flags += libplatform_proj.get_variable('beaglev_clang_flags')
+  endif
   autosar_riscv_ld_flags = [        # Linken der Bibliotheken
     '-Wl,-Map,@OUTPUT0@.map',
     '-Wl,--cref',
