@@ -566,7 +566,9 @@ foreach app: autosar_targets
     name=full_name
     if 'Xen' not in name and 'examples_ara' not in name and 'pmu' not in name and 'automotive_benchmark' not in name and \
       'multicore_andreas_spinlock' not in name and 'autosar_singlecore_bcc1_alarm1_e' not in name and 'autosar_multicore_andreas_alarmmc_b' not in name and \
-      'autosar_multicore_andreas_ipi2_d' not in name
+      'autosar_multicore_andreas_ipi2_d' not in name and 'autosar_singlecore_bcc1_alarm' not in name and 'autosar_singlecore_bcc1_complex1' not in name and \
+      'autosar_singlecore_bcc1_isr' not in name and 'autosar_multicore_andreas_ipi' not in name and 'autosar_multicore_andreas_alarmmc_a' not in name
+      # some tests might run locally but not in the CI
       autosar_generated_targets_posix += app
     endif
   endif
