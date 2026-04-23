@@ -211,7 +211,7 @@ class HyperSSE(Experiment):
             target = path + "/" + thing + "-" + str(num)
             logger.debug(f"Copying: {cwd} -> {target}")
             shutil.copytree(cwd, target)
-            logger.info(f"Creating folder: {thing + "-" + str(num)}")
+            logger.info(f"Creating folder: {thing + '-' + str(num)}")
         else:
             logger.info("No paper-repo, data not copied.")
 
