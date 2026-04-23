@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import datetime
+import time
 import subprocess
 import os
 import csv
@@ -28,6 +29,7 @@ repo_list = [
     "parrot/subprojects/ara-zephyr-apps"
 ]
 
+# [Automatic copy to paper repository]
 # relative to parrots location, e.g. the two folders should be in the same folder
 # parent-dir
 # ├── parrot
@@ -90,8 +92,8 @@ class HyperSSE(Experiment):
                 subprocess.run(cmd, cwd=build_path, check=True)
 
         
-        logger.info(f"Setup test timeout to: \"{timeout}\", might need to wait for meson to reconfigure.")
-        cmd = ["meson", "configure", f"-Dara:test_timeout={timeout}"]
+        logger.info(f"Setup test timeout to: \"{timeout}\" and set meson options, might need to wait for meson to reconfigure.")
+        cmd = ["meson", "configure", f"-Dara:test_timeout={timeout}", f"-Denable_posix=true", f"-Denable_arm=true", f"-Dbuild_hypersse_xen=true"]
         build_path = cwd + parrot_dir + "build/"
         subprocess.run(cmd, cwd=build_path, check=True)
         # this is needed for meson configure to take effect. And it moves the (long) ouput from meson to debug.
@@ -102,9 +104,17 @@ class HyperSSE(Experiment):
         ninja_cmd = ["ninja", "subprojects/ara/appl/Xen/xen-ara-autosar", "-j" , f"{cpus}"]
         subprocess.run(ninja_cmd, cwd=build_path, check=True)
 
+        start_time = time.time()
+
         logger.info("Running meson testsuite.")
-        meson_testuite_cmd = ["meson", "test", "--suite", "ara-xen-eval", "-j" , f"{cpus}"]
-        subprocess.run(meson_testuite_cmd, cwd=build_path)
+        meson_testuite_cmd = ["meson", "test", "--suite", "hypersse_xen", "-j" , f"{cpus}"]
+        subprocess.run(meson_testuite_cmd, cwd=build_path, check=True)
+
+        # Check that a new log was created and its not parsing old data
+        log_time = os.path.getctime("../../../../../build/meson-logs/testlog.txt")
+        if log_time <= start_time:
+            logger.error("Meson testlog.txt was not written to, was there an error with meson?")
+            exit(1)
 
         logger.info("Parsing meson testlog into csv.")
         parse_cmd = ["python3", "../ara_meson_parser.py", "../../../../../build/meson-logs/testlog.txt", "res-ara.csv"]
@@ -122,8 +132,11 @@ class HyperSSE(Experiment):
         logger.debug(f"Found {len(names)} testcases: {names}")
         dumps = cwd + parrot_dir + "build/dumps"
         files = os.listdir(dumps)
-        logger.debug(f"Found files: {files}")
-        hstgs = [hstg for hstg in files if (hstg.startswith(f"{thing}.") and hstg.endswith(".hstg.dot"))]
+        # Filter files from previouse benchmark runs (in case there is some error and no new file is created)
+        new_files = [f for f in files if (start_time <= os.path.getctime(cwd + parrot_dir + "build/dumps/" + f))]
+        logger.debug(f"Found files: {files}\nNew files: {new_files}")
+        logger.info(f"Found {len(files)} files, of which {len(new_files)} were created since start of test.")
+        hstgs = [hstg for hstg in new_files if (hstg.startswith(f"{thing}.") and hstg.endswith(".hstg.dot"))]
 
         logger.debug(f"Found Hstgs: {hstgs}.")
         for hstg in hstgs:
