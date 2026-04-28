@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 # current dir starts in newly created experiment subfolder inside ara/test/xen-eval
 parrot_dir = "/../../../../../"
+build_folder = "build"
 res_file = 'res-ara.csv'
 
 # parrot contains multiple git-repos, each one can influence the test result
@@ -84,7 +85,7 @@ class HyperSSE(Experiment):
 
         if rebuild:
             # could also delete ara/appl here, but would need to keep generated json files
-            folder = cwd + parrot_dir + "build/subprojects/ara-zephyr-apps/appl"
+            folder = cwd + parrot_dir + build_folder + "/subprojects/ara-zephyr-apps/appl"
             if os.path.isdir(folder):
                 logger.warning("Cleaning build dir")
                 cmd = ["rm", "-dr", folder]
@@ -94,7 +95,7 @@ class HyperSSE(Experiment):
         
         logger.info(f"Setup test timeout to: \"{timeout}\" and set meson options, might need to wait for meson to reconfigure.")
         cmd = ["meson", "configure", f"-Dara:test_timeout={timeout}", f"-Denable_posix=true", f"-Denable_arm=true", f"-Dbuild_hypersse_xen=true"]
-        build_path = cwd + parrot_dir + "build/"
+        build_path = cwd + parrot_dir + build_folder + "/"
         subprocess.run(cmd, cwd=build_path, check=True)
         # this is needed for meson configure to take effect. And it moves the (long) ouput from meson to debug.
         ninja_out = subprocess.run("ninja", cwd=build_path, check=True, capture_output=True, encoding="UTF-8")
@@ -111,13 +112,13 @@ class HyperSSE(Experiment):
         subprocess.run(meson_testuite_cmd, cwd=build_path, check=True)
 
         # Check that a new log was created and its not parsing old data
-        log_time = os.path.getctime("../../../../../build/meson-logs/testlog.txt")
+        log_time = os.path.getctime("../../../../../" + build_folder + "/meson-logs/testlog.txt")
         if log_time <= start_time:
             logger.error("Meson testlog.txt was not written to, was there an error with meson?")
             exit(1)
 
         logger.info("Parsing meson testlog into csv.")
-        parse_cmd = ["python3", "../ara_meson_parser.py", "../../../../../build/meson-logs/testlog.txt", "res-ara.csv"]
+        parse_cmd = ["python3", "../ara_meson_parser.py", "../../../../../" + build_folder + "/meson-logs/testlog.txt", "res-ara.csv"]
         subprocess.run(parse_cmd, cwd=cwd, check=True)
 
 
@@ -130,10 +131,10 @@ class HyperSSE(Experiment):
                 names.append(row[0])
 
         logger.debug(f"Found {len(names)} testcases: {names}")
-        dumps = cwd + parrot_dir + "build/dumps"
+        dumps = cwd + parrot_dir + build_folder + "/dumps"
         files = os.listdir(dumps)
         # Filter files from previouse benchmark runs (in case there is some error and no new file is created)
-        new_files = [f for f in files if (start_time <= os.path.getctime(cwd + parrot_dir + "build/dumps/" + f))]
+        new_files = [f for f in files if (start_time <= os.path.getctime(cwd + parrot_dir + build_folder + "/dumps/" + f))]
         logger.debug(f"Found files: {files}\nNew files: {new_files}")
         logger.info(f"Found {len(files)} files, of which {len(new_files)} were created since start of test.")
         hstgs = [hstg for hstg in new_files if (hstg.startswith(f"{thing}.") and hstg.endswith(".hstg.dot"))]
