@@ -31,7 +31,7 @@ extern "C" {
 	typedef enum {PENDING_EVNT, NO_EVNT} EventChannelState_t;
 	typedef enum {NO_BRANCH, IS_BRANCH} EventChannelIsBranch_t;
 
-	// makes Zephyr compilter happy
+	// makes Zephyr compiler happy
 	void XEN_wrap_evtchn_alloc_unbound(domid_t remote_dom, channel_t channel, evtchn_cb_t cb);
 	void XEN_wrap_evtchn_bind_interdomain(domid_t remote_dom, channel_t channel, evtchn_cb_t cb);
 	void XEN_wrap_evtchn_send(channel_t channel);
@@ -119,6 +119,25 @@ extern "C" {
 		EventChannelState_t e;
 		return e;
 	}
+
+	// TODO: this depends on the specific shared memory application that should be analysed.
+	//  It probably should contain the size of the shared region, a pointer to access the memory
+	//  and the grant_ref_t (if grant tables are used as an underlying mechanism).
+	//  In this form it maximzed abstraction, because it only convays that there is some shared memory to the analysis.
+	//  It can be extended to include more detail or by adding another similar wrapper.
+	typedef void * hypersse_shared_memory;
+	typedef int shared_memory_id;
+
+	void XEN_wrap_share_memory(domid_t receiver_dom, shared_memory_id id, hypersse_shared_memory mem);
+	void XEN_wrap_receive_memory(domid_t sharing_dom, shared_memory_id id, hypersse_shared_memory mem);
+	void XEN_wrap_shared_write(shared_memory_id id);
+	void XEN_wrap_annotate_shared_read(shared_memory_id id);
+
+
+	void XEN_wrap_share_memory(domid_t receiver_dom, shared_memory_id id, hypersse_shared_memory mem) {}
+	void XEN_wrap_receive_memory(domid_t sharing_dom, shared_memory_id id, hypersse_shared_memory mem) {}
+	void XEN_wrap_shared_write(shared_memory_id id) {}
+	void XEN_wrap_annotate_shared_read(shared_memory_id id) {}
 
 #ifdef __cplusplus
 }

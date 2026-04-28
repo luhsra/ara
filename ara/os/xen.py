@@ -254,6 +254,7 @@ class XEN(OSBase):
 
     # Used to assign unique ids
     _eventchannel_id: int = 0
+    _sharedmemory_id: int = 0
 
     @syscall(categories={SyscallCategory.comm}, 
             signature=(Arg("remote_dom", ty=int, raw_value=True, hint=SigType.value),
@@ -492,8 +493,104 @@ class XEN(OSBase):
                     cpu.abb = int(next_abb)
                     cpu.exec_state = ExecState.from_abbtype(cfg.vp.type[next_abb])
             return state
+     
+     
+    # --------------------------- Shared Memory ---------------------
 
+    @syscall(categories={SyscallCategory.comm}, 
+            signature=(Arg("receiver_dom", ty=int, raw_value=True, hint=SigType.value),
+                        Arg("id", ty=int, raw_value=True, hint=SigType.value),
+                        Arg("mem", ty=Any, hint=SigType.symbol)),)
+    def XEN_wrap_share_memory(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
         
+        receiver_dom = read_va_integer(args.receiver_dom)
+        id = read_va_integer(args.id)
+        # ignore mem for now
+
+        XEN._sharedmemory_id += 1
+        shared_memory = SharedMemory(name="SharedMemory-" + str(XEN._sharedmemory_id), cpu_id=cpu_id,
+                              sharing_domain=cpu_id, receiving_domain=receiver_dom, shared_memory_id=id)
+        
+        state.context[shared_memory] = 1
+
+        return state
+    
+    @syscall(categories={SyscallCategory.comm}, custom_control_flow=False, 
+            signature=(Arg("sharing_dom", ty=int, raw_value=True, hint=SigType.value),
+                       Arg("id", ty=int, raw_value=True, hint=SigType.value),
+                       Arg("hypersse_shared_memory", ty=Any, hint=SigType.value),),)
+    def XEN_wrap_receive_memory(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
+
+        sharing_dom = read_va_integer(args.sharing_dom)
+        id = read_va_integer(args.id)
+        # ignore mem for now
+
+        XEN._sharedmemory_id += 1
+        shared_memory = SharedMemory(name="SharedMemory-" + str(XEN._sharedmemory_id), cpu_id=cpu_id,
+                              sharing_domain=sharing_dom, receiving_domain=cpu_id, shared_memory_id=id)
+        
+        state.context[shared_memory] = 1
+
+        # Perform an inital write (therefore sync to sharing dom)
+        XEN.get_remote_id(state, sharing_dom)
+        # Convert state in hyersse state
+        state.hypersse_state(system_count=XEN.system_count, cfg_list=XEN.cfg_list, instances_list=XEN.instances_list)
+        
+        return state
+        
+    @syscall(categories={SyscallCategory.comm}, custom_control_flow=False, 
+            signature=(Arg("shared_memory_id", ty=int, raw_value=True, hint=SigType.value),),)
+    def XEN_wrap_shared_write(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
+
+        # If we are not hypervised this does nothing
+        if graph.os != XEN:
+            return state
+
+        shared_memory_id = read_va_integer(args.shared_memory_id)
+
+        # find corresponding other_side
+        active_shared_memories = state.context_get_instances(SharedMemory)
+        for shared_memory in active_shared_memories:
+            if shared_memory_id == shared_memory.shared_memory_id:
+                other_side = shared_memory
+                break
+        if not 'other_side' in locals():
+            logger.warning(f"Wrap_shared_write do not has an shared_memory for id: {shared_memory_id}")
+            return state
+
+        # since both sides can write, other_side can be sharer or receiver
+        if other_side.sharing_domain == cpu_id:
+            other_dom = other_side.receiving_domain
+        elif other_side.receiving_domain == cpu_id:
+            other_dom = other_side.sharing_domain
+        else:
+            logger.error("Shared memory domains error!")
+            return state
+        
+        # Raise CrossCoreAction to get other_side and return here again
+        XEN.get_remote_id(state, other_dom)
+        # Convert state in hyersse state
+        state.hypersse_state(system_count=XEN.system_count, cfg_list=XEN.cfg_list, instances_list=XEN.instances_list)
+        
+        logger.info(f"Wrote to shared memory with id: {shared_memory_id}.")
+        return state
+
+    @syscall(categories={SyscallCategory.comm}, custom_control_flow=False, 
+            signature=(Arg("shared_memory_id", ty=int, raw_value=True, hint=SigType.value),),)
+    def XEN_wrap_annotate_shared_read(graph: Graph, state: OSState, cpu_id: int, args, va) -> OSState:
+        
+        # If we are not hypervised this does nothing
+        if graph.os != XEN:
+            return state
+
+        # Retrieve active event-channels of sender
+        shared_memory_id = read_va_integer(args.shared_memory_id)
+        logger.info(f"Read from shared memory with id: {shared_memory_id}.")
+
+        # since this is only an annotation nothing happens
+        return state
+    
+
 # --------------------------- Classes ---------------------
 
 @dataclass()
@@ -518,4 +615,27 @@ class EventChannel(CPUBounded):
     def __str__(self):
         s = f"\33[1;36m{self.name}\033[0m: cpu_id={self.cpu_id} dom-{self.source_domain} to dom-{self.target_domain},"\
              f" via channel: {self.channel}, event: {self.event}, masked: {self.masked}, pending: {self.pending}"
+        return s
+
+@dataclass()
+class SharedMemory(CPUBounded):
+    """Some share memory regions between guests, writes trigger a SPS, reads are annotated and can be used in analysis..
+     The analysis does not care about size/details (which is a large overestimation), therefore any read of any adress triggeres synchronization for all adresses.
+     An easy OS-specific implementation for the wrappers would be possible with Xen Grant-Tables."""
+    def __eq__(self, other):
+        return self.name == other.name
+
+    def __hash__(self):
+        return hash(self.__class__.__name__ + self.name)
+    
+    name: str
+    sharing_domain: int
+    receiving_domain: int
+    # unique identifier
+    shared_memory_id: int
+
+
+    def __str__(self):
+        s = f"\33[1;36m{self.name}\033[0m: cpu_id={self.cpu_id} sharing_domain-{self.sharing_domain} to receiving_domain-{self.receiving_domain},"\
+             f" via shared_memory_id: {self.shared_memory_id}"
         return s

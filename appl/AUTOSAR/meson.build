@@ -245,6 +245,21 @@ if get_option('build_hypersse_xen')
     {'core': '../Xen',  'path': 'hc-autosar-notiming'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
     {'core': '../Xen',  'path': 'hc-autosar-notiming'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
 
+    # --------------------------- shared memory  ----------------------------------
+    {'core': '../Xen',  'path': 'shamem-autosar-ro'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'shamem-autosar-ro'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'shamem-autosar-raw'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'shamem-autosar-raw'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'shamem-autosar-war'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'shamem-autosar-war'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'shamem-autosar-unknown'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'shamem-autosar-unknown'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'shamem-autosar'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'shamem-autosar'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'shamem-autosar'/ 'Autosar-C','name': 'c', 'oil': 'c.json', 'timing': 'BB'},
+    {'core': '../Xen',  'path': 'shamem-autosar'/ 'Autosar-D','name': 'd', 'oil': 'd.json', 'timing': 'BB'},
+
+
     # --------------------------- COMPLEX ----------------------------------
     {'core': '../Xen',  'path': 'pingpong'/ 'Autosar-A','name': 'a', 'oil': 'a.json', 'timing': 'BB'},
     {'core': '../Xen',  'path': 'pingpong'/ 'Autosar-B','name': 'b', 'oil': 'b.json', 'timing': 'BB'},

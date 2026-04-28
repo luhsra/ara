@@ -152,6 +152,35 @@ xen_testcases = [
 #   },
 
 
+  # --------------------------- shared memory  ----------------------------------
+  # 2x autosar ro
+  {'name': 'shamem-autosar-ro', 'do_timings': 'true', 'testsuite': '10s', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_shamem_autosar_ro_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/shamem-autosar-ro/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_shamem_autosar_ro_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/shamem-autosar-ro/Autosar-B/b.json'
+  },
+  # 2x autosar RAW
+  {'name': 'shamem-autosar-raw', 'do_timings': 'true', 'testsuite': '10s', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_shamem_autosar_raw_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/shamem-autosar-raw/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_shamem_autosar_raw_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/shamem-autosar-raw/Autosar-B/b.json'
+  },
+  # 2x autosar WAR
+  {'name': 'shamem-autosar-war', 'do_timings': 'true', 'testsuite': '10s', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_shamem_autosar_war_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/shamem-autosar-war/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_shamem_autosar_war_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/shamem-autosar-war/Autosar-B/b.json'
+  },
+  # 2x autosar Unknown (if read or write first)
+  {'name': 'shamem-autosar-unknown', 'do_timings': 'true', 'testsuite': '10s', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_shamem_autosar_unknown_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/shamem-autosar-unknown/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_shamem_autosar_unknown_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/shamem-autosar-unknown/Autosar-B/b.json'
+  },
+  # BUGGED! 4x autosar with ReadAfterWrite, WriteAfterRead, Unkown
+  {'name': 'shamem-autosar', 'do_timings': 'true', 'testsuite': 'none', 'guests': 
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_shamem_autosar_Autosar_A_a.pi4.ll;../subprojects/ara/appl/Xen/shamem-autosar/Autosar-A/a.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_shamem_autosar_Autosar_B_b.pi4.ll;../subprojects/ara/appl/Xen/shamem-autosar/Autosar-B/b.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_shamem_autosar_Autosar_C_c.pi4.ll;../subprojects/ara/appl/Xen/shamem-autosar/Autosar-C/c.json;' +
+      'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_shamem_autosar_Autosar_D_d.pi4.ll;../subprojects/ara/appl/Xen/shamem-autosar/Autosar-D/d.json'
+  },
+
   # --------------------------- COMPLEX ----------------------------------
   # 2x autosar, shows Hypercalls back and forth
   {'name': 'pingpong', 'do_timings': 'true', 'testsuite': '10s', 'guests': 
@@ -306,7 +335,7 @@ foreach case: xen_testcases
   # corrections = files('va_corrections.json')
   custom_target('xen-ara-' + case['name'], 
             command: [py3_inst, ara_py, 'ignored', '--os', 'XEN', '--log-level', 'warn',
-                '--step-settings', files('../../settings/hypersse_xen.json'), '--dynamic-step_settings', dynamic_step_settings],
+                '--step-settings', files('../../settings/hypersse_xen.json'), '--dynamic-step-settings', dynamic_step_settings],
             output: name,
             depends : rebuild_lls,
   )

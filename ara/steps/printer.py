@@ -50,7 +50,30 @@ _sysshort = {
     "XEN_wrap_evtchn_bind_interdomain": "XEB",
     "XEN_wrap_evtchn_send": "XES",
     "XEN_wrap_evtchn_poll": "XEP",
+    "XEN_wrap_share_memory": "XSM",
+    "XEN_wrap_receive_memory": "XRM",
+    "XEN_wrap_shared_write": "XSW",
+    "XEN_wrap_annotate_shared_read": "XSR",
 
+}
+syscall_map = {
+    "k_sleep": "Zephyr_ksleep",
+    "k_yield": "Zephyr_kyield",
+    # TODO this changes all graphs
+    # "AUTOSAR_ActivateTask": "Autosar_ActivateTask",
+    "AUTOSAR_TerminateTask": "Autosar_TerminateTask",
+    "AUTOSAR_ReadPeripheral": "Autosar_ReadPeripheral",
+    "AUTOSAR_ChainTask": "Autosar_ChainTask",
+    "XEN_wrap_evtchn_bind_interdomain": "Xen_evtchnBind",
+    "XEN_wrap_evtchn_alloc_unbound": "Xen_evtchnAlloc",
+    "XEN_wrap_evtchn_send": "Xen_evtchnSend",
+    "XEN_wrap_evtchn_poll": "Xen_evtchnPoll",
+    "BareMetal_Idle": "Baremetal_Idle",
+    "BareMetal_Dummy": "Baremetal_Dummy",
+    "XEN_wrap_share_memory": "Xen_share_mem",
+    "XEN_wrap_receive_memory": "Xen_recv_mem",
+    "XEN_wrap_shared_write": "Xen_write",
+    "XEN_wrap_annotate_shared_read": "Xen_read",
 }
 
 # from ara.util import get_logger
@@ -173,21 +196,6 @@ def _sstg_state_as_dot(sstg, state_vert, with_times: bool = True, OS: OSBase = A
     #     ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
     #     more_tupels.append(("D:", ansi_escape.sub('', str(x[0]))))
 
-    syscall_map = {
-        "k_sleep": "Zephyr_ksleep",
-        "k_yield": "Zephyr_kyield",
-        # TODO this changes all graphs
-        # "AUTOSAR_ActivateTask": "Autosar_ActivateTask",
-        "AUTOSAR_TerminateTask": "Autosar_TerminateTask",
-        "AUTOSAR_ReadPeripheral": "Autosar_ReadPeripheral",
-        "AUTOSAR_ChainTask": "Autosar_ChainTask",
-        "XEN_wrap_evtchn_bind_interdomain": "Xen_evtchnBind",
-        "XEN_wrap_evtchn_alloc_unbound": "Xen_evtchnAlloc",
-        "XEN_wrap_evtchn_send": "Xen_evtchnSend",
-        "XEN_wrap_evtchn_poll": "Xen_evtchnPoll",
-        "BareMetal_Idle": "Baremetal_Idle",
-        "BareMetal_Dummy": "Baremetal_Dummy",
-    }
     if syscall:
         if syscall_map.get(syscall):
             syscall = syscall_map.get(syscall)
