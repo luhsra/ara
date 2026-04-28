@@ -1,0 +1,72 @@
+digraph G {
+label="";
+1 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=1];
+subgraph cluster_6 {
+label="M6: Dom-0-AUTOSAR";
+bgcolor="#F8CECC";
+style=bold;
+2 [fontsize=14, label=<State 4<br/><font point-size='12'>instance: A<br/>abb: ABB4<br/>bcet/wcet: 10/20</font>>, tooltip=2, style=solid, color=green];
+3 [fontsize=14, label=<State 6<br/><font point-size='12'>instance: A<br/>abb: ABB5<br/>Xen_share_mem</font>>, tooltip=3, color=cornflowerblue, shape=box, penwidth=3];
+4 [fontsize=14, label=<State 7<br/><font point-size='12'>instance: A<br/>abb: ABB1<br/>bcet/wcet: 125/150</font>>, tooltip=4, style=solid, color=green];
+5 [fontsize=14, label=<State 8<br/><font point-size='12'>instance: A<br/>abb: ABB7<br/>Xen_write</font>>, tooltip=5, color=cornflowerblue, shape=box, penwidth=3];
+}
+subgraph cluster_9 {
+label="M9: Dom-1-AUTOSAR";
+bgcolor="#F8CECC";
+style=bold;
+8 [fontsize=14, label=<State 10<br/><font point-size='12'>instance: B<br/>abb: ABB5<br/>Xen_recv_mem</font>>, tooltip=8, color=cornflowerblue, shape=box, penwidth=3];
+7 [fontsize=14, label=<State 5<br/><font point-size='12'>instance: B<br/>abb: ABB4<br/>bcet/wcet: 25/30</font>>, tooltip=7, style=solid, color=green];
+}
+subgraph cluster_17 {
+label="M17: Dom-1-AUTOSAR";
+bgcolor="#F8CECC";
+style=bold;
+12 [fontsize=14, label=<State 16<br/><font point-size='12'>instance: B<br/>abb: ABB1<br/>bcet/wcet: 50/75</font>>, tooltip=12, style=solid, color=green];
+13 [fontsize=14, label=<State 18<br/><font point-size='12'>instance: B<br/>abb: ABB7<br/>Xen_read</font>>, tooltip=13, color=cornflowerblue, shape=box, penwidth=3];
+14 [fontsize=14, label=<State 19<br/><font point-size='12'>instance: B<br/>abb: ABB2<br/>bcet/wcet: 5/10</font>>, tooltip=14, style=solid, color=green];
+15 [fontsize=14, label=<State 20<br/><font point-size='12'>instance: B<br/>abb: ABB6<br/>Autosar_TerminateTask</font>>, tooltip=15, color=cornflowerblue, shape=box];
+16 [fontsize=14, label=<State 21<br/><font point-size='12'>instance: Idle</font>>, tooltip=16, style=solid, color=violet];
+}
+subgraph cluster_23 {
+label="M23: Dom-0-AUTOSAR";
+bgcolor="#F8CECC";
+style=bold;
+20 [fontsize=14, label=<State 26<br/><font point-size='12'>instance: A<br/>abb: ABB2<br/>bcet/wcet: 5/10</font>>, tooltip=20, style=solid, color=green];
+21 [fontsize=14, label=<State 28<br/><font point-size='12'>instance: A<br/>abb: ABB6<br/>Autosar_TerminateTask</font>>, tooltip=21, color=cornflowerblue, shape=box];
+22 [fontsize=14, label=<State 29<br/><font point-size='12'>instance: Idle</font>>, tooltip=22, style=solid, color=violet];
+}
+subgraph cluster_Metasync10 {
+label="";
+10 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=10];
+11 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=11];
+}
+subgraph cluster_Metasync18 {
+label="";
+18 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=18];
+19 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=19];
+}
+1:c0 -> 2 [color=black];
+1:c1 -> 7 [color=black];
+1 -> 10 [color=darkred, style=dotted, label="25 - 30"];
+2 -> 3 [color=black];
+3 -> 4 [color=black];
+4 -> 5 [color=black];
+4 -> 10:c0 [color=black];
+5 -> 18:c0 [color=black];
+7 -> 8 [color=black];
+8 -> 10:c1 [color=black];
+10 -> 11 [color=black];
+11:c1 -> 12 [color=black];
+11:c0 -> 4 [color=black];
+11 -> 18 [color=darkred, style=dotted, label="105 - 145"];
+12 -> 13 [color=black];
+13 -> 14 [color=black];
+14 -> 15 [color=black];
+15 -> 16 [color=black];
+16 -> 18:c1 [color=black];
+18 -> 19 [color=black];
+19:c0 -> 20 [color=black];
+19:c1 -> 16 [color=black];
+20 -> 21 [color=black];
+21 -> 22 [color=black];
+}

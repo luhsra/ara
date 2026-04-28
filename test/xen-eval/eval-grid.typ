@@ -35,6 +35,11 @@
   "hc-z-b2.hstg.svg",
   "hc-b-a2.hstg.svg",
   //
+  "shamem-autosar-ro.hstg.svg",
+  "shamem-autosar-raw.hstg.svg",
+  "shamem-autosar-war.hstg.svg",
+  "shamem-autosar-unknown.hstg.svg",
+  //
   "hc-autosar-notiming.hstg.svg",
   "hc-zephyr-notiming.hstg.svg",
   "hc-baremetal-notiming.hstg.svg",
@@ -168,13 +173,20 @@
   align: center + horizon,
   ..svgs.slice(0, 18).enumerate(start: 1).map(((i, b)) => vimg(i, b, height, relative_path, do_lable))
 )
+#grid(
+  columns: 4,
+  column-gutter: 3pt,
+  row-gutter: row-gutter,
+  align: center + horizon,
+  ..svgs.slice(18, 18+4).enumerate(start: 18).map(((i, b)) => vimg(i, b, height, relative_path, do_lable))
+)
 
 #grid(
   columns: 3,
   column-gutter: 3pt,
   row-gutter: row-gutter,
   align: center + horizon,
-  ..svgs.slice(18, 27).enumerate(start: 18).map(((i, b)) => vimg(i, b, height, relative_path, do_lable))
+  ..svgs.slice(18+4, 27+4).enumerate(start: 18+4).map(((i, b)) => vimg(i, b, height, relative_path, do_lable))
 )
 
 #grid(
@@ -182,5 +194,5 @@
   column-gutter: 3pt,
   row-gutter: row-gutter,
   align: center + horizon,
-  ..svgs.slice(27, 31).enumerate(start: 28).map(((i, b)) => vimg(i, b, 2 * height, relative_path, do_lable))
+  ..svgs.slice(27+4, 31+4).enumerate(start: 28+4).map(((i, b)) => vimg(i, b, 2 * height, relative_path, do_lable))
 )

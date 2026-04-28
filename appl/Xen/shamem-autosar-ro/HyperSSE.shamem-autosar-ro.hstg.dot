@@ -1,0 +1,57 @@
+digraph G {
+label="";
+1 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=1];
+subgraph cluster_9 {
+label="M9: Dom-0-AUTOSAR";
+bgcolor="#F8CECC";
+style=bold;
+2 [fontsize=14, label=<State 4<br/><font point-size='12'>instance: A<br/>abb: ABB1<br/>bcet/wcet: 10/20</font>>, tooltip=2, style=solid, color=green];
+3 [fontsize=14, label=<State 6<br/><font point-size='12'>instance: A<br/>abb: ABB5<br/>Xen_share_mem</font>>, tooltip=3, color=cornflowerblue, shape=box, penwidth=3];
+4 [fontsize=14, label=<State 7<br/><font point-size='12'>instance: A<br/>abb: ABB2<br/>bcet/wcet: 100/110</font>>, tooltip=4, style=solid, color=green];
+5 [fontsize=14, label=<State 8<br/><font point-size='12'>instance: A<br/>abb: ABB6<br/>Xen_read</font>>, tooltip=5, color=cornflowerblue, shape=box, penwidth=3];
+6 [fontsize=14, label=<State 9<br/><font point-size='12'>instance: A<br/>abb: ABB3<br/>bcet/wcet: 15/25</font>>, tooltip=6, style=solid, color=green];
+7 [fontsize=14, label=<State 10<br/><font point-size='12'>instance: A<br/>abb: ABB7<br/>Autosar_TerminateTask</font>>, tooltip=7, color=cornflowerblue, shape=box];
+8 [fontsize=14, label=<State 11<br/><font point-size='12'>instance: Idle</font>>, tooltip=8, style=solid, color=violet];
+}
+subgraph cluster_12 {
+label="M12: Dom-1-AUTOSAR";
+bgcolor="#F8CECC";
+style=bold;
+10 [fontsize=14, label=<State 5<br/><font point-size='12'>instance: B<br/>abb: ABB1<br/>bcet/wcet: 30/40</font>>, tooltip=10, style=solid, color=green];
+11 [fontsize=14, label=<State 12<br/><font point-size='12'>instance: B<br/>abb: ABB5<br/>Xen_recv_mem</font>>, tooltip=11, color=cornflowerblue, shape=box, penwidth=3];
+}
+subgraph cluster_20 {
+label="M20: Dom-1-AUTOSAR";
+bgcolor="#F8CECC";
+style=bold;
+15 [fontsize=14, label=<State 18<br/><font point-size='12'>instance: B<br/>abb: ABB2<br/>bcet/wcet: 80/90</font>>, tooltip=15, style=solid, color=green];
+16 [fontsize=14, label=<State 20<br/><font point-size='12'>instance: B<br/>abb: ABB6<br/>Xen_read</font>>, tooltip=16, color=cornflowerblue, shape=box, penwidth=3];
+17 [fontsize=14, label=<State 21<br/><font point-size='12'>instance: B<br/>abb: ABB3<br/>bcet/wcet: 5/10</font>>, tooltip=17, style=solid, color=green];
+18 [fontsize=14, label=<State 22<br/><font point-size='12'>instance: B<br/>abb: ABB7<br/>Autosar_TerminateTask</font>>, tooltip=18, color=cornflowerblue, shape=box];
+19 [fontsize=14, label=<State 23<br/><font point-size='12'>instance: Idle</font>>, tooltip=19, style=solid, color=violet];
+}
+subgraph cluster_Metasync13 {
+label="";
+13 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=13];
+14 [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0"><TR><TD PORT="c0">Dom 0</TD><TD PORT="c1">Dom 1</TD></TR></TABLE>>, shape=plaintext, tooltip=14];
+}
+1:c0 -> 2 [color=black];
+1:c1 -> 10 [color=black];
+1 -> 13 [color=darkred, style=dotted, label="30 - 40"];
+2 -> 3 [color=black];
+3 -> 4 [color=black];
+4 -> 5 [color=black];
+4 -> 13:c0 [color=black];
+5 -> 6 [color=black];
+6 -> 7 [color=black];
+7 -> 8 [color=black];
+10 -> 11 [color=black];
+11 -> 13:c1 [color=black];
+13 -> 14 [color=black];
+14:c1 -> 15 [color=black];
+14:c0 -> 4 [color=black];
+15 -> 16 [color=black];
+16 -> 17 [color=black];
+17 -> 18 [color=black];
+18 -> 19 [color=black];
+}
