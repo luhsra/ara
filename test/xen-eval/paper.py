@@ -52,7 +52,6 @@ class HyperSSE(Experiment):
               "rebuild": Bool(False),
               "git_hash": String("0"),
               "cleangit": Bool(False),
-              "timeout": Integer(3),
               "ecrts26": Bool(False)            # flag to create graphs for ecrts26 paper
         }
     outputs = {"result-csv": File("res-ara.csv")}
@@ -63,13 +62,10 @@ class HyperSSE(Experiment):
 
         cpus = self.inputs.cpus.value
         rebuild = self.inputs.rebuild.value
-        # limit for how long ara should try to analyse 1 application. Currently all finish in ~50s, 95% in ~5s.
-        # it sets the meson option of ara: "test_timeout", which is used in "ara/test/xen-eval/meson.build"
-        timeout = self.inputs.timeout
         cleangit = self.inputs.cleangit.value
         logger.setLevel(getattr(logging, self.inputs.log.value.upper(), logging.INFO))
         logger.warning(f"Starting thesis.py for \"{thing}\" with log: {logging.getLevelName(logger.level)}, "
-                       f"cpus: {cpus}, rebuild: {rebuild}, git_hash: {{ {self.inputs.git_hash} }}, test-timeout: {timeout}, clean_git: {cleangit}")
+                       f"cpus: {cpus}, rebuild: {rebuild}, git_hash: {{ {self.inputs.git_hash} }}, clean_git: {cleangit}")
 
         cwd = os.getcwd()
 
@@ -95,8 +91,8 @@ class HyperSSE(Experiment):
                 subprocess.run(cmd, cwd=build_path, check=True)
 
         
-        logger.info(f"Setup test timeout to: \"{timeout}\" and set meson options, might need to wait for meson to reconfigure.")
-        cmd = ["meson", "configure", f"-Dara:test_timeout={timeout}", f"-Denable_posix=true", f"-Denable_arm=true", f"-Dbuild_hypersse_xen=true"]
+        logger.info(f"Setup meson options, might need to wait for meson to reconfigure.")
+        cmd = ["meson", "configure", f"-Denable_posix=true", f"-Denable_arm=true", f"-Dbuild_hypersse_xen=true"]
         build_path = cwd + parrot_dir + build_folder + "/"
         subprocess.run(cmd, cwd=build_path, check=True)
         # this is needed for meson configure to take effect. And it moves the (long) ouput from meson to debug.
@@ -109,8 +105,12 @@ class HyperSSE(Experiment):
 
         start_time = time.time()
 
-        logger.info("Running meson testsuite.")
-        meson_testuite_cmd = ["meson", "test", "--suite", "hypersse_xen", "-j" , f"{cpus}"]
+        if self.inputs.ecrts26.value:
+            meson_testuite_cmd = ["meson", "test", "--suite", "hypersse_xen_full", "-j" , f"{cpus}"]
+            logger.info("Running complete meson testsuite.")
+        else:
+            meson_testuite_cmd = ["meson", "test", "--suite", "hypersse_xen", "-j" , f"{cpus}"]
+            logger.info("Running 99% meson testsuite.")
         subprocess.run(meson_testuite_cmd, cwd=build_path, check=True)
 
         # Check that a new log was created and its not parsing old data

@@ -276,7 +276,7 @@ xen_testcases = [
     # NO TIMES:brakingUnrolled: unrolled loop with prediction case, graph is hard to read, but every iteration is checked
     #  should take ~42s: Number of vertices: 983, Number of edges: 6261, Number of SPs: 719, Number of LAbSSs: 201
     #  but does not have a verifed soluation, because the graph is not readable.
-    {'name': 'brakingNoTimesUnrolled', 'do_timings': 'false', 'testsuite': 'none', 'guests':
+    {'name': 'brakingNoTimesUnrolled', 'do_timings': 'false', 'testsuite': '100s', 'guests':
         'Autosar;subprojects/ara/appl/AUTOSAR/autosar____Xen_braking_Autosar_A_a3_unrolled.pi4.ll;../subprojects/ara/appl/Xen/braking/Autosar-A/a.json;'
         + 'Zephyr;subprojects/ara-zephyr-apps/appl/native_sim-Zephyr-B-1-AckHMI.ll;'
         + 'BareMetal;subprojects/ara/appl/BareMetal/___Xen_braking_BareMetal_C_c_baremetal.pi4.ll;hmi_update;' 

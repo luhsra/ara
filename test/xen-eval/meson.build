@@ -32,11 +32,11 @@ foreach app : xen_testcases
         message(f'@name@ is not part of any testsuite.')
     elif app['testsuite'] == '10s'
         # suits = [f'@n@_10s', f'@n@_100s', f'@n@_1h', f'@n@']
-        suits = [f'@n@_10s', f'@n@']
+        suits = [f'@n@_full', f'@n@']
         timeout = 20 
     elif app['testsuite'] == '100s'
         # suits = [f'@n@_100s', f'@n@_1h', f'@n@']
-        suits = [f'@n@']
+        suits = [f'@n@_full']
         timeout = 100 
     # currently not used
     # elif app['testsuite'] == '1h'
