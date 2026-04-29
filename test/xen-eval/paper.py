@@ -40,8 +40,9 @@ repo_list = [
 # └── ecrts-hypersse
 #       ├── fig
 #       └── ...
-# paper_repo = "../ecrts-hypersse/fig"
-paper_repo = "NONE"
+
+paper_repo = "../ecrts-hypersse/fig"
+# paper_repo = "NONE"
 
 class HyperSSE(Experiment):
 # class MCAnalyzer(Experiment):
@@ -52,6 +53,7 @@ class HyperSSE(Experiment):
               "git_hash": String("0"),
               "cleangit": Bool(False),
               "timeout": Integer(3),
+              "ecrts26": Bool(False)            # flag to create graphs for ecrts26 paper
         }
     outputs = {"result-csv": File("res-ara.csv")}
 
@@ -199,24 +201,6 @@ class HyperSSE(Experiment):
             writer.writerows(data)
 
 
-        path = cwd + parrot_dir + paper_repo
-        if os.path.isdir(path):
-            logger.info(f"Copy svgs to paper-repo: \"{paper_repo}\"")
-            versions = os.listdir(path)
-            logger.debug(f"Folder contains: {versions}")
-            num = 0
-            for v in versions:
-                if v.startswith(thing) and "-" in v:
-                    num = max(num, int(v.split("-")[1]) + 1)
-            logger.debug(f"Next version is: {num}")
-            target = path + "/" + thing + "-" + str(num)
-            logger.debug(f"Copying: {cwd} -> {target}")
-            shutil.copytree(cwd, target)
-            logger.info(f"Creating folder: {thing + '-' + str(num)}")
-        else:
-            logger.info("No paper-repo, data not copied.")
-
-
         # Use typst to create overview-pdf
         experiment_folder = cwd.split('/')[-1]
         output_name =  "eval-grid.pdf"
@@ -231,6 +215,58 @@ class HyperSSE(Experiment):
             logger.warning("Overview failed, maybe typst is not available:")
             logger.warning(e)
             
+        # Create ecrts26 pdfs/results
+        if self.inputs.ecrts26.value:
+            results = []
+            output_name =  "ecrts26-eval-grid.pdf"
+            typst_cmd = ["typst", "compile", "../ecrts26-eval-grid.typ", "--input", f"path={experiment_folder}", output_name]
+            try:
+                res = subprocess.run(typst_cmd, cwd=cwd, capture_output=True, encoding="UTF-8")
+                if res.stderr.rstrip():
+                    logger.warning(res.stderr.rstrip())
+                else:
+                    logger.info(f"Ecrts26: created eval-grid, click to open: \"{cwd}/{output_name}.")
+                    results.append(output_name)
+            except Exception as e:
+                logger.warning(f"{output_name} failed, maybe typst is not available:")
+                logger.warning(e)
+
+            output_name =  "ecrts26-hstg.pdf"
+            typst_cmd = ["typst", "compile", "../ecrts26-hstg.typ", "--input", f"path={experiment_folder}", output_name]
+            try:
+                res = subprocess.run(typst_cmd, cwd=cwd, capture_output=True, encoding="UTF-8")
+                if res.stderr.rstrip():
+                    logger.warning(res.stderr.rstrip())
+                else:
+                    logger.info(f"Ecrts26: Created large hstg, click to open: \"{cwd}/{output_name}.")
+                    results.append(output_name)
+            except Exception as e:
+                logger.warning(f"{output_name} failed, maybe typst is not available:")
+                logger.warning(e)
+
+            # output_name =  "HyperSSE.brakingCheck.pdf"
+            # cmd = ["dot", "-Tpdf", "HyperSSE.brakingCheck.hstg.dot", ">", output_name]
+            # logger.error(cmd)
+            # logger.error(cwd)
+            # try:
+            #     res = subprocess.run(cmd, cwd=cwd, shell=True)
+            #     pass
+            # except Exception as e:
+            #     logger.warning(f"{output_name} failed, maybe dot is not available:")
+            #     logger.warning(e)
+            
+            results.append("res-ara.csv")
+
+            # Copy ecrts26 results if folder is set and exists
+            target = cwd + parrot_dir + paper_repo 
+            if os.path.isdir(target):
+                logger.info(f"Copy results to paper-repo: \"{paper_repo}\"")
+                for f in results:
+                    shutil.copyfile(cwd + "/" + f, target + "/" + f)
+            else:
+                logger.warning("Paper-repo not, data not copied automatically.")
+
+
         logger.info("Done with paper.py.")
         return
         
