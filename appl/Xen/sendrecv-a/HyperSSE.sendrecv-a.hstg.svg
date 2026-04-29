@@ -68,7 +68,7 @@
 <ellipse fill="none" stroke="green" cx="1103.74" cy="-486.17" rx="69.09" ry="41.02"/>
 <text text-anchor="start" x="1084.74" y="-500.97" font-family="Times,serif" font-size="14.00">State 4</text>
 <text text-anchor="start" x="1062.74" y="-488.57" font-family="Times,serif" font-size="12.00">instance: SETUP</text>
-<text text-anchor="start" x="1076.24" y="-476.57" font-family="Times,serif" font-size="12.00">abb: ABB1</text>
+<text text-anchor="start" x="1076.24" y="-476.57" font-family="Times,serif" font-size="12.00">abb: ABB3</text>
 <text text-anchor="start" x="1064.24" y="-464.57" font-family="Times,serif" font-size="12.00">bcet/wcet: 40/50</text>
 </a>
 </g>
@@ -192,7 +192,7 @@
 <ellipse fill="none" stroke="green" cx="1214.74" cy="-237.1" rx="69.09" ry="41.02"/>
 <text text-anchor="start" x="1195.74" y="-251.9" font-family="Times,serif" font-size="14.00">State 9</text>
 <text text-anchor="start" x="1173.74" y="-239.5" font-family="Times,serif" font-size="12.00">instance: SETUP</text>
-<text text-anchor="start" x="1187.24" y="-227.5" font-family="Times,serif" font-size="12.00">abb: ABB2</text>
+<text text-anchor="start" x="1187.24" y="-227.5" font-family="Times,serif" font-size="12.00">abb: ABB1</text>
 <text text-anchor="start" x="1175.24" y="-215.5" font-family="Times,serif" font-size="12.00">bcet/wcet: 40/50</text>
 </a>
 </g>

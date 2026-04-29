@@ -113,7 +113,7 @@
 <g id="a_node4"><a xlink:title="4">
 <ellipse fill="none" stroke="green" cx="150" cy="-657.17" rx="67.35" ry="32.55"/>
 <text text-anchor="start" x="131" y="-665.97" font-family="Times,serif" font-size="14.00">State 7</text>
-<text text-anchor="start" x="122.5" y="-653.57" font-family="Times,serif" font-size="12.00">abb: ABB5</text>
+<text text-anchor="start" x="122.5" y="-653.57" font-family="Times,serif" font-size="12.00">abb: ABB3</text>
 <text text-anchor="start" x="110.5" y="-641.57" font-family="Times,serif" font-size="12.00">bcet/wcet: 15/25</text>
 </a>
 </g>
@@ -147,7 +147,7 @@
 <g id="a_node6"><a xlink:title="6">
 <ellipse fill="none" stroke="green" cx="83" cy="-451.63" rx="67.35" ry="32.55"/>
 <text text-anchor="start" x="64" y="-460.43" font-family="Times,serif" font-size="14.00">State 9</text>
-<text text-anchor="start" x="55.5" y="-448.03" font-family="Times,serif" font-size="12.00">abb: ABB3</text>
+<text text-anchor="start" x="55.5" y="-448.03" font-family="Times,serif" font-size="12.00">abb: ABB4</text>
 <text text-anchor="start" x="43.5" y="-436.03" font-family="Times,serif" font-size="12.00">bcet/wcet: 35/45</text>
 </a>
 </g>

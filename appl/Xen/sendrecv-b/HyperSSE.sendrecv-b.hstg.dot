@@ -5,9 +5,9 @@ subgraph cluster_7 {
 label="M7: Dom-0-AUTOSAR";
 bgcolor="#F8CECC";
 style=bold;
-2 [fontsize=14, label=<State 4<br/><font point-size='12'>instance: SETUP<br/>abb: ABB1<br/>bcet/wcet: 40/50</font>>, tooltip=2, style=solid, color=green];
+2 [fontsize=14, label=<State 4<br/><font point-size='12'>instance: SETUP<br/>abb: ABB3<br/>bcet/wcet: 40/50</font>>, tooltip=2, style=solid, color=green];
 3 [fontsize=14, label=<State 8<br/><font point-size='12'>instance: SETUP<br/>abb: ABB4<br/>Xen_evtchnAlloc</font>>, tooltip=3, color=cornflowerblue, shape=box, penwidth=3];
-4 [fontsize=14, label=<State 9<br/><font point-size='12'>instance: SETUP<br/>abb: ABB2<br/>bcet/wcet: 40/50</font>>, tooltip=4, style=solid, color=green];
+4 [fontsize=14, label=<State 9<br/><font point-size='12'>instance: SETUP<br/>abb: ABB1<br/>bcet/wcet: 40/50</font>>, tooltip=4, style=solid, color=green];
 5 [fontsize=14, label=<State 10<br/><font point-size='12'>instance: SETUP<br/>abb: ABB5<br/>Autosar_TerminateTask</font>>, tooltip=5, color=cornflowerblue, shape=box];
 6 [fontsize=14, label=<State 11<br/><font point-size='12'>instance: Idle</font>>, tooltip=6, style=solid, color=violet];
 35 [fontsize=14, label=<State 38<br/><font point-size='12'>instance: SEND<br/>abb: ABB9<br/>bcet/wcet: 20/30</font>>, tooltip=35, style=solid, color=green];

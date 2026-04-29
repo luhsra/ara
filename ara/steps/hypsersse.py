@@ -191,9 +191,11 @@ class HyperSSE(Step):
         # Reset to OSState Counter back to 0
         reset_id()
 
+        multisse_log_level = self._step_manager._config.extra["MultiSSE"]["log_level"]
+
         # Call another MultiSSE once this step is finished
         self._step_manager.chain_step({"name": "MultiSSE", "with_times": self.do_timings.get(), "dump": True, 
-                                       "log_level": "warning", "hyper_sse": True, "file_name": str(self.testname.get()), "add_legend": False})
+                                       "log_level": multisse_log_level, "hyper_sse": True, "file_name": str(self.testname.get()), "add_legend": False})
 
         if self.do_stats.get():
             self._step_manager.chain_step({"name": "MSTGStats", "dump": True, "log_level": "info"}, after="MultiSSE")
