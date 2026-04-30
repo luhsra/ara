@@ -1,4 +1,5 @@
 [wrap-git]
-url = ssh://git@scm.sra.uni-hannover.de/research/parrot-projects/toolchains.git
-revision = main
+url = https://github.com/luhsra/ara-toolchains.git
+revision = ecrts26 
+
 depth = 1
