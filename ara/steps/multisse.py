@@ -1176,6 +1176,11 @@ class MultiSSE(StatsStep):
             pps = self._find_pairing_partners(cross_state, sp,
                                               start_from=start_from,
                                               only_root=only_root)
+            # self._log.warning(pps)
+            # convert to list and sort to get consisten ordering for same inputs
+            pps = list(pps)
+            pps.sort()
+            # self._log.warning(pps)
 
             # pps is a set[TimeCandidateSet]
             for cands in pps:

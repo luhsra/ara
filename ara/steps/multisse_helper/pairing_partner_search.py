@@ -55,6 +55,10 @@ class TimeCandidateSet:
     # the root SP for this candidate set
     root_sp: graph_tool.Vertex
 
+    # Without ordering numbering in stg can vary
+    def __lt__(self, other):
+        return int(self.candidates[0]) < int(other.candidates[0])
+
     @staticmethod
     def set_without_candidates(sp, time):
         """Return a set without other candidates for the given SP."""

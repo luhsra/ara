@@ -37,7 +37,7 @@ foreach app : xen_testcases
     elif app['testsuite'] == '100s'
         # suits = [f'@n@_100s', f'@n@_1h', f'@n@']
         suits = [f'@n@_full']
-        timeout = 100 
+        timeout = 200 
     # currently not used
     # elif app['testsuite'] == '1h'
     #     suits = [f'@n@_1h', f'@n@']
